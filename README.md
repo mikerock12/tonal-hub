@@ -111,7 +111,7 @@ Desde fevereiro de 2026 apps em **modo de desenvolvimento** têm restrições:
 - Letras sincronizadas
 - Criar/editar playlists e arrastar faixas
 - Guardar o token no Gerenciador de Credenciais do Windows em vez do registro
-- Ícone `.ico` e instalador (`cmake --install` + `windeployqt`)
+- Instalador (`cmake --install` + `windeployqt`)
 
 ## Estrutura
 
@@ -126,8 +126,10 @@ src/
   NetworkFactory.*      cache em disco para as capas
 qml/
   Main.qml              janela, layout, navegação, atalhos, menu de faixa, toast
-  Theme.qml             cores, medidas e funções de formatação (troque `accent` para mudar a cor do app)
+  Theme.qml             cores (azul, preto e branco), medidas e funções de formatação
   Icons.qml             paths SVG dos ícones
+resources/
+  tonal.ico             ícone do app (gerado por make-icon.ps1, ligado ao .exe pelo tonal.rc)
   Nav.qml               histórico de navegação e estado compartilhado
   components/           Icon, Cover, MediaCard, TrackRow, SeekBar, Chip...
   panels/               TopBar, LibraryPanel, PlayerBar, RightPanel, DevicePopup

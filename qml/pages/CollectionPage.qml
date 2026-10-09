@@ -65,7 +65,7 @@ Item {
         if (kind === "liked") {
             typeLabel = qsTr("Playlist")
             title = qsTr("Músicas Curtidas")
-            tint = "#5038a0"
+            tint = Theme.accent
             ownerName = Nav.me ? (Nav.me.display_name || Nav.me.id) : ""
             fetchPage("/me/tracks?limit=50", s)
             return

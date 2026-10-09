@@ -7,8 +7,8 @@ Rectangle {
     radius: Theme.radiusCover
     gradient: Gradient {
         orientation: Gradient.Horizontal
-        GradientStop { position: 0; color: "#4a2ad6" }
-        GradientStop { position: 1; color: "#9fd3c7" }
+        GradientStop { position: 0; color: Theme.accentDeep }
+        GradientStop { position: 1; color: Theme.accentText }
     }
     Icon {
         anchors.centerIn: parent

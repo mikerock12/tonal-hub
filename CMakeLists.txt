@@ -25,6 +25,11 @@ qt_add_executable(Tonal ${TONAL_SOURCES})
 # O registro gerado pelo qmltyperegistrar faz #include <App.h>: src/ precisa estar no include path.
 target_include_directories(Tonal PRIVATE src)
 
+# Ícone do executável e das janelas. Fica fora do TONAL_SOURCES: o /W4 de lá iria para o rc.exe.
+if(WIN32)
+    target_sources(Tonal PRIVATE resources/tonal.rc)
+endif()
+
 set_source_files_properties(qml/Theme.qml qml/Icons.qml qml/Nav.qml
     PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 

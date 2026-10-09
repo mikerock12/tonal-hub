@@ -227,7 +227,7 @@ Rectangle {
             Label {
                 width: parent.width
                 text: qr.item ? qr.item.name : ""
-                color: qr.current ? Theme.accent : Theme.textPrimary
+                color: qr.current ? Theme.accentText : Theme.textPrimary
                 font.pixelSize: 15
                 elide: Text.ElideRight
             }

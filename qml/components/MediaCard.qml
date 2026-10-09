@@ -68,7 +68,7 @@ Item {
         Label {
             width: parent.width
             text: root.title
-            color: root.isCurrent ? Theme.accent : Theme.textPrimary
+            color: root.isCurrent ? Theme.accentText : Theme.textPrimary
             font.pixelSize: 15
             font.weight: Font.DemiBold
             elide: Text.ElideRight

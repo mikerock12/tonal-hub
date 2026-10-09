@@ -13,7 +13,7 @@ Flickable {
     property var myPlaylists: []
     property var savedAlbums: []
     property string expanded: ""    // prateleira aberta em "Mostrar tudo"
-    property color tint: "#3a2a12"
+    property color tint: Theme.accentDeep
 
     contentHeight: content.implicitHeight + 48
     boundsBehavior: Flickable.StopAtBounds

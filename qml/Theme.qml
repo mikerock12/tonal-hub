@@ -4,9 +4,14 @@ import QtQuick
 // Todas as cores e medidas do app num lugar só.
 QtObject {
     // Cor de destaque do Tonal. Troque aqui para mudar a identidade do app inteiro.
-    readonly property color accent: "#ffb224"
-    readonly property color accentHover: "#ffc35a"
-    readonly property color textOnAccent: "#000000"
+    // Paleta: azul, preto e branco (o preto e o branco já são o fundo e o texto).
+    readonly property color accent: "#0d80bf"        // azul de destaque: botões, barras, pontos, ícones ativos
+    readonly property color accentHover: "#3193c9"
+    // Texto em destaque sobre o fundo escuro: o #0d80bf dá só 4,3:1 no #121212 (abaixo de 4,5 para texto
+    // pequeno), então o texto usa um azul mais claro do mesmo tom (6,4:1).
+    readonly property color accentText: "#4aa0cf"
+    readonly property color accentDeep: "#0a3d5c"    // fundos tingidos (degradê da Home, Músicas Curtidas)
+    readonly property color textOnAccent: "#000000"  // preto sobre o azul: 4,9:1 (branco daria 4,3:1)
 
     readonly property color windowBg: "#000000"
     readonly property color panel: "#121212"

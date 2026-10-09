@@ -63,7 +63,7 @@ Item {
             anchors.centerIn: parent
             visible: !root.hovered && !(root.isCurrent && root.isPlaying)
             text: root.number
-            color: root.isCurrent ? Theme.accent : Theme.textSecondary
+            color: root.isCurrent ? Theme.accentText : Theme.textSecondary
             font.pixelSize: 15
             font.features: ({ "tnum": 1 })
         }
@@ -111,7 +111,7 @@ Item {
             Label {
                 width: parent.width
                 text: root.title
-                color: root.isCurrent ? Theme.accent : Theme.textPrimary
+                color: root.isCurrent ? Theme.accentText : Theme.textPrimary
                 font.pixelSize: 15
                 elide: Text.ElideRight
             }

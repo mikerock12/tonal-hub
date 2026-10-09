@@ -52,7 +52,7 @@ Item {
             width: root.width - root.height - 12 - 60
             anchors.verticalCenter: parent.verticalCenter
             text: root.title
-            color: root.isCurrent ? Theme.accent : Theme.textPrimary
+            color: root.isCurrent ? Theme.accentText : Theme.textPrimary
             font.pixelSize: 14
             font.weight: Font.Bold
             elide: Text.ElideRight

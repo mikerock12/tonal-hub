@@ -275,7 +275,7 @@ Rectangle {
                 Label {
                     width: parent.width
                     text: row.title
-                    color: row.isCurrent ? Theme.accent : Theme.textPrimary
+                    color: row.isCurrent ? Theme.accentText : Theme.textPrimary
                     font.pixelSize: 15
                     elide: Text.ElideRight
                 }

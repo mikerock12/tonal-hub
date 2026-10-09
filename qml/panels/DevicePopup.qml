@@ -82,7 +82,7 @@ Popup {
                         spacing: 2
                         Label {
                             text: dev.modelData.local ? qsTr("Este computador (Tonal)") : dev.modelData.name
-                            color: dev.modelData.active ? Theme.accent : Theme.textPrimary
+                            color: dev.modelData.active ? Theme.accentText : Theme.textPrimary
                             font.pixelSize: 15
                             font.weight: dev.modelData.active ? Font.DemiBold : Font.Normal
                         }
