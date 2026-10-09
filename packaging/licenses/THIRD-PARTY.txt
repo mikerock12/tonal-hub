@@ -1,6 +1,8 @@
 Componentes de terceiros distribuídos com o Tonal
 =================================================
 
+O próprio Tonal é distribuído sob a licença MIT (Tonal-LICENSE.txt).
+
 Qt 6 (The Qt Company Ltd. e colaboradores)
   Licença: GNU LGPL versão 3 (Qt-LGPL-3.0.txt, que complementa a GNU GPL versão 3 em Qt-GPL-3.0.txt).
   O Tonal usa o Qt como bibliotecas dinâmicas (as DLLs Qt6*.dll e os plugins nas subpastas): você pode

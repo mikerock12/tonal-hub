@@ -96,6 +96,7 @@ Copy-Item (Join-Path $crt.FullName "*.dll") $stage
 # O Tonal procura o librespot primeiro ao lado do Tonal.exe.
 Copy-Item $Librespot $stage
 Copy-Item (Join-Path $PSScriptRoot "licenses") (Join-Path $stage "licenses") -Recurse
+Copy-Item (Join-Path $root "LICENSE") (Join-Path $stage "licenses\Tonal-LICENSE.txt")
 
 # ------------------------------------------------------------------ ZIP, instalador, hashes
 Step "Gerando o ZIP portátil"

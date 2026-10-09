@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="358" viewBox="0 0 760 358" font-family="Segoe UI, -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
+<title id="t">Memória usada: Tonal x Spotify (app oficial)</title>
+<desc id="d">Parado na tela inicial: Tonal 105 MB, Spotify 745 MB; Tocando música: Tonal 109 MB, Spotify 726 MB. Menor é melhor.</desc>
+<text x="24" y="34" font-size="18" font-weight="600" fill="#1f2328">Memória usada (menor é melhor)</text>
+<text x="24" y="56" font-size="13" fill="#59636e">O Tonal usa cerca de 7× menos memória que o app oficial do Spotify</text>
+<rect x="24" y="72" width="12" height="12" rx="2" fill="#0D80BF"/>
+<text x="42" y="82" font-size="13" fill="#1f2328">Tonal (com o librespot)</text>
+<rect x="231.6" y="72" width="12" height="12" rx="2" fill="#424A53"/>
+<text x="249.6" y="82" font-size="13" fill="#1f2328">Spotify, app oficial</text>
+<line x1="150.0" y1="128" x2="150.0" y2="296" stroke="#d1d9e0" stroke-width="1"/>
+<text x="150.0" y="314" font-size="12" text-anchor="middle" fill="#59636e">0 MB</text>
+<line x1="285.0" y1="128" x2="285.0" y2="296" stroke="#d1d9e0" stroke-width="1"/>
+<text x="285.0" y="314" font-size="12" text-anchor="middle" fill="#59636e">200 MB</text>
+<line x1="420.0" y1="128" x2="420.0" y2="296" stroke="#d1d9e0" stroke-width="1"/>
+<text x="420.0" y="314" font-size="12" text-anchor="middle" fill="#59636e">400 MB</text>
+<line x1="555.0" y1="128" x2="555.0" y2="296" stroke="#d1d9e0" stroke-width="1"/>
+<text x="555.0" y="314" font-size="12" text-anchor="middle" fill="#59636e">600 MB</text>
+<line x1="690.0" y1="128" x2="690.0" y2="296" stroke="#d1d9e0" stroke-width="1"/>
+<text x="690.0" y="314" font-size="12" text-anchor="middle" fill="#59636e">800 MB</text>
+<text x="24" y="118" font-size="14" font-weight="600" fill="#1f2328">Parado na tela inicial</text>
+<text x="140" y="144.0" font-size="13" text-anchor="end" fill="#59636e">Tonal</text>
+<path d="M150.0,128.0 H216.9 Q220.9,128.0 220.9,132.0 V146.0 Q220.9,150.0 216.9,150.0 H150.0 Z" fill="#0D80BF"/>
+<text x="228.9" y="144.0" font-size="13" font-weight="600" fill="#1f2328">105 MB</text>
+<text x="140" y="174.0" font-size="13" text-anchor="end" fill="#59636e">Spotify</text>
+<path d="M150.0,158.0 H648.9 Q652.9,158.0 652.9,162.0 V176.0 Q652.9,180.0 648.9,180.0 H150.0 Z" fill="#424A53"/>
+<text x="660.9" y="174.0" font-size="13" font-weight="600" fill="#1f2328">745 MB</text>
+<text x="24" y="224" font-size="14" font-weight="600" fill="#1f2328">Tocando música</text>
+<text x="140" y="250.0" font-size="13" text-anchor="end" fill="#59636e">Tonal</text>
+<path d="M150.0,234.0 H219.7 Q223.7,234.0 223.7,238.0 V252.0 Q223.7,256.0 219.7,256.0 H150.0 Z" fill="#0D80BF"/>
+<text x="231.7" y="250.0" font-size="13" font-weight="600" fill="#1f2328">109 MB</text>
+<text x="140" y="280.0" font-size="13" text-anchor="end" fill="#59636e">Spotify</text>
+<path d="M150.0,264.0 H636.3 Q640.3,264.0 640.3,268.0 V282.0 Q640.3,286.0 636.3,286.0 H150.0 Z" fill="#424A53"/>
+<text x="648.3" y="280.0" font-size="13" font-weight="600" fill="#1f2328">726 MB</text>
+<text x="24" y="344" font-size="11" fill="#59636e">Memória privada somando os processos de cada app · mediana de 10 amostras · Windows 11 · out/2026</text>
+</svg>
