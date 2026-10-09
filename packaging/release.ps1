@@ -26,6 +26,9 @@ $setup = Join-Path $out "Tonal-$version-setup.exe"
 
 function Step($text) { Write-Host "==> $text" -ForegroundColor Cyan }
 function Check($what) { if ($LASTEXITCODE -ne 0) { throw "$what falhou (código $LASTEXITCODE)" } }
+# Roda um comando externo em silêncio e devolve só o código de saída. No PowerShell 5.1, com
+# ErrorActionPreference=Stop, um stderr redirecionado vira erro fatal mesmo quando é a resposta esperada.
+function ExitCodeOf([scriptblock]$cmd) { $ErrorActionPreference = "Continue"; & $cmd *> $null; $LASTEXITCODE }
 
 # ------------------------------------------------------------------ pré-condições
 if (-not $env:QTDIR) { $env:QTDIR = [Environment]::GetEnvironmentVariable("QTDIR", "User") }
@@ -46,8 +49,7 @@ if ($Publish) {
     $head = git -C $root rev-parse HEAD
     git -C $root fetch -q origin
     if (-not (git -C $root branch -r --contains $head)) { throw "O commit atual ainda não foi enviado (git push)." }
-    gh release view $tag 2>$null | Out-Null
-    if ($LASTEXITCODE -eq 0) { throw "A release $tag já existe. Suba a versão no CMakeLists.txt." }
+    if ((ExitCodeOf { gh release view $tag }) -eq 0) { throw "A release $tag já existe. Suba a versão no CMakeLists.txt." }
 }
 
 # ------------------------------------------------------------------ ambiente do MSVC
