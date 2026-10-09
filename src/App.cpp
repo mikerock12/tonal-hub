@@ -63,6 +63,11 @@ void App::copyToClipboard(const QString &text) const
     QGuiApplication::clipboard()->setText(text);
 }
 
+QString App::clipboardText() const
+{
+    return QGuiApplication::clipboard()->text();
+}
+
 void App::dominantColor(const QString &imageUrl, const QJSValue &callback)
 {
     if (imageUrl.isEmpty() || !callback.isCallable())

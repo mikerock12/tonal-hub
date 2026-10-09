@@ -1,14 +1,46 @@
 import QtQuick
 import QtQuick.Controls
 
-// Primeira tela: configurar o Client ID e fazer login.
+// Primeira tela: criar o app no painel do Spotify, colar o Client ID e fazer login.
 Rectangle {
     id: root
     color: Theme.windowBg
 
+    readonly property string createAppUrl: "https://developer.spotify.com/dashboard/create"
+    readonly property bool formatOk: App.auth.isClientIdFormat(clientId.text)
+    readonly property string status: App.auth.clientIdStatus
+    readonly property bool canLogin: formatOk && status !== "invalid" && status !== "checking" && !App.auth.busy
+
     gradient: Gradient {
         GradientStop { position: 0; color: "#1f1f1f" }
         GradientStop { position: 1; color: "#000000" }
+    }
+
+    function login() {
+        if (!root.canLogin) return
+        App.auth.clientId = clientId.text.trim()
+        App.auth.login()
+    }
+
+    // Ao voltar do navegador com o Client ID copiado, cola sozinho. Só aceita o formato de um
+    // Client ID e não mexe num ID que já foi conferido.
+    function pasteClientIdFromClipboard() {
+        if (App.auth.busy || (root.formatOk && root.status === "valid")) return
+        const t = App.clipboardText().trim()
+        if (t !== clientId.text.trim() && App.auth.isClientIdFormat(t)) {
+            clientId.text = t
+            Nav.toast(qsTr("Client ID colado da área de transferência"))
+        }
+    }
+
+    readonly property bool windowActive: Window.active
+    onWindowActiveChanged: if (windowActive) pasteClientIdFromClipboard()
+
+    // Confere o Client ID no Spotify pouco depois de parar de digitar ou colar.
+    Timer {
+        id: checkTimer
+        interval: 400
+        onTriggered: App.auth.checkClientId(clientId.text)
     }
 
     Flickable {
@@ -18,7 +50,7 @@ Rectangle {
 
         Rectangle {
             id: card
-            width: Math.min(560, root.width - 48)
+            width: Math.min(600, root.width - 48)
             height: col.implicitHeight + 72
             anchors.centerIn: parent
             radius: 12
@@ -46,7 +78,7 @@ Rectangle {
                     width: parent.width
                     horizontalAlignment: Text.AlignHCenter
                     wrapMode: Text.WordWrap
-                    text: qsTr("Um player leve para a sua conta Spotify Premium. Na primeira vez é preciso criar um app gratuito no painel de desenvolvedor do Spotify (leva 2 minutos).")
+                    text: qsTr("Um player leve para a sua conta Spotify Premium. Na primeira vez, crie um app gratuito no painel do Spotify: são 3 passos e uns 2 minutos.")
                     color: Theme.textSecondary
                     font.pixelSize: 14
                 }
@@ -63,74 +95,104 @@ Rectangle {
                         anchors.margins: 16
                         spacing: 10
 
-                        Step { n: 1; text: qsTr("Abra o painel de desenvolvedor e clique em <b>Create app</b>.") }
+                        Step { n: 1; text: qsTr("Abra o formulário de criação de app (entre com sua conta Spotify se ele pedir).") }
                         Chip {
                             x: 32
-                            text: "developer.spotify.com/dashboard"
-                            onClicked: Qt.openUrlExternally("https://developer.spotify.com/dashboard")
+                            text: qsTr("Abrir o painel do Spotify")
+                            onClicked: Qt.openUrlExternally(root.createAppUrl)
                         }
-                        Step { n: 2; text: qsTr("Em <b>Redirect URIs</b>, adicione exatamente:") }
-                        Row {
-                            x: 32
-                            spacing: 8
-                            Rectangle {
-                                width: uriLabel.implicitWidth + 20
-                                height: 32
-                                radius: 4
-                                color: "#121212"
-                                Label {
-                                    id: uriLabel
-                                    anchors.centerIn: parent
-                                    text: App.auth.redirectUri
-                                    color: Theme.accent
-                                    font.family: "Consolas"
-                                    font.pixelSize: 13
-                                }
-                            }
-                            Chip {
-                                text: copied ? qsTr("Copiado!") : qsTr("Copiar")
-                                property bool copied: false
-                                onClicked: { App.copyToClipboard(App.auth.redirectUri); copied = true }
-                            }
-                        }
-                        Step { n: 3; text: qsTr("Marque a opção <b>Web API</b> e salve.") }
-                        Step { n: 4; text: qsTr("Abra <b>Settings</b> do app, copie o <b>Client ID</b> e cole abaixo.") }
+
+                        Step { n: 2; text: qsTr("Preencha assim (no Redirect URIs, cole e clique em <b>Add</b>), marque <b>Web API</b>, aceite os termos e clique em <b>Save</b>:") }
+                        CopyRow { label: qsTr("App name"); value: "Tonal" }
+                        CopyRow { label: qsTr("App description"); value: qsTr("Player pessoal") }
+                        CopyRow { label: qsTr("Redirect URIs"); value: App.auth.redirectUri }
+
+                        Step { n: 3; text: qsTr("Na página do app, copie o <b>Client ID</b>. Ao voltar para cá ele é colado sozinho.") }
                     }
                 }
 
-                TextField {
-                    id: clientId
+                Column {
                     width: parent.width
-                    height: 48
-                    leftPadding: 16
-                    text: App.auth.clientId
-                    placeholderText: qsTr("Client ID")
-                    placeholderTextColor: Theme.textMuted
-                    color: Theme.textPrimary
-                    font.pixelSize: 15
-                    font.family: "Consolas"
-                    selectByMouse: true
-                    background: Rectangle {
-                        radius: 6
-                        color: Theme.elevated
-                        border.width: clientId.activeFocus ? 2 : 1
-                        border.color: clientId.activeFocus ? Theme.textPrimary : Qt.rgba(1, 1, 1, 0.2)
+                    spacing: 8
+
+                    TextField {
+                        id: clientId
+                        width: parent.width
+                        height: 48
+                        leftPadding: 16
+                        rightPadding: 44
+                        text: App.auth.clientId
+                        placeholderText: qsTr("Client ID")
+                        placeholderTextColor: Theme.textMuted
+                        color: Theme.textPrimary
+                        font.pixelSize: 15
+                        font.family: "Consolas"
+                        selectByMouse: true
+                        enabled: !App.auth.busy
+                        background: Rectangle {
+                            radius: 6
+                            color: Theme.elevated
+                            border.width: clientId.activeFocus ? 2 : 1
+                            border.color: root.status === "invalid" || (clientId.text !== "" && !root.formatOk) ? Theme.danger
+                                        : clientId.activeFocus ? Theme.textPrimary : Qt.rgba(1, 1, 1, 0.2)
+                        }
+                        onTextChanged: checkTimer.restart()
+                        onAccepted: root.login()
+
+                        Icon {
+                            anchors.right: parent.right
+                            anchors.rightMargin: 14
+                            anchors.verticalCenter: parent.verticalCenter
+                            visible: root.formatOk && root.status === "valid"
+                            size: 20
+                            strokePath: Icons.checkS
+                            strokeWidth: 2.4
+                            color: Theme.accentText
+                        }
+                        BusyIndicator {
+                            anchors.right: parent.right
+                            anchors.rightMargin: 8
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 32; height: 32
+                            running: root.status === "checking"
+                            visible: running
+                        }
                     }
-                    onAccepted: loginButton.clicked()
+
+                    Label {
+                        width: parent.width
+                        visible: text !== ""
+                        wrapMode: Text.WordWrap
+                        textFormat: Text.StyledText
+                        font.pixelSize: 13
+                        color: root.status === "valid" ? Theme.accentText
+                             : (root.status === "invalid" || !root.formatOk) ? Theme.danger : Theme.textMuted
+                        text: {
+                            if (clientId.text.trim() === "") return ""
+                            if (!root.formatOk)
+                                return qsTr("O Client ID tem 32 caracteres, só números e letras de a a f.")
+                            switch (root.status) {
+                            case "checking": return qsTr("Conferindo com o Spotify...")
+                            case "valid": return qsTr("Client ID encontrado. Pode entrar.")
+                            case "invalid": return qsTr("O Spotify não conhece esse Client ID. Confira se copiou o <b>Client ID</b>, e não o <b>Client Secret</b>.")
+                            case "unknown": return qsTr("Não deu para conferir agora (sem internet?). Você ainda pode tentar entrar.")
+                            }
+                            return ""
+                        }
+                    }
                 }
 
                 Rectangle {
                     id: loginButton
-                    signal clicked()
                     width: parent.width
                     height: 48
                     radius: 24
-                    color: App.auth.busy ? Theme.elevatedHover
-                                         : (loginMouse.containsMouse ? Theme.accentHover : Theme.accent)
+                    color: !root.canLogin ? Theme.elevatedHover
+                                          : (loginMouse.containsMouse ? Theme.accentHover : Theme.accent)
                     Label {
                         anchors.centerIn: parent
                         text: App.auth.busy ? qsTr("Aguardando o navegador...") : qsTr("Entrar com Spotify")
-                        color: App.auth.busy ? Theme.textPrimary : Theme.textOnAccent
+                        color: root.canLogin ? Theme.textOnAccent : Theme.textMuted
                         font.pixelSize: 16
                         font.weight: Font.Bold
                     }
@@ -138,12 +200,29 @@ Rectangle {
                         id: loginMouse
                         anchors.fill: parent
                         hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: loginButton.clicked()
+                        cursorShape: root.canLogin ? Qt.PointingHandCursor : Qt.ArrowCursor
+                        onClicked: root.login()
                     }
-                    onClicked: {
-                        App.auth.clientId = clientId.text
-                        App.auth.login()
+                }
+
+                // Esperando o navegador: o erro mais comum aparece lá, não aqui.
+                Column {
+                    visible: App.auth.busy
+                    width: parent.width
+                    spacing: 10
+                    Label {
+                        width: parent.width
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.WordWrap
+                        textFormat: Text.StyledText
+                        text: qsTr("Se o navegador mostrar <b>Invalid redirect URI</b>, o endereço do passo 2 não foi cadastrado exatamente igual: confira, clique em Save e tente de novo.")
+                        color: Theme.textSecondary
+                        font.pixelSize: 13
+                    }
+                    Chip {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: qsTr("Cancelar")
+                        onClicked: App.auth.cancelLogin()
                     }
                 }
 
@@ -168,6 +247,8 @@ Rectangle {
             }
         }
     }
+
+    Component.onCompleted: if (clientId.text !== "") checkTimer.restart()
 
     component Step: Row {
         id: step
@@ -194,6 +275,42 @@ Rectangle {
             wrapMode: Text.WordWrap
             color: Theme.textPrimary
             font.pixelSize: 14
+        }
+    }
+
+    // Um campo do formulário do Spotify, pronto para copiar.
+    component CopyRow: Row {
+        id: copyRow
+        property string label
+        property string value
+        property bool copied: false
+        x: 32
+        spacing: 8
+        Label {
+            width: 118
+            anchors.verticalCenter: parent.verticalCenter
+            text: copyRow.label
+            color: Theme.textSecondary
+            font.pixelSize: 13
+        }
+        Rectangle {
+            width: valueLabel.implicitWidth + 20
+            height: 32
+            radius: 4
+            color: Theme.panel
+            Label {
+                id: valueLabel
+                anchors.centerIn: parent
+                text: copyRow.value
+                color: Theme.accentText
+                font.family: "Consolas"
+                font.pixelSize: 13
+            }
+        }
+        Chip {
+            anchors.verticalCenter: parent.verticalCenter
+            text: copyRow.copied ? qsTr("Copiado!") : qsTr("Copiar")
+            onClicked: { App.copyToClipboard(copyRow.value); copyRow.copied = true }
         }
     }
 }

@@ -66,6 +66,7 @@ public:
     QString version() const;
 
     Q_INVOKABLE void copyToClipboard(const QString &text) const;
+    Q_INVOKABLE QString clipboardText() const;
     // Cor predominante de uma capa (para o degradê do cabeçalho, igual ao app oficial).
     // callback(colorString)
     Q_INVOKABLE void dominantColor(const QString &imageUrl, const QJSValue &callback);

@@ -60,10 +60,13 @@ cmake --build --preset release
 
 ## 4. Criar o app no Spotify (uma vez)
 
-1. Entre em <https://developer.spotify.com/dashboard> e clique em **Create app**.
-2. Em **Redirect URIs** adicione exatamente `http://127.0.0.1:8898/callback`.
-3. Marque **Web API** e salve.
-4. Em **Settings**, copie o **Client ID** e cole na tela de login do Tonal.
+A tela de login do Tonal guia tudo, com botões para abrir o formulário e copiar cada campo:
+
+1. Abra <https://developer.spotify.com/dashboard/create> (o formulário **Create app**).
+2. Preencha nome e descrição, adicione em **Redirect URIs** exatamente `http://127.0.0.1:8898/callback`
+   (clique em **Add**), marque **Web API**, aceite os termos e clique em **Save**.
+3. Copie o **Client ID** do app. Ao voltar para o Tonal ele é colado sozinho e conferido com o Spotify
+   antes de abrir o navegador (o Client Secret não serve e não é usado).
 
 No primeiro uso abrem **duas** autorizações no navegador: a do Tonal (Web API) e a do librespot
 (o motor de áudio). Depois disso fica tudo salvo e o app abre direto.

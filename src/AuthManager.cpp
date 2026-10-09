@@ -8,6 +8,7 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QRandomGenerator>
+#include <QRegularExpression>
 #include <QSettings>
 #include <QTcpServer>
 #include <QTcpSocket>
@@ -100,10 +101,67 @@ bool AuthManager::hasValidAccessToken() const
         && QDateTime::currentDateTimeUtc().secsTo(m_expiresAt) > 30;
 }
 
+bool AuthManager::isClientIdFormat(const QString &id) const
+{
+    static const QRegularExpression re(QStringLiteral("^[0-9a-fA-F]{32}$"));
+    return re.match(id.trimmed()).hasMatch();
+}
+
+// Confere o Client ID sem abrir o navegador. O /authorize não serve para isso (sem sessão no
+// navegador ele manda tudo para a tela de login); o endpoint de token, chamado com um código
+// falso, responde "invalid_client" para um ID inexistente e "invalid_grant" para um ID que existe.
+void AuthManager::checkClientId(const QString &id)
+{
+    const QString trimmed = id.trimmed();
+    if (!isClientIdFormat(trimmed)) {
+        ++m_checkSerial; // descarta uma conferência em andamento
+        m_checkedClientId.clear();
+        setClientIdStatus(QString());
+        return;
+    }
+    if (trimmed == m_checkedClientId && m_clientIdStatus != QLatin1String("unknown"))
+        return;
+    m_checkedClientId = trimmed;
+    const int serial = ++m_checkSerial;
+    setClientIdStatus(QStringLiteral("checking"));
+
+    QUrlQuery form;
+    form.addQueryItem(QStringLiteral("grant_type"), QStringLiteral("authorization_code"));
+    form.addQueryItem(QStringLiteral("code"), QStringLiteral("tonal-conferencia"));
+    form.addQueryItem(QStringLiteral("redirect_uri"), redirectUri());
+    form.addQueryItem(QStringLiteral("client_id"), trimmed);
+    form.addQueryItem(QStringLiteral("code_verifier"), QString(64, QLatin1Char('a'))); // PKCE: 43 a 128
+    QNetworkRequest req(QUrl(QString::fromLatin1(kTokenUrl)));
+    req.setHeader(QNetworkRequest::ContentTypeHeader, QStringLiteral("application/x-www-form-urlencoded"));
+    req.setTransferTimeout(10000);
+    QNetworkReply *reply = m_nam->post(req, form.query(QUrl::FullyEncoded).toLatin1());
+    connect(reply, &QNetworkReply::finished, this, [this, reply, serial] {
+        reply->deleteLater();
+        if (serial != m_checkSerial)
+            return;
+        const QString error = QJsonDocument::fromJson(reply->readAll()).object()
+                                  .value(QStringLiteral("error")).toString();
+        if (error == QLatin1String("invalid_client"))
+            setClientIdStatus(QStringLiteral("invalid"));
+        else if (error == QLatin1String("invalid_grant"))
+            setClientIdStatus(QStringLiteral("valid"));
+        else
+            setClientIdStatus(QStringLiteral("unknown")); // sem rede ou resposta inesperada
+    });
+}
+
 void AuthManager::login()
 {
     if (m_clientId.isEmpty()) {
         setError(tr("Informe o Client ID do seu app do Spotify."));
+        return;
+    }
+    if (!isClientIdFormat(m_clientId)) {
+        setError(tr("O Client ID tem 32 caracteres, só números e letras de a a f. Copie de novo do painel."));
+        return;
+    }
+    if (m_clientId == m_checkedClientId && m_clientIdStatus == QLatin1String("invalid")) {
+        setError(tr("O Spotify não conhece esse Client ID. Confira se copiou o Client ID, e não o Client Secret."));
         return;
     }
     setError(QString());
@@ -126,6 +184,13 @@ void AuthManager::login()
 
     setBusy(true);
     QDesktopServices::openUrl(url);
+}
+
+// O usuário fechou o navegador ou desistiu: para de esperar o redirect.
+void AuthManager::cancelLogin()
+{
+    stopCallbackServer();
+    setBusy(false);
 }
 
 void AuthManager::logout()
@@ -327,6 +392,14 @@ void AuthManager::setBusy(bool b)
         return;
     m_busy = b;
     emit busyChanged();
+}
+
+void AuthManager::setClientIdStatus(const QString &s)
+{
+    if (m_clientIdStatus == s)
+        return;
+    m_clientIdStatus = s;
+    emit clientIdStatusChanged();
 }
 
 void AuthManager::setError(const QString &e)
