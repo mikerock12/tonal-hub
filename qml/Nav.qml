@@ -6,11 +6,12 @@ QtObject {
     id: nav
 
     // Rotas: home | search {query} | playlist {id} | album {id} | liked | artist {id}
-    property var history: [{ page: "home", params: {} }]
-    property int index: 0
-    readonly property var current: history[index]
-    readonly property bool canBack: index > 0
-    readonly property bool canForward: index < history.length - 1
+    // Histórico e posição mudam juntos, numa atribuição só. Com duas propriedades, cada go()
+    // emitia currentChanged duas vezes, a primeira com a rota antiga, e a página recarregava à toa.
+    property var stack: ({ entries: [{ page: "home", params: {} }], index: 0 })
+    readonly property var current: stack.entries[stack.index]
+    readonly property bool canBack: stack.index > 0
+    readonly property bool canForward: stack.index < stack.entries.length - 1
 
     // Perfil do usuário logado (GET /me)
     property var me: null
@@ -23,25 +24,24 @@ QtObject {
 
     function go(page, params) {
         params = params || {}
-        const cur = history[index]
+        const cur = current
         if (cur.page === page && JSON.stringify(cur.params) === JSON.stringify(params))
             return
         // Busca: digitar não deve empilhar uma entrada por letra
         if (page === "search" && cur.page === "search") {
-            const h = history.slice()
-            h[index] = { page: page, params: params }
-            history = h
+            const h = stack.entries.slice()
+            h[stack.index] = { page: page, params: params }
+            stack = { entries: h, index: stack.index }
             return
         }
-        const h = history.slice(0, index + 1)
+        const h = stack.entries.slice(0, stack.index + 1)
         h.push({ page: page, params: params })
         if (h.length > 50) h.shift()
-        history = h
-        index = h.length - 1
+        stack = { entries: h, index: h.length - 1 }
     }
 
-    function back() { if (canBack) index-- }
-    function forward() { if (canForward) index++ }
+    function back() { if (canBack) stack = { entries: stack.entries, index: stack.index - 1 } }
+    function forward() { if (canForward) stack = { entries: stack.entries, index: stack.index + 1 } }
 
     function openUri(uri) {
         if (!uri) return

@@ -9,6 +9,7 @@
 #include <QSettings>
 
 #include <climits>
+#include <utility>
 
 namespace {
 
@@ -92,6 +93,7 @@ Player::Player(SpotifyApi *api, LibrespotProcess *librespot, AuthManager *auth, 
     });
 
     connect(m_librespot, &LibrespotProcess::playbackEvent, this, [this] { refreshSoon(250); });
+    connect(m_librespot, &LibrespotProcess::sessionLost, this, &Player::rememberForResume);
     connect(m_librespot, &LibrespotProcess::stateChanged, this, [this] {
         if (m_librespot->state() == LibrespotProcess::Ready)
             findLocalDevice(8);
@@ -328,11 +330,58 @@ void Player::findLocalDevice(int attemptsLeft)
                         emit localDeviceChanged();
                         emit stateChanged();
                     }
+                    if (!m_resumeBody.isEmpty())
+                        resumeAfterEngineRestart();
                     return;
                 }
             }
         }
         QTimer::singleShot(1500, this, [this, attemptsLeft] { findLocalDevice(attemptsLeft - 1); });
+    });
+}
+
+// ---------------------------------------------------------------- queda do motor
+
+// Quando a sessão do librespot cai, o Spotify perde a reprodução deste dispositivo e o motor
+// novo sobe parado. Guardamos onde estava para retomar assim que o dispositivo reaparecer.
+void Player::rememberForResume()
+{
+    if (!m_isPlaying || !playingHere() || m_trackUri.isEmpty())
+        return;
+    QJsonObject body { { QStringLiteral("position_ms"), positionMs() } };
+    const QJsonObject offset { { QStringLiteral("uri"), m_trackUri } };
+    if (!m_contextUri.isEmpty()) {
+        body.insert(QStringLiteral("context_uri"), m_contextUri);
+        body.insert(QStringLiteral("offset"), offset);
+    } else if (m_lastUris.contains(m_trackUri)) {
+        // Lista solta (busca, populares): manda a lista toda para manter o que vem depois.
+        // Com "uris" usamos offset por posição, o mesmo formato do playUris.
+        body.insert(QStringLiteral("uris"), QJsonArray::fromStringList(m_lastUris));
+        body.insert(QStringLiteral("offset"),
+                    QJsonObject { { QStringLiteral("position"), int(m_lastUris.indexOf(m_trackUri)) } });
+    } else {
+        body.insert(QStringLiteral("uris"), QJsonArray { m_trackUri });
+    }
+    m_resumeBody = body;
+    m_resumeShuffle = m_shuffle;
+    m_resumeRepeat = m_repeatMode;
+}
+
+void Player::resumeAfterEngineRestart()
+{
+    const QJsonObject body = std::exchange(m_resumeBody, {});
+    const bool shuffle = m_resumeShuffle;
+    const QString repeat = m_resumeRepeat;
+    m_api->put(QStringLiteral("/me/player/play"), { { QStringLiteral("device_id"), m_localDeviceId } },
+               QJsonDocument(body), [this, shuffle, repeat](int status, const QJsonDocument &) {
+        if (status < 300) {
+            // O motor novo começa com aleatório e repetição desligados.
+            if (shuffle)
+                m_api->put(QStringLiteral("/me/player/shuffle"), { { QStringLiteral("state"), true } }, {});
+            if (repeat != QLatin1String("off"))
+                m_api->put(QStringLiteral("/me/player/repeat"), { { QStringLiteral("state"), repeat } }, {});
+        }
+        refreshSoon(500);
     });
 }
 
@@ -370,6 +419,7 @@ void Player::sendPlay(const QJsonObject &body, const QString &deviceId, bool ret
 void Player::togglePlay()
 {
     if (m_isPlaying) {
+        m_resumeBody = {}; // pausou durante a reconexão do motor: não retoma sozinho
         m_isPlaying = false; // otimista
         m_tickTimer.stop();
         setPositionBase(positionMs());
@@ -378,6 +428,11 @@ void Player::togglePlay()
         return;
     }
 
+    if (!m_resumeBody.isEmpty() && !m_localDeviceId.isEmpty()) {
+        // O motor caiu tocando e já voltou: o Spotify perdeu o estado, então tocamos o que foi guardado.
+        resumeAfterEngineRestart();
+        return;
+    }
     if (m_activeDeviceId.isEmpty() && !m_localDeviceId.isEmpty()) {
         // Nada ativo: transfere a sessão para cá e retoma de onde parou.
         transferTo(m_localDeviceId);
@@ -470,6 +525,8 @@ void Player::toggleLike()
 
 void Player::playContext(const QString &contextUri, const QString &offsetUri, int offsetIndex)
 {
+    m_resumeBody = {};
+    m_lastUris.clear();
     QJsonObject body { { QStringLiteral("context_uri"), contextUri } };
     if (!offsetUri.isEmpty())
         body.insert(QStringLiteral("offset"), QJsonObject { { QStringLiteral("uri"), offsetUri } });
@@ -480,11 +537,13 @@ void Player::playContext(const QString &contextUri, const QString &offsetUri, in
 
 void Player::playUris(const QStringList &uris, int offsetIndex)
 {
+    m_resumeBody = {};
     if (uris.isEmpty())
         return;
     // A API aceita no máximo algumas centenas de URIs; mandamos uma janela em volta da faixa escolhida.
     const int start = qMax(0, offsetIndex - 50);
     const QStringList window = uris.mid(start, 300);
+    m_lastUris = window;
     QJsonObject body {
         { QStringLiteral("uris"), QJsonArray::fromStringList(window) },
         { QStringLiteral("offset"), QJsonObject { { QStringLiteral("position"), offsetIndex - start } } },
@@ -503,6 +562,7 @@ void Player::addToQueue(const QString &uri)
 
 void Player::transferTo(const QString &deviceId)
 {
+    m_resumeBody = {};
     if (deviceId.isEmpty())
         return;
     const QJsonObject body {

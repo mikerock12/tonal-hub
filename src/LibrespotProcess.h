@@ -47,6 +47,8 @@ signals:
     // Disparado quando o librespot carrega/troca de faixa, pausa, etc.
     // O Player usa isso para atualizar o estado sem ficar fazendo polling agressivo.
     void playbackEvent();
+    // A sessão com o Spotify caiu (o motor vai voltar sozinho). O que estava tocando aqui se perde.
+    void sessionLost();
 
 private:
     void setState(State s, const QString &text = {});
@@ -56,6 +58,7 @@ private:
     QString findExecutable() const;
     QString cacheDir() const;
     bool hasCachedCredentials() const;
+    bool requestGracefulExit();
     void attachToJob();
 
     QProcess m_process;

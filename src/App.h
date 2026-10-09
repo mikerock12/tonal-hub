@@ -50,7 +50,10 @@ class App : public QObject
     Q_PROPERTY(QString version READ version CONSTANT)
 
 public:
-    explicit App(QObject *parent = nullptr);
+    // Sem construtor padrão de propósito: se o App fosse default-constructible, o QML criaria uma
+    // segunda instância com ele (o Qt prefere o construtor ao create()), com outro librespot e sem o
+    // engine JS no SpotifyApi. Assim o QML sempre usa create(), que devolve a instância do main.cpp.
+    explicit App(QObject *parent);
     ~App() override;
 
     static void setInstance(App *app) { s_instance = app; }

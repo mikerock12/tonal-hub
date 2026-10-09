@@ -4,6 +4,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QLoggingCategory>
 #include <QSettings>
 #include <QStandardPaths>
 #include <QSysInfo>
@@ -18,6 +19,11 @@
 #  endif
 #  include <windows.h>
 #endif
+
+namespace {
+// Erros sempre aparecem; o log completo só com QT_LOGGING_RULES="tonal.librespot.debug=true".
+Q_LOGGING_CATEGORY(lcLibrespot, "tonal.librespot", QtInfoMsg)
+} // namespace
 
 LibrespotProcess::LibrespotProcess(QObject *parent)
     : QObject(parent)
@@ -161,10 +167,37 @@ void LibrespotProcess::stop()
     if (m_process.state() == QProcess::NotRunning)
         return;
     m_stopping = true;
-    // librespot é um app de console: no Windows terminate() (WM_CLOSE) é ignorado.
-    m_process.kill();
-    m_process.waitForFinished(2000);
+    // Primeiro pede para sair com Ctrl+C: o librespot avisa o Spotify que o dispositivo saiu.
+    // Morto à força, a sessão antiga continua no servidor e, quando ela expira (~2 min), o
+    // servidor derruba a sessão nova do mesmo dispositivo.
+    if (!requestGracefulExit() || !m_process.waitForFinished(3000)) {
+        // librespot é um app de console: no Windows terminate() (WM_CLOSE) é ignorado.
+        m_process.kill();
+        m_process.waitForFinished(2000);
+    }
+#ifdef Q_OS_WIN
+    // Só agora, com o librespot já fora, o Tonal volta a aceitar Ctrl+C (ver requestGracefulExit).
+    SetConsoleCtrlHandler(nullptr, FALSE);
+#endif
     setState(Stopped);
+}
+
+bool LibrespotProcess::requestGracefulExit()
+{
+#ifdef Q_OS_WIN
+    // O Tonal é app GUI, sem console próprio: ele se anexa ao console oculto do librespot
+    // (CREATE_NO_WINDOW), manda Ctrl+C para os processos desse console e se desanexa.
+    // Enquanto isso o Tonal ignora o Ctrl+C, que também chega para ele. O "ignorar" é herdado
+    // por processos filhos, por isso stop() só o desfaz depois que o librespot terminou.
+    if (!AttachConsole(static_cast<DWORD>(m_process.processId())))
+        return false;
+    SetConsoleCtrlHandler(nullptr, TRUE);
+    const bool sent = GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0);
+    FreeConsole();
+    return sent;
+#else
+    return false; // fora do Windows fica o kill(), como antes
+#endif
 }
 
 void LibrespotProcess::restart()
@@ -200,6 +233,12 @@ void LibrespotProcess::handleLine(const QString &line)
     if (m_log.size() > 300)
         m_log.removeFirst();
 
+    const bool isError = line.contains(QLatin1String(" ERROR "));
+    if (isError)
+        qCWarning(lcLibrespot).noquote() << line;
+    else
+        qCDebug(lcLibrespot).noquote() << line;
+
     // Login interativo do librespot: "Browse to: https://accounts.spotify.com/authorize?..."
     // O próprio librespot (0.8) já abre essa URL no navegador antes de imprimir a linha;
     // abrir de novo aqui criaria uma segunda aba. Só atualizamos o estado.
@@ -214,6 +253,23 @@ void LibrespotProcess::handleLine(const QString &line)
         return;
     }
 
+    // O librespot só se reconecta sozinho quando o Spirc cai. Se cair só a conexão com o AP
+    // (rede, hibernação, servidor), ele fica "meio vivo": continua listado como dispositivo,
+    // mas o próximo play falha sem a chave de áudio. Reiniciamos na hora.
+    if (line.contains(QLatin1String("Connection to server closed"))) {
+        emit sessionLost();
+        setState(Starting, tr("Reconectando o motor de áudio..."));
+        QMetaObject::invokeMethod(this, &LibrespotProcess::restart, Qt::QueuedConnection);
+        return;
+    }
+    // Aqui o próprio librespot abre uma sessão nova; só avisamos que a reprodução se perdeu.
+    // O "Authenticated as" seguinte volta o estado para Ready.
+    if (line.contains(QLatin1String("Spirc shut down unexpectedly"))) {
+        emit sessionLost();
+        setState(Starting, tr("Reconectando o motor de áudio..."));
+        return;
+    }
+
     if (line.contains(QLatin1String("librespot_playback::player"))
         || line.contains(QLatin1String("librespot_connect"))) {
         if (line.contains(QLatin1String("Loading <")) || line.contains(QLatin1String(") loaded"))
@@ -222,11 +278,8 @@ void LibrespotProcess::handleLine(const QString &line)
         }
     }
 
-    if (line.contains(QLatin1String(" ERROR "))) {
-        qWarning("librespot: %s", qPrintable(line));
-        if (m_state == Starting)
-            setState(Starting, line.section(QLatin1Char(']'), 1).trimmed());
-    }
+    if (isError && m_state == Starting)
+        setState(Starting, line.section(QLatin1Char(']'), 1).trimmed());
 }
 
 void LibrespotProcess::onFinished(int exitCode, QProcess::ExitStatus status)

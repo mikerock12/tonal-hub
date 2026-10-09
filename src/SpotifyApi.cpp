@@ -2,6 +2,7 @@
 #include "AuthManager.h"
 
 #include <QJSEngine>
+#include <QLoggingCategory>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
@@ -13,6 +14,9 @@
 
 namespace {
 const char *kApiBase = "https://api.spotify.com/v1/";
+
+// Erros sempre aparecem; cada chamada com status só com QT_LOGGING_RULES="tonal.api.debug=true".
+Q_LOGGING_CATEGORY(lcApi, "tonal.api", QtInfoMsg)
 
 QVariant unwrapJs(const QVariant &v)
 {
@@ -190,9 +194,13 @@ void SpotifyApi::send(Pending p)
         }
         if (status == 401)
             emit unauthorized();
+        const QString target = p.url.toString(QUrl::RemoveScheme | QUrl::RemoveAuthority);
         if (status >= 400 || status == 0) {
-            qWarning("Spotify API %s %s -> %d %s", p.verb.constData(),
-                     qPrintable(p.url.path()), status, data.left(300).constData());
+            const QByteArray detail = data.isEmpty() ? reply->errorString().toUtf8() : data.left(300);
+            qCWarning(lcApi, "%s %s -> %d %s", p.verb.constData(), qPrintable(target), status,
+                      detail.constData());
+        } else {
+            qCDebug(lcApi, "%s %s -> %d", p.verb.constData(), qPrintable(target), status);
         }
 
         if (p.cb)

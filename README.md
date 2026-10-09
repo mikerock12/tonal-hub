@@ -22,7 +22,7 @@ dispositivo Spotify Connect e é quem baixa e toca a música. O Tonal manda toca
 | O quê | Onde | Observação |
 |---|---|---|
 | Visual Studio 2022 ou 2026 | já tem | workload **Desktop development with C++** (traz CMake e Ninja) |
-| Qt 6.8 ou mais novo | [Qt Online Installer](https://www.qt.io/download-qt-installer-oss) | marque **MSVC 2022 64-bit** na versão escolhida |
+| Qt 6.8 ou mais novo | [Qt Online Installer](https://www.qt.io/download-qt-installer-oss) | marque **MSVC 2022 64-bit** na versão escolhida e, em *Additional Libraries*, **Qt Image Formats** (as capas de playlist vêm em WebP) |
 | Rust | [rustup.rs](https://rustup.rs) | só para compilar o librespot |
 
 Depois de instalar o Qt, crie a variável de ambiente `QTDIR` apontando para o kit, por exemplo:

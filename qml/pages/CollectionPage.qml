@@ -34,7 +34,9 @@ Item {
     readonly property string playUri: kind === "liked" ? Nav.likedSongsUri() : uri
     readonly property bool isCurrentContext: playUri !== "" && App.player.contextUri === playUri
 
-    onRouteChanged: load()
+    // callLater: no onRouteChanged os bindings derivados (kind, itemId) ainda têm o valor da rota
+    // anterior; adiando, load() roda uma vez só e já com a rota nova.
+    onRouteChanged: Qt.callLater(load)
 
     ListModel { id: trackModel }
 
@@ -42,6 +44,9 @@ Item {
     function reset() {
         serial++
         trackModel.clear()
+        // Depois de clear() + append() o ListView põe currentIndex em 0 sozinho, e a primeira
+        // faixa aparecia selecionada sem ninguém clicar nela.
+        list.currentIndex = -1
         typeLabel = ""; title = ""; description = ""; imageUrl = ""; uri = ""
         ownerName = ""; ownerId = ""; artistId = ""; year = ""; releaseDate = ""; copyright = ""
         totalTracks = -1; totalDurationMs = 0; contentsAvailable = true; owned = false; saved = false
@@ -50,7 +55,9 @@ Item {
     }
 
     function load() {
-        if (!route) return
+        // Durante a troca de página o Binding do Main.qml pode entregar a rota nova a esta página
+        // que está saindo (ex.: playlist → artista). Rotas de outro tipo são ignoradas.
+        if (!route || ["playlist", "album", "liked"].indexOf(route.page) < 0) return
         reset()
         const s = serial
         loading = true

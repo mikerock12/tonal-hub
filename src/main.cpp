@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
     QGuiApplication::setFont(font);
 
     NetworkFactory networkFactory;
-    App backend;
+    App backend(nullptr);
     App::setInstance(&backend);
 
     QQmlApplicationEngine engine;

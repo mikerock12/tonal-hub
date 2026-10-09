@@ -106,6 +106,8 @@ private:
     QString targetDeviceForPlay() const;
     void sendPlay(const QJsonObject &body, const QString &deviceId, bool retried = false);
     void setPositionBase(int ms);
+    void rememberForResume();
+    void resumeAfterEngineRestart();
 
     SpotifyApi *m_api;
     LibrespotProcess *m_librespot;
@@ -130,4 +132,11 @@ private:
     bool m_liked = false;
     QString m_activeDeviceId, m_activeDeviceName, m_localDeviceId;
     QVariantList m_queue, m_devices;
+
+    // Lista do último playUris (busca, populares): a retomada precisa dela para não perder a fila.
+    QStringList m_lastUris;
+    // O que retomar quando o motor voltar depois de perder a sessão (vazio = nada).
+    QJsonObject m_resumeBody;
+    bool m_resumeShuffle = false;
+    QString m_resumeRepeat;
 };
