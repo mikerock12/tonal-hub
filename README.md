@@ -17,6 +17,19 @@ Player leve para Spotify (Premium) feito em **C++ / Qt 6 (QML)**, com o áudio t
 O Tonal fala com a Web API oficial (biblioteca, busca, controle). O librespot aparece como um
 dispositivo Spotify Connect e é quem baixa e toca a música. O Tonal manda tocar nele.
 
+## Instalar (sem compilar)
+
+Baixe a versão mais recente em **[Releases](https://github.com/natheus/tonal-player/releases)**:
+
+- `Tonal-<versão>-setup.exe`: instalador. Não precisa de administrador e cria atalho no Menu Iniciar.
+- `Tonal-<versão>-win64.zip`: versão portátil. Descompacte e abra o `Tonal.exe`.
+
+Os dois já trazem o Qt, o runtime do Visual C++ e o librespot. Precisa de Windows 10 (1809) ou 11, 64 bits, e
+de uma conta Spotify Premium. O executável não é assinado: se o SmartScreen avisar, clique em
+**Mais informações → Executar assim mesmo**. Na primeira vez, o Tonal guia a criação do app no painel do Spotify.
+
+O resto deste arquivo é para compilar a partir do código.
+
 ## 1. O que instalar (uma vez)
 
 | O quê | Onde | Observação |
@@ -71,6 +84,17 @@ A tela de login do Tonal guia tudo, com botões para abrir o formulário e copia
 No primeiro uso abrem **duas** autorizações no navegador: a do Tonal (Web API) e a do librespot
 (o motor de áudio). Depois disso fica tudo salvo e o app abre direto.
 
+## 5. Gerar uma release
+
+Com o Inno Setup 6 instalado (`winget install JRSoftware.InnoSetup`), num PowerShell comum:
+
+```powershell
+.\packaging\release.ps1             # gera em out\release\: ZIP, instalador e SHA256SUMS.txt
+.\packaging\release.ps1 -Publish    # gera e publica a release v<versão> no GitHub (precisa do gh logado)
+```
+
+A versão vem do `project(Tonal VERSION ...)` do `CMakeLists.txt`: suba-a antes de cada release nova.
+
 ## O que já funciona
 
 - Login OAuth PKCE (sem client secret), renovação automática do token
@@ -114,7 +138,6 @@ Desde fevereiro de 2026 apps em **modo de desenvolvimento** têm restrições:
 - Letras sincronizadas
 - Criar/editar playlists e arrastar faixas
 - Guardar o token no Gerenciador de Credenciais do Windows em vez do registro
-- Instalador (`cmake --install` + `windeployqt`)
 
 ## Estrutura
 
@@ -131,12 +154,16 @@ qml/
   Main.qml              janela, layout, navegação, atalhos, menu de faixa, toast
   Theme.qml             cores (azul, preto e branco), medidas e funções de formatação
   Icons.qml             paths SVG dos ícones
-resources/
-  tonal.ico             ícone do app (gerado por make-icon.ps1, ligado ao .exe pelo tonal.rc)
   Nav.qml               histórico de navegação e estado compartilhado
   components/           Icon, Cover, MediaCard, TrackRow, SeekBar, Chip...
   panels/               TopBar, LibraryPanel, PlayerBar, RightPanel, DevicePopup
   pages/                Login, Home, Search, Collection (playlist/álbum/curtidas), Artist
+resources/
+  tonal.ico             ícone do app (gerado por make-icon.ps1, ligado ao .exe pelo tonal.rc)
+packaging/
+  release.ps1           gera o ZIP portátil e o instalador (e publica a release com -Publish)
+  tonal.iss             instalador (Inno Setup 6)
+  licenses/             licenças do Qt e do librespot, que vão junto na release
 ```
 
 O Tonal é um cliente pessoal e não oficial. "Spotify" é marca da Spotify AB; este projeto não tem
