@@ -3,12 +3,16 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQuickStyle>
+#include <QWindow>
 
 #include "App.h"
+#include "MediaControls.h"
 #include "NetworkFactory.h"
 
 int main(int argc, char *argv[])
 {
+    MediaControls::setAppUserModelId();
+
     QGuiApplication app(argc, argv);
     QGuiApplication::setOrganizationName(QStringLiteral("Tonal"));
     QGuiApplication::setApplicationName(QStringLiteral("Tonal"));
@@ -37,6 +41,11 @@ int main(int argc, char *argv[])
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
                      &app, [] { QCoreApplication::exit(-1); }, Qt::QueuedConnection);
     engine.loadFromModule("Tonal", "Main");
+
+    // Teclas de mídia e painel de mídia do Windows: precisam da janela principal.
+    MediaControls media(backend.player());
+    if (auto *window = qobject_cast<QWindow *>(engine.rootObjects().value(0)))
+        media.attach(window);
 
     return app.exec();
 }

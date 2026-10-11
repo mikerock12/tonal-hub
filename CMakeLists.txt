@@ -17,6 +17,7 @@ set(TONAL_SOURCES
     src/SpotifyApi.h        src/SpotifyApi.cpp
     src/LibrespotProcess.h  src/LibrespotProcess.cpp
     src/Player.h            src/Player.cpp
+    src/MediaControls.h     src/MediaControls.cpp
     src/NetworkFactory.h    src/NetworkFactory.cpp
 )
 
@@ -25,9 +26,13 @@ qt_add_executable(Tonal ${TONAL_SOURCES})
 # O registro gerado pelo qmltyperegistrar faz #include <App.h>: src/ precisa estar no include path.
 target_include_directories(Tonal PRIVATE src)
 
-# Ícone do executável e das janelas. Fica fora do TONAL_SOURCES: o /W4 de lá iria para o rc.exe.
+# Ícone e versão do executável. Fica fora do TONAL_SOURCES: o /W4 de lá iria para o rc.exe.
 if(WIN32)
     target_sources(Tonal PRIVATE resources/tonal.rc)
+    set_source_files_properties(resources/tonal.rc PROPERTIES COMPILE_DEFINITIONS
+        "TONAL_VERSION_MAJOR=${PROJECT_VERSION_MAJOR};TONAL_VERSION_MINOR=${PROJECT_VERSION_MINOR};TONAL_VERSION_PATCH=${PROJECT_VERSION_PATCH}")
+    # Ativação das classes do Windows Runtime (controle de mídia do Windows, em MediaControls.cpp).
+    target_link_libraries(Tonal PRIVATE runtimeobject)
 endif()
 
 set_source_files_properties(qml/Theme.qml qml/Icons.qml qml/Nav.qml

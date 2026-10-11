@@ -29,6 +29,8 @@ Windows 11, outubro de 2026. Os valores mudam de máquina para máquina e com o 
 - **Sua Biblioteca** com filtros e busca, redimensionável e recolhível
 - **Player:** tocar/pausar, anterior/próxima, aleatório, repetir, barra de progresso, volume e curtir
 - **Fila** e tela **Tocando agora** no painel direito
+- **Teclas de mídia** do teclado (mesmo com o Tonal minimizado) e a faixa com a capa no **painel de mídia do
+  Windows**
 - **Spotify Connect:** o Tonal aparece como dispositivo e também manda a música para o celular ou outro PC
 - **Qualidade** 96/160/320 kbps e normalização de volume (menu da conta)
 - **Atalhos:** `Espaço` tocar/pausar · `Ctrl+→/←` próxima/anterior · `Ctrl+↑/↓` volume · `Ctrl+L` busca ·
@@ -41,7 +43,8 @@ Windows 11, outubro de 2026. Os valores mudam de máquina para máquina e com o 
 Baixe a versão mais recente em **[Releases](https://github.com/natheus/tonal-player/releases)**:
 
 - `Tonal-<versão>-setup.exe`: instalador. Não precisa de administrador e cria atalho no Menu Iniciar.
-- `Tonal-<versão>-win64.zip`: versão portátil. Descompacte e abra o `Tonal.exe`.
+- `Tonal-<versão>-win64.zip`: versão portátil. Descompacte e abra o `Tonal.exe`. Sem o atalho que o instalador
+  cria no Menu Iniciar, o painel de mídia do Windows mostra "Aplicativo desconhecido" no lugar do nome.
 
 Os dois já trazem tudo o que o app precisa (Qt, runtime do Visual C++ e librespot).
 
@@ -163,6 +166,7 @@ src/
   SpotifyApi.*          cliente HTTP da Web API (401 → refresh, 429 → Retry-After)
   Player.*              estado de reprodução, comandos, fila, dispositivos
   LibrespotProcess.*    inicia/reinicia o librespot, lê o log, Job Object no Windows
+  MediaControls.*       teclas de mídia e painel de mídia do Windows (SMTC)
   NetworkFactory.*      cache em disco para as capas
 qml/
   Main.qml              janela, layout, navegação, atalhos, menu de faixa, toast
@@ -183,7 +187,6 @@ docs/                   imagens deste README
 
 ## Próximos passos
 
-- Teclas de mídia do teclado e o controle de mídia do Windows (SMTC)
 - Letras sincronizadas
 - Criar e editar playlists, arrastar faixas
 - Guardar o token no Gerenciador de Credenciais do Windows em vez do registro

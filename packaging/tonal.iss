@@ -44,8 +44,10 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{autoprograms}\Tonal"; Filename: "{app}\Tonal.exe"
-Name: "{autodesktop}\Tonal"; Filename: "{app}\Tonal.exe"; Tasks: desktopicon
+; O AppUserModelID é o mesmo que o Tonal.exe declara (MediaControls::setAppUserModelId): é por ele que
+; o painel de mídia do Windows acha o nome e o ícone do app.
+Name: "{autoprograms}\Tonal"; Filename: "{app}\Tonal.exe"; AppUserModelID: "Tonal.Player"
+Name: "{autodesktop}\Tonal"; Filename: "{app}\Tonal.exe"; AppUserModelID: "Tonal.Player"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\Tonal.exe"; Description: "{cm:LaunchProgram,Tonal}"; Flags: nowait postinstall skipifsilent
