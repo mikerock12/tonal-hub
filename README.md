@@ -29,6 +29,8 @@ Windows 11, outubro de 2026. Os valores mudam de máquina para máquina e com o 
 - **Sua Biblioteca** com filtros e busca, redimensionável e recolhível
 - **Player:** tocar/pausar, anterior/próxima, aleatório, repetir, barra de progresso, volume e curtir
 - **Fila** e tela **Tocando agora** no painel direito
+- **Letras sincronizadas:** a linha que está tocando fica em destaque, a letra acompanha a música e um clique
+  numa linha pula para ela
 - **Teclas de mídia** do teclado (mesmo com o Tonal minimizado) e a faixa com a capa no **painel de mídia do
   Windows**
 - **Spotify Connect:** o Tonal aparece como dispositivo e também manda a música para o celular ou outro PC
@@ -76,6 +78,10 @@ Vêm das regras do Spotify para apps em modo de desenvolvimento (desde fevereiro
 - A **busca** traz no máximo 10 itens por tipo (o "Carregar mais" pagina). Os **populares** de um artista vêm de
   uma busca e mostram até 5 faixas.
 - Não há "Novos lançamentos" nem categorias: o Spotify tirou esses recursos da API.
+
+As **letras** não vêm do Spotify, cuja API não tem letras, e sim do [LRCLIB](https://lrclib.net), um acervo aberto
+mantido por voluntários: nem toda música está lá. Só com a tela de letra aberta o Tonal envia ao LRCLIB o nome
+da música, do artista e do álbum e a duração.
 
 Além disso, por enquanto o Tonal só foi feito e testado no Windows.
 
@@ -167,6 +173,7 @@ src/
   Player.*              estado de reprodução, comandos, fila, dispositivos
   LibrespotProcess.*    inicia/reinicia o librespot, lê o log, Job Object no Windows
   MediaControls.*       teclas de mídia e painel de mídia do Windows (SMTC)
+  Lyrics.*              letras do LRCLIB: busca, escolha da versão certa e leitura do formato LRC
   NetworkFactory.*      cache em disco para as capas
 qml/
   Main.qml              janela, layout, navegação, atalhos, menu de faixa, toast
@@ -175,7 +182,7 @@ qml/
   Nav.qml               histórico de navegação e estado compartilhado
   components/           Icon, Cover, MediaCard, TrackRow, SeekBar, Chip...
   panels/               TopBar, LibraryPanel, PlayerBar, RightPanel, DevicePopup
-  pages/                Login, Home, Search, Collection (playlist/álbum/curtidas), Artist
+  pages/                Login, Home, Search, Collection (playlist/álbum/curtidas), Artist, Lyrics
 resources/
   tonal.ico             ícone do app (gerado por make-icon.ps1, ligado ao .exe pelo tonal.rc)
 packaging/
@@ -187,7 +194,6 @@ docs/                   imagens deste README
 
 ## Próximos passos
 
-- Letras sincronizadas
 - Criar e editar playlists, arrastar faixas
 - Guardar o token no Gerenciador de Credenciais do Windows em vez do registro
 - Assinar o executável e testar em Linux e macOS

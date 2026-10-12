@@ -27,6 +27,7 @@ QtObject {
     readonly property string muteS: "M16 9.5 L21 14.5 M21 9.5 L16 14.5"
 
     readonly property string queueS: "M3 6 L21 6 M3 12 L21 12 M3 18 L14 18"
+    readonly property string lyricsS: "M12 3 C10.3 3 9 4.3 9 6 L9 11 C9 12.7 10.3 14 12 14 C13.7 14 15 12.7 15 11 L15 6 C15 4.3 13.7 3 12 3 Z M5.5 11 C5.5 14.6 8.4 17.5 12 17.5 C15.6 17.5 18.5 14.6 18.5 11 M12 17.5 L12 21"
     readonly property string clockS: "M12 3 A9 9 0 1 0 12 21 A9 9 0 1 0 12 3 Z M12 7 L12 12 L15.5 14"
     readonly property string chevronLeftS: "M15 5 L8 12 L15 19"
     readonly property string chevronRightS: "M9 5 L16 12 L9 19"

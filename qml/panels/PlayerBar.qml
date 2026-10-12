@@ -189,6 +189,17 @@ Item {
         IconButton {
             anchors.verticalCenter: parent.verticalCenter
             iconSize: 17
+            strokePath: Icons.lyricsS
+            strokeWidth: 1.8
+            enabled: root.player.hasTrack
+            active: Nav.current.page === "lyrics"
+            showActiveDot: true
+            tooltip: qsTr("Letra")
+            onClicked: Nav.current.page === "lyrics" ? Nav.back() : Nav.go("lyrics")
+        }
+        IconButton {
+            anchors.verticalCenter: parent.verticalCenter
+            iconSize: 17
             strokePath: Icons.nowPlayingS
             strokeWidth: 1.8
             active: Nav.rightPanel === "nowplaying"

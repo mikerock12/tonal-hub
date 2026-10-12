@@ -11,6 +11,7 @@ class QQmlEngine;
 
 #include "AuthManager.h"
 #include "LibrespotProcess.h"
+#include "Lyrics.h"
 #include "Player.h"
 #include "SpotifyApi.h"
 
@@ -36,8 +37,14 @@ struct LibrespotForeign {
     QML_NAMED_ELEMENT(Librespot)
     QML_UNCREATABLE("Use App.librespot")
 };
+struct LyricsForeign {
+    Q_GADGET
+    QML_FOREIGN(Lyrics)
+    QML_NAMED_ELEMENT(Lyrics)
+    QML_UNCREATABLE("Use App.lyrics")
+};
 
-// Ponto de entrada do QML: App.auth, App.api, App.player, App.librespot
+// Ponto de entrada do QML: App.auth, App.api, App.player, App.librespot, App.lyrics
 class App : public QObject
 {
     Q_OBJECT
@@ -47,6 +54,7 @@ class App : public QObject
     Q_PROPERTY(SpotifyApi *api READ api CONSTANT)
     Q_PROPERTY(Player *player READ player CONSTANT)
     Q_PROPERTY(LibrespotProcess *librespot READ librespot CONSTANT)
+    Q_PROPERTY(Lyrics *lyrics READ lyrics CONSTANT)
     Q_PROPERTY(QString version READ version CONSTANT)
 
 public:
@@ -63,6 +71,7 @@ public:
     SpotifyApi *api() const { return m_api; }
     Player *player() const { return m_player; }
     LibrespotProcess *librespot() const { return m_librespot; }
+    Lyrics *lyrics() const { return m_lyrics; }
     QString version() const;
 
     Q_INVOKABLE void copyToClipboard(const QString &text) const;
@@ -81,4 +90,5 @@ private:
     SpotifyApi *m_api;
     LibrespotProcess *m_librespot;
     Player *m_player;
+    Lyrics *m_lyrics;
 };

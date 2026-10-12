@@ -126,6 +126,7 @@ ApplicationWindow {
                     case "album":
                     case "liked": return collectionPage
                     case "artist": return artistPage
+                    case "lyrics": return lyricsPage
                     default: return homePage
                     }
                 }
@@ -163,6 +164,7 @@ ApplicationWindow {
     Component { id: searchPage; SearchPage { } }
     Component { id: collectionPage; CollectionPage { } }
     Component { id: artistPage; ArtistPage { } }
+    Component { id: lyricsPage; LyricsPage { } }
 
     // ------------------------------------------------------------ atalhos
     Shortcut { sequence: "Space"; enabled: App.auth.authenticated; onActivated: App.player.togglePlay() }

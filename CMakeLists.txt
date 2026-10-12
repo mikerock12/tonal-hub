@@ -18,6 +18,7 @@ set(TONAL_SOURCES
     src/LibrespotProcess.h  src/LibrespotProcess.cpp
     src/Player.h            src/Player.cpp
     src/MediaControls.h     src/MediaControls.cpp
+    src/Lyrics.h            src/Lyrics.cpp
     src/NetworkFactory.h    src/NetworkFactory.cpp
 )
 
@@ -70,6 +71,7 @@ qt_add_qml_module(Tonal
         qml/pages/SearchPage.qml
         qml/pages/CollectionPage.qml
         qml/pages/ArtistPage.qml
+        qml/pages/LyricsPage.qml
 )
 
 target_link_libraries(Tonal PRIVATE
