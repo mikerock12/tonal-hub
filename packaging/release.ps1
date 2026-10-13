@@ -126,7 +126,7 @@ if ($Publish) {
     Step "Publicando a release $tag no GitHub"
     $librespotVersion = ((& $Librespot --version) -split ' ')[1]
     $qtVersion = & (Join-Path $env:QTDIR "bin\qtpaths.exe") --qt-query QT_VERSION
-    $notes = "## Novidades`n`n" + (ChangesOf $version) + "`n`n" +
+    $notes = "## What's new`n`n" + (ChangesOf $version) + "`n`n" +
         (Get-Content (Join-Path $PSScriptRoot "release-notes.md") -Raw -Encoding UTF8).
         Replace("{VERSION}", $version).Replace("{LIBRESPOT}", $librespotVersion).Replace("{QT}", $qtVersion)
     $notesFile = Join-Path $out "notes.md"

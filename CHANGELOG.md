@@ -1,24 +1,23 @@
-# Novidades
+# Changelog
 
-## 0.2.0 (outubro de 2026)
+## 0.2.0 (October 2026)
 
-- **Letras sincronizadas:** botão de microfone na barra do player. A linha que está tocando fica em destaque, a
-  letra acompanha a música e um clique numa linha pula para ela. As letras vêm do [LRCLIB](https://lrclib.net), e
-  só com a tela de letra aberta o Tonal envia para lá o nome da música.
-- **Playlists:** criar pelo **+** de Sua Biblioteca, renomear e mudar a descrição (clique no título), excluir,
-  "Adicionar à playlist" e "Remover desta playlist" no menu de qualquer música, e arrastar as músicas para mudar
-  a ordem. Na primeira edição, o Tonal pede que você o autorize de novo no Spotify, agora com acesso às suas
-  playlists privadas.
-- **Teclas de mídia e painel de mídia do Windows:** tocar, pausar, próxima e anterior pelo teclado, mesmo com o
-  Tonal minimizado, e a música com a capa no painel de mídia do Windows.
-- **Login mais protegido:** os tokens do Spotify saem do registro e vão para o Gerenciador de Credenciais do
-  Windows. A mudança é automática na primeira vez que a versão nova abre.
+- **Synced lyrics:** a microphone button in the player bar. The current line is highlighted, the lyrics follow
+  the song and clicking a line seeks to it. Lyrics come from [LRCLIB](https://lrclib.net), and Tonal only sends
+  it the track title while the lyrics view is open.
+- **Playlists:** create one with the **+** in Your Library, rename it and edit its description (click the
+  title), delete it, add tracks to a playlist and remove them from any track's menu, and drag tracks to reorder
+  them. On your first edit, Tonal asks you to authorize it again in Spotify, now with access to your private
+  playlists.
+- **Media keys and the Windows media flyout:** play, pause, next and previous from the keyboard, even with Tonal
+  minimized, and the current track with its cover in the Windows media flyout.
+- **Better protected login:** the Spotify tokens move from the registry to Windows Credential Manager. This
+  happens automatically the first time the new version opens.
 
-Se você fixou o Tonal na barra de tarefas, fixe de novo depois de atualizar: o atalho antigo pode abrir num botão
-separado.
+If you pinned Tonal to the taskbar, pin it again after updating: the old pin may open as a separate button.
 
-## 0.1.0 (outubro de 2026)
+## 0.1.0 (October 2026)
 
-Primeira versão: tela inicial, busca, Sua Biblioteca, páginas de playlist, álbum, Músicas Curtidas e artista,
-player com fila, "Tocando agora" e troca de dispositivo, e o motor de áudio (librespot) que se recupera sozinho
-quando a conexão cai.
+First release: home screen, search, Your Library, playlist, album, Liked Songs and artist pages, a player with
+queue, Now Playing and device switching, and an audio engine (librespot) that recovers by itself when the
+connection drops.

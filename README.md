@@ -1,158 +1,159 @@
 # Tonal
 
-Player leve para **Spotify Premium** no Windows, feito em **C++ e Qt Quick**, com o áudio tocado pelo
-**[librespot](https://github.com/librespot-org/librespot)**. Sem Electron, sem Chromium embutido.
+A lightweight **Spotify Premium** player for Windows, built with **C++ and Qt Quick**, with audio played by
+**[librespot](https://github.com/librespot-org/librespot)**. No Electron, no embedded Chromium.
 
-![Tonal tocando um álbum](docs/tonal.png)
+The interface is in Brazilian Portuguese.
 
-## Leve de verdade
+![Tonal playing an album](docs/tonal.png)
+
+## Actually lightweight
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/memoria-escuro.svg">
-  <img alt="Gráfico de memória: o Tonal usa 105 MB parado e 109 MB tocando; o app oficial do Spotify usa 745 MB e 726 MB" src="docs/memoria-claro.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/memory-dark.svg">
+  <img alt="Memory chart: Tonal uses 105 MB idle and 109 MB while playing; the official Spotify app uses 745 MB and 726 MB" src="docs/memory-light.svg">
 </picture>
 
-| | Parado na tela inicial | Tocando música | Processos |
+| | Idle on the home screen | Playing music | Processes |
 |---|---:|---:|---:|
 | **Tonal 0.1.0** (Tonal + librespot) | **105 MB** | **109 MB** | 2 |
-| Spotify 1.303 para Windows (Microsoft Store) | 745 MB | 726 MB | 8 |
+| Spotify 1.303 for Windows (Microsoft Store) | 745 MB | 726 MB | 8 |
 
-Como medi: memória privada (a coluna "Memória" do Gerenciador de Tarefas), somando todos os processos de cada
-app; mediana de 10 amostras, 1 minuto depois de abrir e 45 segundos depois de dar play na mesma playlist.
-Windows 11, outubro de 2026. Os valores mudam de máquina para máquina e com o uso.
+How it was measured: private memory (the "Memory" column in Task Manager), summed over all of each app's
+processes; median of 10 samples, 1 minute after opening and 45 seconds after starting the same playlist.
+Windows 11, October 2026. Numbers vary between machines and with use.
 
-## O que ele faz
+## Features
 
-- **Início:** atalhos, tocadas recentemente, artistas e músicas mais ouvidas, suas playlists e álbuns salvos
-- **Busca** com melhor resultado, músicas, artistas, álbuns e playlists, filtros, "carregar mais" e buscas recentes
-- **Páginas** de playlist, álbum, Músicas Curtidas (com rolagem infinita) e artista (populares e discografia)
-- **Sua Biblioteca** com filtros e busca, redimensionável e recolhível
-- **Playlists:** criar, renomear, mudar a descrição, excluir, adicionar e remover músicas (menu de qualquer
-  música) e arrastar as músicas para mudar a ordem
-- **Player:** tocar/pausar, anterior/próxima, aleatório, repetir, barra de progresso, volume e curtir
-- **Fila** e tela **Tocando agora** no painel direito
-- **Letras sincronizadas:** a linha que está tocando fica em destaque, a letra acompanha a música e um clique
-  numa linha pula para ela
-- **Teclas de mídia** do teclado (mesmo com o Tonal minimizado) e a faixa com a capa no **painel de mídia do
-  Windows**
-- **Spotify Connect:** o Tonal aparece como dispositivo e também manda a música para o celular ou outro PC
-- **Qualidade** 96/160/320 kbps e normalização de volume (menu da conta)
-- **Atalhos:** `Espaço` tocar/pausar · `Ctrl+→/←` próxima/anterior · `Ctrl+↑/↓` volume · `Ctrl+L` busca ·
-  `Alt+←/→` voltar/avançar · botões laterais do mouse
-- **Motor de áudio que se recupera sozinho:** se a conexão com o Spotify cair, o Tonal reinicia o librespot e
-  retoma a música do mesmo ponto
+- **Home:** shortcuts, recently played, top artists and tracks, your playlists and saved albums
+- **Search** with top result, tracks, artists, albums and playlists, filters, "load more" and recent searches
+- **Pages** for playlists, albums, Liked Songs (with infinite scrolling) and artists (popular tracks and
+  discography)
+- **Your Library** with filters and search, resizable and collapsible
+- **Playlists:** create, rename, edit the description, delete, add and remove tracks (from any track's menu) and
+  drag tracks to reorder them
+- **Player:** play/pause, previous/next, shuffle, repeat, seek bar, volume and like
+- **Queue** and **Now Playing** view in the right panel
+- **Synced lyrics:** the current line is highlighted, the lyrics follow the song and clicking a line seeks to it
+- **Media keys** (even with Tonal minimized) and the current track with its cover in the **Windows media flyout**
+- **Spotify Connect:** Tonal shows up as a device and can also send playback to your phone or another computer
+- **Quality** 96/160/320 kbps and volume normalization (account menu)
+- **Shortcuts:** `Space` play/pause · `Ctrl+→/←` next/previous · `Ctrl+↑/↓` volume · `Ctrl+L` search ·
+  `Alt+←/→` back/forward · mouse side buttons
+- **Self-healing audio engine:** if the connection to Spotify drops, Tonal restarts librespot and resumes the
+  song where it was
 
-## Instalar
+## Install
 
-Baixe a versão mais recente em **[Releases](https://github.com/natheus/tonal-player/releases)**:
+Download the latest version from **[Releases](https://github.com/natheus/tonal-player/releases)**:
 
-- `Tonal-<versão>-setup.exe`: instalador. Não precisa de administrador e cria atalho no Menu Iniciar.
-- `Tonal-<versão>-win64.zip`: versão portátil. Descompacte e abra o `Tonal.exe`. Sem o atalho que o instalador
-  cria no Menu Iniciar, o painel de mídia do Windows mostra "Aplicativo desconhecido" no lugar do nome.
+- `Tonal-<version>-setup.exe`: installer. It needs no administrator rights and adds a Start menu shortcut.
+- `Tonal-<version>-win64.zip`: portable version. Unzip it and run `Tonal.exe`. Without the Start menu shortcut
+  the installer creates, the Windows media flyout shows "Unknown app" instead of the name.
 
-Os dois já trazem tudo o que o app precisa (Qt, runtime do Visual C++ e librespot).
+Both include everything the app needs (Qt, the Visual C++ runtime and librespot).
 
-**Requisitos:** Windows 10 (1809) ou 11, 64 bits, e uma conta **Spotify Premium**.
+**Requirements:** Windows 10 (1809) or 11, 64-bit, and a **Spotify Premium** account.
 
-O executável não é assinado digitalmente: se o SmartScreen avisar, clique em
-**Mais informações → Executar assim mesmo**.
+The executable is not code-signed: if SmartScreen warns you, click **More info → Run anyway**.
 
-## Primeiro uso
+## First run
 
-O Tonal usa a Web API oficial do Spotify, e para isso cada pessoa cria um app gratuito no painel de
-desenvolvedor do Spotify. A tela de login guia tudo, com botões para abrir o formulário e copiar cada campo:
+Tonal uses the official Spotify Web API, so each user creates a free app in the Spotify developer dashboard.
+The login screen walks you through it, with buttons to open the form and copy each field:
 
-1. Abra o formulário **Create app** em <https://developer.spotify.com/dashboard/create>.
-2. Preencha nome e descrição, adicione em **Redirect URIs** exatamente `http://127.0.0.1:8898/callback`
-   (clique em **Add**), marque **Web API**, aceite os termos e clique em **Save**.
-3. Copie o **Client ID** do app. Ao voltar para o Tonal ele é colado sozinho e conferido com o Spotify antes de
-   abrir o navegador. O Client Secret não é usado.
+1. Open the **Create app** form at <https://developer.spotify.com/dashboard/create>.
+2. Fill in a name and description, add exactly `http://127.0.0.1:8898/callback` under **Redirect URIs**
+   (click **Add**), check **Web API**, accept the terms and click **Save**.
+3. Copy the app's **Client ID**. When you switch back to Tonal, it is pasted automatically and checked with
+   Spotify before the browser opens. The Client Secret is not used.
 
-Na primeira vez abrem **duas** autorizações no navegador: a do Tonal (Web API) e a do librespot (o motor de
-áudio). Depois disso fica tudo salvo e o app abre direto.
+The first time, **two** authorizations open in the browser: Tonal's (Web API) and librespot's (the audio
+engine). After that everything is saved and the app opens straight away.
 
-O login do Tonal fica no **Gerenciador de Credenciais do Windows**, como "Tonal/Spotify", cifrado pelo próprio
-Windows para a sua conta (a versão 0.1.0 guardava no registro, e o Tonal muda para lá sozinho). "Sair", no menu
-da conta, apaga a credencial.
+Tonal's login is kept in **Windows Credential Manager** as "Tonal/Spotify", encrypted by Windows for your
+account (version 0.1.0 kept it in the registry, and Tonal moves it automatically). Signing out (**Sair** in the
+account menu) deletes the credential.
 
-## Limitações
+## Limitations
 
-Vêm das regras do Spotify para apps em modo de desenvolvimento (desde fevereiro de 2026), não do Tonal:
+These come from Spotify's rules for apps in development mode (since February 2026), not from Tonal:
 
-- **Playlists de outras pessoas** não mostram as faixas pela API. O Tonal avisa e deixa tocar mesmo assim.
-- **Playlists geradas pelo Spotify** (Daily Mix e editoriais) não abrem pela API.
-- A **busca** traz no máximo 10 itens por tipo (o "Carregar mais" pagina). Os **populares** de um artista vêm de
-  uma busca e mostram até 5 faixas.
-- Não há "Novos lançamentos" nem categorias: o Spotify tirou esses recursos da API.
+- **Other people's playlists** don't list their tracks through the API. Tonal says so and still lets you play
+  them.
+- **Playlists generated by Spotify** (Daily Mix and editorial playlists) can't be opened through the API.
+- **Search** returns at most 10 items per type ("load more" pages through them). An artist's **popular
+  tracks** come from a search and show up to 5 tracks.
+- There are no "New releases" or categories: Spotify removed them from the API.
 
-As **letras** não vêm do Spotify, cuja API não tem letras, e sim do [LRCLIB](https://lrclib.net), um acervo aberto
-mantido por voluntários: nem toda música está lá. Só com a tela de letra aberta o Tonal envia ao LRCLIB o nome
-da música, do artista e do álbum e a duração.
+**Lyrics** don't come from Spotify, whose API has none, but from [LRCLIB](https://lrclib.net), an open database
+maintained by volunteers, so not every song is there. Tonal sends LRCLIB the track title, artist, album and
+duration only while the lyrics view is open.
 
-A **visibilidade** de uma playlist (pública ou privada) só muda pelo app oficial: a API aceita tornar uma
-playlist pública, mas ignora o pedido de voltar para privada. As playlists criadas pelo Tonal nascem privadas.
+A playlist's **visibility** (public or private) can only be changed in the official app: the API makes a
+playlist public but ignores requests to make it private again. Playlists created by Tonal start private.
 
-Além disso, por enquanto o Tonal só foi feito e testado no Windows.
+Tonal has only been built and tested on Windows so far.
 
-## Como funciona
+## How it works
 
 ```
 ┌──────────────────────── Tonal.exe (Qt Quick) ────────────────────────┐
 │  QML (interface)  ──►  C++ (App, Player, SpotifyApi, AuthManager)    │
 │                              │ Web API (HTTPS)                       │
 │                              ▼                                       │
-│                     api.spotify.com  ◄── comandos: play, pause...    │
+│                     api.spotify.com  ◄── commands: play, pause...    │
 └──────────────────────────────┬───────────────────────────────────────┘
-                               │ inicia e vigia o processo
-                     librespot.exe  ──►  áudio (dispositivo "Tonal @ PC")
+                               │ starts and watches the process
+                     librespot.exe  ──►  audio (device "Tonal @ PC")
 ```
 
-O Tonal fala com a Web API oficial (biblioteca, busca, controle). O librespot aparece como um dispositivo
-Spotify Connect e é quem baixa e toca a música; o Tonal manda tocar nele.
+Tonal talks to the official Web API (library, search, playback control). librespot shows up as a Spotify
+Connect device and is what downloads and plays the music; Tonal tells Spotify to play on it.
 
-Por que gasta pouco:
+Why it uses so little memory:
 
-- Interface em Qt Quick desenhada pela GPU, sem motor de navegador
-- Estilo "Basic" do Qt Quick Controls e ícones vetoriais com `QtQuick.Shapes` (sem PNGs nem fontes de ícones)
-- Capas decodificadas no tamanho em que aparecem e guardadas em cache no disco
-- Páginas criadas e destruídas sob demanda; listas longas reaproveitam as linhas
-- O estado do player é consultado a cada 5 s e a barra de progresso anda sozinha; o log do librespot avisa na
-  hora quando a faixa muda
+- Qt Quick UI drawn by the GPU, no browser engine
+- Qt Quick Controls "Basic" style and vector icons with `QtQuick.Shapes` (no PNGs or icon fonts)
+- Covers decoded at the size they are shown and cached on disk
+- Pages created and destroyed on demand; long lists reuse their rows
+- Player state is polled every 5 s and the progress bar moves on its own; librespot's log tells Tonal right
+  away when the track changes
 
-## Compilar a partir do código
+## Building from source
 
-### 1. O que instalar (uma vez)
+### 1. Prerequisites (once)
 
-| O quê | Onde | Observação |
+| What | Where | Notes |
 |---|---|---|
-| Visual Studio 2022 ou 2026 | [visualstudio.microsoft.com](https://visualstudio.microsoft.com) | workload **Desenvolvimento para desktop com C++** (traz CMake e Ninja) |
-| Qt 6.8 ou mais novo | [Qt Online Installer](https://www.qt.io/download-qt-installer-oss) | marque **MSVC 2022 64-bit** e, em *Additional Libraries*, **Qt Image Formats** (as capas de playlist vêm em WebP) |
-| Rust | [rustup.rs](https://rustup.rs) | só para compilar o librespot |
+| Visual Studio 2022 or 2026 | [visualstudio.microsoft.com](https://visualstudio.microsoft.com) | **Desktop development with C++** workload (includes CMake and Ninja) |
+| Qt 6.8 or newer | [Qt Online Installer](https://www.qt.io/download-qt-installer-oss) | select **MSVC 2022 64-bit** and, under *Additional Libraries*, **Qt Image Formats** (playlist covers are WebP) |
+| Rust | [rustup.rs](https://rustup.rs) | only to build librespot |
 
-Depois de instalar o Qt, crie a variável de ambiente `QTDIR` apontando para o kit, por exemplo:
+After installing Qt, create a `QTDIR` environment variable pointing to the kit, for example:
 
 ```powershell
 setx QTDIR "C:\Qt\6.8.3\msvc2022_64"
 ```
 
-Feche e abra o Visual Studio (ou o terminal) depois do `setx`.
+Close and reopen Visual Studio (or the terminal) after `setx`.
 
-### 2. Compilar o librespot
+### 2. Build librespot
 
 ```powershell
 cargo install librespot --locked
 ```
 
-O executável fica em `%USERPROFILE%\.cargo\bin\librespot.exe`. O Tonal procura nesta ordem: ao lado do
-`Tonal.exe`, no `PATH` e em `.cargo\bin`. Não precisa copiar nada.
+The executable ends up in `%USERPROFILE%\.cargo\bin\librespot.exe`. Tonal looks for it in this order: next to
+`Tonal.exe`, on the `PATH` and in `.cargo\bin`. There is no need to copy it anywhere.
 
-### 3. Compilar o Tonal
+### 3. Build Tonal
 
-**Pelo Visual Studio:** *Arquivo → Abrir → Pasta...* e escolha esta pasta. Na barra de cima escolha o preset
-**Release (MSVC + Qt)**, depois *Compilar → Compilar Tudo* e rode `Tonal.exe`. O `windeployqt` roda sozinho
-depois do build e copia as DLLs do Qt para a pasta do executável.
+**In Visual Studio:** *File → Open → Folder...* and pick this folder. Choose the **Release (MSVC + Qt)** preset
+in the toolbar, then *Build → Build All* and run `Tonal.exe`. `windeployqt` runs after the build and copies the
+Qt DLLs next to the executable.
 
-**Pela linha de comando** (Developer PowerShell do Visual Studio):
+**From the command line** (Visual Studio Developer PowerShell):
 
 ```powershell
 cmake --preset release
@@ -160,60 +161,66 @@ cmake --build --preset release
 .\out\build\release\Tonal.exe
 ```
 
-### 4. Gerar uma release
+### 4. Make a release
 
-Com o Inno Setup 6 instalado (`winget install JRSoftware.InnoSetup`), num PowerShell comum:
+With Inno Setup 6 installed (`winget install JRSoftware.InnoSetup`), in a regular PowerShell:
 
 ```powershell
-.\packaging\release.ps1             # gera em out\release\: ZIP, instalador e SHA256SUMS.txt
-.\packaging\release.ps1 -Publish    # gera e publica a release v<versão> no GitHub (precisa do gh logado)
+.\packaging\release.ps1             # builds the ZIP, installer and SHA256SUMS.txt in out\release\
+.\packaging\release.ps1 -Publish    # also publishes release v<version> on GitHub (needs a logged-in gh)
 ```
 
-A versão vem do `project(Tonal VERSION ...)` do `CMakeLists.txt`. Antes de cada release nova, suba a versão e
-escreva as novidades dela no [CHANGELOG.md](CHANGELOG.md): o `-Publish` copia essa seção para a página da release.
+The version comes from `project(Tonal VERSION ...)` in `CMakeLists.txt`. Before each new release, bump the
+version and write its changes in [CHANGELOG.md](CHANGELOG.md): `-Publish` copies that section to the release
+page.
 
-### Estrutura
+### Layout
+
+Code comments and UI strings are in Brazilian Portuguese. Commits follow
+[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
 
 ```
 src/
-  main.cpp              inicializa app, estilo, fonte e o motor QML
-  App.*                 singleton exposto ao QML (App.auth, App.api, App.player, App.librespot)
-  AuthManager.*         OAuth PKCE + servidor de callback em 127.0.0.1:8898
-  SpotifyApi.*          cliente HTTP da Web API (401 → refresh, 429 → Retry-After)
-  Player.*              estado de reprodução, comandos, fila, dispositivos
-  LibrespotProcess.*    inicia/reinicia o librespot, lê o log, Job Object no Windows
-  MediaControls.*       teclas de mídia e painel de mídia do Windows (SMTC)
-  Lyrics.*              letras do LRCLIB: busca, escolha da versão certa e leitura do formato LRC
-  NetworkFactory.*      cache em disco para as capas
+  main.cpp              sets up the app, style, font and QML engine
+  App.*                 singleton exposed to QML (App.auth, App.api, App.player, App.librespot, App.lyrics)
+  AuthManager.*         OAuth PKCE + callback server on 127.0.0.1:8898
+  TokenStore.*          Spotify tokens in Windows Credential Manager
+  SpotifyApi.*          Web API HTTP client (401 → refresh, 429 → Retry-After)
+  Player.*              playback state, commands, queue, devices
+  LibrespotProcess.*    starts/restarts librespot, reads its log, Job Object on Windows
+  MediaControls.*       media keys and the Windows media flyout (SMTC)
+  Lyrics.*              LRCLIB lyrics: lookup, picking the right version and parsing LRC
+  NetworkFactory.*      disk cache for covers
 qml/
-  Main.qml              janela, layout, navegação, atalhos, menu de faixa, toast
-  Theme.qml             cores (azul, preto e branco), medidas e funções de formatação
-  Icons.qml             paths SVG dos ícones
-  Nav.qml               histórico de navegação e estado compartilhado
-  Playlists.qml         criar e editar playlists (e a permissão que isso pede ao Spotify)
+  Main.qml              window, layout, navigation, shortcuts, track menu, toast
+  Theme.qml             colors (blue, black and white), sizes and formatting helpers
+  Icons.qml             SVG icon paths
+  Nav.qml               navigation history and shared state
+  Playlists.qml         creating and editing playlists (and the permission it needs from Spotify)
   components/           Icon, Cover, MediaCard, TrackRow, SeekBar, Chip...
   panels/               TopBar, LibraryPanel, PlayerBar, RightPanel, DevicePopup
-  pages/                Login, Home, Search, Collection (playlist/álbum/curtidas), Artist, Lyrics
+  pages/                Login, Home, Search, Collection (playlist/album/liked), Artist, Lyrics
 resources/
-  tonal.ico             ícone do app (gerado por make-icon.ps1, ligado ao .exe pelo tonal.rc)
+  tonal.ico             app icon (generated by make-icon.ps1, linked to the .exe by tonal.rc)
 packaging/
-  release.ps1           gera o ZIP portátil e o instalador (e publica a release com -Publish)
-  tonal.iss             instalador (Inno Setup 6)
-  licenses/             licenças do Qt e do librespot, que vão junto na release
-docs/                   imagens deste README
+  release.ps1           builds the portable ZIP and the installer (and publishes the release with -Publish)
+  tonal.iss             installer (Inno Setup 6)
+  licenses/             Qt and librespot licenses shipped with the release
+docs/                   images for this README
 ```
 
-## Próximos passos
+## Roadmap
 
-- Capa personalizada de playlist e arrastar músicas direto para uma playlist de Sua Biblioteca
-- Assinar o executável e testar em Linux e macOS
+- Custom playlist covers and dragging tracks straight onto a playlist in Your Library
+- Code signing, and testing on Linux and macOS
 
-## Licença
+## License
 
-O código do Tonal está sob a [licença MIT](LICENSE).
+Tonal's code is under the [MIT license](LICENSE).
 
-Os pacotes de release também incluem o [Qt 6](https://www.qt.io) (LGPLv3, como bibliotecas dinâmicas) e o
-[librespot](https://github.com/librespot-org/librespot) (MIT). As licenças deles vão na pasta `licenses` do pacote.
+Release packages also include [Qt 6](https://www.qt.io) (LGPLv3, as dynamic libraries) and
+[librespot](https://github.com/librespot-org/librespot) (MIT). Their licenses are in the package's `licenses`
+folder.
 
-O Tonal é um cliente pessoal e não oficial. "Spotify" é marca da Spotify AB; este projeto não tem relação com a
-empresa. O librespot é uma implementação aberta e não oficial do protocolo do Spotify.
+Tonal is a personal, unofficial client. "Spotify" is a trademark of Spotify AB; this project is not affiliated
+with the company. librespot is an open, unofficial implementation of the Spotify protocol.
