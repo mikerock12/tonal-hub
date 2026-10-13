@@ -13,6 +13,7 @@ class QQmlEngine;
 #include "LibrespotProcess.h"
 #include "Lyrics.h"
 #include "Player.h"
+#include "SetlistFm.h"
 #include "SpotifyApi.h"
 
 // Registro dos tipos C++ que o QML enxerga (sem criação pelo QML).
@@ -37,6 +38,11 @@ struct LibrespotForeign {
     QML_NAMED_ELEMENT(Librespot)
     QML_UNCREATABLE("Use App.librespot")
 };
+struct SetlistFmForeign {
+    Q_GADGET
+    QML_FOREIGN(SetlistFm)
+    QML_ANONYMOUS
+};
 struct LyricsForeign {
     Q_GADGET
     QML_FOREIGN(Lyrics)
@@ -44,7 +50,7 @@ struct LyricsForeign {
     QML_UNCREATABLE("Use App.lyrics")
 };
 
-// Ponto de entrada do QML: App.auth, App.api, App.player, App.librespot, App.lyrics
+// Ponto de entrada do QML: App.auth, App.api, App.player, App.librespot, App.lyrics, App.setlistFm
 class App : public QObject
 {
     Q_OBJECT
@@ -55,6 +61,7 @@ class App : public QObject
     Q_PROPERTY(Player *player READ player CONSTANT)
     Q_PROPERTY(LibrespotProcess *librespot READ librespot CONSTANT)
     Q_PROPERTY(Lyrics *lyrics READ lyrics CONSTANT)
+    Q_PROPERTY(SetlistFm *setlistFm READ setlistFm CONSTANT)
     Q_PROPERTY(QString version READ version CONSTANT)
 
 public:
@@ -72,6 +79,7 @@ public:
     Player *player() const { return m_player; }
     LibrespotProcess *librespot() const { return m_librespot; }
     Lyrics *lyrics() const { return m_lyrics; }
+    SetlistFm *setlistFm() const { return m_setlistFm; }
     QString version() const;
 
     Q_INVOKABLE void copyToClipboard(const QString &text) const;
@@ -91,4 +99,5 @@ private:
     LibrespotProcess *m_librespot;
     Player *m_player;
     Lyrics *m_lyrics;
+    SetlistFm *m_setlistFm;
 };

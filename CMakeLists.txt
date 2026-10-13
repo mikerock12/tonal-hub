@@ -20,6 +20,7 @@ set(TONAL_SOURCES
     src/Player.h            src/Player.cpp
     src/MediaControls.h     src/MediaControls.cpp
     src/Lyrics.h            src/Lyrics.cpp
+    src/SetlistFm.h         src/SetlistFm.cpp
     src/NetworkFactory.h    src/NetworkFactory.cpp
 )
 
@@ -37,7 +38,7 @@ if(WIN32)
     target_link_libraries(Tonal PRIVATE runtimeobject)
 endif()
 
-set_source_files_properties(qml/Theme.qml qml/Icons.qml qml/Nav.qml qml/Playlists.qml
+set_source_files_properties(qml/Theme.qml qml/Icons.qml qml/Nav.qml qml/Playlists.qml qml/Setlists.qml
     PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
 qt_add_qml_module(Tonal
@@ -49,6 +50,7 @@ qt_add_qml_module(Tonal
         qml/Icons.qml
         qml/Nav.qml
         qml/Playlists.qml
+        qml/Setlists.qml
         qml/components/Icon.qml
         qml/components/IconButton.qml
         qml/components/PlayButton.qml
@@ -78,6 +80,7 @@ qt_add_qml_module(Tonal
         qml/pages/CollectionPage.qml
         qml/pages/ArtistPage.qml
         qml/pages/LyricsPage.qml
+        qml/pages/SetlistsPage.qml
 )
 
 target_link_libraries(Tonal PRIVATE

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **Setlists:** a new page (button next to Home) that searches a band's shows on setlist.fm and turns the checked
+  shows into a private playlist. Shows stay checked when you search another band, so one playlist can mix bands,
+  and songs repeated across shows go in once. It needs your own free setlist.fm API key, stored in Windows
+  Credential Manager.
+
 ## 0.2.0 (October 2026)
 
 - **Synced lyrics:** a microphone button in the player bar. The current line is highlighted, the lyrics follow

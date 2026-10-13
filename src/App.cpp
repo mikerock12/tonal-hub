@@ -21,6 +21,7 @@ App::App(QObject *parent)
     , m_librespot(new LibrespotProcess(this))
     , m_player(new Player(m_api, m_librespot, m_auth, this))
     , m_lyrics(new Lyrics(m_nam, m_player, this))
+    , m_setlistFm(new SetlistFm(m_nam, this))
 {
     auto *cache = new QNetworkDiskCache(m_imageNam);
     cache->setCacheDirectory(QStandardPaths::writableLocation(QStandardPaths::CacheLocation)
@@ -51,6 +52,7 @@ App *App::create(QQmlEngine *qmlEngine, QJSEngine *jsEngine)
     Q_ASSERT(s_instance);
     QJSEngine::setObjectOwnership(s_instance, QJSEngine::CppOwnership);
     s_instance->m_api->setJsEngine(jsEngine);
+    s_instance->m_setlistFm->setJsEngine(jsEngine);
     return s_instance;
 }
 

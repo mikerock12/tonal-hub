@@ -72,9 +72,23 @@ Item {
             onClicked: Nav.go("home")
         }
 
+        IconButton {
+            width: 48; height: 48
+            circle: true
+            background: Theme.elevated
+            backgroundHover: Theme.elevatedHover
+            iconSize: 22
+            strokeWidth: 1.8
+            readonly property bool atSetlists: Nav.current.page === "setlists"
+            strokePath: Icons.setlistS
+            baseColor: atSetlists ? Theme.textPrimary : Theme.textSecondary
+            tooltip: qsTr("Setlists: criar playlist a partir de shows do setlist.fm")
+            onClicked: Nav.go("setlists")
+        }
+
         TextField {
             id: search
-            width: Math.min(474, root.width - 520)
+            width: Math.min(474, root.width - 576)
             height: 48
             leftPadding: 48
             rightPadding: 40

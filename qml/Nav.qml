@@ -5,7 +5,7 @@ import QtQuick
 QtObject {
     id: nav
 
-    // Rotas: home | search {query} | playlist {id} | album {id} | liked | artist {id} | lyrics
+    // Rotas: home | search {query} | playlist {id} | album {id} | liked | artist {id} | lyrics | setlists
     // Histórico e posição mudam juntos, numa atribuição só. Com duas propriedades, cada go()
     // emitia currentChanged duas vezes, a primeira com a rota antiga, e a página recarregava à toa.
     property var stack: ({ entries: [{ page: "home", params: {} }], index: 0 })
