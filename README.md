@@ -169,7 +169,8 @@ Com o Inno Setup 6 instalado (`winget install JRSoftware.InnoSetup`), num PowerS
 .\packaging\release.ps1 -Publish    # gera e publica a release v<versão> no GitHub (precisa do gh logado)
 ```
 
-A versão vem do `project(Tonal VERSION ...)` do `CMakeLists.txt`: suba-a antes de cada release nova.
+A versão vem do `project(Tonal VERSION ...)` do `CMakeLists.txt`. Antes de cada release nova, suba a versão e
+escreva as novidades dela no [CHANGELOG.md](CHANGELOG.md): o `-Publish` copia essa seção para a página da release.
 
 ### Estrutura
 

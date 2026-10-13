@@ -1,6 +1,7 @@
 ﻿# Gera a release do Tonal para Windows: build Release limpo, pasta com tudo o que o app precisa
 # (Qt, runtime do Visual C++, librespot e licenças), ZIP portátil, instalador (Inno Setup) e SHA256SUMS.
-# Com -Publish, cria a release v<versão> no GitHub com esses arquivos (a versão vem do CMakeLists.txt).
+# Com -Publish, cria a release v<versão> no GitHub com esses arquivos (a versão vem do CMakeLists.txt) e com as
+# novidades da seção "## <versão>" do CHANGELOG.md.
 #
 # Uso, num PowerShell comum (o script carrega o ambiente do Visual Studio sozinho):
 #   .\packaging\release.ps1             # só gera, em out\release\
@@ -29,6 +30,12 @@ function Check($what) { if ($LASTEXITCODE -ne 0) { throw "$what falhou (código 
 # Roda um comando externo em silêncio e devolve só o código de saída. No PowerShell 5.1, com
 # ErrorActionPreference=Stop, um stderr redirecionado vira erro fatal mesmo quando é a resposta esperada.
 function ExitCodeOf([scriptblock]$cmd) { $ErrorActionPreference = "Continue"; & $cmd *> $null; $LASTEXITCODE }
+# Seção "## <versão> ..." do CHANGELOG.md, sem o título (vazio se não houver).
+function ChangesOf([string]$v) {
+    $log = Get-Content (Join-Path $root "CHANGELOG.md") -Raw -Encoding UTF8
+    $m = [regex]::Match($log, "(?ms)^## " + [regex]::Escape($v) + "\b[^\n]*\n(.*?)(?=^## |\z)")
+    if ($m.Success) { $m.Groups[1].Value.Trim() } else { "" }
+}
 
 # ------------------------------------------------------------------ pré-condições
 if (-not $env:QTDIR) { $env:QTDIR = [Environment]::GetEnvironmentVariable("QTDIR", "User") }
@@ -50,6 +57,7 @@ if ($Publish) {
     git -C $root fetch -q origin
     if (-not (git -C $root branch -r --contains $head)) { throw "O commit atual ainda não foi enviado (git push)." }
     if ((ExitCodeOf { gh release view $tag }) -eq 0) { throw "A release $tag já existe. Suba a versão no CMakeLists.txt." }
+    if (-not (ChangesOf $version)) { throw "Escreva as novidades da $version no CHANGELOG.md (seção ""## $version"")." }
 }
 
 # ------------------------------------------------------------------ ambiente do MSVC
@@ -118,7 +126,8 @@ if ($Publish) {
     Step "Publicando a release $tag no GitHub"
     $librespotVersion = ((& $Librespot --version) -split ' ')[1]
     $qtVersion = & (Join-Path $env:QTDIR "bin\qtpaths.exe") --qt-query QT_VERSION
-    $notes = (Get-Content (Join-Path $PSScriptRoot "release-notes.md") -Raw -Encoding UTF8).
+    $notes = "## Novidades`n`n" + (ChangesOf $version) + "`n`n" +
+        (Get-Content (Join-Path $PSScriptRoot "release-notes.md") -Raw -Encoding UTF8).
         Replace("{VERSION}", $version).Replace("{LIBRESPOT}", $librespotVersion).Replace("{QT}", $qtVersion)
     $notesFile = Join-Path $out "notes.md"
     [IO.File]::WriteAllText($notesFile, $notes, (New-Object Text.UTF8Encoding $false))
