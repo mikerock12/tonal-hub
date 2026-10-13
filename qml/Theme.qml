@@ -54,25 +54,29 @@ QtObject {
         const h = Math.floor(totalMin / 60)
         const m = totalMin % 60
         if (h > 0)
-            return h + " h " + m + " min"
-        return m + " min"
+            return qsTr("%1 h %2 min").arg(h).arg(m)
+        return qsTr("%1 min").arg(m)
     }
 
-    readonly property var monthNames: ["jan.", "fev.", "mar.", "abr.", "mai.", "jun.",
-                                       "jul.", "ago.", "set.", "out.", "nov.", "dez."]
+    // Data no idioma do app (Qt.locale() segue o idioma escolhido): "1 de ago. de 2026" / "Aug 1, 2026";
+    // com longMonth, "1 de agosto de 2026" / "August 1, 2026".
+    function formatDate(date, longMonth) {
+        return date.toLocaleDateString(Qt.locale(), longMonth ? qsTr("d 'de' MMMM 'de' yyyy")
+                                                              : qsTr("d 'de' MMM 'de' yyyy"))
+    }
 
     function formatAdded(iso) {
         if (!iso) return ""
         const d = new Date(iso)
         const days = Math.floor((Date.now() - d.getTime()) / 86400000)
-        if (days < 1) return "hoje"
-        if (days === 1) return "ontem"
-        if (days < 7) return "há " + days + " dias"
+        if (days < 1) return qsTr("hoje")
+        if (days === 1) return qsTr("ontem")
+        if (days < 7) return qsTr("há %1 dias").arg(days)
         if (days < 30) {
             const w = Math.floor(days / 7)
-            return w === 1 ? "há 1 semana" : "há " + w + " semanas"
+            return w === 1 ? qsTr("há 1 semana") : qsTr("há %1 semanas").arg(w)
         }
-        return d.getDate() + " de " + monthNames[d.getMonth()] + " de " + d.getFullYear()
+        return formatDate(d, false)
     }
 
     function bestImage(images, minWidth) {

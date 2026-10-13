@@ -244,6 +244,27 @@ Rectangle {
                     color: Theme.textMuted
                     font.pixelSize: 12
                 }
+
+                // Troca de idioma antes de entrar: reinicia na hora (não há sessão para perder). O nome do outro
+                // idioma vai nele mesmo, para quem não lê o atual.
+                Label {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    readonly property string other: App.language === "pt" ? "en" : "pt"
+                    text: other === "en" ? "English" : "Português (Brasil)"
+                    color: languageMouse.containsMouse ? Theme.textPrimary : Theme.textSecondary
+                    font.pixelSize: 13
+                    font.underline: languageMouse.containsMouse
+                    MouseArea {
+                        id: languageMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            App.setLanguage(parent.other)
+                            App.restart()
+                        }
+                    }
+                }
             }
         }
     }

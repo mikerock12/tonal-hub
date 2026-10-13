@@ -643,9 +643,7 @@ Item {
                 text: {
                     const d = new Date(root.releaseDate + "T12:00:00")
                     if (isNaN(d.getTime()) || root.releaseDate.length < 10) return root.releaseDate
-                    const months = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho",
-                                    "agosto", "setembro", "outubro", "novembro", "dezembro"]
-                    return d.getDate() + " de " + months[d.getMonth()] + " de " + d.getFullYear()
+                    return Theme.formatDate(d, true)
                 }
                 color: Theme.textSecondary
                 font.pixelSize: 14

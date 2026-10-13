@@ -4,6 +4,7 @@
 #include <QJSEngine>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLocale>
 #include <QLoggingCategory>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
@@ -42,7 +43,9 @@ QNetworkReply *SetlistFm::get(const QString &path, const QList<std::pair<QString
     QNetworkRequest req(url);
     req.setRawHeader("x-api-key", key.toUtf8());
     req.setRawHeader("Accept", "application/json");
-    req.setRawHeader("Accept-Language", "pt"); // cidades e países em português
+    // Cidades e países no idioma do app (sem o cabeçalho, o setlist.fm responde em inglês).
+    if (QLocale().language() == QLocale::Portuguese)
+        req.setRawHeader("Accept-Language", "pt");
     req.setHeader(QNetworkRequest::UserAgentHeader,
                   QStringLiteral("Tonal/%1 (https://github.com/natheus/tonal-player)")
                       .arg(QCoreApplication::applicationVersion()));

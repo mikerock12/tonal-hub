@@ -63,6 +63,8 @@ class App : public QObject
     Q_PROPERTY(Lyrics *lyrics READ lyrics CONSTANT)
     Q_PROPERTY(SetlistFm *setlistFm READ setlistFm CONSTANT)
     Q_PROPERTY(QString version READ version CONSTANT)
+    // Idioma em uso nesta execução: "pt" ou "en".
+    Q_PROPERTY(QString language READ language CONSTANT)
 
 public:
     // Sem construtor padrão de propósito: se o App fosse default-constructible, o QML criaria uma
@@ -81,6 +83,16 @@ public:
     Lyrics *lyrics() const { return m_lyrics; }
     SetlistFm *setlistFm() const { return m_setlistFm; }
     QString version() const;
+    QString language() const;
+
+    // Idioma do próximo início: o salvo no menu ou, sem escolha, o do Windows (português ou, senão, inglês).
+    static QString startupLanguage();
+    static bool restartRequested() { return s_restartRequested; }
+
+    // Guarda o idioma escolhido ("pt" ou "en"); vale a partir do próximo início.
+    Q_INVOKABLE void setLanguage(const QString &language);
+    // Fecha o Tonal e abre de novo (o main.cpp abre a instância nova depois de parar o librespot).
+    Q_INVOKABLE void restart();
 
     Q_INVOKABLE void copyToClipboard(const QString &text) const;
     Q_INVOKABLE QString clipboardText() const;
@@ -90,6 +102,7 @@ public:
 
 private:
     static inline App *s_instance = nullptr;
+    static inline bool s_restartRequested = false;
 
     QNetworkAccessManager *m_nam;
     QNetworkAccessManager *m_imageNam;

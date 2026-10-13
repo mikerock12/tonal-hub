@@ -7,7 +7,7 @@
 
 **Requirements:** Windows 10 (1809) or 11, 64-bit, and a **Spotify Premium** account. On first run, Tonal walks
 you through creating a free app in the Spotify developer dashboard (about 2 minutes). The interface is in
-Brazilian Portuguese.
+English or Brazilian Portuguese.
 
 The executable is not code-signed: SmartScreen may show "Windows protected your PC". Click
 **More info → Run anyway**. SHA-256 hashes are in `SHA256SUMS.txt`.

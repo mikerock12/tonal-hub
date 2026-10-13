@@ -3,7 +3,8 @@
 A lightweight **Spotify Premium** player for Windows, built with **C++ and Qt Quick**, with audio played by
 **[librespot](https://github.com/librespot-org/librespot)**. No Electron, no embedded Chromium.
 
-The interface is in Brazilian Portuguese.
+The interface is in English or Brazilian Portuguese: it follows the Windows language, and you can switch it in
+the account menu.
 
 ![Tonal playing an album](docs/tonal.png)
 
@@ -40,7 +41,8 @@ Windows 11, October 2026. Numbers vary between machines and with use.
 - **Synced lyrics:** the current line is highlighted, the lyrics follow the song and clicking a line seeks to it
 - **Media keys** (even with Tonal minimized) and the current track with its cover in the **Windows media flyout**
 - **Spotify Connect:** Tonal shows up as a device and can also send playback to your phone or another computer
-- **Quality** 96/160/320 kbps and volume normalization (account menu)
+- **Quality** 96/160/320 kbps (account menu), with volume normalization
+- **English or Portuguese** interface (account menu → Language; Tonal restarts to switch)
 - **Shortcuts:** `Space` play/pause · `Ctrl+→/←` next/previous · `Ctrl+↑/↓` volume · `Ctrl+L` search ·
   `Alt+←/→` back/forward · mouse side buttons
 - **Self-healing audio engine:** if the connection to Spotify drops, Tonal restarts librespot and resumes the
@@ -186,8 +188,8 @@ page.
 
 ### Layout
 
-Code comments and UI strings are in Brazilian Portuguese. Commits follow
-[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
+Code comments and the source UI strings are in Brazilian Portuguese; the English interface comes from
+`i18n/tonal_en.ts`. Commits follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
 
 ```
 src/
@@ -218,7 +220,19 @@ packaging/
   release.ps1           builds the portable ZIP and the installer (and publishes the release with -Publish)
   tonal.iss             installer (Inno Setup 6)
   licenses/             Qt and librespot licenses shipped with the release
+i18n/
+  tonal_en.ts           English translation (compiled into the executable)
 docs/                   images for this README
+```
+
+### Translations
+
+UI text is written in Portuguese with `qsTr()` (QML) or `tr()` (C++). After adding or changing text, extract it
+and translate the new entries in `i18n/tonal_en.ts` (with Qt Linguist or any text editor); untranslated entries
+show the Portuguese text:
+
+```powershell
+cmake --build --preset debug --target update_translations
 ```
 
 ## Roadmap

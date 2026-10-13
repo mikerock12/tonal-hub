@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Qt 6.8 LTS ou mais novo (usamos Shape.CurveRenderer e loadFromModule)
-find_package(Qt6 6.8 REQUIRED COMPONENTS Core Gui Network Qml Quick QuickControls2)
+find_package(Qt6 6.8 REQUIRED COMPONENTS Core Gui Network Qml Quick QuickControls2 LinguistTools)
 
 qt_standard_project_setup(REQUIRES 6.8)
 
@@ -126,6 +126,16 @@ if(WIN32 AND TONAL_AUTO_DEPLOY)
         message(WARNING "windeployqt não encontrado: rode-o manualmente para copiar as DLLs do Qt.")
     endif()
 endif()
+
+# Interface em inglês: os textos do código (qsTr/tr) são em português. "cmake --build ... --target
+# update_translations" extrai os textos novos para i18n/tonal_en.ts (traduza os que ficarem "unfinished"); o
+# build compila o .ts e embute em :/i18n/tonal_en.qm.
+qt_add_translations(Tonal
+    TS_FILES i18n/tonal_en.ts
+    RESOURCE_PREFIX /i18n
+    NO_GENERATE_PLURALS_TS_FILE
+    LUPDATE_OPTIONS -no-obsolete -locations none -source-language pt_BR -target-language en
+)
 
 include(GNUInstallDirs)
 install(TARGETS Tonal

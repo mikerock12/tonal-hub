@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **English interface:** Tonal is now available in English and Brazilian Portuguese. It follows the Windows
+  language on first run, and you can switch it in the account menu (Tonal restarts to apply it). Dates and
+  durations follow the chosen language too.
 - **Setlists:** a new page (button next to Home) that searches a band's shows on setlist.fm and turns the checked
   shows into a private playlist. Shows stay checked when you search another band, so one playlist can mix bands,
   and songs repeated across shows go in once. It needs your own free setlist.fm API key, stored in Windows

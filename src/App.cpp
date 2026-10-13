@@ -9,7 +9,9 @@
 #include <QImage>
 #include <QNetworkDiskCache>
 #include <QNetworkReply>
+#include <QLocale>
 #include <QPointer>
+#include <QSettings>
 #include <QStandardPaths>
 
 App::App(QObject *parent)
@@ -59,6 +61,33 @@ App *App::create(QQmlEngine *qmlEngine, QJSEngine *jsEngine)
 QString App::version() const
 {
     return QCoreApplication::applicationVersion();
+}
+
+QString App::language() const
+{
+    return QLocale().language() == QLocale::English ? QStringLiteral("en") : QStringLiteral("pt");
+}
+
+QString App::startupLanguage()
+{
+    const QString saved = QSettings().value(QStringLiteral("ui/language")).toString();
+    if (saved == QLatin1String("pt") || saved == QLatin1String("en"))
+        return saved;
+    const QStringList system = QLocale::system().uiLanguages();
+    return !system.isEmpty() && system.first().startsWith(QLatin1String("pt")) ? QStringLiteral("pt")
+                                                                               : QStringLiteral("en");
+}
+
+void App::setLanguage(const QString &language)
+{
+    if (language == QLatin1String("pt") || language == QLatin1String("en"))
+        QSettings().setValue(QStringLiteral("ui/language"), language);
+}
+
+void App::restart()
+{
+    s_restartRequested = true;
+    QCoreApplication::quit();
 }
 
 void App::copyToClipboard(const QString &text) const

@@ -281,7 +281,55 @@ Item {
         AccountItem { text: qsTr("Reiniciar motor de áudio"); onTriggered: App.librespot.restart() }
         AccountItem { text: qsTr("Refazer login do motor de áudio"); onTriggered: App.librespot.resetLogin() }
         MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Theme.divider } }
+        MenuLabel { text: qsTr("Idioma"); secondary: true }
+        // Cada idioma com o próprio nome, para quem não lê o idioma atual achar o seu.
+        AccountItem {
+            text: "Português (Brasil)"
+            checked: root.chosenLanguage === "pt"
+            onTriggered: root.chooseLanguage("pt")
+        }
+        AccountItem {
+            text: "English"
+            checked: root.chosenLanguage === "en"
+            onTriggered: root.chooseLanguage("en")
+        }
+        MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Theme.divider } }
         AccountItem { text: qsTr("Sair"); onTriggered: App.auth.logout() }
+    }
+
+    // Idioma marcado no menu: o em uso ou, depois de uma troca, o que vale no próximo início.
+    property string chosenLanguage: App.language
+
+    function chooseLanguage(language) {
+        if (language === chosenLanguage) return
+        chosenLanguage = language
+        App.setLanguage(language)
+        languageDialog.open()
+    }
+
+    ModalDialog {
+        id: languageDialog
+        title: qsTr("Reiniciar o Tonal?")
+
+        Label {
+            width: parent.width
+            wrapMode: Text.WordWrap
+            color: Theme.textSecondary
+            font.pixelSize: 14
+            text: qsTr("O idioma novo vale a partir do próximo início. Se reiniciar agora, a música para por alguns segundos.")
+        }
+
+        buttons: [
+            PillButton {
+                primary: false
+                text: qsTr("Depois")
+                onClicked: languageDialog.close()
+            },
+            PillButton {
+                text: qsTr("Reiniciar agora")
+                onClicked: App.restart()
+            }
+        ]
     }
 
     component MenuLabel: Label {

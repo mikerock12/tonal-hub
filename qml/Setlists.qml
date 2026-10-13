@@ -134,11 +134,11 @@ QtObject {
         return new Date(Number(p[2]), (Number(p[1]) || 1) - 1, Number(p[0])).getTime()
     }
 
-    // "01-08-2026" → "1 de ago. de 2026"
+    // "01-08-2026" → "1 de ago. de 2026" (ou "Aug 1, 2026" em inglês)
     function formatDate(eventDate) {
         const p = eventDate.split("-")
-        if (p.length !== 3 || !Theme.monthNames[Number(p[1]) - 1]) return eventDate
-        return Number(p[0]) + " de " + Theme.monthNames[Number(p[1]) - 1] + " de " + p[2]
+        const d = new Date(Number(p[2]), Number(p[1]) - 1, Number(p[0]))
+        return p.length !== 3 || isNaN(d.getTime()) ? eventDate : Theme.formatDate(d, false)
     }
 
     // Do show mais antigo para o mais recente: a ordem em que a playlist toca.
@@ -156,7 +156,7 @@ QtObject {
         for (const s of ordered) if (artists.indexOf(s.artist) < 0) artists.push(s.artist)
         // Com poucas bandas, listar quem toca diz mais; acima disso vira uma parede de texto.
         const who = artists.length === 1 ? artists[0]
-                  : artists.length <= 3 ? artists.slice(0, -1).join(", ") + " e " + artists[artists.length - 1]
+                  : artists.length <= 3 ? qsTr("%1 e %2").arg(artists.slice(0, -1).join(", ")).arg(artists[artists.length - 1])
                   : qsTr("%1 bandas").arg(artists.length)
         return (who + " - " + qsTr("%1 shows").arg(ordered.length)).slice(0, maxNameLength)
     }
