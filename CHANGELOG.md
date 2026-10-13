@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 (October 2026)
 
 - **English interface:** Tonal is now available in English and Brazilian Portuguese. It follows the Windows
   language on first run, and you can switch it in the account menu (Tonal restarts to apply it). Dates and
