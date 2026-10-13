@@ -15,6 +15,8 @@
 #include <QUrl>
 #include <QUrlQuery>
 
+#include "TokenStore.h"
+
 namespace {
 
 const char *kAuthorizeUrl = "https://accounts.spotify.com/authorize";
@@ -384,11 +386,21 @@ void AuthManager::loadTokens()
 {
     QSettings s;
     m_clientId = s.value(QStringLiteral("auth/clientId")).toString();
-    m_refreshToken = s.value(QStringLiteral("auth/refreshToken")).toString();
-    m_accessToken = s.value(QStringLiteral("auth/accessToken")).toString();
-    m_expiresAt = s.value(QStringLiteral("auth/expiresAt")).toDateTime();
     // Texto, não lista: o registro do Windows devolve listas de 1 item como string.
     m_grantedScopes = s.value(QStringLiteral("auth/scope")).toString().split(QLatin1Char(' '), Qt::SkipEmptyParts);
+    if (const auto stored = TokenStore::load()) {
+        m_refreshToken = stored->refreshToken;
+        m_accessToken = stored->accessToken;
+        m_expiresAt = stored->expiresAt;
+    } else {
+        // Até a versão 0.1.0 os tokens ficavam no registro, em texto puro (e ficam lá se o cofre falhar ou não
+        // existir). saveTokens() passa para o cofre e só então apaga do registro.
+        m_refreshToken = s.value(QStringLiteral("auth/refreshToken")).toString();
+        m_accessToken = s.value(QStringLiteral("auth/accessToken")).toString();
+        m_expiresAt = s.value(QStringLiteral("auth/expiresAt")).toDateTime();
+        if (!m_refreshToken.isEmpty())
+            saveTokens();
+    }
     if (isAuthenticated()) {
         if (hasValidAccessToken())
             scheduleRefresh();
@@ -399,13 +411,19 @@ void AuthManager::loadTokens()
 
 void AuthManager::saveTokens()
 {
-    // Observação: em projeto pessoal o QSettings (registro do Windows) basta.
-    // Para distribuir, troque por Windows Credential Manager / DPAPI.
     QSettings s;
-    s.setValue(QStringLiteral("auth/refreshToken"), m_refreshToken);
-    s.setValue(QStringLiteral("auth/accessToken"), m_accessToken);
-    s.setValue(QStringLiteral("auth/expiresAt"), m_expiresAt);
     s.setValue(QStringLiteral("auth/scope"), m_grantedScopes.join(QLatin1Char(' ')));
+    const QString keys[] = { QStringLiteral("auth/refreshToken"), QStringLiteral("auth/accessToken"),
+                             QStringLiteral("auth/expiresAt") };
+    if (TokenStore::save({ m_refreshToken, m_accessToken, m_expiresAt })) {
+        for (const QString &key : keys)
+            s.remove(key);
+        return;
+    }
+    // Sem o cofre (outro sistema, ou o Windows recusou): fica no QSettings, como antes.
+    s.setValue(keys[0], m_refreshToken);
+    s.setValue(keys[1], m_accessToken);
+    s.setValue(keys[2], m_expiresAt);
 }
 
 void AuthManager::setBusy(bool b)

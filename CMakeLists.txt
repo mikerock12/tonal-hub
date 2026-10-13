@@ -14,6 +14,7 @@ set(TONAL_SOURCES
     src/main.cpp
     src/App.h               src/App.cpp
     src/AuthManager.h       src/AuthManager.cpp
+    src/TokenStore.h        src/TokenStore.cpp
     src/SpotifyApi.h        src/SpotifyApi.cpp
     src/LibrespotProcess.h  src/LibrespotProcess.cpp
     src/Player.h            src/Player.cpp

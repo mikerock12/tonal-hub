@@ -71,6 +71,10 @@ desenvolvedor do Spotify. A tela de login guia tudo, com botões para abrir o fo
 Na primeira vez abrem **duas** autorizações no navegador: a do Tonal (Web API) e a do librespot (o motor de
 áudio). Depois disso fica tudo salvo e o app abre direto.
 
+O login do Tonal fica no **Gerenciador de Credenciais do Windows**, como "Tonal/Spotify", cifrado pelo próprio
+Windows para a sua conta (a versão 0.1.0 guardava no registro, e o Tonal muda para lá sozinho). "Sair", no menu
+da conta, apaga a credencial.
+
 ## Limitações
 
 Vêm das regras do Spotify para apps em modo de desenvolvimento (desde fevereiro de 2026), não do Tonal:
@@ -201,7 +205,6 @@ docs/                   imagens deste README
 ## Próximos passos
 
 - Capa personalizada de playlist e arrastar músicas direto para uma playlist de Sua Biblioteca
-- Guardar o token no Gerenciador de Credenciais do Windows em vez do registro
 - Assinar o executável e testar em Linux e macOS
 
 ## Licença
