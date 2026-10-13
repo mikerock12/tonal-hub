@@ -3,6 +3,7 @@
 #include <QObject>
 #include <QDateTime>
 #include <QString>
+#include <QStringList>
 #include <QTimer>
 
 class QNetworkAccessManager;
@@ -22,6 +23,9 @@ class AuthManager : public QObject
     Q_PROPERTY(QString lastError READ lastError NOTIFY lastErrorChanged)
     // "" (não conferido) | "checking" | "valid" | "invalid" | "unknown" (sem resposta clara do Spotify)
     Q_PROPERTY(QString clientIdStatus READ clientIdStatus NOTIFY clientIdStatusChanged)
+    // O login atual permite criar e editar playlists. Quem entrou antes de o Tonal pedir
+    // playlist-modify-private precisa autorizar de novo (login() com a sessão aberta).
+    Q_PROPERTY(bool canEditPlaylists READ canEditPlaylists NOTIFY grantedScopesChanged)
 
 public:
     explicit AuthManager(QNetworkAccessManager *nam, QObject *parent = nullptr);
@@ -35,6 +39,7 @@ public:
     QString redirectUri() const;
     QString lastError() const { return m_lastError; }
     QString clientIdStatus() const { return m_clientIdStatus; }
+    bool canEditPlaylists() const;
 
     QString accessToken() const { return m_accessToken; }
     bool hasValidAccessToken() const;
@@ -58,6 +63,7 @@ signals:
     void clientIdChanged();
     void lastErrorChanged();
     void clientIdStatusChanged();
+    void grantedScopesChanged();
     void tokenRefreshed(bool ok);
 
 private:
@@ -72,6 +78,7 @@ private:
     void loadTokens();
     void saveTokens();
     void scheduleRefresh();
+    void setGrantedScopes(const QStringList &scopes);
 
     QNetworkAccessManager *m_nam;
     QTcpServer *m_server = nullptr;
@@ -81,6 +88,7 @@ private:
     QString m_accessToken;
     QString m_refreshToken;
     QDateTime m_expiresAt;
+    QStringList m_grantedScopes;   // o que o Spotify concedeu de fato (campo "scope" do token)
 
     QString m_codeVerifier;
     QString m_state;

@@ -20,7 +20,7 @@ namespace {
 const char *kAuthorizeUrl = "https://accounts.spotify.com/authorize";
 const char *kTokenUrl = "https://accounts.spotify.com/api/token";
 
-// Escopos necessários para biblioteca, busca e controle de reprodução.
+// Escopos necessários para biblioteca, busca, controle de reprodução e edição de playlists.
 const char *kScopes =
     "user-read-private "
     "user-read-playback-state "
@@ -33,6 +33,7 @@ const char *kScopes =
     "user-follow-read "
     "user-follow-modify "
     "playlist-modify-public "
+    "playlist-modify-private "
     "playlist-read-private "
     "playlist-read-collaborative";
 
@@ -199,8 +200,23 @@ void AuthManager::logout()
     m_refreshToken.clear();
     m_expiresAt = {};
     m_refreshTimer.stop();
+    setGrantedScopes({});
     saveTokens();
     emit authenticatedChanged();
+}
+
+bool AuthManager::canEditPlaylists() const
+{
+    return m_grantedScopes.contains(QLatin1String("playlist-modify-public"))
+        && m_grantedScopes.contains(QLatin1String("playlist-modify-private"));
+}
+
+void AuthManager::setGrantedScopes(const QStringList &scopes)
+{
+    if (scopes == m_grantedScopes)
+        return;
+    m_grantedScopes = scopes;
+    emit grantedScopesChanged();
 }
 
 void AuthManager::startCallbackServer()
@@ -340,6 +356,9 @@ void AuthManager::requestToken(const QByteArray &formBody, bool isRefresh)
         const QString newRefresh = obj.value(QStringLiteral("refresh_token")).toString();
         if (!newRefresh.isEmpty())
             m_refreshToken = newRefresh;
+        // O refresh mantém as permissões do login original; só um login novo pede as que faltam.
+        if (obj.contains(QStringLiteral("scope")))
+            setGrantedScopes(obj.value(QStringLiteral("scope")).toString().split(QLatin1Char(' '), Qt::SkipEmptyParts));
         saveTokens();
         scheduleRefresh();
         setError(QString());
@@ -368,6 +387,8 @@ void AuthManager::loadTokens()
     m_refreshToken = s.value(QStringLiteral("auth/refreshToken")).toString();
     m_accessToken = s.value(QStringLiteral("auth/accessToken")).toString();
     m_expiresAt = s.value(QStringLiteral("auth/expiresAt")).toDateTime();
+    // Texto, não lista: o registro do Windows devolve listas de 1 item como string.
+    m_grantedScopes = s.value(QStringLiteral("auth/scope")).toString().split(QLatin1Char(' '), Qt::SkipEmptyParts);
     if (isAuthenticated()) {
         if (hasValidAccessToken())
             scheduleRefresh();
@@ -384,6 +405,7 @@ void AuthManager::saveTokens()
     s.setValue(QStringLiteral("auth/refreshToken"), m_refreshToken);
     s.setValue(QStringLiteral("auth/accessToken"), m_accessToken);
     s.setValue(QStringLiteral("auth/expiresAt"), m_expiresAt);
+    s.setValue(QStringLiteral("auth/scope"), m_grantedScopes.join(QLatin1Char(' ')));
 }
 
 void AuthManager::setBusy(bool b)

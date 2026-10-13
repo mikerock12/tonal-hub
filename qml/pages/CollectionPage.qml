@@ -24,7 +24,16 @@ Item {
     property int totalTracks: -1
     property real totalDurationMs: 0
     property bool contentsAvailable: true
-    property bool owned: false
+    property bool owned: false          // aceita músicas: sua ou colaborativa
+    property bool isOwner: false        // só o dono muda nome e descrição e exclui
+    property string snapshotId: ""
+
+    // Arraste de faixa (playlist sua): a linha muda de lugar no modelo enquanto anda, e só ao soltar vai
+    // um PUT com a posição final. Mover no modelo mantém a linha arrastada na tela: a lista recicla as linhas
+    // que saem dela (reuseItems) e a linha perderia o mouse.
+    property int dragFrom: -1        // posição original
+    property int dragIndex: -1       // posição atual
+    property real dragY: 0           // ponteiro, em coordenadas da lista
     property bool saved: false
     property bool loading: false
     property string nextUrl: ""
@@ -50,6 +59,7 @@ Item {
         typeLabel = ""; title = ""; description = ""; imageUrl = ""; uri = ""
         ownerName = ""; ownerId = ""; artistId = ""; year = ""; releaseDate = ""; copyright = ""
         totalTracks = -1; totalDurationMs = 0; contentsAvailable = true; owned = false; saved = false
+        isOwner = false; snapshotId = ""
         nextUrl = ""; tint = "#535353"
         list.positionViewAtBeginning()
     }
@@ -108,7 +118,9 @@ Item {
             root.imageUrl = Theme.bestImage(p.images, 300)
             root.ownerName = p.owner ? (p.owner.display_name || p.owner.id) : ""
             root.ownerId = p.owner ? p.owner.id : ""
-            root.owned = !!(Nav.me && p.owner && p.owner.id === Nav.me.id) || !!p.collaborative
+            root.isOwner = !!(Nav.me && p.owner && p.owner.id === Nav.me.id)
+            root.owned = root.isOwner || !!p.collaborative
+            root.snapshotId = p.snapshot_id || ""
             // Fev/2026: o conteúdo vem em "items" (antes "tracks") e só para playlists suas/colaborativas.
             const page = p.items || p.tracks
             if (page && page.items) {
@@ -200,6 +212,113 @@ Item {
         })
     }
 
+    // ------------------------------------------------------------ edição (playlists suas)
+    function saveDetails(name, description) {
+        const id = itemId
+        Playlists.update(id, { name: name, description: description }, function(done) {
+            if (!done || id !== root.itemId) return
+            root.title = name
+            root.description = description
+        })
+    }
+
+    function deletePlaylist() {
+        Playlists.remove(uri, function(done) {
+            if (!done) return
+            if (Nav.canBack) Nav.back()
+            else Nav.go("home")
+        })
+    }
+
+    // A API tira todas as ocorrências da faixa; a lista faz o mesmo, sem recarregar a página.
+    function removeTrack(trackUri) {
+        const id = itemId
+        Playlists.removeTrack(id, trackUri, snapshotId, function(done, snapshot) {
+            if (!done || id !== root.itemId) return
+            if (snapshot) root.snapshotId = snapshot
+            let removed = 0
+            for (let i = trackModel.count - 1; i >= 0; --i) {
+                const row = trackModel.get(i)
+                if (row.uri !== trackUri) continue
+                root.totalDurationMs -= row.durationMs
+                trackModel.remove(i)
+                ++removed
+            }
+            if (root.totalTracks >= removed) root.totalTracks -= removed
+            list.currentIndex = -1
+        })
+    }
+
+    function dragStart(index) {
+        dragFrom = index
+        dragIndex = index
+        list.currentIndex = -1
+    }
+
+    function dragMove(sceneX, sceneY) {
+        dragY = list.mapFromItem(null, sceneX, sceneY).y
+        updateDragTarget()
+    }
+
+    function updateDragTarget() {
+        if (dragIndex < 0) return
+        const y = list.contentY + dragY
+        let target = list.indexAt(list.width / 2, y)
+        if (target < 0) {
+            // Fora das linhas: abaixo da última (rodapé) ou acima da primeira (cabeçalho).
+            const last = list.itemAtIndex(trackModel.count - 1)
+            target = last && y > last.y ? trackModel.count - 1 : 0
+        }
+        if (target === dragIndex) return
+        trackModel.move(dragIndex, target, 1)
+        dragIndex = target
+    }
+
+    function dragEnd(canceled) {
+        const from = dragFrom
+        const to = dragIndex
+        dragFrom = -1
+        dragIndex = -1
+        if (from < 0 || to === from) return
+        if (canceled) {
+            trackModel.move(to, from, 1)
+            return
+        }
+        const id = itemId
+        // insert_before conta as posições de antes da mudança: descendo, é a posição seguinte à de destino.
+        Playlists.moveTrack(id, from, to > from ? to + 1 : to, snapshotId, function(done, snapshot) {
+            if (id !== root.itemId) return
+            if (!done) root.load() // a ordem local não vale mais: recarrega a do Spotify
+            else if (snapshot) root.snapshotId = snapshot
+        })
+    }
+
+    // Rola a lista enquanto o ponteiro arrastado está perto da borda de cima ou de baixo.
+    Timer {
+        interval: 16
+        repeat: true
+        running: root.dragIndex >= 0
+        onTriggered: {
+            const top = stickyBar.opacity > 0.5 ? 144 : 48   // a barra fixa e as colunas cobrem o topo
+            const bottom = list.height - 48
+            let dy = 0
+            if (root.dragY < top) dy = -Math.ceil((top - root.dragY) / 4)
+            else if (root.dragY > bottom) dy = Math.ceil((root.dragY - bottom) / 4)
+            if (dy === 0) return
+            const maxY = list.originY + list.contentHeight - list.height
+            list.contentY = Math.max(list.originY, Math.min(maxY, list.contentY + dy))
+            root.updateDragTarget()
+        }
+    }
+
+    Connections {
+        target: Playlists
+        // Música adicionada a esta playlist pelo menu de faixa, de qualquer tela.
+        function onContentChanged(playlistId) {
+            if (root.kind === "playlist" && playlistId === root.itemId) root.load()
+        }
+    }
+
     function playFrom(index) {
         const row = trackModel.get(index)
         if (kind === "liked" && playUri === "") {
@@ -254,6 +373,7 @@ Item {
         reuseItems: true
         cacheBuffer: 800
         ScrollBar.vertical: ThinScrollBar { }
+        moveDisplaced: Transition { NumberAnimation { property: "y"; duration: 120; easing.type: Easing.OutQuad } }
 
         onContentYChanged: {
             if (contentY + height > contentHeight + originY - 1200)
@@ -320,6 +440,12 @@ Item {
                         maximumLineCount: 2
                         elide: Text.ElideRight
                         lineHeight: 0.95
+                        MouseArea {
+                            anchors.fill: parent
+                            enabled: root.isOwner
+                            cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                            onClicked: detailsDialog.openFor(root.title, root.description)
+                        }
                     }
                     Label {
                         visible: root.description !== ""
@@ -405,15 +531,13 @@ Item {
                         onClicked: root.toggleSaved()
                     }
                     IconButton {
+                        id: moreButton
                         anchors.verticalCenter: parent.verticalCenter
                         visible: root.uri !== ""
                         iconSize: 28
                         fillPath: Icons.dotsF
-                        tooltip: qsTr("Copiar link")
-                        onClicked: {
-                            App.copyToClipboard("https://open.spotify.com/" + root.kind + "/" + root.itemId)
-                            Nav.toast(qsTr("Link copiado"))
-                        }
+                        tooltip: qsTr("Mais opções")
+                        onClicked: pageMenu.popup(moreButton, 0, moreButton.height)
                     }
                 }
             }
@@ -474,11 +598,22 @@ Item {
             isPlaying: App.player.isPlaying
             selected: list.currentIndex === index
             onSelectRequested: list.currentIndex = index
+            draggable: root.kind === "playlist" && root.owned
+            dragging: root.dragIndex === index
+            onDragStarted: root.dragStart(index)
+            onDragMoved: (sx, sy) => root.dragMove(sx, sy)
+            onDragEnded: (canceled) => root.dragEnd(canceled)
             onPlay: root.playFrom(index)
             onArtistClicked: if (artistId) Nav.go("artist", { id: artistId })
             onAlbumClicked: if (albumId) Nav.go("album", { id: albumId })
-            onMenuRequested: (mx, my) => Nav.trackMenuRequested(
-                { uri: uri, name: name, albumId: albumId, artists: JSON.parse(artistsJson) }, row, mx, my)
+            onMenuRequested: (mx, my) => {
+                const track = { uri: uri, name: name, albumId: albumId, artists: JSON.parse(artistsJson) }
+                if (root.kind === "playlist" && root.owned) {
+                    const trackUri = uri
+                    track.removeFromPlaylist = function() { root.removeTrack(trackUri) }
+                }
+                Nav.trackMenuRequested(track, row, mx, my)
+            }
         }
 
         footer: Column {
@@ -491,6 +626,16 @@ Item {
                 anchors.horizontalCenter: parent.horizontalCenter
                 running: root.loading
                 visible: running
+            }
+            Label {
+                visible: root.kind === "playlist" && root.owned && root.contentsAvailable && !root.loading
+                         && trackModel.count === 0
+                x: 24
+                width: parent.width - 48
+                wrapMode: Text.WordWrap
+                text: qsTr("Sua playlist está vazia. Para pôr músicas nela, use “Adicionar à playlist” no menu (⋯) de qualquer música.")
+                color: Theme.textSecondary
+                font.pixelSize: 14
             }
             Label {
                 visible: root.kind === "album" && root.releaseDate !== ""
@@ -557,6 +702,130 @@ Item {
             width: parent.width - 48
             Rectangle { anchors.fill: parent; anchors.leftMargin: -24; anchors.rightMargin: -24; z: -1; color: Theme.panel }
         }
+    }
+
+    // ------------------------------------------------------------ menu ⋯ e diálogos
+    DarkMenu {
+        id: pageMenu
+
+        DarkMenuItem {
+            text: qsTr("Editar detalhes")
+            visible: root.isOwner
+            height: visible ? implicitHeight : 0
+            onTriggered: detailsDialog.openFor(root.title, root.description)
+        }
+        DarkMenuItem {
+            text: qsTr("Excluir")
+            visible: root.isOwner
+            height: visible ? implicitHeight : 0
+            onTriggered: deleteDialog.open()
+        }
+        DarkMenuItem {
+            text: qsTr("Copiar link")
+            onTriggered: {
+                App.copyToClipboard("https://open.spotify.com/" + root.kind + "/" + root.itemId)
+                Nav.toast(qsTr("Link copiado"))
+            }
+        }
+    }
+
+    ModalDialog {
+        id: detailsDialog
+        title: qsTr("Editar detalhes")
+
+        function openFor(name, description) {
+            nameField.text = name
+            descriptionField.text = description
+            open()
+            nameField.forceActiveFocus()
+            nameField.selectAll()
+        }
+        function save() {
+            const name = nameField.text.trim()
+            if (name === "") return
+            root.saveDetails(name, descriptionField.text.trim())
+            close()
+        }
+
+        TextField {
+            id: nameField
+            width: parent.width
+            height: 44
+            leftPadding: 12
+            placeholderText: qsTr("Nome da playlist")
+            placeholderTextColor: Theme.textMuted
+            color: Theme.textPrimary
+            font.pixelSize: 15
+            maximumLength: 100
+            selectByMouse: true
+            onAccepted: detailsDialog.save()
+            background: Rectangle {
+                radius: 4
+                color: Qt.rgba(1, 1, 1, 0.07)
+                border.width: nameField.activeFocus ? 1 : 0
+                border.color: Theme.textMuted
+            }
+        }
+        TextArea {
+            id: descriptionField
+            width: parent.width
+            height: 112
+            padding: 12
+            placeholderText: qsTr("Adicione uma descrição (opcional)")
+            placeholderTextColor: Theme.textMuted
+            color: Theme.textPrimary
+            font.pixelSize: 14
+            wrapMode: TextArea.Wrap
+            selectByMouse: true
+            background: Rectangle {
+                radius: 4
+                color: Qt.rgba(1, 1, 1, 0.07)
+                border.width: descriptionField.activeFocus ? 1 : 0
+                border.color: Theme.textMuted
+            }
+        }
+
+        buttons: [
+            PillButton {
+                primary: false
+                text: qsTr("Cancelar")
+                onClicked: detailsDialog.close()
+            },
+            PillButton {
+                text: qsTr("Salvar")
+                enabled: nameField.text.trim() !== ""
+                onClicked: detailsDialog.save()
+            }
+        ]
+    }
+
+    ModalDialog {
+        id: deleteDialog
+        title: qsTr("Excluir de Sua Biblioteca?")
+
+        Label {
+            width: parent.width
+            wrapMode: Text.WordWrap
+            textFormat: Text.StyledText
+            color: Theme.textSecondary
+            font.pixelSize: 14
+            text: qsTr("Isso vai excluir <b>%1</b> de Sua Biblioteca.").arg(root.title.replace(/&/g, "&amp;").replace(/</g, "&lt;"))
+        }
+
+        buttons: [
+            PillButton {
+                primary: false
+                text: qsTr("Cancelar")
+                onClicked: deleteDialog.close()
+            },
+            PillButton {
+                text: qsTr("Excluir")
+                onClicked: {
+                    deleteDialog.close()
+                    root.deletePlaylist()
+                }
+            }
+        ]
     }
 
     component ColumnHeader: Item {

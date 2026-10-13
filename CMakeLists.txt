@@ -36,7 +36,7 @@ if(WIN32)
     target_link_libraries(Tonal PRIVATE runtimeobject)
 endif()
 
-set_source_files_properties(qml/Theme.qml qml/Icons.qml qml/Nav.qml
+set_source_files_properties(qml/Theme.qml qml/Icons.qml qml/Nav.qml qml/Playlists.qml
     PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
 qt_add_qml_module(Tonal
@@ -47,6 +47,7 @@ qt_add_qml_module(Tonal
         qml/Theme.qml
         qml/Icons.qml
         qml/Nav.qml
+        qml/Playlists.qml
         qml/components/Icon.qml
         qml/components/IconButton.qml
         qml/components/PlayButton.qml
@@ -61,6 +62,10 @@ qt_add_qml_module(Tonal
         qml/components/LikedArt.qml
         qml/components/ThinScrollBar.qml
         qml/components/HorizontalShelf.qml
+        qml/components/PillButton.qml
+        qml/components/ModalDialog.qml
+        qml/components/DarkMenu.qml
+        qml/components/DarkMenuItem.qml
         qml/panels/TopBar.qml
         qml/panels/LibraryPanel.qml
         qml/panels/PlayerBar.qml

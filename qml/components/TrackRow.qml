@@ -20,8 +20,15 @@ Item {
     property bool isCurrent: false
     property bool isPlaying: false
     property bool selected: false
+    // Playlist sua: arrastar a linha muda a ordem. Quem move as linhas é a página (dragMoved em
+    // coordenadas da janela, porque a linha muda de lugar enquanto é arrastada).
+    property bool draggable: false
+    property bool dragging: false
 
     signal play()
+    signal dragStarted()
+    signal dragMoved(real sceneX, real sceneY)
+    signal dragEnded(bool canceled)
     signal selectRequested()
     signal menuRequested(real x, real y)
     signal artistClicked()
@@ -35,15 +42,46 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: Theme.radiusCover
-        color: root.selected ? Qt.rgba(1, 1, 1, 0.18) : (root.hovered ? Theme.rowHover : "transparent")
+        color: root.selected || root.dragging ? Qt.rgba(1, 1, 1, 0.18) : (root.hovered ? Theme.rowHover : "transparent")
+        border.width: root.dragging ? 1 : 0
+        border.color: Theme.textMuted
     }
 
     HoverHandler { id: hover }
 
     MouseArea {
+        id: rowMouse
+        property point pressPos
+        property bool moved: false
+
         anchors.fill: parent
         acceptedButtons: Qt.LeftButton | Qt.RightButton
+        // Nas linhas arrastáveis o arraste é da linha, não da rolagem da lista.
+        preventStealing: root.draggable
+        cursorShape: root.dragging ? Qt.ClosedHandCursor : Qt.ArrowCursor
+
+        onPressed: (e) => {
+            pressPos = Qt.point(e.x, e.y)
+            moved = false
+        }
+        onPositionChanged: (e) => {
+            if (!root.draggable || !(e.buttons & Qt.LeftButton)) return
+            if (!moved && Math.abs(e.y - pressPos.y) < 6) return
+            const p = mapToItem(null, e.x, e.y)
+            if (!moved) {
+                moved = true
+                root.dragStarted()
+            }
+            root.dragMoved(p.x, p.y)
+        }
+        onReleased: if (moved) root.dragEnded(false)
+        onCanceled: {
+            if (!moved) return
+            moved = false
+            root.dragEnded(true)
+        }
         onClicked: (e) => {
+            if (moved) return // fim de um arraste
             if (e.button === Qt.RightButton)
                 root.menuRequested(e.x, e.y)
             else

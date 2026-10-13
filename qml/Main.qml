@@ -177,20 +177,43 @@ ApplicationWindow {
     Shortcut { sequence: "Alt+Right"; onActivated: Nav.forward() }
 
     // ------------------------------------------------------------ menu de faixa
-    Menu {
+    DarkMenu {
         id: trackMenu
+        // { uri, name, albumId, artists: [{id, name}], removeFromPlaylist?: function }
         property var track: ({})
-
-        background: Rectangle {
-            implicitWidth: 240
-            color: "#282828"
-            radius: 4
-            border.color: Qt.rgba(1, 1, 1, 0.06)
-        }
 
         DarkMenuItem {
             text: qsTr("Adicionar à fila")
             onTriggered: App.player.addToQueue(trackMenu.track.uri)
+        }
+        DarkMenu {
+            id: addToPlaylistMenu
+            title: qsTr("Adicionar à playlist")
+
+            DarkMenuItem {
+                text: qsTr("Nova playlist")
+                onTriggered: Playlists.createWithTracks([trackMenu.track.uri])
+            }
+            MenuSeparator {
+                contentItem: Rectangle { implicitHeight: 1; color: Theme.divider }
+            }
+            // As playlists entram depois dos dois itens fixos acima.
+            Instantiator {
+                model: Playlists.editable
+                delegate: DarkMenuItem {
+                    required property var modelData
+                    text: modelData.name
+                    onTriggered: Playlists.addTracks(modelData, [trackMenu.track.uri])
+                }
+                onObjectAdded: (index, object) => addToPlaylistMenu.insertItem(index + 2, object)
+                onObjectRemoved: (index, object) => addToPlaylistMenu.removeItem(object)
+            }
+        }
+        DarkMenuItem {
+            text: qsTr("Remover desta playlist")
+            visible: !!trackMenu.track.removeFromPlaylist
+            height: visible ? implicitHeight : 0
+            onTriggered: trackMenu.track.removeFromPlaylist()
         }
         DarkMenuItem {
             text: qsTr("Ir para o artista")
@@ -211,19 +234,58 @@ ApplicationWindow {
         }
     }
 
-    component DarkMenuItem: MenuItem {
-        id: mi
-        implicitHeight: 40
-        contentItem: Label {
-            leftPadding: 4
-            text: mi.text
-            color: mi.enabled ? Theme.textPrimary : Theme.textMuted
-            font.pixelSize: 14
-            verticalAlignment: Text.AlignVCenter
+    // ------------------------------------------------------------ permissão para editar playlists
+    // Quem entrou antes de o Tonal pedir playlist-modify-private autoriza de novo, sem sair da conta.
+    ModalDialog {
+        id: permissionDialog
+        title: qsTr("Autorizar a edição de playlists")
+        onClosed: {
+            if (App.auth.busy) App.auth.cancelLogin()
+            Playlists.pending = null
         }
-        background: Rectangle {
-            color: mi.highlighted ? Qt.rgba(1, 1, 1, 0.1) : "transparent"
-            radius: 2
+
+        Label {
+            width: parent.width
+            wrapMode: Text.WordWrap
+            color: Theme.textSecondary
+            font.pixelSize: 14
+            text: App.auth.busy
+                  ? qsTr("Confirme no navegador. Esta janela fecha sozinha quando o Spotify responder.")
+                  : qsTr("Para criar e editar playlists, o Spotify precisa que você autorize o Tonal de novo, agora com acesso às suas playlists privadas. O navegador vai abrir na página de autorização: é só confirmar.")
+        }
+        Label {
+            visible: App.auth.lastError !== ""
+            width: parent.width
+            wrapMode: Text.WordWrap
+            color: Theme.danger
+            font.pixelSize: 13
+            text: App.auth.lastError
+        }
+
+        buttons: [
+            PillButton {
+                primary: false
+                text: App.auth.busy ? qsTr("Cancelar") : qsTr("Agora não")
+                onClicked: permissionDialog.close()
+            },
+            PillButton {
+                visible: !App.auth.busy
+                text: qsTr("Autorizar")
+                onClicked: App.auth.login()
+            }
+        ]
+    }
+
+    Connections {
+        target: Playlists
+        function onPermissionNeeded() { permissionDialog.open() }
+    }
+    Connections {
+        target: App.auth
+        function onGrantedScopesChanged() {
+            if (!App.auth.canEditPlaylists || !permissionDialog.opened) return
+            Playlists.runPending()
+            permissionDialog.close()
         }
     }
 

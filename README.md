@@ -27,6 +27,8 @@ Windows 11, outubro de 2026. Os valores mudam de máquina para máquina e com o 
 - **Busca** com melhor resultado, músicas, artistas, álbuns e playlists, filtros, "carregar mais" e buscas recentes
 - **Páginas** de playlist, álbum, Músicas Curtidas (com rolagem infinita) e artista (populares e discografia)
 - **Sua Biblioteca** com filtros e busca, redimensionável e recolhível
+- **Playlists:** criar, renomear, mudar a descrição, excluir, adicionar e remover músicas (menu de qualquer
+  música) e arrastar as músicas para mudar a ordem
 - **Player:** tocar/pausar, anterior/próxima, aleatório, repetir, barra de progresso, volume e curtir
 - **Fila** e tela **Tocando agora** no painel direito
 - **Letras sincronizadas:** a linha que está tocando fica em destaque, a letra acompanha a música e um clique
@@ -82,6 +84,9 @@ Vêm das regras do Spotify para apps em modo de desenvolvimento (desde fevereiro
 As **letras** não vêm do Spotify, cuja API não tem letras, e sim do [LRCLIB](https://lrclib.net), um acervo aberto
 mantido por voluntários: nem toda música está lá. Só com a tela de letra aberta o Tonal envia ao LRCLIB o nome
 da música, do artista e do álbum e a duração.
+
+A **visibilidade** de uma playlist (pública ou privada) só muda pelo app oficial: a API aceita tornar uma
+playlist pública, mas ignora o pedido de voltar para privada. As playlists criadas pelo Tonal nascem privadas.
 
 Além disso, por enquanto o Tonal só foi feito e testado no Windows.
 
@@ -180,6 +185,7 @@ qml/
   Theme.qml             cores (azul, preto e branco), medidas e funções de formatação
   Icons.qml             paths SVG dos ícones
   Nav.qml               histórico de navegação e estado compartilhado
+  Playlists.qml         criar e editar playlists (e a permissão que isso pede ao Spotify)
   components/           Icon, Cover, MediaCard, TrackRow, SeekBar, Chip...
   panels/               TopBar, LibraryPanel, PlayerBar, RightPanel, DevicePopup
   pages/                Login, Home, Search, Collection (playlist/álbum/curtidas), Artist, Lyrics
@@ -194,7 +200,7 @@ docs/                   imagens deste README
 
 ## Próximos passos
 
-- Criar e editar playlists, arrastar faixas
+- Capa personalizada de playlist e arrastar músicas direto para uma playlist de Sua Biblioteca
 - Guardar o token no Gerenciador de Credenciais do Windows em vez do registro
 - Assinar o executável e testar em Linux e macOS
 

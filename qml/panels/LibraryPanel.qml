@@ -11,6 +11,7 @@ Rectangle {
     property string filter: ""        // "" | playlist | album | artist
     property string textFilter: ""
     property var playlists: []
+    property var playlistInfo: []     // { id, uri, name, ownerId, collaborative }, para Playlists.editable
     property var albums: []
     property var artists: []
     property bool loading: false
@@ -23,7 +24,7 @@ Rectangle {
         if (!App.auth.authenticated) return
         loading = true
         playlists = []; albums = []; artists = []
-        fetchPlaylists("/me/playlists?limit=50", [])
+        fetchPlaylists("/me/playlists?limit=50", [], [])
         App.api.call("GET", "/me/albums", { limit: 50 }, null, function(status, data) {
             if (status !== 200) return
             root.albums = data.items.map(function(it) {
@@ -44,25 +45,38 @@ Rectangle {
         })
     }
 
-    function fetchPlaylists(url, acc) {
+    function fetchPlaylists(url, acc, infoAcc) {
         App.api.call("GET", url, {}, null, function(status, data) {
             if (status !== 200) { root.loading = false; return }
-            const list = acc.concat(data.items.filter(p => p !== null).map(function(p) {
+            const items = data.items.filter(p => p !== null)
+            const list = acc.concat(items.map(function(p) {
                 const owner = p.owner ? (p.owner.display_name || p.owner.id) : ""
                 return { kind: "playlist", itemId: p.id, uri: p.uri, title: p.name,
                          subtitle: qsTr("Playlist") + (owner ? " • " + owner : ""),
                          imageUrl: Theme.bestImage(p.images, 64), round: false }
             }))
+            const info = infoAcc.concat(items.map(p => ({ id: p.id, uri: p.uri, name: p.name,
+                                                          ownerId: p.owner ? p.owner.id : "",
+                                                          collaborative: !!p.collaborative })))
             root.playlists = list
+            root.playlistInfo = info
             root.rebuild()
             if (data.next && list.length < 500)
-                root.fetchPlaylists(data.next, list)
+                root.fetchPlaylists(data.next, list, info)
             else
                 root.loading = false
         })
     }
 
+    // Playlists que aceitam músicas: as suas e as colaborativas (o dono vem do /me, que pode chegar depois).
+    function updateEditable() {
+        const meId = Nav.me ? Nav.me.id : ""
+        Playlists.editable = playlistInfo.filter(p => p.collaborative || (meId !== "" && p.ownerId === meId))
+                                         .map(p => ({ id: p.id, uri: p.uri, name: p.name }))
+    }
+
     function rebuild() {
+        updateEditable()
         let items = []
         if (filter === "" || filter === "playlist") {
             items.push({ kind: "liked", itemId: "", uri: Nav.likedSongsUri(), title: qsTr("Músicas Curtidas"),
@@ -90,6 +104,11 @@ Rectangle {
     Connections {
         target: Nav
         function onMeChanged() { root.rebuild() }
+    }
+    Connections {
+        target: Playlists
+        // Criou, renomeou ou excluiu: só a lista de playlists precisa vir de novo.
+        function onListChanged() { root.fetchPlaylists("/me/playlists?limit=50", [], []) }
     }
 
     ListModel { id: libraryModel }
@@ -144,6 +163,12 @@ Rectangle {
                 anchors.right: parent.right
                 anchors.rightMargin: 8
                 anchors.verticalCenter: parent.verticalCenter
+                IconButton {
+                    iconSize: 16
+                    strokePath: Icons.plusS
+                    tooltip: qsTr("Criar playlist")
+                    onClicked: Playlists.create(function(p) { Nav.go("playlist", { id: p.id }) })
+                }
                 IconButton {
                     iconSize: 16
                     strokePath: Icons.searchS
