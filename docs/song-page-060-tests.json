@@ -1,0 +1,143 @@
+{
+  "version": "0.6.0-local",
+  "date": "2026-10-17",
+  "artifacts": {
+    "windows_installer": {
+      "path": "out/release-local/Tonal-Hub-0.6.0.0-Windows-x64-Setup.exe",
+      "bytes": 81283919,
+      "sha256": "b1a5d09876ad40be1209cc30c18ecee3a5cf63cfd40acfe221a3ffe0a3058048"
+    },
+    "windows_portable": {
+      "path": "out/release-local/Tonal-Hub-0.6.0-local.zip",
+      "bytes": 114847279,
+      "sha256": "98a076d92b40e01d4c46d372ee9253351fc7461b22c8253a1533948f74abccc7"
+    },
+    "android_universal": {
+      "path": "out/android/Tonal-Android-0.6.0-local.apk",
+      "bytes": 46356295,
+      "sha256": "3bb151abfb7d71e37cd974e89b970c82e8b0202dc49d8c42b36568846eabdbee"
+    },
+    "android_arm64": {
+      "path": "out/android/Tonal-Android-0.6.0-arm64-v8a.apk",
+      "bytes": 24574785,
+      "sha256": "fdd6200aea0f057af6697d0dcde862ff1268ae1c69cc81e4c3cbd47044b0cb9a"
+    },
+    "audio_sources": {
+      "path": "out/android/Tonal-Android-0.6.0-audio-sources.tar.gz",
+      "bytes": 49079132,
+      "sha256": "bfd65a94a8c395082a01c2942cc7e772e3e541438dc7a0426e2b2d0718046897"
+    }
+  },
+  "windows_ctest": {
+    "passed": true,
+    "suites": 4,
+    "names": [
+      "companion_unit",
+      "companion_ui_smoke",
+      "indie_ui_smoke",
+      "audio_ui_smoke"
+    ]
+  },
+  "qml_song_page": {
+    "passed": true,
+    "checks": [
+      "automatic translation uses auto language",
+      "original and Portuguese shown together",
+      "track changes hide stale results",
+      "next lyrics trigger translation without a second button press"
+    ]
+  },
+  "android_song_page": {
+    "passed": true,
+    "checks": [
+      {
+        "name": "song_page_fetches_lyrics_without_pressing_search",
+        "passed": true,
+        "lines": 25
+      },
+      {
+        "name": "song_page_heart_updates_favorites",
+        "passed": true
+      },
+      {
+        "name": "automatic_source_language_translation",
+        "passed": true,
+        "translated_lines": 25
+      },
+      {
+        "name": "open_page_follows_next_track_and_fetches_lyrics",
+        "passed": true,
+        "lines": 26
+      },
+      {
+        "name": "statistics_cards_visible",
+        "passed": true
+      },
+      {
+        "name": "song_page_metadata_follows_current_track",
+        "passed": true
+      }
+    ],
+    "spotify_authenticated": false,
+    "physical_bluetooth": false
+  },
+  "android_release_upgrade": {
+    "passed": true,
+    "apk_sha256": "3bb151abfb7d71e37cd974e89b970c82e8b0202dc49d8c42b36568846eabdbee",
+    "before": {
+      "version": "0.5.0-local",
+      "code": "6",
+      "first_install": "2026-10-15 06:39:54",
+      "app_id": "10218",
+      "ce_inode": "770154"
+    },
+    "after": {
+      "version": "0.6.0-local",
+      "code": "7",
+      "first_install": "2026-10-15 06:39:54",
+      "app_id": "10218",
+      "ce_inode": "770154"
+    },
+    "updated_without_uninstall": true,
+    "data_directory_preserved": true,
+    "release_hub_and_public_search": true
+  },
+  "installer": {
+    "installation": {
+      "DisplayVersion": "0.6.0.0",
+      "InstallLocation": "D:\\PROJETOS\\Tonal-Player-Matheus\\out\\installer-smoke-0600\\app\\"
+    },
+    "files_match": {
+      "TonalHub.exe": true,
+      "Tonalify.exe": true,
+      "IndieTonal.exe": true,
+      "qt.conf": true,
+      "platforms/qwindows.dll": true,
+      "sqldrivers/qsqlite.dll": true,
+      "CREDITS.md": true,
+      "WINDOWS_INSTALLER_LOCAL.md": true
+    },
+    "installed_app_startup_without_sdk_plugin_paths": true,
+    "reinstallation_preserves_unmanaged_files": true,
+    "isolated_uninstallation": true,
+    "passed": true
+  },
+  "live_synthetic_auto_translation": {
+    "passed": true,
+    "http_status": 200
+  },
+  "packaging": {
+    "elf_and_zip_16_kib": true,
+    "signature_preserved": true,
+    "certificate_sha256": "464ae7cf34f4f145541569db215f8fcdef5deda1be31921d8e366eed20aa22c2",
+    "licenses": 699,
+    "private_session_in_apks": false
+  },
+  "limits": {
+    "spotify_authenticated_retested": false,
+    "physical_poco_tested": false,
+    "physical_bluetooth_tested": false,
+    "new_cpu_ram_benchmark": false,
+    "artist_biographies_or_photos_fabricated": false
+  }
+}

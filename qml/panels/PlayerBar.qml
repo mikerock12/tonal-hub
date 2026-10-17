@@ -7,6 +7,9 @@ Item {
 
     readonly property var player: App.player
     readonly property bool playingElsewhere: player.activeDeviceId !== "" && !player.playingHere
+    property int libraryRevision: 0
+    readonly property bool trackLiked: {libraryRevision;return player.localPlayback ? App.music.liked(App.music.current) : player.liked}
+    Connections { target: App.music; function onChanged(){root.libraryRevision++} }
 
     // ---------------------------------------------------- esquerda: faixa atual
     Item {
@@ -26,7 +29,7 @@ Item {
             MouseArea {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
-                onClicked: Nav.rightPanel = Nav.rightPanel === "nowplaying" ? "" : "nowplaying"
+                onClicked: Nav.go("lyrics")
             }
         }
 
@@ -50,7 +53,7 @@ Item {
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: Nav.openUri(root.player.albumUri)
+                    onClicked: Nav.go("lyrics")
                 }
             }
             Label {
@@ -78,13 +81,13 @@ Item {
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
             iconSize: 18
-            fillPath: root.player.liked ? Icons.heart : ""
-            strokePath: root.player.liked ? "" : Icons.heart
+            fillPath: root.trackLiked ? Icons.heart : ""
+            strokePath: root.trackLiked ? "" : Icons.heart
             strokeWidth: 1.8
-            active: root.player.liked
-            visible: root.player.trackUri.indexOf("spotify:track:") === 0
-            tooltip: root.player.liked ? qsTr("Remover das Músicas Curtidas") : qsTr("Adicionar às Músicas Curtidas")
-            onClicked: root.player.toggleLike()
+            active: root.trackLiked
+            visible: root.player.hasTrack
+            tooltip: root.trackLiked ? qsTr("Remover das favoritas") : qsTr("Favoritar música")
+            onClicked: root.player.localPlayback ? App.music.favorite(App.music.current) : root.player.toggleLike()
         }
     }
 

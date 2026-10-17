@@ -87,6 +87,10 @@ Check "cmake --build"
 Step "Montando $name"
 New-Item -ItemType Directory $stage | Out-Null
 Copy-Item (Join-Path $build "Tonal.exe") $stage
+# As DLLs do motor sao copiadas pelo target CMake, mesmo com TONAL_AUTO_DEPLOY=OFF.
+Get-ChildItem -LiteralPath $build -File -Filter '*.dll' |
+    Where-Object { $_.Name -match '^(avcodec-|avformat-|avfilter-|avutil-|swresample-|swscale-|OpenAL32|iamf)' } |
+    Copy-Item -Destination $stage -Force
 # --no-compiler-runtime: o runtime vai como DLLs logo abaixo, não como o instalador vc_redist (18 MB).
 # --no-system-dxc-compiler: o compilador de shaders do Direct3D 12 (12 MB); o Qt Quick usa D3D11.
 & $windeployqt --release --qmldir (Join-Path $root "qml") --no-translations --no-system-d3d-compiler `
@@ -104,6 +108,7 @@ Copy-Item (Join-Path $crt.FullName "*.dll") $stage
 # O Tonal procura o librespot primeiro ao lado do Tonal.exe.
 Copy-Item $Librespot $stage
 Copy-Item (Join-Path $PSScriptRoot "licenses") (Join-Path $stage "licenses") -Recurse
+& (Join-Path $PSScriptRoot 'collect-audio-notices.ps1') -Destination (Join-Path $stage 'licenses\audio')
 Copy-Item (Join-Path $root "LICENSE") (Join-Path $stage "licenses\Tonal-LICENSE.txt")
 
 # ------------------------------------------------------------------ ZIP, instalador, hashes

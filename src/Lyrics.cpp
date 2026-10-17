@@ -8,6 +8,7 @@
 #include <QRegularExpression>
 #include <QUrl>
 #include <QUrlQuery>
+#include <QTimer>
 
 #include <algorithm>
 #include <cmath>
@@ -79,6 +80,7 @@ void Lyrics::setActive(bool active)
     emit activeChanged();
     if (m_active)
         load();
+    else if(m_status==Loading){++m_serial;m_status=Error;}
 }
 
 int Lyrics::lineAt(int positionMs) const
@@ -105,6 +107,7 @@ void Lyrics::load()
     const QString uri = m_player->trackUri();
     if (uri == m_trackUri && m_status != Error)
         return; // já mostra (ou já busca) a letra desta faixa
+    if(uri!=m_trackUri)m_retries=0;
     m_trackUri = uri;
     ++m_serial; // descarta a resposta de uma busca anterior
 
@@ -177,6 +180,11 @@ void Lyrics::handleReply(QNetworkReply *reply, bool isSearch, int serial)
     }
     Entry entry;
     if (status != 200) {
+        if((status==429||status==502||status==503||status==504)&&m_retries<2){
+            const int delay=1500*(1<<m_retries++);
+            QTimer::singleShot(delay,this,[this,serial]{if(serial==m_serial&&m_active){m_status=Error;load();}});
+            return;
+        }
         qCWarning(lcLyrics).noquote() << "LRCLIB:" << status << reply->errorString();
         entry.status = Error; // fora do cache: "Tentar de novo" busca outra vez
         show(entry);

@@ -63,6 +63,7 @@ private:
     Player *m_player;
     bool m_active = false;
     int m_serial = 0;
+    int m_retries = 0;
 
     // O que foi pedido ao LRCLIB: a busca de reserva usa os mesmos dados.
     QString m_queryArtist;

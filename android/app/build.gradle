@@ -1,0 +1,22 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'app.tonal.android'
+    compileSdk 36
+    defaultConfig {
+        applicationId 'app.tonal.android'
+        minSdk 28
+        targetSdk 36
+        versionCode 8
+        versionName '0.7.0-local'
+        if (project.hasProperty('tonalAbi')) {
+            ndk { abiFilters project.property('tonalAbi').toString() }
+        }
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    buildFeatures { buildConfig true }
+    buildTypes {
+        release { minifyEnabled false; signingConfig signingConfigs.debug }
+        benchmark { initWith release; debuggable true; applicationIdSuffix '.benchmark' }
+    }
+    packaging { jniLibs { useLegacyPackaging = false } }
+}

@@ -4,6 +4,12 @@ import QtQuick.Controls
 
 ApplicationWindow {
     id: window
+    property alias audioEffectsController: audioPanel
+    function openMusic(){if(musicLoader.item)musicLoader.item.open();else musicLoader.setSource("qrc:/companion/qml/companion/MusicPanel.qml",{controller:App.music,audioEngine:App.audio})}
+    Loader { id: musicLoader; onLoaded: item.open() }
+    Binding { target: musicLoader.item; property: "position"; value: App.player.positionMs; when: !!musicLoader.item }
+    Binding { target: musicLoader.item; property: "playing"; value: App.player.isPlaying && App.player.playingHere; when: !!musicLoader.item }
+    Connections { target: musicLoader.item; function onDiscover(artist){Nav.go("search",{query:artist})} function onTogglePlayback(){App.player.togglePlay()} function onPreviousRequested(){App.player.previous()} function onNextRequested(){App.player.next()} }
 
     width: 1280
     height: 820
@@ -13,7 +19,7 @@ ApplicationWindow {
     color: Theme.windowBg
     title: App.player.hasTrack && App.player.isPlaying
            ? App.player.trackName + " • " + App.player.artistsText
-           : "Tonal"
+           : "Tonalify"
 
     palette.toolTipBase: "#282828"
     palette.toolTipText: Theme.textPrimary
@@ -39,7 +45,7 @@ ApplicationWindow {
     // ------------------------------------------------------------ login
     Loader {
         anchors.fill: parent
-        active: !App.auth.authenticated
+        active: !App.auth.authenticated && !App.audio.localActive
         sourceComponent: LoginPage { }
     }
 
@@ -47,7 +53,7 @@ ApplicationWindow {
     Item {
         id: shell
         anchors.fill: parent
-        visible: App.auth.authenticated
+        visible: App.auth.authenticated || App.audio.localActive
 
         // Botões laterais do mouse (voltar/avançar). Fica por baixo de tudo:
         // os outros MouseAreas só aceitam o botão esquerdo, então esses cliques chegam aqui.
@@ -66,6 +72,8 @@ ApplicationWindow {
             anchors.right: parent.right
             anchors.top: parent.top
             height: Theme.topBarHeight
+            onAudioSettingsRequested: audioPanel.open()
+            onMusicRequested: window.openMusic()
         }
 
         LibraryPanel {
@@ -120,6 +128,7 @@ ApplicationWindow {
                 id: pageLoader
                 anchors.fill: parent
                 sourceComponent: {
+                    if(!App.auth.authenticated && App.audio.localActive) return localAudioPage
                     switch (Nav.current.page) {
                     case "search": return searchPage
                     case "playlist":
@@ -167,9 +176,35 @@ ApplicationWindow {
     Component { id: artistPage; ArtistPage { } }
     Component { id: lyricsPage; LyricsPage { } }
     Component { id: setlistsPage; SetlistsPage { } }
+    Component {
+        id: localAudioPage
+        Item {
+            property var route
+            Label {
+                anchors.centerIn: parent
+                width: parent.width - 48
+                horizontalAlignment: Text.AlignHCenter
+                wrapMode: Text.WordWrap
+                text: App.audio.localName + "\n\n" + qsTr("Use a barra de reprodução. Ctrl+E abre os efeitos e arquivos locais.")
+                color: Theme.textPrimary
+                font.pixelSize: 18
+            }
+        }
+    }
+
+    AudioEffectsPanel { id: audioPanel }
+    Button {
+        visible: !App.auth.authenticated && !App.audio.localActive
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.margins: 24
+        text: qsTr("Áudio e arquivos locais…")
+        onClicked: audioPanel.open()
+    }
 
     // ------------------------------------------------------------ atalhos
-    Shortcut { sequence: "Space"; enabled: App.auth.authenticated; onActivated: App.player.togglePlay() }
+    Shortcut { sequence: "Ctrl+E"; onActivated: audioPanel.open() }
+    Shortcut { sequence: "Space"; enabled: App.auth.authenticated || App.audio.localActive; onActivated: App.player.togglePlay() }
     Shortcut { sequence: "Ctrl+Right"; onActivated: App.player.next() }
     Shortcut { sequence: "Ctrl+Left"; onActivated: App.player.previous() }
     Shortcut { sequence: "Ctrl+Up"; onActivated: App.player.setVolume(App.player.volume + 10) }
@@ -339,5 +374,8 @@ ApplicationWindow {
         target: App.auth
         function onAuthenticatedChanged() { window.bootstrap() }
     }
-    Component.onCompleted: bootstrap()
+    Component.onCompleted: {
+        bootstrap()
+        if(Qt.application.arguments.indexOf("--audio-settings") >= 0) audioPanel.open()
+    }
 }

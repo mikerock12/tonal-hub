@@ -1,0 +1,149 @@
+{
+  "version": "0.1.1-local",
+  "apk_validation": {
+    "sha256": "3be95ba56b48746977efa4586af1744ec24ab799ea9fc9f5717fab35172ed425",
+    "size_bytes": 20383425,
+    "architectures": {
+      "arm64-v8a": {
+        "elf_load_alignment": [
+          16384,
+          16384,
+          16384,
+          16384
+        ],
+        "zip_offset": 81920,
+        "uncompressed": true,
+        "matches_packaged_build": true,
+        "before_strip_matches_source": true
+      },
+      "x86_64": {
+        "elf_load_alignment": [
+          16384,
+          16384,
+          16384,
+          16384
+        ],
+        "zip_offset": 7897088,
+        "uncompressed": true,
+        "matches_packaged_build": true,
+        "before_strip_matches_source": true
+      }
+    },
+    "license_files": 669,
+    "private_seed_file_present": false,
+    "session_token_present": false
+  },
+  "auth_probe": [
+    {
+      "profile": "current-apk-Android-Keymaster",
+      "client_token_http": 400,
+      "client_error_format": "unrecognized"
+    },
+    {
+      "profile": "upstream-Android-client",
+      "client_token_http": 200,
+      "client_token_response_type": 2
+    },
+    {
+      "profile": "desktop-OAuth-compatibility",
+      "client_token_http": 200,
+      "client_token_response_type": 1,
+      "login5_http": 200,
+      "login5_ok": true,
+      "login5_error": null,
+      "login5_challenge": false
+    }
+  ],
+  "streaming": {
+    "pass_all": true,
+    "package": "app.tonal.android.benchmark",
+    "version": "0.1.1-local",
+    "track_uri": "spotify:track:65cOtEO1eVrTezvIMDsoDr",
+    "authorization": "User-authorized Premium cached engine credentials, copied only into benchmark sandbox",
+    "fresh_browser_oauth_completed_in_emulator": false,
+    "playing": {
+      "frames": 4115264,
+      "playing": true,
+      "paused": false,
+      "metrics": "PCM: 4,115,264 frames \u00b7 DSP 26 \u00b5s/bloco \u00b7 underruns 0",
+      "track": "Wolf\nVeruca Salt",
+      "errors": []
+    },
+    "paused1": {
+      "frames": 4166464,
+      "playing": false,
+      "paused": true,
+      "metrics": "PCM: 4,166,464 frames \u00b7 DSP 26 \u00b5s/bloco \u00b7 underruns 0",
+      "track": "Wolf\nVeruca Salt",
+      "errors": []
+    },
+    "paused2": {
+      "frames": 4166464,
+      "playing": false,
+      "paused": true,
+      "metrics": "PCM: 4,166,464 frames \u00b7 DSP 26 \u00b5s/bloco \u00b7 underruns 0",
+      "track": "Wolf\nVeruca Salt",
+      "errors": []
+    },
+    "resumed": {
+      "frames": 4403968,
+      "playing": true,
+      "paused": false,
+      "metrics": "PCM: 4,403,968 frames \u00b7 DSP 25 \u00b5s/bloco \u00b7 underruns 0",
+      "track": "Wolf\nVeruca Salt",
+      "errors": []
+    },
+    "after_background": {
+      "frames": 4768320,
+      "playing": true,
+      "paused": false,
+      "metrics": "PCM: 4,768,320 frames \u00b7 DSP 27 \u00b5s/bloco \u00b7 underruns 0",
+      "track": "Wolf\nVeruca Salt",
+      "errors": []
+    },
+    "reconnected": {
+      "frames": 181312,
+      "playing": true,
+      "paused": false,
+      "metrics": "PCM: 181,312 frames \u00b7 DSP 97 \u00b5s/bloco \u00b7 underruns 0",
+      "track": "Wolf\nVeruca Salt",
+      "errors": []
+    },
+    "audible_quality_tested": false
+  },
+  "local_audio": {
+    "pass_all": true,
+    "playing": {
+      "frames": 363200,
+      "paused": false,
+      "playing": true,
+      "metrics": "PCM: 363,200 frames \u00b7 DSP 21 \u00b5s/bloco \u00b7 underruns 0"
+    },
+    "paused1": {
+      "frames": 409280,
+      "paused": true,
+      "playing": false,
+      "metrics": "PCM: 409,280 frames \u00b7 DSP 21 \u00b5s/bloco \u00b7 underruns 0"
+    },
+    "paused2": {
+      "frames": 409280,
+      "paused": true,
+      "playing": false,
+      "metrics": "PCM: 409,280 frames \u00b7 DSP 21 \u00b5s/bloco \u00b7 underruns 0"
+    },
+    "resumed": {
+      "frames": 604864,
+      "paused": false,
+      "playing": true,
+      "metrics": "PCM: 604,864 frames \u00b7 DSP 21 \u00b5s/bloco \u00b7 underruns 0"
+    },
+    "after_background": {
+      "frames": 931520,
+      "paused": false,
+      "playing": true,
+      "metrics": "PCM: 931,520 frames \u00b7 DSP 24 \u00b5s/bloco \u00b7 underruns 0"
+    },
+    "audible_click_tested": false,
+    "note": "Headless emulator; verified PCM transport and state, not audible quality"
+  }
+}

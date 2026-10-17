@@ -28,18 +28,19 @@ Flickable {
         // guardado como JSON: listas no registro do Windows voltam com tipos inconsistentes
         property string recentJson: "[]"
     }
-    property var recentSearches: {
-        try { return JSON.parse(history.recentJson) } catch (e) { return [] }
-    }
+    property var recentSearches: App.music.searches
 
-    onQueryChanged: { filter = "all"; search() }
-    Component.onCompleted: search()
+    onQueryChanged: { filter = "all"; search(); discoveryDelay.restart() }
+    Timer {
+        id: discoveryDelay
+        interval: 600; repeat: false
+        onTriggered: App.discovery.search(root.query, "extras")
+    }
+    Component.onCompleted: { if(!App.music.searches.length){try{JSON.parse(history.recentJson).slice().reverse().forEach(q=>App.music.rememberSearch(q))}catch(e){}} search(); discoveryDelay.restart() }
 
     function rememberQuery() {
         if (query === "") return
-        const list = recentSearches.filter(q => q.toLowerCase() !== query.toLowerCase())
-        list.unshift(query)
-        history.recentJson = JSON.stringify(list.slice(0, 10))
+        App.music.rememberSearch(query)
     }
 
     function mapTrack(t) {
@@ -71,6 +72,7 @@ Flickable {
             if (serial !== root.requestSerial) return   // resposta de uma busca antiga
             root.loading = false
             if (status !== 200) return
+            root.rememberQuery()
             const valid = x => x !== null
             root.tracks = data.tracks ? data.tracks.items.filter(valid).map(root.mapTrack) : []
             root.artists = data.artists ? data.artists.items.filter(valid).map(a => root.mapCard("artist", a)) : []
@@ -158,11 +160,39 @@ Flickable {
             Chip {
                 visible: root.recentSearches.length > 0
                 text: qsTr("Limpar buscas recentes")
-                onClicked: history.recentJson = "[]"
+                onClicked: App.music.forgetSearch("")
             }
         }
 
         // ------------------------------------------------ filtros
+        Rectangle {
+            visible: root.query.length > 1
+            width: parent.width
+            height: discoveryColumn.implicitHeight + 28
+            color: "#152b37"; radius: 10
+            Column {
+                id: discoveryColumn
+                anchors.left: parent.left; anchors.right: parent.right
+                anchors.top: parent.top; anchors.margins: 14; spacing: 8
+                Row {
+                    spacing: 12
+                    Label { text: "Explore também no IndieTonal"; font.pixelSize: 17; font.bold: true; color: "#a4e1ee" }
+                    Label { text: App.discovery.busy ? "Consultando fontes abertas…" : App.discovery.items.length + " candidatos carregados"; color: "#9ab7c5" }
+                }
+                Label { text: "Busca independente pelo texto digitado. Resultados podem ser versões diferentes ou homônimos; não indicam exclusividade."; color: "#afc1cc"; wrapMode: Text.WordWrap; width: parent.width; font.pixelSize: 12 }
+                Repeater {
+                    model: App.discovery.query === root.query ? App.discovery.items.filter(item => item.kind !== "artist").slice(0, 5) : []
+                    Label {
+                        required property var modelData
+                        width: discoveryColumn.width; elide: Text.ElideRight; color: Theme.textPrimary
+                        textFormat: Text.PlainText
+                        text: modelData.title + " • " + (modelData.artist || modelData.kind) + " • " + modelData.provider
+                    }
+                }
+                Button { text: "Abrir esta busca no IndieTonal"; onClicked: { if (App.player.isPlaying) App.player.togglePlay(); App.hub.indie(root.query) } }
+            }
+        }
+
         Row {
             visible: root.query !== ""
             spacing: 8

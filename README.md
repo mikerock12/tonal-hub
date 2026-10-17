@@ -1,12 +1,34 @@
 # Tonal
 
+Este projeto pessoal deriva do **Tonal**, criado por **Matheus Nunes (natheus)**,
+meu irmão: [natheus/tonal-player](https://github.com/natheus/tonal-player).
+O projeto original fornece a base C++/Qt e a integração inicial com Spotify.
+As extensões Tonal Hub, Tonalify, IndieTonal, Android e os recursos adicionais
+são desenvolvimentos deste projeto derivado. Consulte [CREDITS.md](CREDITS.md)
+e a licença MIT original, preservada em [LICENSE](LICENSE).
+
 A lightweight **Spotify Premium** player for Windows, built with **C++ and Qt Quick**, with audio played by
 **[librespot](https://github.com/librespot-org/librespot)**. No Electron, no embedded Chromium.
 
 The interface is in English or Brazilian Portuguese: it follows the Windows language, and you can switch it in
 the account menu.
 
+Experimental local Android build and testing instructions: [ANDROID_LOCAL.md](docs/ANDROID_LOCAL.md).
+
+Local Windows hub experiment: **Tonal Hub**, **Tonalify** (Spotify), and **IndieTonal**
+(independent sources). Setup, implemented features and current limitations:
+[TONAL_HUB_LOCAL.md](docs/TONAL_HUB_LOCAL.md). This is a personal derivative with private source hosting.
+
+New in the personal **0.5.0** build: [rare fan recordings and demos](docs/RARE_RECORDINGS_LOCAL.md),
+[favorites, playlists, listening charts, lyric backgrounds, pt-BR translation and SQLite backups](docs/PERSONAL_LIBRARY_050.md).
+Local Windows/Android deliverables are generated in `out/`; they are separate from the original project's public releases.
+
+Windows installer and direct translation on the lyrics screen (0.5.0, correction 1):
+[installation and build instructions](docs/WINDOWS_INSTALLER_LOCAL.md).
+
 ![Tonal playing an album](docs/tonal.png)
+
+Página da música, letras e tradução automáticas e interface 0.6.0: [guia e instaláveis](docs/SONG_PAGE_060.md).
 
 ## Actually lightweight
 
@@ -133,6 +155,14 @@ Why it uses so little memory:
   away when the track changes
 
 ## Building from source
+
+### Local advanced-audio integration
+
+This working tree includes a local FFmpeg/OpenAL audio engine and an optional IAMF/OAR
+binaural adapter. See [local audio implementation and tests](docs/AUDIO_LOCAL.md) for
+the pinned dependency setup, `packaging/build-local.ps1 -Test`, limitations, and usage.
+Press **Ctrl+E** to open audio effects and local files. `--local-only` starts without
+loading the Spotify login. The integration uses C++20 and preserves Spotify controls.
 
 ### 1. Prerequisites (once)
 

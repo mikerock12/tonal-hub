@@ -1,0 +1,141 @@
+{
+  "recorded_at_utc": "2026-10-16T04:36:10.674333+00:00",
+  "purpose": "public metadata feasibility, not playback or catalog equivalence",
+  "credentials_from_user_accessed": false,
+  "app_integrations_implemented": false,
+  "results": [
+    {
+      "provider": "audius",
+      "endpoint": "https://api.audius.co/v1/tracks/search",
+      "media_requested": false,
+      "http_status": 200,
+      "ok": true,
+      "returned_items": 3,
+      "samples": [
+        {
+          "id": "K9QB2",
+          "title_or_name": "Nirvana",
+          "artist": "Candyland",
+          "audio_url_present": false,
+          "preview_url_present": false,
+          "gated": false,
+          "streamable_metadata": true
+        },
+        {
+          "id": "aAmXa3a",
+          "title_or_name": "Nirvana - Smells Like Teen Spirit (Tony Metric Remix)",
+          "artist": "Tony Metric",
+          "audio_url_present": false,
+          "preview_url_present": false,
+          "gated": false,
+          "streamable_metadata": true
+        },
+        {
+          "id": "rG8WO",
+          "title_or_name": "Gramatik Vs. Nirvana Vs. Bill Burr - Lake Of Fire Flip",
+          "artist": "Gramatik",
+          "audio_url_present": false,
+          "preview_url_present": false,
+          "gated": false,
+          "streamable_metadata": true
+        }
+      ],
+      "elapsed_seconds": 0.152
+    },
+    {
+      "provider": "musicbrainz",
+      "endpoint": "https://musicbrainz.org/ws/2/artist",
+      "media_requested": false,
+      "http_status": 200,
+      "ok": true,
+      "returned_items": 3,
+      "samples": [
+        {
+          "id": "5b11f4ce-a62d-471e-81fc-a69a8278c7da",
+          "title_or_name": "Nirvana",
+          "artist": "",
+          "audio_url_present": false,
+          "preview_url_present": false,
+          "gated": null,
+          "streamable_metadata": null
+        },
+        {
+          "id": "9282c8b4-ca0b-4c6b-b7e3-4f7762dfc4d6",
+          "title_or_name": "Nirvana",
+          "artist": "",
+          "audio_url_present": false,
+          "preview_url_present": false,
+          "gated": null,
+          "streamable_metadata": null
+        },
+        {
+          "id": "c3a64a25-251b-4d03-afba-1471440245b8",
+          "title_or_name": "Approaching Nirvana",
+          "artist": "",
+          "audio_url_present": false,
+          "preview_url_present": false,
+          "gated": null,
+          "streamable_metadata": null
+        }
+      ],
+      "elapsed_seconds": 0.796
+    },
+    {
+      "provider": "jamendo",
+      "endpoint": "https://api.jamendo.com/v3.0/tracks/",
+      "media_requested": false,
+      "http_status": 200,
+      "sample_client_id_only": true,
+      "provider_error_code": 11,
+      "provider_error_message": "Jamendo Api Suspended Application Error: Your application has been suspended, please contact Jamendo",
+      "ok": false,
+      "error": "ValueError",
+      "elapsed_seconds": 0.463
+    },
+    {
+      "provider": "deezer",
+      "endpoint": "https://api.deezer.com/search",
+      "media_requested": false,
+      "http_status": 200,
+      "ok": true,
+      "returned_items": 3,
+      "samples": [
+        {
+          "id": "13791930",
+          "title_or_name": "Smells Like Teen Spirit",
+          "artist": "Nirvana",
+          "audio_url_present": false,
+          "preview_url_present": true,
+          "gated": null,
+          "streamable_metadata": null
+        },
+        {
+          "id": "13791932",
+          "title_or_name": "Come As You Are",
+          "artist": "Nirvana",
+          "audio_url_present": false,
+          "preview_url_present": true,
+          "gated": null,
+          "streamable_metadata": null
+        },
+        {
+          "id": "1105736",
+          "title_or_name": "The Man Who Sold The World (Live)",
+          "artist": "Nirvana",
+          "audio_url_present": false,
+          "preview_url_present": true,
+          "gated": null,
+          "streamable_metadata": null
+        }
+      ],
+      "elapsed_seconds": 0.472
+    }
+  ],
+  "limits": [
+    "No playback, audible quality or mobile performance test",
+    "Search names are not proof of artist identity",
+    "A URL or streamability field is not proof of playback authorization",
+    "No exclusivity or cross-provider recording match inferred",
+    "Public HTTP availability does not grant production API access"
+  ]
+}

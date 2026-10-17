@@ -1,0 +1,152 @@
+package app.tonal.android;
+
+import android.graphics.Typeface;
+import android.view.*;
+import android.view.inputmethod.*;
+import android.content.Context;
+import android.text.TextUtils;
+import android.widget.*;
+import java.util.*;
+import java.util.function.Consumer;
+import org.json.*;
+
+/** Spotify catalog routes, kept separate from the native playback/service lifecycle. */
+final class CatalogScreen {
+    private final MainActivity host;
+    private final SpotifyClient api;
+    private final Ui ui;
+    private final Artwork artwork;
+    private final LinearLayout container;
+    private LinearLayout content;
+    private ScrollView scroll;
+    private int generation;
+    private boolean closed;
+    private Route route=new Route("home","","","","");
+    private final ArrayDeque<Route> history=new ArrayDeque<>();
+    private static final String[] TYPES={"all","track","artist","album","playlist"};
+    private static final String[] FILTERS={"Tudo","Músicas","Artistas","Álbuns","Playlists"};
+    private static final class Route {
+        final String page,id,name,image,query;String filter="all";int y;
+        Route(String p,String i,String n,String a,String q){page=p;id=i;name=n;image=a;query=q;}
+    }
+    CatalogScreen(MainActivity h,SpotifyClient a,Artwork images,LinearLayout body){host=h;api=a;artwork=images;container=body;ui=new Ui(h);}
+    void home(){tab("home");}void search(){tab("search");}void library(){tab("library");}
+    void search(String literal){history.clear();route=new Route("search","","","",literal.substring(0,Math.min(200,literal.length())));render();}
+    String page(){return route.page;}
+    private void tab(String page){history.clear();route=new Route(page,"","","",page.equals("search")?route.query:"");if(page.equals("library"))route.filter="playlist";render();}
+    private void open(Route next){route.y=scroll==null?0:scroll.getScrollY();history.push(route);route=next;render();}
+    boolean back(){if(history.isEmpty()){if(!route.page.equals("home")){home();return true;}return false;}route=history.pop();render();return true;}
+    void close(){closed=true;generation++;}
+    private void render(){
+        generation++;container.removeAllViews();host.selectTab(route.page);scroll=new ScrollView(host);scroll.setFillViewport(true);scroll.setClipToPadding(false);
+        content=ui.column();ui.pad(content,16,8);scroll.addView(content);container.addView(scroll,new LinearLayout.LayoutParams(-1,-1));
+        if(!history.isEmpty()){LinearLayout row=ui.row();row.addView(ui.icon("back","Voltar",this::back),new LinearLayout.LayoutParams(ui.dp(44),ui.dp(44)));row.addView(ui.line("Sua música",13,Ui.MUTED));content.addView(row);}
+        if(route.page.equals("search")){renderSearch();}
+        else if(route.page.equals("home")){renderHome();}
+        else if(!api.loggedIn()){signedOut();}
+        else switch(route.page){case "library":renderLibrary();break;case "artist":renderArtist();break;case "album":case "playlist":case "liked":renderCollection();break;}
+        ui.space(content,16);int y=route.y;scroll.post(()->scroll.scrollTo(0,y));
+    }
+    private void title(String text){content.addView(ui.title(text,27));ui.space(content,16);}
+    private void heading(LinearLayout parent,String text){ui.space(parent,18);parent.addView(ui.title(text,21));ui.space(parent,10);}
+    private TextView message(LinearLayout parent,String text){TextView v=ui.text(text,14,Ui.MUTED);ui.pad(v,0,12);parent.addView(v);return v;}
+    private void signedOut(){title("Sua música no Tonal");message(content,"Entre para buscar músicas, explorar artistas e ouvir sua biblioteca Spotify.");content.addView(ui.action("Entrar com Spotify",host::login));}
+    private void request(String path,Consumer<JSONObject> success,Consumer<String> failure){int ticket=generation;api.get(path,json->{if(!closed&&ticket==generation)success.accept(json);},error->{if(!closed&&ticket==generation)failure.accept(error);});}
+    private void problem(LinearLayout target,String error,Runnable retry){
+        target.removeAllViews();message(target,error.contains("403")?"O Spotify não permitiu este acesso. Atualize a autorização da biblioteca em Conta.":error);
+        target.addView(ui.action(error.contains("403")?"Atualizar autorização":"Tentar novamente",error.contains("403")?host::login:retry));
+    }
+    private LinearLayout section(String name){heading(content,name);LinearLayout group=ui.column();content.addView(group);return group;}
+    private ImageView image(String url,int size,boolean circle){ImageView image=new ImageView(host);image.setScaleType(ImageView.ScaleType.CENTER_CROP);ui.rounded(image,Ui.CARD,circle?size/2:6);image.setLayoutParams(new LinearLayout.LayoutParams(ui.dp(size),ui.dp(size)));artwork.load(image,url);return image;}
+    private LinearLayout item(String name,String detail,String img,String type,Runnable click){
+        LinearLayout row=ui.row();ui.pad(row,0,7);row.setMinimumHeight(ui.dp(70));ImageView cover=image(img,54,type.equals("artist"));row.addView(cover);
+        LinearLayout labels=ui.column();ui.pad(labels,12,0);labels.addView(ui.line(name,15,Ui.TEXT));TextView sub=ui.line(detail,12,Ui.MUTED);sub.setPadding(0,ui.dp(5),0,0);labels.addView(sub);ui.weight(row,labels);ui.clickable(row,click);return row;
+    }
+    private static String id(JSONObject item){return item.optString("id");}
+    static String artists(JSONObject track){JSONArray list=track.optJSONArray("artists");StringJoiner names=new StringJoiner(", ");if(list!=null)for(int i=0;i<list.length();i++){JSONObject a=list.optJSONObject(i);if(a!=null)names.add(a.optString("name"));}return names.toString();}
+    private static String safe(JSONObject json,String key){String value=json.optString(key,"");return value.equals("null")?"":value;}
+    private static String duration(int ms){return String.format(Locale.ROOT,"%d:%02d",ms/60000,(ms/1000)%60);}
+    private void openEntity(JSONObject obj,String type){if(id(obj).isEmpty())return;open(new Route(type,id(obj),obj.optString("name"),Artwork.url(obj),""));}
+    private void entityRow(LinearLayout parent,JSONObject obj,String type){
+        String detail=type.equals("artist")?"Artista":type.equals("playlist")?"Playlist":"Álbum";
+        String by=artists(obj);JSONObject owner=obj.optJSONObject("owner");if(type.equals("playlist")&&owner!=null)by=owner.optString("display_name");if(!by.isEmpty())detail+=" • "+by;
+        parent.addView(item(obj.optString("name"),detail,Artwork.url(obj),type,()->openEntity(obj,type)));
+    }
+    private void song(LinearLayout parent,JSONObject track,ArrayList<JSONObject> queue,String context,int index,String fallbackImage){
+        if(track.optString("uri").isEmpty())return;
+        String art=Artwork.url(track);if(art.isEmpty())art=fallbackImage;
+        boolean available=!track.optBoolean("is_local")&&(!track.has("is_playable")||track.optBoolean("is_playable"));
+        LinearLayout row=item(track.optString("name"),artists(track)+"  •  "+(available?duration(track.optInt("duration_ms")):"Indisponível"),art,"track",()->host.playTracks(queue,index,context,track));
+        if(!available)row.setAlpha(.45f);
+        row.addView(ui.icon("more","Opções de "+track.optString("name"),()->trackMenu(track)),new LinearLayout.LayoutParams(ui.dp(44),ui.dp(48)));parent.addView(row);
+    }
+    private void trackMenu(JSONObject track){
+        ArrayList<String> options=new ArrayList<>();ArrayList<Runnable> actions=new ArrayList<>();
+        options.add("Favoritos, playlists e letras");actions.add(()->host.trackPersonalMenu(track));
+        JSONObject album=track.optJSONObject("album");if(album!=null&&!id(album).isEmpty()){options.add("Abrir álbum");actions.add(()->openEntity(album,"album"));}
+        JSONArray artists=track.optJSONArray("artists");if(artists!=null)for(int i=0;i<artists.length();i++){JSONObject a=artists.optJSONObject(i);if(a==null)continue;options.add("Artista: "+a.optString("name"));actions.add(()->openEntity(a,"artist"));}
+        if(!options.isEmpty())new android.app.AlertDialog.Builder(host).setTitle(track.optString("name")).setItems(options.toArray(new String[0]),(d,i)->actions.get(i).run()).show();
+    }
+    private void chips(String[] labels,String[] values,String selected,Consumer<String> change){
+        HorizontalScrollView h=new HorizontalScrollView(host);h.setHorizontalScrollBarEnabled(false);LinearLayout row=ui.row();
+        for(int i=0;i<labels.length;i++){final String v=values[i];TextView chip=ui.pill(labels[i],selected.equals(v),()->change.accept(v));LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-2,-2);p.rightMargin=ui.dp(8);row.addView(chip,p);}h.addView(row);content.addView(h);ui.space(content,12);
+    }
+    private void renderHome(){
+        int hour=Calendar.getInstance().get(Calendar.HOUR_OF_DAY);title(hour<12?"Bom dia":hour<18?"Boa tarde":"Boa noite");
+        if(!api.loggedIn()){signedOut();return;}
+        LinearLayout shortcuts=ui.column();content.addView(shortcuts);ArrayList<JSONObject> quick=new ArrayList<>();quick.add(new JSONObject());quickTiles(shortcuts,quick);
+        request("me/playlists?limit=5",j->{JSONArray list=j.optJSONArray("items");if(list!=null)for(int i=0;i<list.length();i++){JSONObject p=list.optJSONObject(i);if(p!=null)quick.add(p);}quickTiles(shortcuts,quick);},e->{});
+        LinearLayout recent=section("Tocadas recentemente");loadRecent(recent);
+        LinearLayout saved=section("Seus álbuns");new Pager(saved,"me/albums?limit=10","album","album",false,"").load();
+        LinearLayout top=section("Seus artistas");new Pager(top,"me/top/artists?limit=10&time_range=short_term","artist","",false,"").load();
+    }
+    private void quickTiles(LinearLayout target,ArrayList<JSONObject> items){target.removeAllViews();LinearLayout row=null;for(int i=0;i<items.size();i++){if(i%2==0){row=ui.row();target.addView(row);}JSONObject obj=items.get(i);boolean liked=i==0;LinearLayout tile=ui.row();ui.rounded(tile,Ui.CARD,5);ImageView art=image(Artwork.url(obj),48,false);if(liked){ui.rounded(art,Ui.BLUE,0);art.setImageDrawable(new Ui.Symbol("heart",Ui.TEXT));art.setPadding(ui.dp(12),ui.dp(12),ui.dp(12),ui.dp(12));}tile.addView(art);TextView name=ui.text(liked?"Músicas Curtidas":obj.optString("name"),12,Ui.TEXT);name.setTypeface(null,Typeface.BOLD);name.setMaxLines(2);name.setEllipsize(TextUtils.TruncateAt.END);ui.pad(name,8,2);ui.weight(tile,name);ui.clickable(tile,()->{if(liked)open(new Route("liked","","Músicas Curtidas","",""));else openEntity(obj,"playlist");});LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,ui.dp(56),1);p.setMargins(0,0,ui.dp(i%2==0?8:0),ui.dp(8));row.addView(tile,p);}if(items.size()%2==1)row.addView(new View(host),new LinearLayout.LayoutParams(0,1,1));}
+    private void loadRecent(LinearLayout group){message(group,"Carregando…");request("me/player/recently-played?limit=10",json->{group.removeAllViews();JSONArray list=json.optJSONArray("items");Set<String> shown=new HashSet<>();HorizontalScrollView strip=new HorizontalScrollView(host);strip.setHorizontalScrollBarEnabled(false);LinearLayout cards=ui.row();strip.addView(cards);group.addView(strip);if(list!=null)for(int i=0;i<list.length();i++){JSONObject item=list.optJSONObject(i);if(item==null)continue;JSONObject track=item.optJSONObject("track");if(track==null)track=item.optJSONObject("item");if(track==null)continue;JSONObject album=track.optJSONObject("album");if(album!=null&&shown.add(id(album))){LinearLayout card=ui.column();card.addView(image(Artwork.url(album),148,false));ui.space(card,8);card.addView(ui.line(album.optString("name"),14,Ui.TEXT));card.addView(ui.line(artists(album),12,Ui.MUTED));ui.clickable(card,()->openEntity(album,"album"));LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(ui.dp(148),-2);p.rightMargin=ui.dp(16);cards.addView(card,p);}}if(shown.isEmpty())message(group,"Suas próximas reproduções aparecerão aqui.");},e->problem(group,e,()->loadRecent(group)));}
+    private void renderSearch(){
+        title("Buscar");LinearLayout input=ui.row();ui.rounded(input,Ui.CARD,24);ImageButton submit=ui.icon("search","Pesquisar",()->{});
+        EditText query=new EditText(host);query.setTextColor(Ui.TEXT);query.setHintTextColor(Ui.MUTED);query.setTextSize(15);query.setHint("O que você quer ouvir?");query.setSingleLine(true);query.setBackgroundColor(0x00000000);query.setPadding(ui.dp(16),ui.dp(10),0,ui.dp(10));query.setImeOptions(EditorInfo.IME_ACTION_SEARCH);query.setText(route.query);
+        Runnable execute=()->{String q=query.getText().toString().trim();if(q.isEmpty())return;MusicStore.get(host).rememberSearch(q);((InputMethodManager)host.getSystemService(Context.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(query.getWindowToken(),0);route=new Route("search","","","",q);render();};
+        submit.setOnClickListener(v->execute.run());query.setOnEditorActionListener((v,action,event)->{if(action==EditorInfo.IME_ACTION_SEARCH||(event!=null&&event.getKeyCode()==KeyEvent.KEYCODE_ENTER)){execute.run();return true;}return false;});ui.weight(input,query);input.addView(submit,new LinearLayout.LayoutParams(ui.dp(48),ui.dp(48)));content.addView(input);ui.space(content,16);
+        chips(FILTERS,TYPES,route.filter,v->{route.filter=v;route.y=0;render();});
+        if(!route.query.isEmpty()){String literal=route.query;content.addView(ui.action("Explorar “"+literal+"” no IndieTonal",()->HubActivity.open(host,IndieActivity.class,literal)));message(content,"Outras fontes e shows ao vivo • a consulta digitada será aberta no outro player.");}
+        if(route.query.isEmpty()){MusicStore journal=MusicStore.get(host);JSONArray recent=journal.searches();if(recent.length()>0){LinearLayout head=ui.row();ui.weight(head,ui.title("Buscas recentes",20));head.addView(ui.icon("trash","Limpar histórico de buscas",()->{journal.forgetSearch("");render();}));content.addView(head);for(Object value:MusicStore.values(recent)){String text=String.valueOf(value);LinearLayout row=ui.row();row.addView(ui.icon("history","Repetir busca: "+text,()->{query.setText(text);execute.run();}));TextView label=ui.line(text,16,Ui.TEXT);ui.clickable(label,()->{query.setText(text);execute.run();});ui.weight(row,label);row.addView(ui.icon("close","Remover busca: "+text,()->{journal.forgetSearch(text);render();}));content.addView(row);}}}
+        if(!api.loggedIn()){signedOut();return;}if(route.query.isEmpty()){message(content,"Encontre músicas, artistas, álbuns e playlists no Spotify.");return;}
+        String type=route.filter.equals("all")?"track,artist,album,playlist":route.filter;
+        String path="search?type="+type+"&limit=10&q="+SpotifyClient.encode(route.query);
+        if(!route.filter.equals("all")){LinearLayout group=ui.column();content.addView(group);new Pager(group,path,route.filter,"",true,"").load();return;}
+        LinearLayout all=ui.column();content.addView(all);message(all,"Buscando…");request(path,json->{all.removeAllViews();int count=0;for(int k=1;k<TYPES.length;k++){String kind=TYPES[k];JSONObject group=json.optJSONObject(kind+"s");JSONArray list=group==null?null:group.optJSONArray("items");if(list==null||list.length()==0)continue;heading(all,FILTERS[k]);ArrayList<JSONObject> tracks=new ArrayList<>();for(int i=0;i<list.length();i++){JSONObject item=list.optJSONObject(i);if(item!=null)tracks.add(item);}for(int i=0;i<Math.min(4,tracks.size());i++){JSONObject item=tracks.get(i);if(kind.equals("track"))song(all,item,tracks,"",i,"");else entityRow(all,item,kind);count++;}all.addView(ui.action("Ver "+FILTERS[k].toLowerCase(new Locale("pt","BR")),()->{route.filter=kind;route.y=0;render();}));}if(count==0)message(all,"Nenhum resultado para “"+route.query+"”. Tente outro nome.");},e->problem(all,e,this::render));
+    }
+    private void renderLibrary(){
+        title("Sua Biblioteca");chips(new String[]{"Playlists","Álbuns","Artistas"},new String[]{"playlist","album","artist"},route.filter,v->{route.filter=v;route.y=0;render();});
+        content.addView(item("Músicas Curtidas","Playlist • Sua coleção","","album",()->open(new Route("liked","","Músicas Curtidas","",""))));
+        LinearLayout list=ui.column();content.addView(list);
+        String endpoint=route.filter.equals("album")?"me/albums?limit=10":route.filter.equals("artist")?"me/following?type=artist&limit=10":"me/playlists?limit=10";
+        new Pager(list,endpoint,route.filter,route.filter.equals("album")?"album":"",false,"").load();
+    }
+    private void renderArtist(){
+        title(route.name);LinearLayout hero=ui.row();ImageView photo=image(route.image,128,true);hero.addView(photo);LinearLayout detail=ui.column();ui.pad(detail,16,0);detail.addView(ui.title("Artista",15));TextView description=ui.text("Spotify",13,Ui.MUTED);detail.addView(description);ui.weight(hero,detail);content.addView(hero);
+        request("artists/"+route.id,json->{String url=Artwork.url(json);if(!url.isEmpty())artwork.load(photo,url);JSONObject followers=json.optJSONObject("followers");description.setText(followers!=null?String.format(new Locale("pt","BR"),"%,d seguidores",followers.optLong("total")):"Spotify");},e->{});
+        LinearLayout tracks=section("Músicas");String q="artist:\""+route.name.replace("\"","")+"\"";
+        Pager songs=new Pager(tracks,"search?type=track&limit=10&q="+SpotifyClient.encode(q),"track","",true,"");songs.artistId=route.id;songs.load();
+        for(String group:new String[]{"album","single","compilation"}){LinearLayout albums=section(group.equals("album")?"Álbuns":group.equals("single")?"Singles e EPs":"Coletâneas");new Pager(albums,"artists/"+route.id+"/albums?include_groups="+group+"&limit=10","album","",false,"").load();}
+    }
+    private void renderCollection(){
+        title(route.name);LinearLayout hero=ui.row();ImageView cover=image(route.image,132,false);hero.addView(cover);LinearLayout meta=ui.column();ui.pad(meta,16,0);TextView info=ui.text(route.page.equals("liked")?"Sua coleção":route.page.equals("album")?"Álbum":"Playlist",14,Ui.MUTED);meta.addView(info);
+        String context=route.page.equals("liked")?"":"spotify:"+route.page+":"+route.id;
+        TextView play=ui.pill("Reproduzir",true,()->{});meta.addView(play);ui.weight(hero,meta);content.addView(hero);
+        LinearLayout list=section("Músicas");String endpoint=route.page.equals("liked")?"me/tracks?limit=10":route.page+"s/"+route.id+(route.page.equals("album")?"/tracks?limit=10":"/items?limit=10");
+        Pager pager=new Pager(list,endpoint,"track",route.page.equals("liked")?"track":route.page.equals("playlist")?"item":"",false,context);pager.fallbackImage=route.image;play.setOnClickListener(v->{if(!pager.items.isEmpty())host.playTracks(pager.items,0,context,pager.items.get(0));else host.notice("Aguarde as músicas carregarem.");});pager.load();
+        if(!route.page.equals("liked"))request(route.page+"s/"+route.id,json->{String img=Artwork.url(json);if(!img.isEmpty()){artwork.load(cover,img);pager.fallbackImage=img;}String description=artists(json);if(route.page.equals("playlist")){JSONObject owner=json.optJSONObject("owner");description=owner==null?"Playlist":owner.optString("display_name");}else description+=" • "+json.optString("release_date","");info.setText(description);JSONArray artists=json.optJSONArray("artists");if(artists!=null&&artists.length()>0){JSONObject a=artists.optJSONObject(0);if(a!=null){info.setTextColor(Ui.BLUE);info.setOnClickListener(v->openEntity(a,"artist"));}}},e->{});
+    }
+    /** One pager owns one section and one monotonically growing playback queue. */
+    private final class Pager {
+        final LinearLayout target;final String kind,wrapper,context;final boolean search;
+        final ArrayList<JSONObject> items=new ArrayList<>();final Set<String> seen=new HashSet<>();
+        String next,artistId="",fallbackImage="";boolean busy;int sourceOffset;TextView control;
+        Pager(LinearLayout target,String url,String kind,String wrapper,boolean search,String context){this.target=target;next=url;this.kind=kind;this.wrapper=wrapper;this.search=search;this.context=context;}
+        void load(){if(busy||next.isEmpty())return;busy=true;if(control!=null)target.removeView(control);control=message(target,"Carregando…");String path=next;
+            request(path,json->{busy=false;target.removeView(control);JSONObject group=search?json.optJSONObject(kind+"s"):kind.equals("artist")&&json.optJSONObject("artists")!=null?json.optJSONObject("artists"):json;JSONArray array=group==null?null:group.optJSONArray("items");if(array!=null)for(int i=0;i<array.length();i++){int sourceIndex=sourceOffset++;JSONObject item=array.optJSONObject(i);if(item==null)continue;if(!wrapper.isEmpty()){JSONObject nested=item.optJSONObject(wrapper);if(nested==null&&kind.equals("track"))nested=item.optJSONObject("track");if(nested==null)nested=item.optJSONObject("item");if(nested==null)continue;item=nested;}if(!artistId.isEmpty()&&!hasArtist(item,artistId))continue;String key=item.optString("uri",item.optString("id"));if((context.isEmpty()||!kind.equals("track"))&&!seen.add(key))continue;if(!context.isEmpty())try{item.put("_contextIndex",sourceIndex);}catch(JSONException ignored){}int index=items.size();items.add(item);if(kind.equals("track"))song(target,item,items,context,index,fallbackImage);else entityRow(target,item,kind);}next=group==null?"":safe(group,"next");if(items.isEmpty())message(target,"Nenhum item disponível.");if(!next.isEmpty()){control=ui.action("Carregar mais",this::load);target.addView(control);}},error->{busy=false;target.removeView(control);control=ui.action(error.contains("403")?"Atualizar autorização da biblioteca":error+" • Tentar novamente",error.contains("403")?host::login:this::load);target.addView(control);});
+        }
+    }
+    private static boolean hasArtist(JSONObject track,String id){JSONArray list=track.optJSONArray("artists");if(list!=null)for(int i=0;i<list.length();i++){JSONObject a=list.optJSONObject(i);if(a!=null&&id.equals(a.optString("id")))return true;}return false;}
+}

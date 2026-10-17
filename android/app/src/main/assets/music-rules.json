@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "tones": {
+    "intenso": {"words": ["anger", "rage", "fight", "scream", "fire", "hate", "furious", "raiva", "grito", "ódio", "fúria", "luta", "fogo", "rabia"], "genres": ["metal", "punk", "hardcore", "grunge", "industrial"]},
+    "contemplativo": {"words": ["lonely", "alone", "sad", "tears", "cry", "rain", "lost", "remember", "saudade", "solidão", "triste", "choro", "lágrimas", "lembrar", "llorar", "tristeza"], "genres": ["ambient", "shoegaze", "folk", "blues", "slowcore"]},
+    "afetivo": {"words": ["love", "kiss", "heart", "darling", "together", "amor", "beijo", "coração", "abraço", "carinho", "amar", "beso", "corazón"], "genres": ["soul", "r&b", "bossa", "romantic"]},
+    "festivo": {"words": ["dance", "party", "happy", "celebrate", "smile", "joy", "dançar", "festa", "feliz", "alegria", "sorriso", "celebrar", "bailar", "fiesta"], "genres": ["disco", "funk", "dance", "house", "samba", "ska"]}
+  },
+  "recommendations": [
+    {"genres": ["grunge", "alternative rock"], "artists": ["Nirvana", "Alice In Chains", "Soundgarden", "Pearl Jam", "Mudhoney", "Veruca Salt", "The Breeders"]},
+    {"genres": ["punk", "ska", "hardcore"], "artists": ["Ramones", "Green Day", "The Distillers", "Rancid", "Bad Religion", "Bikini Kill"]},
+    {"genres": ["metal", "thrash"], "artists": ["Metallica", "Megadeth", "Anthrax", "Testament", "Sepultura", "Slayer"]},
+    {"genres": ["rock", "indie", "shoegaze"], "artists": ["Pixies", "Sonic Youth", "Dinosaur Jr.", "Garbage", "Slowdive", "The Breeders"]},
+    {"genres": ["folk", "acoustic"], "artists": ["Nick Drake", "Joni Mitchell", "Elliott Smith", "Laura Marling"]},
+    {"genres": ["soul", "r&b", "funk", "disco"], "artists": ["Curtis Mayfield", "Erykah Badu", "Stevie Wonder", "Parliament"]},
+    {"genres": ["ambient", "electronic", "house", "dance"], "artists": ["Brian Eno", "Boards of Canada", "Bonobo", "Tycho"]},
+    {"genres": ["samba", "bossa", "mpb"], "artists": ["Cartola", "Elis Regina", "Jorge Ben Jor", "Marisa Monte"]}
+  ]
+}

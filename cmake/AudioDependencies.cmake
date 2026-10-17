@@ -1,0 +1,48 @@
+set(TONAL_ADVANCED_AUDIO ON) # The integrated engine has a runtime bypass/fallback.
+option(TONAL_ENABLE_IAMF "Enable validated libiamf + OAR binaural adapter" OFF)
+set(TONAL_AUDIO_DEPS "${CMAKE_SOURCE_DIR}/out/audio-deps" CACHE PATH "Pinned local dependency cache")
+set(TONAL_FFMPEG_ROOT "${TONAL_AUDIO_DEPS}/ffmpeg/ffmpeg-n8.1-latest-win64-lgpl-shared-8.1" CACHE PATH "FFmpeg matching SDK/runtime")
+if(TONAL_ADVANCED_AUDIO)
+    foreach(component avutil avcodec avformat avfilter swresample)
+        find_library(FFMPEG_${component}_LIB NAMES ${component} PATHS "${TONAL_FFMPEG_ROOT}/lib" NO_DEFAULT_PATH REQUIRED)
+        add_library(FFmpeg::${component} UNKNOWN IMPORTED)
+        set_target_properties(FFmpeg::${component} PROPERTIES IMPORTED_LOCATION "${FFMPEG_${component}_LIB}" INTERFACE_INCLUDE_DIRECTORIES "${TONAL_FFMPEG_ROOT}/include")
+    endforeach()
+    set(ALSOFT_UTILS OFF CACHE BOOL "" FORCE)
+    set(ALSOFT_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(ALSOFT_TESTS OFF CACHE BOOL "" FORCE)
+    set(ALSOFT_INSTALL OFF CACHE BOOL "" FORCE)
+    set(ALSOFT_INSTALL_CONFIG OFF CACHE BOOL "" FORCE)
+    set(ALSOFT_INSTALL_HRTF_DATA OFF CACHE BOOL "" FORCE)
+    set(ALSOFT_INSTALL_AMBDEC_PRESETS OFF CACHE BOOL "" FORCE)
+    add_subdirectory("${TONAL_AUDIO_DEPS}/openal-soft" "${CMAKE_BINARY_DIR}/openal" EXCLUDE_FROM_ALL)
+    add_library(tonal_audio STATIC
+        src/audio/AudioFrame.hpp src/audio/AudioDiagnostics.hpp src/audio/AudioSettings.cpp src/audio/AudioSettings.hpp
+        src/audio/DspGraph.cpp src/audio/DspGraph.hpp src/audio/FfmpegDecoder.cpp src/audio/FfmpegDecoder.hpp
+        src/audio/LoudnessAnalyzer.cpp src/audio/LoudnessAnalyzer.hpp
+        src/audio/OpenALOutput.cpp src/audio/OpenALOutput.hpp
+        src/audio/NativePcmPipe.cpp src/audio/NativePcmPipe.hpp
+        src/audio/IamfDecoderAdapter.cpp src/audio/IamfDecoderAdapter.hpp
+        src/audio/AudioEngine.cpp src/audio/AudioEngine.hpp)
+    target_include_directories(tonal_audio PUBLIC "${CMAKE_SOURCE_DIR}/src")
+    target_link_libraries(tonal_audio PUBLIC Qt6::Core OpenAL::OpenAL FFmpeg::avutil FFmpeg::avcodec FFmpeg::avformat FFmpeg::avfilter FFmpeg::swresample)
+    target_compile_definitions(tonal_audio PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
+    if(MSVC)
+        target_compile_options(tonal_audio PRIVATE /utf-8 /W4)
+    endif()
+    file(GLOB TONAL_AUDIO_DLLS "${TONAL_FFMPEG_ROOT}/bin/*.dll")
+    list(FILTER TONAL_AUDIO_DLLS EXCLUDE REGEX "avdevice-[0-9]+\\.dll$")
+    if(TONAL_ENABLE_IAMF)
+        find_library(TONAL_IAMF_LIBRARY NAMES iamf PATHS "${TONAL_AUDIO_DEPS}/iamf-build" NO_DEFAULT_PATH REQUIRED)
+        if(NOT EXISTS "${TONAL_AUDIO_DEPS}/iamf-build/iamf.dll")
+            message(FATAL_ERROR "Compile libiamf/OAR before enabling TONAL_ENABLE_IAMF")
+        endif()
+        target_include_directories(tonal_audio PRIVATE "${TONAL_AUDIO_DEPS}/libiamf-src/code/include")
+        target_link_libraries(tonal_audio PUBLIC "${TONAL_IAMF_LIBRARY}")
+        target_compile_definitions(tonal_audio PUBLIC TONAL_WITH_IAMF=1)
+        list(APPEND TONAL_AUDIO_DLLS "${TONAL_AUDIO_DEPS}/iamf-build/iamf.dll")
+    endif()
+    function(tonal_deploy_audio target)
+        add_custom_command(TARGET ${target} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TONAL_AUDIO_DLLS} "$<TARGET_FILE_DIR:${target}>" COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:OpenAL>" "$<TARGET_FILE:Qt6::Core>" "$<TARGET_FILE_DIR:${target}>" VERBATIM)
+    endfunction()
+endif()

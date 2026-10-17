@@ -15,6 +15,10 @@ class QQmlEngine;
 #include "Player.h"
 #include "SetlistFm.h"
 #include "SpotifyApi.h"
+#include "audio/AudioEngine.hpp"
+#include "indie/CatalogService.h"
+#include "indie/HubController.h"
+#include "companion/MusicCompanion.h"
 
 // Registro dos tipos C++ que o QML enxerga (sem criação pelo QML).
 struct AuthManagerForeign {
@@ -22,6 +26,14 @@ struct AuthManagerForeign {
     QML_FOREIGN(AuthManager)
     QML_ANONYMOUS
 };
+struct AudioEngineForeign {
+    Q_GADGET
+    QML_FOREIGN(tonal::audio::AudioEngine)
+    QML_ANONYMOUS
+};
+struct IndieCatalogForeign { Q_GADGET QML_FOREIGN(CatalogService) QML_ANONYMOUS };
+struct TonalHubForeign { Q_GADGET QML_FOREIGN(HubController) QML_ANONYMOUS };
+struct MusicCompanionForeign { Q_GADGET QML_FOREIGN(MusicCompanion) QML_ANONYMOUS };
 struct SpotifyApiForeign {
     Q_GADGET
     QML_FOREIGN(SpotifyApi)
@@ -62,7 +74,11 @@ class App : public QObject
     Q_PROPERTY(LibrespotProcess *librespot READ librespot CONSTANT)
     Q_PROPERTY(Lyrics *lyrics READ lyrics CONSTANT)
     Q_PROPERTY(SetlistFm *setlistFm READ setlistFm CONSTANT)
+    Q_PROPERTY(tonal::audio::AudioEngine *audio READ audio CONSTANT)
     Q_PROPERTY(QString version READ version CONSTANT)
+    Q_PROPERTY(CatalogService *discovery READ discovery CONSTANT)
+    Q_PROPERTY(HubController *hub READ hub CONSTANT)
+    Q_PROPERTY(MusicCompanion *music READ music CONSTANT)
     // Idioma em uso nesta execução: "pt" ou "en".
     Q_PROPERTY(QString language READ language CONSTANT)
 
@@ -82,7 +98,11 @@ public:
     LibrespotProcess *librespot() const { return m_librespot; }
     Lyrics *lyrics() const { return m_lyrics; }
     SetlistFm *setlistFm() const { return m_setlistFm; }
+    tonal::audio::AudioEngine *audio() const { return m_audio; }
     QString version() const;
+    CatalogService *discovery() const { return m_discovery; }
+    HubController *hub() const { return m_hub; }
+    MusicCompanion *music() const { return m_music; }
     QString language() const;
 
     // Idioma do próximo início: o salvo no menu ou, sem escolha, o do Windows (português ou, senão, inglês).
@@ -109,8 +129,12 @@ private:
     QHash<QString, QString> m_colorCache;
     AuthManager *m_auth;
     SpotifyApi *m_api;
+    tonal::audio::AudioEngine *m_audio;
     LibrespotProcess *m_librespot;
     Player *m_player;
     Lyrics *m_lyrics;
     SetlistFm *m_setlistFm;
+    CatalogService *m_discovery;
+    HubController *m_hub;
+    MusicCompanion *m_music;
 };

@@ -20,12 +20,12 @@ BEGIN
         BLOCK "041604B0" // português (Brasil), Unicode
         BEGIN
             VALUE "CompanyName", "Tonal"
-            VALUE "FileDescription", "Tonal"
+            VALUE "FileDescription", "Tonalify"
             VALUE "FileVersion", PROJECT_VERSION_STRING
             VALUE "InternalName", "Tonal"
             VALUE "LegalCopyright", "Copyright (c) 2026 Natheus. Licença MIT."
             VALUE "OriginalFilename", "Tonal.exe"
-            VALUE "ProductName", "Tonal"
+            VALUE "ProductName", "Tonalify"
             VALUE "ProductVersion", PROJECT_VERSION_STRING
         END
     END

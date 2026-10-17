@@ -1,0 +1,821 @@
+{
+  "version": "Tonal Hub 0.1.2-local",
+  "recorded_at_utc": "2026-10-16T23:18:53.763890+00:00",
+  "platform": "Windows x64",
+  "local_only": true,
+  "portable_checks": [
+    {
+      "program": "TonalHub.exe",
+      "exit_code": 0,
+      "passed": true
+    },
+    {
+      "program": "IndieTonal.exe",
+      "exit_code": 0,
+      "passed": true
+    },
+    {
+      "program": "Tonalify.exe",
+      "exit_code": 0,
+      "passed": true
+    }
+  ],
+  "ctest": [
+    {
+      "name": "indie_catalog_unit",
+      "passed": true
+    },
+    {
+      "name": "indie_ui_smoke",
+      "passed": true
+    },
+    {
+      "name": "hub_ui_smoke",
+      "passed": true
+    },
+    {
+      "name": "spotify_recovery",
+      "passed": true
+    },
+    {
+      "name": "audio_integration",
+      "passed": true
+    },
+    {
+      "name": "audio_ui_smoke",
+      "passed": true
+    }
+  ],
+  "portable_tests_passed": true,
+  "private_runtime_files_packaged": false,
+  "artifacts": [
+    {
+      "path": "out/release-local/Tonal-Hub-0.1.2-local/TonalHub.exe",
+      "bytes": 56832,
+      "sha256": "2a2c562f789ad77903b2f8dfbb0ae74f05870128302077e54bd81fed3e20fcf7"
+    },
+    {
+      "path": "out/release-local/Tonal-Hub-0.1.2-local/Tonalify.exe",
+      "bytes": 2369024,
+      "sha256": "d1dd328b9744c397f563120b705939b5016534e08e9b1a5d0b7d3861f5a52902"
+    },
+    {
+      "path": "out/release-local/Tonal-Hub-0.1.2-local/IndieTonal.exe",
+      "bytes": 336896,
+      "sha256": "ab28acf8b2a8000e0f38d7d7c7ceab7846079e7a8a9a5efb5ac1bbea60311d66"
+    },
+    {
+      "path": "out/release-local/Tonal-Hub-0.1.2-local.zip",
+      "bytes": 110205836,
+      "sha256": "050d4ae74b985de8c8fd81fc28c094f4cc489eeab7bdb663c24993231f787c06"
+    }
+  ],
+  "archive_integrity": {
+    "passed": true,
+    "files": 1398,
+    "all_crc_verified": true,
+    "executables_match_portable_directory": true
+  },
+  "ipc": {
+    "passed": true,
+    "credentials_accessed": false,
+    "public_api_requests": 0,
+    "indie": {
+      "busy": false,
+      "durationMs": 12000,
+      "items": [],
+      "liveStatus": "",
+      "messages": [
+        "Busca: Digite pelo menos dois caracteres"
+      ],
+      "playing": false,
+      "positionMs": 1130,
+      "query": "x"
+    },
+    "hub_single_instance": true
+  },
+  "render": {
+    "passed": true,
+    "screens": [
+      {
+        "screen": "hub-ui",
+        "rendered": true,
+        "bytes": 31875
+      },
+      {
+        "screen": "indie-effects-ui",
+        "rendered": true,
+        "bytes": 55287,
+        "first_result": null,
+        "live_shows_loaded": 0,
+        "live_status": "",
+        "catalog_busy": false,
+        "catalog_messages": []
+      },
+      {
+        "screen": "indie-connections-ui",
+        "rendered": true,
+        "bytes": 59400,
+        "first_result": null,
+        "live_shows_loaded": 0,
+        "live_status": "",
+        "catalog_busy": false,
+        "catalog_messages": []
+      },
+      {
+        "screen": "indie-results-ui",
+        "rendered": true,
+        "bytes": 68588,
+        "first_result": {
+          "artist": "",
+          "detail": "Catálogo MusicBrainz • Banda / grupo • US • 1980s–1990s US grunge band",
+          "id": "5b11f4ce-a62d-471e-81fc-a69a8278c7da",
+          "image": "",
+          "kind": "artist",
+          "playable": false,
+          "provider": "MusicBrainz",
+          "searchScore": 100,
+          "title": "Nirvana",
+          "url": "https://musicbrainz.org/artist/5b11f4ce-a62d-471e-81fc-a69a8278c7da"
+        },
+        "live_shows_loaded": 6,
+        "live_status": "Shows ao vivo: 6 registros; 0 nesta página com nome exato do artista. Confira tributos e menções.",
+        "catalog_busy": false,
+        "catalog_messages": [
+          "Jamendo: Configure um client ID próprio ativo em Conexões.",
+          "OpenSubsonic: Configure sua biblioteca ou coleção Bandcamp em Conexões."
+        ]
+      },
+      {
+        "screen": "indie-veruca-ui",
+        "rendered": true,
+        "bytes": 75315,
+        "first_result": {
+          "artist": "",
+          "detail": "Catálogo MusicBrainz • Banda / grupo • US • ",
+          "id": "86e8e21a-d29f-47d2-bbf0-e079f7044e71",
+          "image": "",
+          "kind": "artist",
+          "playable": false,
+          "provider": "MusicBrainz",
+          "searchScore": 100,
+          "title": "Veruca Salt",
+          "url": "https://musicbrainz.org/artist/86e8e21a-d29f-47d2-bbf0-e079f7044e71"
+        },
+        "live_shows_loaded": 0,
+        "live_status": "Nenhum show encontrado para esta busca no Live Music Archive. O acervo não inclui todas as bandas.",
+        "catalog_busy": false,
+        "catalog_messages": [
+          "Jamendo: Configure um client ID próprio ativo em Conexões.",
+          "OpenSubsonic: Configure sua biblioteca ou coleção Bandcamp em Conexões."
+        ]
+      },
+      {
+        "screen": "indie-live-ui",
+        "rendered": true,
+        "bytes": 86888,
+        "first_result": {
+          "artist": "",
+          "detail": "Catálogo MusicBrainz • Banda / grupo • AU • ",
+          "id": "f58384a4-2ad2-4f24-89c5-c7b74ae1cce7",
+          "image": "",
+          "kind": "artist",
+          "playable": false,
+          "provider": "MusicBrainz",
+          "searchScore": 100,
+          "title": "King Gizzard & the Lizard Wizard",
+          "url": "https://musicbrainz.org/artist/f58384a4-2ad2-4f24-89c5-c7b74ae1cce7"
+        },
+        "live_shows_loaded": 20,
+        "live_status": "Shows ao vivo: 494 registros; 20 nesta página com nome exato do artista. Confira tributos e menções.",
+        "catalog_busy": false,
+        "catalog_messages": [
+          "Jamendo: Configure um client ID próprio ativo em Conexões.",
+          "OpenSubsonic: Configure sua biblioteca ou coleção Bandcamp em Conexões."
+        ]
+      }
+    ],
+    "spotify_credentials_accessed": false
+  },
+  "spotify_recovery": {
+    "credentials_read": false,
+    "passed": true,
+    "real_spotify_session": false,
+    "recorded_at_utc": "2026-10-16T23:17:10Z",
+    "scenarios": [
+      "unexpected_process_exit",
+      "PCM_EOF_while_child_alive",
+      "no_PCM_progress",
+      "Rust_panic",
+      "intentional_pause_not_restarted",
+      "bounded_crash_loop_and_explicit_restart",
+      "API_and_token_total_deadlines",
+      "resume_position_and_queue",
+      "new_selection_during_reconnect",
+      "cancelled_resume_does_not_reissue_play",
+      "GUI_heartbeat_during_recovery"
+    ]
+  },
+  "spotify_live_before_fix": {
+    "credentials_logged": false,
+    "error": "Live engine/device did not become ready",
+    "passed": false,
+    "physical_audio_tested": false,
+    "real_spotify_session": true,
+    "recorded_at_utc": "2026-10-16T23:10:12Z"
+  },
+  "spotify_live_session": {
+    "credentials_logged": false,
+    "passed": false,
+    "physical_audio_tested": false,
+    "real_spotify_session": true,
+    "recorded_at_utc": "2026-10-16T23:14:43Z",
+    "skipped": "Playback already active; left the user's session untouched"
+  },
+  "spotify_live_readiness": {
+    "credentials_logged": false,
+    "device_discovered": true,
+    "engine_ready": true,
+    "passed": true,
+    "physical_audio_tested": false,
+    "playback_commands_sent": 0,
+    "readiness_only": true,
+    "real_spotify_session": true,
+    "recorded_at_utc": "2026-10-16T23:17:05Z"
+  },
+  "live_bands": {
+    "recorded_at_utc": "2026-10-16T18:45:54.547021+00:00",
+    "source": "Internet Archive collection:etree (Live Music Archive)",
+    "spotify_credentials_read": false,
+    "bands": [
+      {
+        "band": "Nirvana",
+        "query_url": "https://archive.org/advancedsearch.php?q=collection%3Aetree+AND+mediatype%3Aetree+AND+%28creator%3A%22Nirvana%22+OR+title%3A%22Nirvana%22%29&output=json&rows=20&sort%5B%5D=downloads+desc&fl%5B%5D=identifier%2Ctitle%2Ccreator%2Cdate%2Cmediatype",
+        "total_query_hits": 6,
+        "sampled_results": [
+          {
+            "creator": "Pickin' On Nirvana",
+            "date": "2017-11-16T00:00:00Z",
+            "identifier": "PickinOnNirvana2017-11-16.AKG.P170.SBD.Matrix",
+            "mediatype": "etree",
+            "title": "Pickin' On Nirvana Live at Cervantes: The Other Side on 2017-11-16"
+          },
+          {
+            "creator": "Mihali, Nirvana, Lespecial,Shawn Eckles,",
+            "date": "2026-04-03T00:00:00Z",
+            "identifier": "Mihali2026-04-03.WilcoxRecording",
+            "mediatype": "etree",
+            "title": "Mihali Live at Paradise Rock Club on 2026-04-03"
+          },
+          {
+            "creator": "Nirvanna - Tribute to Nirvana",
+            "date": "2026-03-13T00:00:00Z",
+            "identifier": "nirvanna2026-03-13",
+            "mediatype": "etree",
+            "title": "Nirvanna - Tribute to Nirvana Live at House of Blues on 2026-03-13"
+          },
+          {
+            "creator": "Nirvanna - Tribute to Nirvana",
+            "date": "2025-03-08T00:00:00Z",
+            "identifier": "nirvanna2025-03-08.audience",
+            "mediatype": "etree",
+            "title": "Nirvanna - Tribute to Nirvana Live at House of Blues on 2025-03-08"
+          },
+          {
+            "creator": "Nirvanna - Tribute to Nirvana",
+            "date": "2024-01-06T00:00:00Z",
+            "identifier": "nirvanna2024-01-06.flac16",
+            "mediatype": "etree",
+            "title": "Nirvanna - Tribute to Nirvana Live at Zydeco on 2024-01-06"
+          },
+          {
+            "creator": "Nirvanna - Tribute to Nirvana",
+            "date": "2024-01-06T00:00:00Z",
+            "identifier": "nirvanna2024-01-06.flac24",
+            "mediatype": "etree",
+            "title": "Nirvanna - Tribute to Nirvana Live at Zydeco on 2024-01-06"
+          }
+        ],
+        "exact_creator_hits_in_sample": 0,
+        "metadata_checks": []
+      },
+      {
+        "band": "Alice In Chains",
+        "query_url": "https://archive.org/advancedsearch.php?q=collection%3Aetree+AND+mediatype%3Aetree+AND+%28creator%3A%22Alice+In+Chains%22+OR+title%3A%22Alice+In+Chains%22%29&output=json&rows=20&sort%5B%5D=downloads+desc&fl%5B%5D=identifier%2Ctitle%2Ccreator%2Cdate%2Cmediatype",
+        "total_query_hits": 0,
+        "sampled_results": [],
+        "exact_creator_hits_in_sample": 0,
+        "metadata_checks": []
+      },
+      {
+        "band": "Metallica",
+        "query_url": "https://archive.org/advancedsearch.php?q=collection%3Aetree+AND+mediatype%3Aetree+AND+%28creator%3A%22Metallica%22+OR+title%3A%22Metallica%22%29&output=json&rows=20&sort%5B%5D=downloads+desc&fl%5B%5D=identifier%2Ctitle%2Ccreator%2Cdate%2Cmediatype",
+        "total_query_hits": 0,
+        "sampled_results": [],
+        "exact_creator_hits_in_sample": 0,
+        "metadata_checks": []
+      },
+      {
+        "band": "Soundgarden",
+        "query_url": "https://archive.org/advancedsearch.php?q=collection%3Aetree+AND+mediatype%3Aetree+AND+%28creator%3A%22Soundgarden%22+OR+title%3A%22Soundgarden%22%29&output=json&rows=20&sort%5B%5D=downloads+desc&fl%5B%5D=identifier%2Ctitle%2Ccreator%2Cdate%2Cmediatype",
+        "total_query_hits": 0,
+        "sampled_results": [],
+        "exact_creator_hits_in_sample": 0,
+        "metadata_checks": []
+      },
+      {
+        "band": "Green Day",
+        "query_url": "https://archive.org/advancedsearch.php?q=collection%3Aetree+AND+mediatype%3Aetree+AND+%28creator%3A%22Green+Day%22+OR+title%3A%22Green+Day%22%29&output=json&rows=20&sort%5B%5D=downloads+desc&fl%5B%5D=identifier%2Ctitle%2Ccreator%2Cdate%2Cmediatype",
+        "total_query_hits": 0,
+        "sampled_results": [],
+        "exact_creator_hits_in_sample": 0,
+        "metadata_checks": []
+      },
+      {
+        "band": "Ramones",
+        "query_url": "https://archive.org/advancedsearch.php?q=collection%3Aetree+AND+mediatype%3Aetree+AND+%28creator%3A%22Ramones%22+OR+title%3A%22Ramones%22%29&output=json&rows=20&sort%5B%5D=downloads+desc&fl%5B%5D=identifier%2Ctitle%2Ccreator%2Cdate%2Cmediatype",
+        "total_query_hits": 0,
+        "sampled_results": [],
+        "exact_creator_hits_in_sample": 0,
+        "metadata_checks": []
+      },
+      {
+        "band": "The Distillers",
+        "query_url": "https://archive.org/advancedsearch.php?q=collection%3Aetree+AND+mediatype%3Aetree+AND+%28creator%3A%22The+Distillers%22+OR+title%3A%22The+Distillers%22%29&output=json&rows=20&sort%5B%5D=downloads+desc&fl%5B%5D=identifier%2Ctitle%2Ccreator%2Cdate%2Cmediatype",
+        "total_query_hits": 0,
+        "sampled_results": [],
+        "exact_creator_hits_in_sample": 0,
+        "metadata_checks": []
+      },
+      {
+        "band": "Veruca Salt",
+        "query_url": "https://archive.org/advancedsearch.php?q=collection%3Aetree+AND+mediatype%3Aetree+AND+%28creator%3A%22Veruca+Salt%22+OR+title%3A%22Veruca+Salt%22%29&output=json&rows=20&sort%5B%5D=downloads+desc&fl%5B%5D=identifier%2Ctitle%2Ccreator%2Cdate%2Cmediatype",
+        "total_query_hits": 0,
+        "sampled_results": [],
+        "exact_creator_hits_in_sample": 0,
+        "metadata_checks": []
+      },
+      {
+        "band": "Dinosaur Jr.",
+        "query_url": "https://archive.org/advancedsearch.php?q=collection%3Aetree+AND+mediatype%3Aetree+AND+%28creator%3A%22Dinosaur+Jr.%22+OR+title%3A%22Dinosaur+Jr.%22%29&output=json&rows=20&sort%5B%5D=downloads+desc&fl%5B%5D=identifier%2Ctitle%2Ccreator%2Cdate%2Cmediatype",
+        "total_query_hits": 0,
+        "sampled_results": [],
+        "exact_creator_hits_in_sample": 0,
+        "metadata_checks": []
+      },
+      {
+        "band": "King Gizzard & The Lizard Wizard",
+        "query_url": "https://archive.org/advancedsearch.php?q=collection%3Aetree+AND+mediatype%3Aetree+AND+%28creator%3A%22King+Gizzard+%26+The+Lizard+Wizard%22+OR+title%3A%22King+Gizzard+%26+The+Lizard+Wizard%22%29&output=json&rows=20&sort%5B%5D=downloads+desc&fl%5B%5D=identifier%2Ctitle%2Ccreator%2Cdate%2Cmediatype",
+        "total_query_hits": 494,
+        "sampled_results": [
+          {
+            "creator": "King Gizzard & The Lizard Wizard",
+            "date": "2022-10-23T00:00:00Z",
+            "identifier": "kglw2022-10-23.vwmule",
+            "mediatype": "etree",
+            "title": "King Gizzard & The Lizard Wizard Live at The Anthem on 2022-10-23"
+          },
+          {
+            "creator": "King Gizzard & The Lizard Wizard",
+            "date": "2023-06-21T00:00:00Z",
+            "identifier": "kglw2023-06-21.MC59W",
+            "mediatype": "etree",
+            "title": "King Gizzard & The Lizard Wizard Live at Hollywood Bowl on 2023-06-21"
+          },
+          {
+            "creator": "King Gizzard & The Lizard Wizard",
+            "date": "2024-08-17T00:00:00Z",
+            "identifier": "kglw2024-08-17",
+            "mediatype": "etree",
+            "title": "King Gizzard & The Lizard Wizard Live at Forest Hills Tennis Stadium on 2024-08-17"
+          },
+          {
+            "creator": "King Gizzard & The Lizard Wizard",
+            "date": "2024-05-31T00:00:00Z",
+            "identifier": "kglw2024-05-31.Brighton24",
+            "mediatype": "etree",
+            "title": "King Gizzard & The Lizard Wizard Live at Brighton Dome on 2024-05-31"
+          },
+          {
+            "creator": "King Gizzard & The Lizard Wizard",
+            "date": "2022-10-26T00:00:00Z",
+            "identifier": "kglw2022-10-26.vwmule",
+            "mediatype": "etree",
+            "title": "King Gizzard & The Lizard Wizard Live at The Eastern on 2022-10-26"
+          },
+          {
+            "creator": "King Gizzard & The Lizard Wizard",
+            "date": "2025-07-28T00:00:00Z",
+            "identifier": "kglw2025-07-28.SchoepsMK41.Burns.Flac24",
+            "mediatype": "etree",
+            "title": "King Gizzard & The Lizard Wizard Live at The Mann Music Center on 2025-07-28"
+          },
+          {
+            "creator": "King Gizzard & The Lizard Wizard",
+            "date": "2022-10-02T00:00:00Z",
+            "identifier": "kglw2022-10-02",
+            "mediatype": "etree",
+            "title": "King Gizzard & The Lizard Wizard Live at William Randolph Hearst Greek Theatre on 2022-10-02"
+          },
+          {
+            "creator": "King Gizzard & The Lizard Wizard",
+            "date": "2023-06-08T00:00:00Z",
+            "identifier": "kglw2023-06-08.Burns.Schoeps.MK41.Flac24",
+            "mediatype": "etree",
+            "title": "King Gizzard & The Lizard Wizard Live at Red Rocks Amphitheatre on 2023-06-08"
+          },
+          {
+            "creator": "King Gizzard & The Lizard Wizard",
+            "date": "2023-06-04T00:00:00Z",
+            "identifier": "kglw2023-06-04",
+            "mediatype": "etree",
+            "title": "King Gizzard & The Lizard Wizard Live at The Caverns Ampitheater Outdoor Stage on 2023-06-04"
+          },
+          {
+            "creator": "King Gizzard & The Lizard Wizard",
+            "date": "2022-10-22T00:00:00Z",
+            "identifier": "kglw2022-10-22.ScheopsMK41.Flac24",
+            "mediatype": "etree",
+            "title": "King Gizzard & The Lizard Wizard Live at Franklin Music Hall on 2022-10-22"
+          },
+          {
+            "creator": "King Gizzard & The Lizard Wizard",
+            "date": "2023-06-03T00:00:00Z",
+            "identifier": "kglw2023-06-03",
+            "mediatype": "etree",
+            "title": "King Gizzard & The Lizard Wizard Live at The Caverns Ampitheater Outdoor Stage on 2023-06-03"
+          },
+          {
+            "creator": "King Gizzard & The Lizard Wizard",
+            "date": "2022-10-10T00:00:00Z",
+            "identifier": "kglw2022-10-10.bootlegger",
+            "mediatype": "etree",
+            "title": "King Gizzard & The Lizard Wizard Live at Red Rocks Amphitheatre on 2022-10-10"
+          },
+          {
+            "creator": "King Gizzard & The Lizard Wizard",
+            "date": "2022-10-21T00:00:00Z",
+            "identifier": "kglw2022-10-21.BOOTS",
+            "mediatype": "etree",
+            "title": "King Gizzard & The Lizard Wizard Live at Forest Hills Stadium on 2022-10-21"
+          },
+          {
+            "creator": "King Gizzard & The Lizard Wizard",
+            "date": "2024-09-14T00:00:00Z",
+            "identifier": "kglw2024-09-14.bandcampbootlegger",
+            "mediatype": "etree",
+            "title": "King Gizzard & The Lizard Wizard Live at The Gorge Amphitheater on 2024-09-14"
+          },
+          {
+            "creator": "King Gizzard & The Lizard Wizard",
+            "date": "2023-06-01T00:00:00Z",
+            "identifier": "kglw2023-06-01",
+            "mediatype": "etree",
+            "title": "King Gizzard & The Lizard Wizard Live at The Caverns Underground on 2023-06-01"
+          },
+          {
+            "creator": "King Gizzard & The Lizard Wizard",
+            "date": "2023-06-18T00:00:00Z",
+            "identifier": "kglw2023-06-18.cbof",
+            "mediatype": "etree",
+            "title": "King Gizzard & The Lizard Wizard Live at Remlinger Farms on 2023-06-18"
+          },
+          {
+            "creator": "King Gizzard & The Lizard Wizard",
+            "date": "2023-06-07T00:00:00Z",
+            "identifier": "kglw2023-06-07.Burns.Schoeps.MK41.Flac24",
+            "mediatype": "etree",
+            "title": "King Gizzard & The Lizard Wizard Live at Red Rocks Amphitheatre on 2023-06-07"
+          },
+          {
+            "creator": "King Gizzard & The Lizard Wizard",
+            "date": "2024-08-15T00:00:00Z",
+            "identifier": "kglw2024-08-15.vwmule",
+            "mediatype": "etree",
+            "title": "King Gizzard & The Lizard Wizard Live at The Anthem on 2024-08-15"
+          },
+          {
+            "creator": "King Gizzard & The Lizard Wizard",
+            "date": "2023-06-07T00:00:00Z",
+            "identifier": "kglw2023-06-07",
+            "mediatype": "etree",
+            "title": "King Gizzard & The Lizard Wizard Live at Red Rocks on 2023-06-07"
+          },
+          {
+            "creator": "King Gizzard & The Lizard Wizard",
+            "date": "2022-10-29T00:00:00Z",
+            "identifier": "kglw2022-10-29",
+            "mediatype": "etree",
+            "title": "King Gizzard & The Lizard Wizard Live at Stubb's BBQ Waller Creek Amphitheater on 2022-10-29"
+          }
+        ],
+        "exact_creator_hits_in_sample": 20,
+        "metadata_checks": [
+          {
+            "id": "kglw2022-10-23.vwmule",
+            "restricted": false,
+            "public_mp3_files": 12
+          },
+          {
+            "id": "kglw2023-06-21.MC59W",
+            "restricted": false,
+            "public_mp3_files": 27
+          }
+        ]
+      },
+      {
+        "band": "Goose",
+        "query_url": "https://archive.org/advancedsearch.php?q=collection%3Aetree+AND+mediatype%3Aetree+AND+%28creator%3A%22Goose%22+OR+title%3A%22Goose%22%29&output=json&rows=20&sort%5B%5D=downloads+desc&fl%5B%5D=identifier%2Ctitle%2Ccreator%2Cdate%2Cmediatype",
+        "total_query_hits": 943,
+        "sampled_results": [
+          {
+            "creator": "Goose",
+            "date": "2022-06-25T00:00:00Z",
+            "identifier": "goose2022-06-25.matrix.stearns.flac16",
+            "mediatype": "etree",
+            "title": "Goose Live at Radio City Music Hall on 2022-06-25"
+          },
+          {
+            "creator": "Goose",
+            "date": "2022-02-26T00:00:00Z",
+            "identifier": "goose2022-02-26",
+            "mediatype": "etree",
+            "title": "Goose Live at Mohegan Sun Arena on 2022-02-26"
+          },
+          {
+            "creator": "Goose",
+            "date": "2022-11-09T00:00:00Z",
+            "identifier": "goose2022-11-09.AKG414",
+            "mediatype": "etree",
+            "title": "Goose Live at Cross Insurance Arena on 2022-11-09"
+          },
+          {
+            "creator": "Goose",
+            "date": "2021-06-12T00:00:00Z",
+            "identifier": "goose2021-06-12",
+            "mediatype": "etree",
+            "title": "Goose Live at Westville Music Bowl on 2021-06-12"
+          },
+          {
+            "creator": "Goose",
+            "date": "2021-07-10T00:00:00Z",
+            "identifier": "goose2021-07-10.mbho",
+            "mediatype": "etree",
+            "title": "Goose Live at Sculpture Park on 2021-07-10"
+          },
+          {
+            "creator": "Goose",
+            "date": "2021-10-30T00:00:00Z",
+            "identifier": "goose2021-10-30",
+            "mediatype": "etree",
+            "title": "Goose Live at The Palladium on 2021-10-30"
+          },
+          {
+            "creator": "Goose",
+            "date": "2020-10-03T00:00:00Z",
+            "identifier": "goose2020-10-03",
+            "mediatype": "etree",
+            "title": "Goose Live at Drive-In Live on 2020-10-03"
+          },
+          {
+            "creator": "Goose",
+            "date": "2022-06-25T00:00:00Z",
+            "identifier": "gooseband2022-06-25",
+            "mediatype": "etree",
+            "title": "Goose Live at Radio City Music Hall on 2022-06-25"
+          },
+          {
+            "creator": "Goose",
+            "date": "2019-06-29T00:00:00Z",
+            "identifier": "goose2019-06-29.CA14.cards.AUD.SBD.Matrix.flac16",
+            "mediatype": "etree",
+            "title": "Goose Live at Rancho Del Rio on 2019-06-29"
+          },
+          {
+            "creator": "Goose",
+            "date": "2020-10-15T00:00:00Z",
+            "identifier": "goose2020-10-15.16-44_Flac_Oktava_MidSide",
+            "mediatype": "etree",
+            "title": "Goose Live at Legend Valley on 2020-10-15"
+          },
+          {
+            "creator": "Goose",
+            "date": "2021-07-09T00:00:00Z",
+            "identifier": "goose2021-07-09.mk4",
+            "mediatype": "etree",
+            "title": "Goose Live at Sculpture Park, Denver CO on 2021-07-09"
+          },
+          {
+            "creator": "Goose",
+            "date": "2020-09-16T00:00:00Z",
+            "identifier": "goose2020-09-16.mk2S.flac16",
+            "mediatype": "etree",
+            "title": "Goose Live at South Farms on 2020-09-16"
+          },
+          {
+            "creator": "Goose",
+            "date": "2023-01-15T00:00:00Z",
+            "identifier": "goose2023-01-15.EJL95",
+            "mediatype": "etree",
+            "title": "Goose Live at Playing in the Sand on 2023-01-15"
+          },
+          {
+            "creator": "Goose",
+            "date": "2022-08-18T00:00:00Z",
+            "identifier": "goose2022-08-18.matrix.stearns.flac16",
+            "mediatype": "etree",
+            "title": "Goose Live at Red Rocks Amphitheatre on 2022-08-18"
+          },
+          {
+            "creator": "Goose",
+            "date": "2022-12-31T00:00:00Z",
+            "identifier": "goose2022-12-31.mk4v",
+            "mediatype": "etree",
+            "title": "Goose Live at Andrew J Brady Music Center on 2022-12-31"
+          },
+          {
+            "creator": "Goose",
+            "date": "2019-07-27T00:00:00Z",
+            "identifier": "goose2019-07-27.litz.akg414.flac16",
+            "mediatype": "etree",
+            "title": "Goose Live at The Peach Music Festival on 2019-07-27"
+          },
+          {
+            "creator": "Goose",
+            "date": "2021-05-06T00:00:00Z",
+            "identifier": "goose2021-05-06.peluso.flac24",
+            "mediatype": "etree",
+            "title": "Goose Live at Riverfront Park on 2021-05-06"
+          },
+          {
+            "creator": "Goose",
+            "date": "2021-04-09T00:00:00Z",
+            "identifier": "goose2021-04-09.schoeps.spyder9.flac16",
+            "mediatype": "etree",
+            "title": "Goose Live at Spirit of the Suwannee Music Park on 2021-04-09"
+          },
+          {
+            "creator": "Goose",
+            "date": "2020-01-24T00:00:00Z",
+            "identifier": "goose2020-01-24",
+            "mediatype": "etree",
+            "title": "Goose Live at Bowery Ballroom on 2020-01-24"
+          },
+          {
+            "creator": "Goose",
+            "date": "2022-01-28T00:00:00Z",
+            "identifier": "goose2022-01-28.tk62.logrippo.flac24",
+            "mediatype": "etree",
+            "title": "Goose Live at The Fonda Theatre on 2022-01-28"
+          }
+        ],
+        "exact_creator_hits_in_sample": 20,
+        "metadata_checks": [
+          {
+            "id": "goose2022-06-25.matrix.stearns.flac16",
+            "restricted": false,
+            "public_mp3_files": 22
+          },
+          {
+            "id": "goose2022-02-26",
+            "restricted": false,
+            "public_mp3_files": 20
+          }
+        ]
+      }
+    ]
+  },
+  "veruca_discography": {
+    "passed": true,
+    "phases": [
+      {
+        "heading": "Veruca Salt",
+        "itemsLoaded": 20,
+        "opening": {
+          "artist": "Veruca Salt",
+          "detail": "Somente discografia •  • ",
+          "id": "4706e589-cbbc-405e-ac13-2047a119c1d0",
+          "image": "",
+          "kind": "album",
+          "playable": false,
+          "provider": "MusicBrainz",
+          "title": "All Hail Me",
+          "url": "https://musicbrainz.org/release-group/4706e589-cbbc-405e-ac13-2047a119c1d0"
+        },
+        "provider": "MusicBrainz"
+      },
+      {
+        "heading": "All Hail Me",
+        "itemsLoaded": 1,
+        "opening": {
+          "artist": "Veruca Salt",
+          "detail": "Somente discografia •  • 1995",
+          "id": "349f9861-3e85-4959-8771-066ec1d9e9a9",
+          "image": "",
+          "kind": "release",
+          "playable": false,
+          "provider": "MusicBrainz",
+          "title": "All Hail Me",
+          "url": "https://musicbrainz.org/release/349f9861-3e85-4959-8771-066ec1d9e9a9"
+        },
+        "provider": "MusicBrainz"
+      },
+      {
+        "detailDepth": 3,
+        "heading": "All Hail Me",
+        "provider": "MusicBrainz",
+        "releasesLoaded": 3
+      }
+    ],
+    "recordedAt": "2026-10-16T18:51:16Z",
+    "spotifyCredentialsRead": false
+  },
+  "live_rock_pcm": {
+    "passed": true,
+    "phases": [
+      {
+        "metrics": {
+          "averageDspUs": 205.35465116279067,
+          "binaural": false,
+          "channels": 2,
+          "hrtfActive": false,
+          "invalidSamples": 0,
+          "overFullScale": 0,
+          "peakDbfs": -23.565433117781815,
+          "sampleRate": 48000,
+          "underruns": 0
+        },
+        "pcmPlaybackPassed": true,
+        "positionMs": 1952,
+        "provider": "Live Music Archive"
+      }
+    ],
+    "recordedAt": "2026-10-16T18:48:10Z",
+    "spotifyCredentialsRead": false
+  },
+  "lma_individual": {
+    "passed": true,
+    "phases": [
+      {
+        "metrics": {
+          "averageDspUs": 255.21499999999992,
+          "binaural": false,
+          "channels": 2,
+          "hrtfActive": false,
+          "invalidSamples": 0,
+          "overFullScale": 0,
+          "peakDbfs": -13.795168595144009,
+          "sampleRate": 44100,
+          "underruns": 0
+        },
+        "pcmPlaybackPassed": true,
+        "positionMs": 1962,
+        "provider": "Live Music Archive"
+      }
+    ],
+    "recordedAt": "2026-10-16T17:37:36Z",
+    "spotifyCredentialsRead": false
+  },
+  "joint_network_run": {
+    "passed": false,
+    "phases": [
+      {
+        "metrics": {
+          "averageDspUs": 528.2850574712643,
+          "binaural": false,
+          "channels": 2,
+          "hrtfActive": false,
+          "invalidSamples": 0,
+          "overFullScale": 0,
+          "peakDbfs": -5.006968318085584,
+          "sampleRate": 48000,
+          "underruns": 0
+        },
+        "pcmPlaybackPassed": true,
+        "positionMs": 1962,
+        "provider": "Audius"
+      },
+      {
+        "provider": "MusicBrainz",
+        "releasesLoaded": 20
+      },
+      {
+        "diagnostics": "Server returned 5XX Server Error reply",
+        "pcmPlaybackPassed": false,
+        "provider": "Live Music Archive"
+      }
+    ],
+    "recordedAt": "2026-10-16T17:43:05Z",
+    "spotifyCredentialsRead": false
+  },
+  "limits": [
+    "Jamendo and authenticated Subsonic/Bandcamp not tested",
+    "Cross-provider identity merges and Spotify exclusivity audit not implemented",
+    "Individual PCM snippets approximately 2 seconds; not a long playback endurance test",
+    "A joint network run failed on a remote 5xx response",
+    "Original user incident had no retained crash/engine logs; exact cause was not reconstructed",
+    "Full live Spotify crash/resume test skipped because playback was active; live readiness used zero playback commands",
+    "Indie catalog network/render evidence retained from 0.1.1; current package GUI/audio smoke tests repeated",
+    "No physical Bluetooth, Android hub, audible or CPU/RAM comparison test"
+  ]
+}

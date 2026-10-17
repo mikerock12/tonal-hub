@@ -1,0 +1,238 @@
+{
+    "abstained": 4,
+    "accepted": 12,
+    "correct_accepted": 12,
+    "independent_synthetic_examples": 16,
+    "limits": "Small independently authored synthetic sanity set, not real-song accuracy or calibrated probabilities.",
+    "mean_inference_us": 2.78803,
+    "model": "TonalMuse Tiny v1",
+    "precision_when_accepted": 1,
+    "predictions": [
+        {
+            "expected": "amor",
+            "predicted": "abstained",
+            "scores": {
+                "amor": 0.43675535917282104,
+                "celebracao": 0.05563952773809433,
+                "esperanca": 0.05833663418889046,
+                "introspeccao": 0.10920558869838715,
+                "perda": 0.17602598667144775,
+                "rebeldia": 0.09681001305580139,
+                "saudade": 0.08816186338663101,
+                "tensao": 0.07650800049304962
+            }
+        },
+        {
+            "expected": "saudade",
+            "predicted": "abstained",
+            "scores": {
+                "amor": 0.0630325898528099,
+                "celebracao": 0.05680583789944649,
+                "esperanca": 0.4292236566543579,
+                "introspeccao": 0.1859665811061859,
+                "perda": 0.049314022064208984,
+                "rebeldia": 0.09925584495067596,
+                "saudade": 0.42866531014442444,
+                "tensao": 0.06027303263545036
+            }
+        },
+        {
+            "expected": "perda",
+            "predicted": "perda",
+            "scores": {
+                "amor": 0.11895108968019485,
+                "celebracao": 0.0385206900537014,
+                "esperanca": 0.013795792125165462,
+                "introspeccao": 0.023683490231633186,
+                "perda": 0.9738447666168213,
+                "rebeldia": 0.024896355345845222,
+                "saudade": 0.0487106516957283,
+                "tensao": 0.12545159459114075
+            }
+        },
+        {
+            "expected": "rebeldia",
+            "predicted": "rebeldia",
+            "scores": {
+                "amor": 0.03646564483642578,
+                "celebracao": 0.04335438460111618,
+                "esperanca": 0.056335534900426865,
+                "introspeccao": 0.030113879591226578,
+                "perda": 0.09933434426784515,
+                "rebeldia": 0.9942750334739685,
+                "saudade": 0.0469791442155838,
+                "tensao": 0.03575870022177696
+            }
+        },
+        {
+            "expected": "esperanca",
+            "predicted": "esperanca",
+            "scores": {
+                "amor": 0.07538622617721558,
+                "celebracao": 0.0447734072804451,
+                "esperanca": 0.9855433702468872,
+                "introspeccao": 0.0354279987514019,
+                "perda": 0.2068527340888977,
+                "rebeldia": 0.05375393107533455,
+                "saudade": 0.02417614683508873,
+                "tensao": 0.0376046821475029
+            }
+        },
+        {
+            "expected": "celebracao",
+            "predicted": "celebracao",
+            "scores": {
+                "amor": 0.03213325887918472,
+                "celebracao": 0.9864078760147095,
+                "esperanca": 0.0717415139079094,
+                "introspeccao": 0.019539330154657364,
+                "perda": 0.04569758102297783,
+                "rebeldia": 0.1267576664686203,
+                "saudade": 0.01749967597424984,
+                "tensao": 0.1059889867901802
+            }
+        },
+        {
+            "expected": "tensao",
+            "predicted": "abstained",
+            "scores": {
+                "amor": 0.05484830588102341,
+                "celebracao": 0.19303177297115326,
+                "esperanca": 0.1345280408859253,
+                "introspeccao": 0.023761849850416183,
+                "perda": 0.06814205646514893,
+                "rebeldia": 0.1242164894938469,
+                "saudade": 0.03865598514676094,
+                "tensao": 0.5891064405441284
+            }
+        },
+        {
+            "expected": "introspeccao",
+            "predicted": "introspeccao",
+            "scores": {
+                "amor": 0.019084272906184196,
+                "celebracao": 0.021614616736769676,
+                "esperanca": 0.0813060849905014,
+                "introspeccao": 0.9993165731430054,
+                "perda": 0.03949633613228798,
+                "rebeldia": 0.07319696992635727,
+                "saudade": 0.025924572721123695,
+                "tensao": 0.06391861289739609
+            }
+        },
+        {
+            "expected": "amor",
+            "predicted": "amor",
+            "scores": {
+                "amor": 0.9460381269454956,
+                "celebracao": 0.025168556720018387,
+                "esperanca": 0.042453695088624954,
+                "introspeccao": 0.016593171283602715,
+                "perda": 0.3100215494632721,
+                "rebeldia": 0.10362808406352997,
+                "saudade": 0.13902029395103455,
+                "tensao": 0.058614861220121384
+            }
+        },
+        {
+            "expected": "saudade",
+            "predicted": "saudade",
+            "scores": {
+                "amor": 0.178373783826828,
+                "celebracao": 0.024225784465670586,
+                "esperanca": 0.034718193113803864,
+                "introspeccao": 0.014918559230864048,
+                "perda": 0.04690204933285713,
+                "rebeldia": 0.018310660496354103,
+                "saudade": 0.946083664894104,
+                "tensao": 0.10720492899417877
+            }
+        },
+        {
+            "expected": "perda",
+            "predicted": "perda",
+            "scores": {
+                "amor": 0.08369316160678864,
+                "celebracao": 0.023417489603161812,
+                "esperanca": 0.013294750824570656,
+                "introspeccao": 0.029964502900838852,
+                "perda": 0.9991623163223267,
+                "rebeldia": 0.011261967942118645,
+                "saudade": 0.008109180256724358,
+                "tensao": 0.03683653846383095
+            }
+        },
+        {
+            "expected": "rebeldia",
+            "predicted": "rebeldia",
+            "scores": {
+                "amor": 0.12603072822093964,
+                "celebracao": 0.04983237758278847,
+                "esperanca": 0.015014585107564926,
+                "introspeccao": 0.014240936376154423,
+                "perda": 0.04866575449705124,
+                "rebeldia": 0.9931281805038452,
+                "saudade": 0.04828735813498497,
+                "tensao": 0.02306143380701542
+            }
+        },
+        {
+            "expected": "esperanca",
+            "predicted": "esperanca",
+            "scores": {
+                "amor": 0.0263382401317358,
+                "celebracao": 0.047063205391168594,
+                "esperanca": 0.9917551279067993,
+                "introspeccao": 0.08185796439647675,
+                "perda": 0.029157551005482674,
+                "rebeldia": 0.01728883758187294,
+                "saudade": 0.03781849145889282,
+                "tensao": 0.009923283010721207
+            }
+        },
+        {
+            "expected": "celebracao",
+            "predicted": "celebracao",
+            "scores": {
+                "amor": 0.025022078305482864,
+                "celebracao": 0.9965565204620361,
+                "esperanca": 0.01567014865577221,
+                "introspeccao": 0.03598904609680176,
+                "perda": 0.056077033281326294,
+                "rebeldia": 0.03230482339859009,
+                "saudade": 0.05472015589475632,
+                "tensao": 0.031038640066981316
+            }
+        },
+        {
+            "expected": "tensao",
+            "predicted": "tensao",
+            "scores": {
+                "amor": 0.06399226188659668,
+                "celebracao": 0.12438314408063889,
+                "esperanca": 0.08516231179237366,
+                "introspeccao": 0.07508119195699692,
+                "perda": 0.06690974533557892,
+                "rebeldia": 0.07539280503988266,
+                "saudade": 0.09075183421373367,
+                "tensao": 0.7879825234413147
+            }
+        },
+        {
+            "expected": "introspeccao",
+            "predicted": "abstained",
+            "scores": {
+                "amor": 0.2596624791622162,
+                "celebracao": 0.13689260184764862,
+                "esperanca": 0.06418370455503464,
+                "introspeccao": 0.19121628999710083,
+                "perda": 0.06800039857625961,
+                "rebeldia": 0.04480160027742386,
+                "saudade": 0.0852176770567894,
+                "tensao": 0.1413067877292633
+            }
+        }
+    ],
+    "top1_recall_with_abstention": 0.75,
+    "weight_payload_bytes": 32832
+}
