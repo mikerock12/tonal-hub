@@ -4,6 +4,8 @@ import QtQuick.Controls
 // Barra superior: logo, voltar/avançar, Início, busca e menu da conta.
 Item {
     id: root
+    signal audioSettingsRequested()
+    signal musicRequested()
 
     function focusSearch() {
         search.forceActiveFocus()
@@ -20,6 +22,7 @@ Item {
         Logo {
             size: 32
             anchors.verticalCenter: parent.verticalCenter
+            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: App.hub.hub() }
         }
 
         Item { width: 4; height: 1 }
@@ -262,6 +265,8 @@ Item {
             secondary: true
         }
         MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Theme.divider } }
+        AccountItem { text: qsTr("Áudio e efeitos…"); onTriggered: root.audioSettingsRequested() }
+        AccountItem { text: qsTr("Biblioteca pessoal, estatísticas e letras…"); onTriggered: root.musicRequested() }
         AccountItem {
             text: qsTr("Qualidade: 320 kbps (muito alta)")
             checked: App.librespot.bitrate === 320
@@ -309,7 +314,7 @@ Item {
 
     ModalDialog {
         id: languageDialog
-        title: qsTr("Reiniciar o Tonal?")
+        title: qsTr("Reiniciar o Tonalify?")
 
         Label {
             width: parent.width

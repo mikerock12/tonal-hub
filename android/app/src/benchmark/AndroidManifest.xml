@@ -1,0 +1,4 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
+    <application><activity android:name=".IndieActivity" android:exported="true" tools:replace="android:exported" /></application>
+    <instrumentation android:name="app.tonal.android.DeviceInstrumentation" android:targetPackage="app.tonal.android.benchmark" android:label="Tonal device tests" />
+</manifest>

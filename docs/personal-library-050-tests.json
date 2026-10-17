@@ -1,0 +1,210 @@
+{
+  "version": "0.5.0-local",
+  "recorded_at_utc": "2026-10-17T07:02:02.039047+00:00",
+  "artifacts": {
+    "universal": {
+      "path": "out/android/Tonal-Android-0.5.0-local.apk",
+      "sha256": "375f298b704d8e8b42d402f3a32f2181acc0e371fdb0c04dde974920de15de66",
+      "size_bytes": 46339915,
+      "abis": [
+        "arm64-v8a",
+        "x86_64"
+      ],
+      "elf_zip_alignment": 16384,
+      "license_files": 699
+    },
+    "arm64": {
+      "path": "out/android/Tonal-Android-0.5.0-arm64-v8a.apk",
+      "sha256": "b44df8958cb751e62e3390f0e4082721aa19b1a7b11265720023f02a9102f37e",
+      "size_bytes": 24558405,
+      "abis": [
+        "arm64-v8a"
+      ],
+      "elf_zip_alignment": 16384,
+      "license_files": 699
+    },
+    "windows": {
+      "path": "out/release-local/Tonal-Hub-0.5.0-local.zip",
+      "sha256": "d8ff078ae00055abf2a5803b3356b1565fc94fff18b1fcb76e6ff9dcde19756a",
+      "size_bytes": 111741922
+    }
+  },
+  "certificate_sha256": "464ae7cf34f4f145541569db215f8fcdef5deda1be31921d8e366eed20aa22c2",
+  "windows_ctest": {
+    "passed": true,
+    "suites": 8
+  },
+  "android_core": {
+    "passed": true,
+    "checks": [
+      "companion_lrc_multistamps_offset_and_fractions",
+      "companion_signed_urls_and_passwords_excluded",
+      "companion_favorites_and_playlist_deduplication",
+      "companion_periods_chart_drilldown_lyric_mood_and_genre_suggestions",
+      "companion_clear_history_preserves_library",
+      "rare_archive_audio_demos_mp3_preference_private_and_path_filter",
+      "rare_archive_dark_items_rejected",
+      "companion_portable_backup_restore",
+      "companion_sqlite_transaction_persistence",
+      "resume_uses_actual_pcm_track_and_position",
+      "restore_preserves_queue_and_atomic_seek",
+      "pause_cancels_resume_without_losing_selection",
+      "new_selection_replaces_old_resume",
+      "stop_cancels_all_recovery_intent",
+      "exact_artist_ahead_of_remixes_and_unrelated_profiles",
+      "provider_score_breaks_homonym_ties",
+      "musicbrainz_is_metadata_only",
+      "unicode_and_word_normalization",
+      "reject_cleartext_streams",
+      "reject_url_userinfo",
+      "diagnostics_redact_urls_and_credentials",
+      "real_jni_connection_failures_hit_bounded_recovery_budget",
+      "no_unbounded_restart_loop_after_budget",
+      "explicit_pause_cancels_service_resume"
+    ]
+  },
+  "android_ui": {
+    "passed": true,
+    "checks": [
+      {
+        "name": "l7_fan_recording_discovered_from_audio_collection",
+        "passed": true,
+        "recording": "ajc02607_l7-1989-09-14"
+      },
+      {
+        "name": "l7_actual_pcm_playback_no_checksum_files",
+        "passed": true,
+        "position_ms": 2892
+      },
+      {
+        "name": "favorites_and_personal_playlist_ui",
+        "passed": true
+      },
+      {
+        "name": "interactive_statistics_tab_opens",
+        "passed": true
+      },
+      {
+        "name": "synced_lyrics_import_foreground_stage",
+        "passed": true
+      },
+      {
+        "name": "translation_service_ui_handles_result",
+        "passed": true,
+        "translation_succeeded": true
+      },
+      {
+        "name": "actual_pcm_visualizers_open_during_playback",
+        "passed": true
+      },
+      {
+        "name": "backup_saved_in_external_documents_storage",
+        "passed": true,
+        "filename": "IndieTonal-2026-10-17.tonal-backup.json"
+      },
+      {
+        "name": "backup_restored_through_android_document_picker",
+        "passed": true
+      },
+      {
+        "name": "audio_keeps_progressing_while_using_personal_features",
+        "passed": true,
+        "position_ms": 141396
+      }
+    ],
+    "benchmark_apk_sha256": "79c0ec6a6943a147ad1e9c65c47f060872b40037635a6757a3cd9f017ecf4318"
+  },
+  "android_native_audio": {
+    "passed": true,
+    "checks": 16
+  },
+  "release_upgrade": {
+    "passed": true,
+    "apk_sha256": "375f298b704d8e8b42d402f3a32f2181acc0e371fdb0c04dde974920de15de66",
+    "before": {
+      "version": "0.4.0-local",
+      "code": "5",
+      "first_install": "2026-10-15 06:39:54",
+      "app_id": "10218",
+      "ce_inode": "770154"
+    },
+    "after": {
+      "version": "0.5.0-local",
+      "code": "6",
+      "first_install": "2026-10-15 06:39:54",
+      "app_id": "10218",
+      "ce_inode": "770154"
+    },
+    "updated_without_uninstall": true,
+    "data_directory_preserved": true,
+    "release_hub_and_public_search": true
+  },
+  "backup_interoperability": {
+    "cpp_to_android": true,
+    "android_to_cpp": true,
+    "android_external_document_export_and_restore": true
+  },
+  "live_translation": {
+    "windows_qt_http1": true,
+    "android": true,
+    "synthetic_phrase_only": true
+  },
+  "public_fan_recording_playback": {
+    "L7": {
+      "passed": true,
+      "phases": [
+        {
+          "metrics": {
+            "averageDspUs": 242.70000000000005,
+            "binaural": false,
+            "channels": 2,
+            "hrtfActive": false,
+            "invalidSamples": 0,
+            "overFullScale": 0,
+            "peakDbfs": -47.65157601592647,
+            "sampleRate": 48000,
+            "spectrum": [],
+            "underruns": 0,
+            "waveform": []
+          },
+          "pcmPlaybackPassed": true,
+          "positionMs": 1941,
+          "provider": "Aadam Jacobs"
+        }
+      ],
+      "recordedAt": "2026-10-17T06:34:03Z",
+      "spotifyCredentialsRead": false
+    },
+    "Nirvana": {
+      "passed": true,
+      "phases": [
+        {
+          "metrics": {
+            "averageDspUs": 260.02631578947376,
+            "binaural": false,
+            "channels": 2,
+            "hrtfActive": false,
+            "invalidSamples": 0,
+            "overFullScale": 0,
+            "peakDbfs": -12.510803508342274,
+            "sampleRate": 44100,
+            "spectrum": [],
+            "underruns": 0,
+            "waveform": []
+          },
+          "pcmPlaybackPassed": true,
+          "positionMs": 1834,
+          "provider": "Aadam Jacobs"
+        }
+      ],
+      "recordedAt": "2026-10-17T06:43:02Z",
+      "spotifyCredentialsRead": false
+    }
+  },
+  "limits": {
+    "spotify_authenticated_retested": false,
+    "physical_poco_x7_pro_tested": false,
+    "physical_bluetooth_tested": false,
+    "new_official_spotify_cpu_ram_comparison": false
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "platform": "android-api28-arm64-v8a-x86_64",
+  "ndk": "27.0.12077973",
+  "cmake": "3.31.10",
+  "ffmpeg": {
+    "revision": "46d899d7a02bc63237472cc4897258d5ddf274ac",
+    "url": "https://codeload.github.com/FFmpeg/FFmpeg/tar.gz/46d899d7a02bc63237472cc4897258d5ddf274ac",
+    "sha256": "6626e1f622324597146a8cc90a89bb4c3529f7df55f0a8c998fde55ac5ae4161",
+    "license": "LGPL-3.0-or-later"
+  },
+  "libebur128": {
+    "version": "1.2.6",
+    "url": "https://codeload.github.com/jiixyj/libebur128/tar.gz/refs/tags/v1.2.6",
+    "sha256": "baa7fc293a3d4651e244d8022ad03ab797ca3c2ad8442c43199afe8059faa613",
+    "license": "MIT"
+  },
+  "sources": {
+    "openal-soft": {
+      "url": "https://github.com/kcat/openal-soft.git",
+      "commit": "b2c48f7718ef3fcf67921a8b6534c4914e328970"
+    },
+    "libiamf": {
+      "url": "https://github.com/AOMediaCodec/libiamf.git",
+      "commit": "b276f4371a8ae4f370a656e914f7b07e4cd5a2fa"
+    },
+    "oar": {
+      "url": "https://github.com/AOMediaCodec/oar.git",
+      "commit": "ca14b54381b6e8482a72dcc65c3adb17d6751db0"
+    },
+    "absl": {
+      "url": "https://github.com/abseil/abseil-cpp.git",
+      "commit": "76bb24329e8bf5f39704eb10d21b9a80befa7c81"
+    },
+    "googletest": {
+      "url": "https://github.com/google/googletest.git",
+      "commit": "52eb8108c5bdec04579160ae17225d66034bd723"
+    },
+    "eigen": {
+      "url": "https://gitlab.com/libeigen/eigen.git",
+      "commit": "3147391d946bb4b6c68edd901f2add6ac1f31f8c"
+    },
+    "pffft": {
+      "url": "https://bitbucket.org/jpommier/pffft.git",
+      "commit": "0aec0327a6912e1a0ec5326eef737c2ce19bc836"
+    },
+    "fdk-aac": {
+      "url": "https://github.com/mstorsjo/fdk-aac.git",
+      "commit": "716f4394641d53f0d79c9ddac3fa93b03a49f278"
+    },
+    "opus": {
+      "version": "1.4",
+      "url": "https://downloads.xiph.org/releases/opus/opus-1.4.tar.gz",
+      "sha256": "c9b32b4253be5ae63d1ff16eea06b94b5f0f2951b7a02aceef58e3a3ce49c51f"
+    },
+    "flac": {
+      "version": "1.4.2",
+      "url": "https://downloads.xiph.org/releases/flac/flac-1.4.2.tar.xz",
+      "sha256": "e322d58a1f48d23d9dd38f432672865f6f79e73a6f9cc5a5f57fcaa83eb5a8e4"
+    }
+  },
+  "localPatches": [
+    "OpenAL FlexArray views::drop replaced by equivalent iterator fill in generated translation unit",
+    "OpenAL C++20 modules disabled and POSIX TLS selected for API28",
+    "OAR timespec_get compatibility with clock_gettime for API28",
+    "FDK Android logging stub made static inline in the Android-only copy"
+  ]
+}

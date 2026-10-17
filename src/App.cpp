@@ -20,11 +20,52 @@ App::App(QObject *parent)
     , m_imageNam(new QNetworkAccessManager(this))
     , m_auth(new AuthManager(m_nam, this))
     , m_api(new SpotifyApi(m_nam, m_auth, this))
+    , m_audio(new tonal::audio::AudioEngine(this))
     , m_librespot(new LibrespotProcess(this))
     , m_player(new Player(m_api, m_librespot, m_auth, this))
     , m_lyrics(new Lyrics(m_nam, m_player, this))
     , m_setlistFm(new SetlistFm(m_nam, this))
+    , m_discovery(new CatalogService(this))
+    , m_hub(new HubController(this))
+    , m_music(new MusicCompanion(this))
 {
+    m_librespot->setAudioEngine(m_audio);
+    m_player->setAudioEngine(m_audio);
+    auto selected = [this] {
+        if (!m_player->hasTrack()) return;
+        QVariantMap t{{"provider",m_player->localPlayback()?"Local":"Spotify"},
+          {"id",m_player->localPlayback()?m_audio->localFileUrl().toString():m_player->trackUri()},
+          {"uri",m_player->trackUri()},{"title",m_player->trackName()},{"artist",m_player->artistsText()},
+          {"album",m_player->albumName()},{"image",m_player->coverUrlLarge()},
+          {"durationMs",m_player->durationMs()},{"playable",true}};
+        if (m_player->localPlayback()) t["localFile"]=m_audio->localFileUrl().toString();
+        m_music->selectTrack(t);
+    };
+    connect(m_player,&Player::trackChanged,this,selected);
+    connect(m_player,&Player::likedChanged,this,[this] {
+        if(!m_player->localPlayback()&&m_music->current().value("uri").toString()==m_player->trackUri())m_music->setFavorite(m_music->current(),m_player->liked());
+    });
+    auto *historyTimer=new QTimer(this);historyTimer->setInterval(1000);
+    connect(historyTimer,&QTimer::timeout,this,[this,lastFrames=uint64_t(0)]() mutable {
+        const auto frames=m_audio->spotifyFramesRead();
+        const bool actual=m_player->localPlayback()?m_audio->localPlaying():frames!=lastFrames;
+        m_music->pulse(m_player->isPlaying()&&m_player->playingHere()&&actual,m_player->positionMs());lastFrames=frames;
+    });historyTimer->start();
+    connect(m_music,&MusicCompanion::seekRequested,m_player,&Player::seek);
+    connect(m_music,&MusicCompanion::queueRequested,this,[this](const QVariantList &tracks,int index) {
+        if (index<0||index>=tracks.size()) return;
+        const auto t=tracks[index].toMap();
+        if(t["provider"]=="Local") {m_audio->openFile(QUrl(t["localFile"].toString()));return;}
+        QStringList uris;int offset=0;for(int i=0;i<tracks.size();i++){auto uri=tracks[i].toMap()["uri"].toString();if(uri.startsWith("spotify:track:")){if(i==index)offset=uris.size();uris<<uri;}}
+        if(!uris.isEmpty())m_player->playUris(uris,offset);
+    });
+    connect(m_music,&MusicCompanion::spotifyFavoriteRequested,this,[this](const QVariantMap &t,bool on) {
+        const auto done=[this,t,on](int status,const QJsonDocument &) {if(status>=200&&status<300){m_music->setFavorite(t,on);m_player->refresh();}else emit m_music->message("Não foi possível atualizar as Músicas Curtidas no Spotify. Confira as permissões da conta.");};
+        const QVariantMap query{{"uris",t["uri"]}};
+        if(on)m_api->put("/me/library",query,{},done);else m_api->del("/me/library",query,{},done);
+    });
+    connect(m_audio, &tonal::audio::AudioEngine::localModeRequested, m_librespot, &LibrespotProcess::stop);
+    connect(m_audio, &tonal::audio::AudioEngine::spotifyModeRequested, this, [this] { if(m_auth->isAuthenticated())m_librespot->start(); });
     auto *cache = new QNetworkDiskCache(m_imageNam);
     cache->setCacheDirectory(QStandardPaths::writableLocation(QStandardPaths::CacheLocation)
                              + QStringLiteral("/colors"));

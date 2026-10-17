@@ -1,0 +1,1489 @@
+{
+  "date": "2026-10-15",
+  "scope": "logged-out idle foreground/background; Tonal local playback separately",
+  "apk": {
+    "sha256": "508dade15f47a7a8a16b27f1f73980f4d900ae10ec5acb6422cf5f767497ef28",
+    "size_bytes": 20383001,
+    "architectures": {
+      "arm64-v8a": {
+        "elf_load_alignment": [
+          16384,
+          16384,
+          16384,
+          16384
+        ],
+        "zip_offset": 81920,
+        "uncompressed": true,
+        "matches_packaged_build": true,
+        "before_strip_matches_source": true
+      },
+      "x86_64": {
+        "elf_load_alignment": [
+          16384,
+          16384,
+          16384,
+          16384
+        ],
+        "zip_offset": 7897088,
+        "uncompressed": true,
+        "matches_packaged_build": true,
+        "before_strip_matches_source": true
+      }
+    },
+    "license_files": 669,
+    "private_seed_file_present": false,
+    "session_token_present": false
+  },
+  "profile": {
+    "android": "16",
+    "api": "36",
+    "abi": "x86_64",
+    "cores": 4,
+    "page_size": 4096,
+    "clk_tck": 100,
+    "app_version": "0.1.0-local",
+    "visibility": "foreground"
+  },
+  "groups": {
+    "tonal-foreground": {
+      "runs": 2,
+      "samples": 12,
+      "pss_mib_median": 16.5009765625,
+      "pss_mib_min": 16.1181640625,
+      "pss_mib_max": 16.775390625,
+      "swap_reported_mib_median": 0.03125,
+      "pss_plus_swap_mib_median": 16.5322265625,
+      "cpu_one_core_percent_median": 0.0,
+      "cpu_one_core_percent_weighted_mean": 0.07781579206031561,
+      "cpu_one_core_percent_min": 0.0,
+      "cpu_one_core_percent_max": 0.31580482844724855
+    },
+    "spotify-foreground": {
+      "runs": 2,
+      "samples": 12,
+      "pss_mib_median": 158.85205078125,
+      "pss_mib_min": 154.4658203125,
+      "pss_mib_max": 161.8720703125,
+      "swap_reported_mib_median": 0.03125,
+      "pss_plus_swap_mib_median": 158.88330078125,
+      "cpu_one_core_percent_median": 0.1420811483975593,
+      "cpu_one_core_percent_weighted_mean": 2.792343380489033,
+      "cpu_one_core_percent_min": 0.0,
+      "cpu_one_core_percent_max": 14.429423958610544
+    },
+    "tonal-background": {
+      "runs": 2,
+      "samples": 12,
+      "pss_mib_median": 16.5078125,
+      "pss_mib_min": 16.115234375,
+      "pss_mib_max": 16.5078125,
+      "swap_reported_mib_median": 0.03125,
+      "pss_plus_swap_mib_median": 16.5390625,
+      "cpu_one_core_percent_median": 0.0,
+      "cpu_one_core_percent_weighted_mean": 0.07895534457307095,
+      "cpu_one_core_percent_min": 0.0,
+      "cpu_one_core_percent_max": 0.6320663037551756
+    },
+    "spotify-background": {
+      "runs": 2,
+      "samples": 12,
+      "pss_mib_median": 71.58349609375,
+      "pss_mib_min": 57.6298828125,
+      "pss_mib_max": 104.197265625,
+      "swap_reported_mib_median": 29.150390625,
+      "pss_plus_swap_mib_median": 100.98828125,
+      "cpu_one_core_percent_median": 0.31505625568871565,
+      "cpu_one_core_percent_weighted_mean": 2.404714732822554,
+      "cpu_one_core_percent_min": 0.0,
+      "cpu_one_core_percent_max": 16.731029041299898
+    },
+    "tonal-local": {
+      "runs": 1,
+      "samples": 6,
+      "pss_mib_median": 21.0771484375,
+      "pss_mib_min": 20.2646484375,
+      "pss_mib_max": 21.5771484375,
+      "swap_reported_mib_median": 0.03125,
+      "pss_plus_swap_mib_median": 21.1083984375,
+      "cpu_one_core_percent_median": 1.9024247322194134,
+      "cpu_one_core_percent_weighted_mean": 1.8355582061191904,
+      "cpu_one_core_percent_min": 1.6791321439094904,
+      "cpu_one_core_percent_max": 1.9242032758163041
+    },
+    "tonal-effects": {
+      "runs": 1,
+      "samples": 6,
+      "pss_mib_median": 21.0302734375,
+      "pss_mib_min": 20.2177734375,
+      "pss_mib_max": 21.5498046875,
+      "swap_reported_mib_median": 0.03125,
+      "pss_plus_swap_mib_median": 21.0615234375,
+      "cpu_one_core_percent_median": 2.5210084554037313,
+      "cpu_one_core_percent_weighted_mean": 2.479594953204619,
+      "cpu_one_core_percent_min": 2.1585430179990728,
+      "cpu_one_core_percent_max": 2.6404663908589803
+    }
+  },
+  "raw_results_directory": "D:\\PROJETOS\\Tonal-Player-Matheus\\out\\android\\measurements-final",
+  "runs": {
+    "tonal-foreground-1": {
+      "label": "tonal-foreground-1",
+      "package": "app.tonal.android",
+      "scenario": "idle",
+      "profile": {
+        "android": "16",
+        "api": "36",
+        "abi": "x86_64",
+        "cores": 4,
+        "page_size": 4096,
+        "clk_tck": 100,
+        "app_version": "0.1.0-local",
+        "visibility": "foreground"
+      },
+      "cold_start_ms": [],
+      "samples": [
+        {
+          "sample": 1,
+          "pss_kib": 17170,
+          "swap_pss_kib": 0,
+          "pss_plus_swap_kib": 17202,
+          "cpu_ticks": 0,
+          "counters_before": {
+            "14664": 66
+          },
+          "counters_after": {
+            "14664": 66
+          },
+          "cpu_one_core_percent": 0.0,
+          "cpu_device_percent": 0.0,
+          "processes": 1,
+          "interval_seconds": 3.168580000001384,
+          "swap_kind": "SWAP_KB",
+          "swap_kib": 32
+        },
+        {
+          "sample": 2,
+          "pss_kib": 17173,
+          "swap_pss_kib": 0,
+          "pss_plus_swap_kib": 17205,
+          "cpu_ticks": 0,
+          "counters_before": {
+            "14664": 66
+          },
+          "counters_after": {
+            "14664": 66
+          },
+          "cpu_one_core_percent": 0.0,
+          "cpu_device_percent": 0.0,
+          "processes": 1,
+          "interval_seconds": 3.1664464000023145,
+          "swap_kind": "SWAP_KB",
+          "swap_kib": 32
+        },
+        {
+          "sample": 3,
+          "pss_kib": 17177,
+          "swap_pss_kib": 0,
+          "pss_plus_swap_kib": 17209,
+          "cpu_ticks": 0,
+          "counters_before": {
+            "14664": 66
+          },
+          "counters_after": {
+            "14664": 66
+          },
+          "cpu_one_core_percent": 0.0,
+          "cpu_device_percent": 0.0,
+          "processes": 1,
+          "interval_seconds": 3.1591907999973046,
+          "swap_kind": "SWAP_KB",
+          "swap_kib": 32
+        },
+        {
+          "sample": 4,
+          "pss_kib": 17178,
+          "swap_pss_kib": 0,
+          "pss_plus_swap_kib": 17210,
+          "cpu_ticks": 0,
+          "counters_before": {
+            "14664": 66
+          },
+          "counters_after": {
+            "14664": 66
+          },
+          "cpu_one_core_percent": 0.0,
+          "cpu_device_percent": 0.0,
+          "processes": 1,
+          "interval_seconds": 3.1845389000009163,
+          "swap_kind": "SWAP_KB",
+          "swap_kib": 32
+        },
+        {
+          "sample": 5,
+          "pss_kib": 16769,
+          "swap_pss_kib": 0,
+          "pss_plus_swap_kib": 16801,
+          "cpu_ticks": 1,
+          "counters_before": {
+            "14664": 66
+          },
+          "counters_after": {
+            "14664": 67
+          },
+          "cpu_one_core_percent": 0.3146261649665594,
+          "cpu_device_percent": 0.07865654124163984,
+          "processes": 1,
+          "interval_seconds": 3.17837519999739,
+          "swap_kind": "SWAP_KB",
+          "swap_kib": 32
+        },
+        {
+          "sample": 6,
+          "pss_kib": 16777,
+          "swap_pss_kib": 0,
+          "pss_plus_swap_kib": 16809,
+          "cpu_ticks": 1,
+          "counters_before": {
+            "14664": 67
+          },
+          "counters_after": {
+            "14664": 68
+          },
+          "cpu_one_core_percent": 0.31580482844724855,
+          "cpu_device_percent": 0.07895120711181214,
+          "processes": 1,
+          "interval_seconds": 3.1665127000014763,
+          "swap_kind": "SWAP_KB",
+          "swap_kib": 32
+        }
+      ],
+      "median_pss_mib": 16.76904296875,
+      "median_cpu_one_core_percent": 0.0,
+      "cpu_definition": "100% = one fully used core; all named package processes summed",
+      "memory_definition": "dumpsys meminfo --local -s -S; TOTAL PSS and SwapPSS for named package processes; shared pages apportioned"
+    },
+    "spotify-foreground-1": {
+      "label": "spotify-foreground-1",
+      "package": "com.spotify.music",
+      "scenario": "idle",
+      "profile": {
+        "android": "16",
+        "api": "36",
+        "abi": "x86_64",
+        "cores": 4,
+        "page_size": 4096,
+        "clk_tck": 100,
+        "app_version": "9.1.90.2270",
+        "visibility": "foreground"
+      },
+      "cold_start_ms": [],
+      "samples": [
+        {
+          "sample": 1,
+          "pss_kib": 165211,
+          "swap_pss_kib": 0,
+          "pss_plus_swap_kib": 165243,
+          "cpu_ticks": 53,
+          "counters_before": {
+            "14825": 948
+          },
+          "counters_after": {
+            "14825": 1001
+          },
+          "cpu_one_core_percent": 14.429423958610544,
+          "cpu_device_percent": 3.607355989652636,
+          "processes": 1,
+          "interval_seconds": 3.673050299999886,
+          "swap_kind": "SWAP_KB",
+          "swap_kib": 32
+        },
+        {
+          "sample": 2,
+          "pss_kib": 165215,
+          "swap_pss_kib": 0,
+          "pss_plus_swap_kib": 165247,
+          "cpu_ticks": 1,
+          "counters_before": {
+            "14825": 1001
+          },
+          "counters_after": {
+            "14825": 1002
+          },
+          "cpu_one_core_percent": 0.3112834846867891,
+          "cpu_device_percent": 0.07782087117169728,
+          "processes": 1,
+          "interval_seconds": 3.2125057999983255,
+          "swap_kind": "SWAP_KB",
+          "swap_kib": 32
+        },
+        {
+          "sample": 3,
+          "pss_kib": 165213,
+          "swap_pss_kib": 0,
+          "pss_plus_swap_kib": 165245,
+          "cpu_ticks": 0,
+          "counters_before": {
+            "14825": 1002
+          },
+          "counters_after": {
+            "14825": 1002
+          },
+          "cpu_one_core_percent": 0.0,
+          "cpu_device_percent": 0.0,
+          "processes": 1,
+          "interval_seconds": 3.1871144999968237,
+          "swap_kind": "SWAP_KB",
+          "swap_kib": 32
+        },
+        {
+          "sample": 4,
+          "pss_kib": 165213,
+          "swap_pss_kib": 0,
+          "pss_plus_swap_kib": 165245,
+          "cpu_ticks": 0,
+          "counters_before": {
+            "14825": 1002
+          },
+          "counters_after": {
+            "14825": 1002
+          },
+          "cpu_one_core_percent": 0.0,
+          "cpu_device_percent": 0.0,
+          "processes": 1,
+          "interval_seconds": 3.1686401999977534,
+          "swap_kind": "SWAP_KB",
+          "swap_kib": 32
+        },
+        {
+          "sample": 5,
+          "pss_kib": 165213,
+          "swap_pss_kib": 0,
+          "pss_plus_swap_kib": 165245,
+          "cpu_ticks": 0,
+          "counters_before": {
+            "14825": 1002
+          },
+          "counters_after": {
+            "14825": 1002
+          },
+          "cpu_one_core_percent": 0.0,
+          "cpu_device_percent": 0.0,
+          "processes": 1,
+          "interval_seconds": 3.161337600002298,
+          "swap_kind": "SWAP_KB",
+          "swap_kib": 32
+        },
+        {
+          "sample": 6,
+          "pss_kib": 165757,
+          "swap_pss_kib": 0,
+          "pss_plus_swap_kib": 165789,
+          "cpu_ticks": 2,
+          "counters_before": {
+            "14825": 1008
+          },
+          "counters_after": {
+            "14825": 1010
+          },
+          "cpu_one_core_percent": 0.6301642352931476,
+          "cpu_device_percent": 0.1575410588232869,
+          "processes": 1,
+          "interval_seconds": 3.1737758000017493,
+          "swap_kind": "SWAP_KB",
+          "swap_kib": 32
+        }
+      ],
+      "median_pss_mib": 161.3408203125,
+      "median_cpu_one_core_percent": 0.15564174234339456,
+      "cpu_definition": "100% = one fully used core; all named package processes summed",
+      "memory_definition": "dumpsys meminfo --local -s -S; TOTAL PSS and SwapPSS for named package processes; shared pages apportioned"
+    },
+    "tonal-background-1": {
+      "label": "tonal-background-1",
+      "package": "app.tonal.android",
+      "scenario": "idle",
+      "profile": {
+        "android": "16",
+        "api": "36",
+        "abi": "x86_64",
+        "cores": 4,
+        "page_size": 4096,
+        "clk_tck": 100,
+        "app_version": "0.1.0-local",
+        "visibility": "background"
+      },
+      "cold_start_ms": [],
+      "samples": [
+        {
+          "sample": 1,
+          "pss_kib": 16904,
+          "swap_pss_kib": 0,
+          "pss_plus_swap_kib": 16936,
+          "cpu_ticks": 0,
+          "counters_before": {
+            "15461": 69
+          },
+          "counters_after": {
+            "15461": 69
+          },
+          "cpu_one_core_percent": 0.0,
+          "cpu_device_percent": 0.0,
+          "processes": 1,
+          "interval_seconds": 3.1677330000020447,
+          "swap_kind": "SWAP_KB",
+          "swap_kib": 32
+        },
+        {
+          "sample": 2,
+          "pss_kib": 16904,
+          "swap_pss_kib": 0,
+          "pss_plus_swap_kib": 16936,
+          "cpu_ticks": 0,
+          "counters_before": {
+            "15461": 69
+          },
+          "counters_after": {
+            "15461": 69
+          },
+          "cpu_one_core_percent": 0.0,
+          "cpu_device_percent": 0.0,
+          "processes": 1,
+          "interval_seconds": 3.164338900001894,
+          "swap_kind": "SWAP_KB",
+          "swap_kib": 32
+        },
+        {
+          "sample": 3,
+          "pss_kib": 16904,
+          "swap_pss_kib": 0,
+          "pss_plus_swap_kib": 16936,
+          "cpu_ticks": 0,
+          "counters_before": {
+            "15461": 69
+          },
+          "counters_after": {
+            "15461": 69
+          },
+          "cpu_one_core_percent": 0.0,
+          "cpu_device_percent": 0.0,
+          "processes": 1,
+          "interval_seconds": 3.1713272999986657,
+          "swap_kind": "SWAP_KB",
+          "swap_kib": 32
+        },
+        {
+          "sample": 4,
+          "pss_kib": 16904,
+          "swap_pss_kib": 0,
+          "pss_plus_swap_kib": 16936,
+          "cpu_ticks": 0,
+          "counters_before": {
+            "15461": 69
+          },
+          "counters_after": {
+            "15461": 69
+          },
+          "cpu_one_core_percent": 0.0,
+          "cpu_device_percent": 0.0,
+          "processes": 1,
+          "interval_seconds": 3.168281400001433,
+          "swap_kind": "SWAP_KB",
+          "swap_kib": 32
+        },
+        {
+          "sample": 5,
+          "pss_kib": 16527,
+          "swap_pss_kib": 0,
+          "pss_plus_swap_kib": 16559,
+          "cpu_ticks": 1,
+          "counters_before": {
+            "15461": 69
+          },
+          "counters_after": {
+            "15461": 70
+          },
+          "cpu_one_core_percent": 0.31565986374447336,
+          "cpu_device_percent": 0.07891496593611834,
+          "processes": 1,
+          "interval_seconds": 3.167966899996827,
+          "swap_kind": "SWAP_KB",
+          "swap_kib": 32
+        },
+        {
+          "sample": 6,
+          "pss_kib": 16526,
+          "swap_pss_kib": 0,
+          "pss_plus_swap_kib": 16558,
+          "cpu_ticks": 0,
+          "counters_before": {
+            "15461": 70
+          },
+          "counters_after": {
+            "15461": 70
+          },
+          "cpu_one_core_percent": 0.0,
+          "cpu_device_percent": 0.0,
+          "processes": 1,
+          "interval_seconds": 3.164527299999463,
+          "swap_kind": "SWAP_KB",
+          "swap_kib": 32
+        }
+      ],
+      "median_pss_mib": 16.5078125,
+      "median_cpu_one_core_percent": 0.0,
+      "cpu_definition": "100% = one fully used core; all named package processes summed",
+      "memory_definition": "dumpsys meminfo --local -s -S; TOTAL PSS and SwapPSS for named package processes; shared pages apportioned"
+    },
+    "spotify-background-1": {
+      "label": "spotify-background-1",
+      "package": "com.spotify.music",
+      "scenario": "idle",
+      "profile": {
+        "android": "16",
+        "api": "36",
+        "abi": "x86_64",
+        "cores": 4,
+        "page_size": 4096,
+        "clk_tck": 100,
+        "app_version": "9.1.90.2270",
+        "visibility": "background"
+      },
+      "cold_start_ms": [],
+      "samples": [
+        {
+          "sample": 1,
+          "pss_kib": 65450,
+          "swap_pss_kib": 34592,
+          "pss_plus_swap_kib": 100042,
+          "cpu_ticks": 2,
+          "counters_before": {
+            "15619": 541
+          },
+          "counters_after": {
+            "15619": 543
+          },
+          "cpu_one_core_percent": 0.6005107403901698,
+          "cpu_device_percent": 0.15012768509754246,
+          "processes": 1,
+          "interval_seconds": 3.3304982999979984,
+          "swap_kind": "SwapPSS",
+          "swap_kib": 34592
+        },
+        {
+          "sample": 2,
+          "pss_kib": 80494,
+          "swap_pss_kib": 29888,
+          "pss_plus_swap_kib": 110382,
+          "cpu_ticks": 1,
+          "counters_before": {
+            "15619": 573
+          },
+          "counters_after": {
+            "15619": 574
+          },
+          "cpu_one_core_percent": 0.31629382583070853,
+          "cpu_device_percent": 0.07907345645767713,
+          "processes": 1,
+          "interval_seconds": 3.161617199999455,
+          "swap_kind": "SwapPSS",
+          "swap_kib": 29888
+        },
+        {
+          "sample": 3,
+          "pss_kib": 80554,
+          "swap_pss_kib": 29812,
+          "pss_plus_swap_kib": 110366,
+          "cpu_ticks": 1,
+          "counters_before": {
+            "15619": 574
+          },
+          "counters_after": {
+            "15619": 575
+          },
+          "cpu_one_core_percent": 0.31523086468270395,
+          "cpu_device_percent": 0.07880771617067599,
+          "processes": 1,
+          "interval_seconds": 3.1722781999997096,
+          "swap_kind": "SwapPSS",
+          "swap_kib": 29812
+        },
+        {
+          "sample": 4,
+          "pss_kib": 65490,
+          "swap_pss_kib": 34900,
+          "pss_plus_swap_kib": 100390,
+          "cpu_ticks": 0,
+          "counters_before": {
+            "15619": 575
+          },
+          "counters_after": {
+            "15619": 575
+          },
+          "cpu_one_core_percent": 0.0,
+          "cpu_device_percent": 0.0,
+          "processes": 1,
+          "interval_seconds": 3.1634540999984893,
+          "swap_kind": "SwapPSS",
+          "swap_kib": 34900
+        },
+        {
+          "sample": 5,
+          "pss_kib": 74078,
+          "swap_pss_kib": 32356,
+          "pss_plus_swap_kib": 106434,
+          "cpu_ticks": 0,
+          "counters_before": {
+            "15619": 586
+          },
+          "counters_after": {
+            "15619": 586
+          },
+          "cpu_one_core_percent": 0.0,
+          "cpu_device_percent": 0.0,
+          "processes": 1,
+          "interval_seconds": 3.163373799998226,
+          "swap_kind": "SwapPSS",
+          "swap_kib": 32356
+        },
+        {
+          "sample": 6,
+          "pss_kib": 106698,
+          "swap_pss_kib": 12964,
+          "pss_plus_swap_kib": 119662,
+          "cpu_ticks": 53,
+          "counters_before": {
+            "15619": 586
+          },
+          "counters_after": {
+            "15619": 639
+          },
+          "cpu_one_core_percent": 16.731029041299898,
+          "cpu_device_percent": 4.1827572603249745,
+          "processes": 1,
+          "interval_seconds": 3.1677669000018795,
+          "swap_kind": "SwapPSS",
+          "swap_kib": 12964
+        }
+      ],
+      "median_pss_mib": 75.474609375,
+      "median_cpu_one_core_percent": 0.3157623452567062,
+      "cpu_definition": "100% = one fully used core; all named package processes summed",
+      "memory_definition": "dumpsys meminfo --local -s -S; TOTAL PSS and SwapPSS for named package processes; shared pages apportioned"
+    },
+    "tonal-foreground-2": {
+      "label": "tonal-foreground-2",
+      "package": "app.tonal.android",
+      "scenario": "idle",
+      "profile": {
+        "android": "16",
+        "api": "36",
+        "abi": "x86_64",
+        "cores": 4,
+        "page_size": 4096,
+        "clk_tck": 100,
+        "app_version": "0.1.0-local",
+        "visibility": "foreground"
+      },
+      "cold_start_ms": [],
+      "samples": [
+        {
+          "sample": 1,
+          "pss_kib": 16861,
+          "swap_kib": 32,
+          "swap_kind": "SWAP_KB",
+          "pss_plus_swap_kib": 16893,
+          "cpu_ticks": 0,
+          "counters_before": {
+            "16436": 85
+          },
+          "counters_after": {
+            "16436": 85
+          },
+          "cpu_one_core_percent": 0.0,
+          "cpu_device_percent": 0.0,
+          "processes": 1,
+          "interval_seconds": 3.1902354000012565
+        },
+        {
+          "sample": 2,
+          "pss_kib": 16895,
+          "swap_kib": 32,
+          "swap_kind": "SWAP_KB",
+          "pss_plus_swap_kib": 16927,
+          "cpu_ticks": 0,
+          "counters_before": {
+            "16436": 85
+          },
+          "counters_after": {
+            "16436": 85
+          },
+          "cpu_one_core_percent": 0.0,
+          "cpu_device_percent": 0.0,
+          "processes": 1,
+          "interval_seconds": 3.1925697999977274
+        },
+        {
+          "sample": 3,
+          "pss_kib": 16899,
+          "swap_kib": 32,
+          "swap_kind": "SWAP_KB",
+          "pss_plus_swap_kib": 16931,
+          "cpu_ticks": 0,
+          "counters_before": {
+            "16436": 85
+          },
+          "counters_after": {
+            "16436": 85
+          },
+          "cpu_one_core_percent": 0.0,
+          "cpu_device_percent": 0.0,
+          "processes": 1,
+          "interval_seconds": 3.1771916999969108
+        },
+        {
+          "sample": 4,
+          "pss_kib": 16903,
+          "swap_kib": 32,
+          "swap_kind": "SWAP_KB",
+          "pss_plus_swap_kib": 16935,
+          "cpu_ticks": 0,
+          "counters_before": {
+            "16436": 85
+          },
+          "counters_after": {
+            "16436": 85
+          },
+          "cpu_one_core_percent": 0.0,
+          "cpu_device_percent": 0.0,
+          "processes": 1,
+          "interval_seconds": 3.1760996999983035
+        },
+        {
+          "sample": 5,
+          "pss_kib": 16505,
+          "swap_kib": 32,
+          "swap_kind": "SWAP_KB",
+          "pss_plus_swap_kib": 16537,
+          "cpu_ticks": 1,
+          "counters_before": {
+            "16436": 85
+          },
+          "counters_after": {
+            "16436": 86
+          },
+          "cpu_one_core_percent": 0.29599488141958236,
+          "cpu_device_percent": 0.07399872035489559,
+          "processes": 1,
+          "interval_seconds": 3.3784368000015093
+        },
+        {
+          "sample": 6,
+          "pss_kib": 16505,
+          "swap_kib": 32,
+          "swap_kind": "SWAP_KB",
+          "pss_plus_swap_kib": 16537,
+          "cpu_ticks": 0,
+          "counters_before": {
+            "16436": 86
+          },
+          "counters_after": {
+            "16436": 86
+          },
+          "cpu_one_core_percent": 0.0,
+          "cpu_device_percent": 0.0,
+          "processes": 1,
+          "interval_seconds": 3.4144083999999566
+        }
+      ],
+      "median_pss_mib": 16.482421875,
+      "median_cpu_one_core_percent": 0.0,
+      "cpu_definition": "100% = one fully used core; all named package processes summed",
+      "memory_definition": "dumpsys meminfo --local -s -S; TOTAL PSS and SwapPSS for named package processes; shared pages apportioned"
+    },
+    "spotify-foreground-2": {
+      "label": "spotify-foreground-2",
+      "package": "com.spotify.music",
+      "scenario": "idle",
+      "profile": {
+        "android": "16",
+        "api": "36",
+        "abi": "x86_64",
+        "cores": 4,
+        "page_size": 4096,
+        "clk_tck": 100,
+        "app_version": "9.1.90.2270",
+        "visibility": "foreground"
+      },
+      "cold_start_ms": [],
+      "samples": [
+        {
+          "sample": 1,
+          "pss_kib": 158173,
+          "swap_kib": 32,
+          "swap_kind": "SWAP_KB",
+          "pss_plus_swap_kib": 158205,
+          "cpu_ticks": 0,
+          "counters_before": {
+            "16009": 571
+          },
+          "counters_after": {
+            "16009": 571
+          },
+          "cpu_one_core_percent": 0.0,
+          "cpu_device_percent": 0.0,
+          "processes": 1,
+          "interval_seconds": 3.190543799999432
+        },
+        {
+          "sample": 2,
+          "pss_kib": 158177,
+          "swap_kib": 32,
+          "swap_kind": "SWAP_KB",
+          "pss_plus_swap_kib": 158209,
+          "cpu_ticks": 0,
+          "counters_before": {
+            "16009": 571
+          },
+          "counters_after": {
+            "16009": 571
+          },
+          "cpu_one_core_percent": 0.0,
+          "cpu_device_percent": 0.0,
+          "processes": 1,
+          "interval_seconds": 3.1692775000010442
+        },
+        {
+          "sample": 3,
+          "pss_kib": 158177,
+          "swap_kib": 32,
+          "swap_kind": "SWAP_KB",
+          "pss_plus_swap_kib": 158209,
+          "cpu_ticks": 0,
+          "counters_before": {
+            "16009": 571
+          },
+          "counters_after": {
+            "16009": 571
+          },
+          "cpu_one_core_percent": 0.0,
+          "cpu_device_percent": 0.0,
+          "processes": 1,
+          "interval_seconds": 3.3307845999988785
+        },
+        {
+          "sample": 4,
+          "pss_kib": 158210,
+          "swap_kib": 32,
+          "swap_kind": "SWAP_KB",
+          "pss_plus_swap_kib": 158242,
+          "cpu_ticks": 1,
+          "counters_before": {
+            "16009": 571
+          },
+          "counters_after": {
+            "16009": 572
+          },
+          "cpu_one_core_percent": 0.2841622967951186,
+          "cpu_device_percent": 0.07104057419877965,
+          "processes": 1,
+          "interval_seconds": 3.519115700000839
+        },
+        {
+          "sample": 5,
+          "pss_kib": 159950,
+          "swap_kib": 32,
+          "swap_kind": "SWAP_KB",
+          "pss_plus_swap_kib": 159982,
+          "cpu_ticks": 50,
+          "counters_before": {
+            "16009": 572
+          },
+          "counters_after": {
+            "16009": 622
+          },
+          "cpu_one_core_percent": 13.22944479644392,
+          "cpu_device_percent": 3.30736119911098,
+          "processes": 1,
+          "interval_seconds": 3.7794481000019005
+        },
+        {
+          "sample": 6,
+          "pss_kib": 160118,
+          "swap_kib": 32,
+          "swap_kind": "SWAP_KB",
+          "pss_plus_swap_kib": 160150,
+          "cpu_ticks": 5,
+          "counters_before": {
+            "16009": 635
+          },
+          "counters_after": {
+            "16009": 640
+          },
+          "cpu_one_core_percent": 1.4108008600127806,
+          "cpu_device_percent": 0.35270021500319515,
+          "processes": 1,
+          "interval_seconds": 3.5440863000003446
+        }
+      ],
+      "median_pss_mib": 154.48583984375,
+      "median_cpu_one_core_percent": 0.1420811483975593,
+      "cpu_definition": "100% = one fully used core; all named package processes summed",
+      "memory_definition": "dumpsys meminfo --local -s -S; TOTAL PSS and SwapPSS for named package processes; shared pages apportioned"
+    },
+    "tonal-background-2": {
+      "label": "tonal-background-2",
+      "package": "app.tonal.android",
+      "scenario": "idle",
+      "profile": {
+        "android": "16",
+        "api": "36",
+        "abi": "x86_64",
+        "cores": 4,
+        "page_size": 4096,
+        "clk_tck": 100,
+        "app_version": "0.1.0-local",
+        "visibility": "background"
+      },
+      "cold_start_ms": [],
+      "samples": [
+        {
+          "sample": 1,
+          "pss_kib": 16878,
+          "swap_kib": 32,
+          "swap_kind": "SWAP_KB",
+          "pss_plus_swap_kib": 16910,
+          "cpu_ticks": 0,
+          "counters_before": {
+            "16915": 96
+          },
+          "counters_after": {
+            "16915": 96
+          },
+          "cpu_one_core_percent": 0.0,
+          "cpu_device_percent": 0.0,
+          "processes": 1,
+          "interval_seconds": 3.1628981000030763
+        },
+        {
+          "sample": 2,
+          "pss_kib": 16904,
+          "swap_kib": 32,
+          "swap_kind": "SWAP_KB",
+          "pss_plus_swap_kib": 16936,
+          "cpu_ticks": 0,
+          "counters_before": {
+            "16915": 96
+          },
+          "counters_after": {
+            "16915": 96
+          },
+          "cpu_one_core_percent": 0.0,
+          "cpu_device_percent": 0.0,
+          "processes": 1,
+          "interval_seconds": 3.1618407999994815
+        },
+        {
+          "sample": 3,
+          "pss_kib": 16904,
+          "swap_kib": 32,
+          "swap_kind": "SWAP_KB",
+          "pss_plus_swap_kib": 16936,
+          "cpu_ticks": 0,
+          "counters_before": {
+            "16915": 96
+          },
+          "counters_after": {
+            "16915": 96
+          },
+          "cpu_one_core_percent": 0.0,
+          "cpu_device_percent": 0.0,
+          "processes": 1,
+          "interval_seconds": 3.1676086000006762
+        },
+        {
+          "sample": 4,
+          "pss_kib": 16904,
+          "swap_kib": 32,
+          "swap_kind": "SWAP_KB",
+          "pss_plus_swap_kib": 16936,
+          "cpu_ticks": 0,
+          "counters_before": {
+            "16915": 96
+          },
+          "counters_after": {
+            "16915": 96
+          },
+          "cpu_one_core_percent": 0.0,
+          "cpu_device_percent": 0.0,
+          "processes": 1,
+          "interval_seconds": 3.1751213999996253
+        },
+        {
+          "sample": 5,
+          "pss_kib": 16510,
+          "swap_kib": 32,
+          "swap_kind": "SWAP_KB",
+          "pss_plus_swap_kib": 16542,
+          "cpu_ticks": 2,
+          "counters_before": {
+            "16915": 96
+          },
+          "counters_after": {
+            "16915": 98
+          },
+          "cpu_one_core_percent": 0.6320663037551756,
+          "cpu_device_percent": 0.1580165759387939,
+          "processes": 1,
+          "interval_seconds": 3.1642250000004424
+        },
+        {
+          "sample": 6,
+          "pss_kib": 16502,
+          "swap_kib": 32,
+          "swap_kind": "SWAP_KB",
+          "pss_plus_swap_kib": 16534,
+          "cpu_ticks": 0,
+          "counters_before": {
+            "16915": 98
+          },
+          "counters_after": {
+            "16915": 98
+          },
+          "cpu_one_core_percent": 0.0,
+          "cpu_device_percent": 0.0,
+          "processes": 1,
+          "interval_seconds": 3.160292499997013
+        }
+      ],
+      "median_pss_mib": 16.4951171875,
+      "median_cpu_one_core_percent": 0.0,
+      "cpu_definition": "100% = one fully used core; all named package processes summed",
+      "memory_definition": "dumpsys meminfo --local -s -S; TOTAL PSS and SwapPSS for named package processes; shared pages apportioned"
+    },
+    "spotify-background-2": {
+      "label": "spotify-background-2",
+      "package": "com.spotify.music",
+      "scenario": "idle",
+      "profile": {
+        "android": "16",
+        "api": "36",
+        "abi": "x86_64",
+        "cores": 4,
+        "page_size": 4096,
+        "clk_tck": 100,
+        "app_version": "9.1.90.2270",
+        "visibility": "background"
+      },
+      "cold_start_ms": [],
+      "samples": [
+        {
+          "sample": 1,
+          "pss_kib": 59952,
+          "swap_kib": 31280,
+          "swap_kind": "SwapPSS",
+          "pss_plus_swap_kib": 91232,
+          "cpu_ticks": 0,
+          "counters_before": {
+            "16574": 587
+          },
+          "counters_after": {
+            "16574": 587
+          },
+          "cpu_one_core_percent": 0.0,
+          "cpu_device_percent": 0.0,
+          "processes": 1,
+          "interval_seconds": 4.045458699998562
+        },
+        {
+          "sample": 2,
+          "pss_kib": 72525,
+          "swap_kib": 27524,
+          "swap_kind": "SwapPSS",
+          "pss_plus_swap_kib": 100049,
+          "cpu_ticks": 0,
+          "counters_before": {
+            "16574": 602
+          },
+          "counters_after": {
+            "16574": 602
+          },
+          "cpu_one_core_percent": 0.0,
+          "cpu_device_percent": 0.0,
+          "processes": 1,
+          "interval_seconds": 3.1659651000009035
+        },
+        {
+          "sample": 3,
+          "pss_kib": 72525,
+          "swap_kib": 27512,
+          "swap_kind": "SwapPSS",
+          "pss_plus_swap_kib": 100037,
+          "cpu_ticks": 0,
+          "counters_before": {
+            "16574": 602
+          },
+          "counters_after": {
+            "16574": 602
+          },
+          "cpu_one_core_percent": 0.0,
+          "cpu_device_percent": 0.0,
+          "processes": 1,
+          "interval_seconds": 3.168463800000609
+        },
+        {
+          "sample": 4,
+          "pss_kib": 59013,
+          "swap_kib": 31796,
+          "swap_kind": "SwapPSS",
+          "pss_plus_swap_kib": 90809,
+          "cpu_ticks": 1,
+          "counters_before": {
+            "16574": 602
+          },
+          "counters_after": {
+            "16574": 603
+          },
+          "cpu_one_core_percent": 0.31488164669472735,
+          "cpu_device_percent": 0.07872041167368184,
+          "processes": 1,
+          "interval_seconds": 3.1757964000025822
+        },
+        {
+          "sample": 5,
+          "pss_kib": 94724,
+          "swap_kib": 24192,
+          "swap_kind": "SwapPSS",
+          "pss_plus_swap_kib": 118916,
+          "cpu_ticks": 23,
+          "counters_before": {
+            "16574": 612
+          },
+          "counters_after": {
+            "16574": 635
+          },
+          "cpu_one_core_percent": 7.155338096876678,
+          "cpu_device_percent": 1.7888345242191694,
+          "processes": 1,
+          "interval_seconds": 3.2143834000016795
+        },
+        {
+          "sample": 6,
+          "pss_kib": 99044,
+          "swap_kib": 11284,
+          "swap_kind": "SwapPSS",
+          "pss_plus_swap_kib": 110328,
+          "cpu_ticks": 13,
+          "counters_before": {
+            "16574": 656
+          },
+          "counters_after": {
+            "16574": 669
+          },
+          "cpu_one_core_percent": 4.112857050562427,
+          "cpu_device_percent": 1.0282142626406068,
+          "processes": 1,
+          "interval_seconds": 3.1608198000030825
+        }
+      ],
+      "median_pss_mib": 70.8251953125,
+      "median_cpu_one_core_percent": 0.15744082334736367,
+      "cpu_definition": "100% = one fully used core; all named package processes summed",
+      "memory_definition": "dumpsys meminfo --local -s -S; TOTAL PSS and SwapPSS for named package processes; shared pages apportioned"
+    },
+    "tonal-local": {
+      "label": "tonal-local",
+      "package": "app.tonal.android",
+      "scenario": "local",
+      "profile": {
+        "android": "16",
+        "api": "36",
+        "abi": "x86_64",
+        "cores": 4,
+        "page_size": 4096,
+        "clk_tck": 100,
+        "app_version": "0.1.0-local",
+        "visibility": "foreground"
+      },
+      "cold_start_ms": [],
+      "samples": [
+        {
+          "sample": 1,
+          "pss_kib": 21223,
+          "swap_kib": 32,
+          "swap_kind": "SWAP_KB",
+          "pss_plus_swap_kib": 21255,
+          "cpu_ticks": 8,
+          "counters_before": {
+            "17058": 110
+          },
+          "counters_after": {
+            "17058": 118
+          },
+          "cpu_one_core_percent": 1.8914615971582611,
+          "cpu_device_percent": 0.4728653992895653,
+          "processes": 1,
+          "interval_seconds": 4.229533400000946
+        },
+        {
+          "sample": 2,
+          "pss_kib": 21475,
+          "swap_kib": 32,
+          "swap_kind": "SWAP_KB",
+          "pss_plus_swap_kib": 21507,
+          "cpu_ticks": 8,
+          "counters_before": {
+            "17058": 120
+          },
+          "counters_after": {
+            "17058": 128
+          },
+          "cpu_one_core_percent": 1.9242032758163041,
+          "cpu_device_percent": 0.48105081895407603,
+          "processes": 1,
+          "interval_seconds": 4.15756490000058
+        },
+        {
+          "sample": 3,
+          "pss_kib": 21691,
+          "swap_kib": 32,
+          "swap_kind": "SWAP_KB",
+          "pss_plus_swap_kib": 21723,
+          "cpu_ticks": 8,
+          "counters_before": {
+            "17058": 128
+          },
+          "counters_after": {
+            "17058": 136
+          },
+          "cpu_one_core_percent": 1.9133878672805655,
+          "cpu_device_percent": 0.4783469668201414,
+          "processes": 1,
+          "interval_seconds": 4.181065499997203
+        },
+        {
+          "sample": 4,
+          "pss_kib": 21895,
+          "swap_kib": 32,
+          "swap_kind": "SWAP_KB",
+          "pss_plus_swap_kib": 21927,
+          "cpu_ticks": 8,
+          "counters_before": {
+            "17058": 136
+          },
+          "counters_after": {
+            "17058": 144
+          },
+          "cpu_one_core_percent": 1.9224104566431433,
+          "cpu_device_percent": 0.4806026141607858,
+          "processes": 1,
+          "interval_seconds": 4.161442200002057
+        },
+        {
+          "sample": 5,
+          "pss_kib": 22095,
+          "swap_kib": 32,
+          "swap_kind": "SWAP_KB",
+          "pss_plus_swap_kib": 22127,
+          "cpu_ticks": 7,
+          "counters_before": {
+            "17058": 144
+          },
+          "counters_after": {
+            "17058": 151
+          },
+          "cpu_one_core_percent": 1.6791321439094904,
+          "cpu_device_percent": 0.4197830359773726,
+          "processes": 1,
+          "interval_seconds": 4.168820200000482
+        },
+        {
+          "sample": 6,
+          "pss_kib": 20751,
+          "swap_kib": 32,
+          "swap_kind": "SWAP_KB",
+          "pss_plus_swap_kib": 20783,
+          "cpu_ticks": 7,
+          "counters_before": {
+            "17058": 155
+          },
+          "counters_after": {
+            "17058": 162
+          },
+          "cpu_one_core_percent": 1.6818553016749123,
+          "cpu_device_percent": 0.42046382541872807,
+          "processes": 1,
+          "interval_seconds": 4.162070300000778
+        }
+      ],
+      "median_pss_mib": 21.0771484375,
+      "median_cpu_one_core_percent": 1.9024247322194134,
+      "cpu_definition": "100% = one fully used core; all named package processes summed",
+      "memory_definition": "dumpsys meminfo --local -s -S; TOTAL PSS and SwapPSS for named package processes; shared pages apportioned"
+    },
+    "tonal-effects": {
+      "label": "tonal-effects",
+      "package": "app.tonal.android",
+      "scenario": "effects",
+      "profile": {
+        "android": "16",
+        "api": "36",
+        "abi": "x86_64",
+        "cores": 4,
+        "page_size": 4096,
+        "clk_tck": 100,
+        "app_version": "0.1.0-local",
+        "visibility": "foreground"
+      },
+      "cold_start_ms": [],
+      "samples": [
+        {
+          "sample": 1,
+          "pss_kib": 21231,
+          "swap_kib": 32,
+          "swap_kind": "SWAP_KB",
+          "pss_plus_swap_kib": 21263,
+          "cpu_ticks": 11,
+          "counters_before": {
+            "17203": 115
+          },
+          "counters_after": {
+            "17203": 126
+          },
+          "cpu_one_core_percent": 2.6404663908589803,
+          "cpu_device_percent": 0.6601165977147451,
+          "processes": 1,
+          "interval_seconds": 4.165930700000899
+        },
+        {
+          "sample": 2,
+          "pss_kib": 21439,
+          "swap_kib": 32,
+          "swap_kind": "SWAP_KB",
+          "pss_plus_swap_kib": 21471,
+          "cpu_ticks": 10,
+          "counters_before": {
+            "17203": 127
+          },
+          "counters_after": {
+            "17203": 137
+          },
+          "cpu_one_core_percent": 2.402564882164755,
+          "cpu_device_percent": 0.6006412205411887,
+          "processes": 1,
+          "interval_seconds": 4.162218500001472
+        },
+        {
+          "sample": 3,
+          "pss_kib": 21631,
+          "swap_kib": 32,
+          "swap_kind": "SWAP_KB",
+          "pss_plus_swap_kib": 21663,
+          "cpu_ticks": 11,
+          "counters_before": {
+            "17203": 138
+          },
+          "counters_after": {
+            "17203": 149
+          },
+          "cpu_one_core_percent": 2.6394520286427077,
+          "cpu_device_percent": 0.6598630071606769,
+          "processes": 1,
+          "interval_seconds": 4.167531700000836
+        },
+        {
+          "sample": 4,
+          "pss_kib": 21875,
+          "swap_kib": 32,
+          "swap_kind": "SWAP_KB",
+          "pss_plus_swap_kib": 21907,
+          "cpu_ticks": 10,
+          "counters_before": {
+            "17203": 149
+          },
+          "counters_after": {
+            "17203": 159
+          },
+          "cpu_one_core_percent": 2.3968649390081884,
+          "cpu_device_percent": 0.5992162347520471,
+          "processes": 1,
+          "interval_seconds": 4.172116600002482
+        },
+        {
+          "sample": 5,
+          "pss_kib": 22067,
+          "swap_kib": 32,
+          "swap_kind": "SWAP_KB",
+          "pss_plus_swap_kib": 22099,
+          "cpu_ticks": 9,
+          "counters_before": {
+            "17203": 160
+          },
+          "counters_after": {
+            "17203": 169
+          },
+          "cpu_one_core_percent": 2.1585430179990728,
+          "cpu_device_percent": 0.5396357544997682,
+          "processes": 1,
+          "interval_seconds": 4.169479100000899
+        },
+        {
+          "sample": 6,
+          "pss_kib": 20703,
+          "swap_kib": 32,
+          "swap_kind": "SWAP_KB",
+          "pss_plus_swap_kib": 20735,
+          "cpu_ticks": 11,
+          "counters_before": {
+            "17203": 170
+          },
+          "counters_after": {
+            "17203": 181
+          },
+          "cpu_one_core_percent": 2.6399109610835407,
+          "cpu_device_percent": 0.6599777402708852,
+          "processes": 1,
+          "interval_seconds": 4.166807199999312
+        }
+      ],
+      "median_pss_mib": 21.0302734375,
+      "median_cpu_one_core_percent": 2.5210084554037313,
+      "cpu_definition": "100% = one fully used core; all named package processes summed",
+      "memory_definition": "dumpsys meminfo --local -s -S; TOTAL PSS and SwapPSS for named package processes; shared pages apportioned"
+    }
+  },
+  "functional_audio_test": {
+    "pass_all": true,
+    "playing": {
+      "frames": 366272,
+      "paused": false,
+      "playing": true,
+      "metrics": "PCM: 366,272 frames \u00b7 DSP 26 \u00b5s/bloco \u00b7 underruns 0"
+    },
+    "paused1": {
+      "frames": 415424,
+      "paused": true,
+      "playing": false,
+      "metrics": "PCM: 415,424 frames \u00b7 DSP 25 \u00b5s/bloco \u00b7 underruns 0"
+    },
+    "paused2": {
+      "frames": 415424,
+      "paused": true,
+      "playing": false,
+      "metrics": "PCM: 415,424 frames \u00b7 DSP 25 \u00b5s/bloco \u00b7 underruns 0"
+    },
+    "resumed": {
+      "frames": 604864,
+      "paused": false,
+      "playing": true,
+      "metrics": "PCM: 604,864 frames \u00b7 DSP 24 \u00b5s/bloco \u00b7 underruns 0"
+    },
+    "after_background": {
+      "frames": 887488,
+      "paused": false,
+      "playing": true,
+      "metrics": "PCM: 887,488 frames \u00b7 DSP 28 \u00b5s/bloco \u00b7 underruns 0"
+    },
+    "audible_click_tested": false,
+    "note": "Headless emulator; verified PCM transport and state, not audible quality"
+  }
+}

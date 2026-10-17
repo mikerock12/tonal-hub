@@ -1,0 +1,2 @@
+// Reuse the existing project icon for the local launcher and independent player.
+IDI_ICON1 ICON "tonal.ico"

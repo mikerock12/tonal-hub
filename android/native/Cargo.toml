@@ -1,0 +1,28 @@
+[package]
+name = "tonal_android"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+librespot = { version = "=0.8.0", default-features = false, features = ["rustls-tls-webpki-roots"] }
+jni = "=0.21.1"
+log = "=0.4.34"
+tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "macros"] }
+symphonia = { version = "0.5", default-features = false, features = ["mp3", "ogg", "vorbis", "flac", "wav", "pcm", "isomp4", "aac"] }
+
+[patch.crates-io]
+librespot-core = { path = "vendor/librespot-core" }
+librespot-audio = { path = "vendor/librespot-audio" }
+librespot-connect = { path = "vendor/librespot-connect" }
+librespot-playback = { path = "vendor/librespot-playback" }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+strip = true
+codegen-units = 1
+panic = "unwind"

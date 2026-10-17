@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "platform": "windows-x64-msvc2022",
+  "ffmpeg": {
+    "version": "n8.1.3-18-g46d899d7a0-20261014",
+    "sourceRevision": "46d899d7a0",
+    "url": "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-10-14-13-03/ffmpeg-n8.1.3-18-g46d899d7a0-win64-lgpl-shared-8.1.zip",
+    "sha256": "38dd3fb973c2e10723489e2173135d60f569953e70a04b885446175f9e9380d6",
+    "sdkDir": "ffmpeg/ffmpeg-n8.1-latest-win64-lgpl-shared-8.1",
+    "license": "LGPL-3.0-or-later",
+    "provenance": "The archive hash pins the complete binary artifact, including embedded codec dependencies. GPL/nonfree disabled."
+  },
+  "sources": {
+    "openal-soft": {
+      "url": "https://github.com/kcat/openal-soft.git",
+      "commit": "b2c48f7718ef3fcf67921a8b6534c4914e328970"
+    },
+    "libiamf": {
+      "url": "https://github.com/AOMediaCodec/libiamf.git",
+      "commit": "b276f4371a8ae4f370a656e914f7b07e4cd5a2fa"
+    },
+    "oar": {
+      "url": "https://github.com/AOMediaCodec/oar.git",
+      "commit": "ca14b54381b6e8482a72dcc65c3adb17d6751db0"
+    },
+    "absl": {
+      "url": "https://github.com/abseil/abseil-cpp.git",
+      "commit": "76bb24329e8bf5f39704eb10d21b9a80befa7c81"
+    },
+    "googletest": {
+      "url": "https://github.com/google/googletest.git",
+      "commit": "52eb8108c5bdec04579160ae17225d66034bd723"
+    },
+    "eigen": {
+      "url": "https://gitlab.com/libeigen/eigen.git",
+      "commit": "3147391d946bb4b6c68edd901f2add6ac1f31f8c"
+    },
+    "pffft": {
+      "url": "https://bitbucket.org/jpommier/pffft.git",
+      "commit": "0aec0327a6912e1a0ec5326eef737c2ce19bc836"
+    },
+    "fdk-aac": {
+      "url": "https://github.com/mstorsjo/fdk-aac.git",
+      "commit": "716f4394641d53f0d79c9ddac3fa93b03a49f278"
+    },
+    "opus": {
+      "version": "1.4",
+      "url": "https://downloads.xiph.org/releases/opus/opus-1.4.tar.gz",
+      "sha256": "c9b32b4253be5ae63d1ff16eea06b94b5f0f2951b7a02aceef58e3a3ce49c51f"
+    },
+    "flac": {
+      "version": "1.4.2",
+      "url": "https://downloads.xiph.org/releases/flac/flac-1.4.2.tar.xz",
+      "sha256": "e322d58a1f48d23d9dd38f432672865f6f79e73a6f9cc5a5f57fcaa83eb5a8e4"
+    }
+  },
+  "runtimeHashes": {
+    "avcodec-62.dll": "a41c97f10552db0094a82d159852a9fb37de27b431a1141d650b554f883ee960",
+    "avdevice-62.dll": "2615621a1be2061e0d844a2bc53b9c278edd513f27f1e143ac59ceec82ad11e5",
+    "avfilter-11.dll": "b554530876302666890a849de129379ee075d88cb877c3c14f0f7f2a2a93bd2b",
+    "avformat-62.dll": "c1807841e1a031934db50afe83e9e39d04994dd040a5b61efc41152cb7b88ffd",
+    "avutil-60.dll": "347812c2cd1699616e11689542b58fd4e2a98f01b8e1e92e94a39ceda702e3f6",
+    "swresample-6.dll": "00f6444849be71d5ea9207865b410750acf82aa73ddc1b86ecaefc2e91fc9ce6",
+    "swscale-9.dll": "46a0328d2f306ccfcde59ae5d02a0655eb1ab8974cb4a2cc230c63beae24352c"
+  }
+}

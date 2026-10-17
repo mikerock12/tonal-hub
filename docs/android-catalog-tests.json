@@ -1,0 +1,457 @@
+{
+  "version": "0.2.0-local",
+  "date": "2026-10-15",
+  "apk": "out/android/Tonal-Android-0.2.0-local.apk",
+  "package_validation": {
+    "sha256": "4eebdcdf77e506984f5c6bedfdf0ea2a4ad7efd55f24824ef3ba5fbe248314bf",
+    "size_bytes": 20443145,
+    "architectures": {
+      "arm64-v8a": {
+        "elf_load_alignment": [
+          16384,
+          16384,
+          16384,
+          16384
+        ],
+        "zip_offset": 131072,
+        "uncompressed": true,
+        "matches_packaged_build": true,
+        "before_strip_matches_source": true
+      },
+      "x86_64": {
+        "elf_load_alignment": [
+          16384,
+          16384,
+          16384,
+          16384
+        ],
+        "zip_offset": 7946240,
+        "uncompressed": true,
+        "matches_packaged_build": true,
+        "before_strip_matches_source": true
+      }
+    },
+    "license_files": 669,
+    "private_seed_file_present": false,
+    "session_token_present": false
+  },
+  "signature_verified": true,
+  "signing_certificate_sha256": "464ae7cf34f4f145541569db215f8fcdef5deda1be31921d8e366eed20aa22c2",
+  "min_sdk": 28,
+  "target_sdk": 36,
+  "lint_errors": 0,
+  "lint_warnings": 15,
+  "environment": {
+    "avd": "Tonal_Local_20261015",
+    "android_api": 36,
+    "abi": "x86_64",
+    "default_resolution": [
+      1080,
+      2400
+    ],
+    "small_viewport_dp": [
+      360,
+      640
+    ],
+    "account": "User-authorized Premium test session"
+  },
+  "tests": {
+    "spotify_api": {
+      "pass_all": true,
+      "version": "0.2.0-local",
+      "checks": [
+        {
+          "endpoint": "/v1/search",
+          "status": 400,
+          "passed": true
+        },
+        {
+          "endpoint": "/v1/search",
+          "status": 200,
+          "passed": true
+        },
+        {
+          "endpoint": "/v1/artists/2QwJQuBekTA4qF7N7uLHDP",
+          "status": 200,
+          "passed": true
+        },
+        {
+          "endpoint": "/v1/artists/2QwJQuBekTA4qF7N7uLHDP/albums",
+          "status": 200,
+          "passed": true,
+          "count": 6
+        },
+        {
+          "endpoint": "/v1/albums/6MuDwD3lvWsJyd4I1DSBVd",
+          "status": 200,
+          "passed": true
+        },
+        {
+          "endpoint": "/v1/albums/6MuDwD3lvWsJyd4I1DSBVd/tracks",
+          "status": 200,
+          "passed": true,
+          "count": 10
+        },
+        {
+          "endpoint": "/v1/albums/6MuDwD3lvWsJyd4I1DSBVd/tracks",
+          "status": 200,
+          "passed": true,
+          "count": 3,
+          "pagination": true
+        },
+        {
+          "endpoint": "/v1/search",
+          "status": 200,
+          "passed": true,
+          "count": 10
+        },
+        {
+          "endpoint": "/v1/search",
+          "status": 200,
+          "passed": true,
+          "count": 10,
+          "pagination": true
+        },
+        {
+          "endpoint": "/v1/me/playlists",
+          "status": 200,
+          "passed": true,
+          "count": 10
+        },
+        {
+          "endpoint": "/v1/me/playlists",
+          "status": 200,
+          "passed": true,
+          "count": 10,
+          "pagination": true
+        },
+        {
+          "endpoint": "/v1/playlists/5O3QJ8MTNFPsDniLuKM338",
+          "status": 200,
+          "passed": true
+        },
+        {
+          "endpoint": "/v1/playlists/5O3QJ8MTNFPsDniLuKM338/items",
+          "status": 200,
+          "passed": true,
+          "count": 10
+        },
+        {
+          "endpoint": "/v1/playlists/5O3QJ8MTNFPsDniLuKM338/items",
+          "status": 200,
+          "passed": true,
+          "count": 10,
+          "pagination": true
+        },
+        {
+          "endpoint": "/v1/me/albums",
+          "status": 200,
+          "passed": true,
+          "count": 10
+        },
+        {
+          "endpoint": "/v1/me/albums",
+          "status": 200,
+          "passed": true,
+          "count": 10,
+          "pagination": true
+        },
+        {
+          "endpoint": "/v1/me/following",
+          "status": 200,
+          "passed": true,
+          "count": 10
+        },
+        {
+          "endpoint": "/v1/me/following",
+          "status": 200,
+          "passed": true,
+          "count": 10,
+          "pagination": true
+        },
+        {
+          "endpoint": "/v1/me/tracks",
+          "status": 200,
+          "passed": true,
+          "count": 10
+        },
+        {
+          "endpoint": "/v1/me/tracks",
+          "status": 200,
+          "passed": true,
+          "count": 10,
+          "pagination": true
+        },
+        {
+          "endpoint": "/v1/me/player/recently-played",
+          "status": 200,
+          "passed": true
+        },
+        {
+          "endpoint": "/v1/search",
+          "status": 200,
+          "passed": true
+        }
+      ]
+    },
+    "catalog_ui": {
+      "pass_all": true,
+      "version": "0.2.0-local",
+      "checks": [
+        {
+          "name": "home_authenticated_artwork",
+          "passed": true
+        },
+        {
+          "name": "search_all_no_invalid_limit",
+          "passed": true
+        },
+        {
+          "name": "artist_page",
+          "passed": true
+        },
+        {
+          "name": "artist_to_album_tracks",
+          "passed": true
+        },
+        {
+          "name": "album_second_page_selection",
+          "passed": true
+        },
+        {
+          "name": "selected_album_track_streams",
+          "passed": true,
+          "track": "Wolf"
+        },
+        {
+          "name": "album_context_next_track",
+          "passed": true
+        },
+        {
+          "name": "pause_resume_pcm",
+          "passed": true,
+          "paused_frames": 1445056
+        },
+        {
+          "name": "player_seek_control",
+          "passed": true
+        },
+        {
+          "name": "system_back_restores_search",
+          "passed": true
+        },
+        {
+          "name": "library_playlists",
+          "passed": true
+        },
+        {
+          "name": "library_saved_albums",
+          "passed": true
+        },
+        {
+          "name": "library_followed_artists",
+          "passed": true
+        },
+        {
+          "name": "search_tracks",
+          "passed": true
+        },
+        {
+          "name": "search_queue_next",
+          "passed": true
+        },
+        {
+          "name": "search_albums",
+          "passed": true
+        },
+        {
+          "name": "search_playlists",
+          "passed": true
+        },
+        {
+          "name": "empty_search",
+          "passed": true
+        },
+        {
+          "name": "no_java_crash",
+          "passed": true
+        }
+      ]
+    },
+    "catalog_player": {
+      "pass_all": true,
+      "version": "0.2.0-local",
+      "checks": [
+        {
+          "name": "playlist_context_and_next",
+          "passed": true,
+          "first": "Bruise Violet",
+          "second": "He's My Thing"
+        },
+        {
+          "name": "liked_queue_and_next",
+          "passed": true,
+          "first": "S\u00e1bado De Sol - Live",
+          "second": "Na Moral (feat. Seu Jorge)",
+          "unavailable_count": 1
+        },
+        {
+          "name": "seek_confirmed_by_spotify",
+          "passed": true,
+          "position_ms": 124244,
+          "duration_ms": 240093
+        },
+        {
+          "name": "shuffle_repeat_confirmed_by_spotify",
+          "passed": true
+        },
+        {
+          "name": "catalog_streams_in_background",
+          "passed": true
+        },
+        {
+          "name": "search_available_after_background",
+          "passed": true
+        }
+      ]
+    },
+    "responsive_ui": {
+      "pass_all": true,
+      "version": "0.2.0-local",
+      "viewport_dp": [
+        360,
+        640
+      ],
+      "checks": [
+        {
+          "name": "home_360dp",
+          "passed": true
+        },
+        {
+          "name": "search_artist_360dp",
+          "passed": true
+        },
+        {
+          "name": "compact_transport_visible_without_debug_counters",
+          "passed": true
+        },
+        {
+          "name": "back_preserves_query_360dp",
+          "passed": true
+        }
+      ]
+    },
+    "spotify_streaming": {
+      "pass_all": true,
+      "package": "app.tonal.android.benchmark",
+      "version": "0.2.0-local",
+      "track_uri": "spotify:track:65cOtEO1eVrTezvIMDsoDr",
+      "authorization": "User-authorized Premium cached engine credentials, copied only into benchmark sandbox",
+      "fresh_browser_oauth_completed_in_emulator": false,
+      "playing": {
+        "frames": 1908928,
+        "playing": true,
+        "paused": false,
+        "metrics": "PCM: 1,908,928 frames \u00b7 DSP 29 \u00b5s/bloco \u00b7 underruns 0",
+        "track": "Wolf",
+        "errors": []
+      },
+      "paused1": {
+        "frames": 2008256,
+        "playing": false,
+        "paused": true,
+        "metrics": "PCM: 2,008,256 frames \u00b7 DSP 29 \u00b5s/bloco \u00b7 underruns 0",
+        "track": "Wolf",
+        "errors": []
+      },
+      "paused2": {
+        "frames": 2008256,
+        "playing": false,
+        "paused": true,
+        "metrics": "PCM: 2,008,256 frames \u00b7 DSP 29 \u00b5s/bloco \u00b7 underruns 0",
+        "track": "Wolf",
+        "errors": []
+      },
+      "resumed": {
+        "frames": 2117952,
+        "playing": true,
+        "paused": false,
+        "metrics": "PCM: 2,117,952 frames \u00b7 DSP 29 \u00b5s/bloco \u00b7 underruns 0",
+        "track": "Wolf",
+        "errors": []
+      },
+      "after_background": {
+        "frames": 2555840,
+        "playing": true,
+        "paused": false,
+        "metrics": "PCM: 2,555,840 frames \u00b7 DSP 31 \u00b5s/bloco \u00b7 underruns 0",
+        "track": "Wolf",
+        "errors": []
+      },
+      "reconnected": {
+        "frames": 257216,
+        "playing": true,
+        "paused": false,
+        "metrics": "PCM: 257,216 frames \u00b7 DSP 42 \u00b5s/bloco \u00b7 underruns 0",
+        "track": "Wolf",
+        "errors": []
+      },
+      "audible_quality_tested": false
+    },
+    "release_local_audio": {
+      "pass_all": true,
+      "playing": {
+        "frames": 288448,
+        "paused": false,
+        "playing": true,
+        "metrics": "PCM: 288,448 frames \u00b7 DSP 27 \u00b5s/bloco \u00b7 underruns 0"
+      },
+      "paused1": {
+        "frames": 379584,
+        "paused": true,
+        "playing": false,
+        "metrics": "PCM: 379,584 frames \u00b7 DSP 25 \u00b5s/bloco \u00b7 underruns 0"
+      },
+      "paused2": {
+        "frames": 379584,
+        "paused": true,
+        "playing": false,
+        "metrics": "PCM: 379,584 frames \u00b7 DSP 25 \u00b5s/bloco \u00b7 underruns 0"
+      },
+      "resumed": {
+        "frames": 500416,
+        "paused": false,
+        "playing": true,
+        "metrics": "PCM: 500,416 frames \u00b7 DSP 25 \u00b5s/bloco \u00b7 underruns 0"
+      },
+      "after_background": {
+        "frames": 691904,
+        "paused": false,
+        "playing": true,
+        "metrics": "PCM: 691,904 frames \u00b7 DSP 26 \u00b5s/bloco \u00b7 underruns 0"
+      },
+      "audible_click_tested": false,
+      "note": "Headless emulator; verified PCM transport and state, not audible quality"
+    }
+  },
+  "evidence": {
+    "spotify_api": "out/android/catalog-api-0.2.0.json",
+    "catalog_ui": "out/android/catalog-smoke-0.2.0/result.json",
+    "catalog_player": "out/android/catalog-navigation-0.2.0/result.json",
+    "responsive_ui": "out/android/responsive-0.2.0/result.json",
+    "spotify_streaming": "out/android/streaming-smoke-0.2.0/result.json",
+    "release_local_audio": "out/android/audio-smoke-0.2.0/result.json"
+  },
+  "limitations": [
+    "Headless emulator: audible quality/clicks not evaluated",
+    "ARM64 packaging validated; no physical POCO test in this run",
+    "Fresh browser engine OAuth not repeated; authorized cached credentials used",
+    "Intermittent engine disconnections occurred in earlier repeated cold-start trials; final isolated restart and final catalog/player trials passed",
+    "No new CPU/RAM comparison for version 0.2.0; 0.1.0 benchmark remains historical"
+  ],
+  "github_writes": false,
+  "commits_created": false,
+  "private_test_session_cleaned": true,
+  "test_emulator_stopped": true,
+  "gradle_daemon_stopped": true
+}

@@ -1,0 +1,52 @@
+name: Tonal private CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: tonal-ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  personal-library:
+    runs-on: windows-2022
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Qt 6.8.3
+        shell: pwsh
+        run: |
+          python -m pip install aqtinstall==3.3.0
+          python -m aqt install-qt windows desktop 6.8.3 win64_msvc2022_64 --outputdir "$env:RUNNER_TEMP/Qt"
+      - name: Build and test actual C++ library
+        shell: pwsh
+        run: |
+          $qt = "$env:RUNNER_TEMP/Qt/6.8.3/msvc2022_64"
+          $env:PATH = "$qt/bin;$env:PATH"
+          $env:QT_PLUGIN_PATH = "$qt/plugins"
+          cmake -S tests/companion -B out/ci -A x64 "-DCMAKE_PREFIX_PATH=$qt"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake --build out/ci --config Release --parallel 2
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ctest --test-dir out/ci -C Release --output-on-failure
+  android-java:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14.3'
+      - name: Install Android platform
+        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - name: Compile both Android variants without account credentials
+        run: gradle -p android compileReleaseJavaWithJavac compileBenchmarkJavaWithJavac --console=plain

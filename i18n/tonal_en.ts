@@ -17,7 +17,7 @@
     </message>
     <message>
         <source>Não consegui atualizar</source>
-        <translation>Couldn&apos;t update</translation>
+        <translation>Couldn't update</translation>
     </message>
     <message>
         <source>Artista</source>
@@ -61,10 +61,137 @@
     </message>
 </context>
 <context>
+    <name>AudioEffectsPanel</name>
+    <message>
+        <source>Abrir áudio local</source>
+        <translation>Open local audio</translation>
+    </message>
+    <message>
+        <source>Áudio (*.mp3 *.flac *.wav *.aac *.m4a *.ogg *.opus *.wma *.aiff *.iamf *.mp4)</source>
+        <translation>Audio (*.mp3 *.flac *.wav *.aac *.m4a *.ogg *.opus *.wma *.aiff *.iamf *.mp4)</translation>
+    </message>
+    <message>
+        <source>Todos os arquivos (*)</source>
+        <translation>All files (*)</translation>
+    </message>
+    <message>
+        <source>Restaurar todas as configurações de áudio?</source>
+        <translation>Reset all audio settings?</translation>
+    </message>
+    <message>
+        <source>Áudio e efeitos</source>
+        <translation>Audio and effects</translation>
+    </message>
+    <message>
+        <source>Fechar</source>
+        <translation>Close</translation>
+    </message>
+    <message>
+        <source>Efeitos aplicados apenas ao áudio reproduzido neste computador.</source>
+        <translation>Effects apply only to audio played on this computer.</translation>
+    </message>
+    <message>
+        <source>Motor de áudio avançado</source>
+        <translation>Advanced audio engine</translation>
+    </message>
+    <message>
+        <source>Abrir arquivo…</source>
+        <translation>Open file…</translation>
+    </message>
+    <message>
+        <source>Voltar ao Spotify</source>
+        <translation>Return to Spotify</translation>
+    </message>
+    <message>
+        <source>Spotify / librespot</source>
+        <translation>Spotify / librespot</translation>
+    </message>
+    <message>
+        <source>Pico pré-volume: %1 dBFS · DSP: %2 µs · inválidas: %3</source>
+        <translation>Pre-volume peak: %1 dBFS · DSP: %2 µs · invalid samples: %3</translation>
+    </message>
+    <message>
+        <source>Equalizador</source>
+        <translation>Equalizer</translation>
+    </message>
+    <message>
+        <source>Zerar EQ</source>
+        <translation>Reset EQ</translation>
+    </message>
+    <message>
+        <source>−12 a +12 dB · Duplo clique para zerar uma banda</source>
+        <translation>−12 to +12 dB · Double-click to reset a band</translation>
+    </message>
+    <message>
+        <source>Graves</source>
+        <translation>Bass</translation>
+    </message>
+    <message>
+        <source>Zerar</source>
+        <translation>Reset</translation>
+    </message>
+    <message>
+        <source>Compressão dinâmica (suave)</source>
+        <translation>Dynamic compression (gentle)</translation>
+    </message>
+    <message>
+        <source>Normalizar volume entre faixas</source>
+        <translation>Normalize volume between tracks</translation>
+    </message>
+    <message>
+        <source>Arquivos locais: ReplayGain ou análise EBU R128 com cache. Spotify: normalização do librespot; a troca reinicia o motor.</source>
+        <translation>Local files: ReplayGain or cached EBU R128 analysis. Spotify: librespot normalization; changing this restarts the engine.</translation>
+    </message>
+    <message>
+        <source>Alvo local</source>
+        <translation>Local target</translation>
+    </message>
+    <message>
+        <source>Áudio espacial</source>
+        <translation>Spatial audio</translation>
+    </message>
+    <message>
+        <source>Original</source>
+        <translation>Original</translation>
+    </message>
+    <message>
+        <source>HRTF para fones</source>
+        <translation>Headphone HRTF</translation>
+    </message>
+    <message>
+        <source>IAMF binaural</source>
+        <translation>IAMF binaural</translation>
+    </message>
+    <message>
+        <source>Renderização OAR binaural: HRTF adicional desativado.</source>
+        <translation>OAR binaural rendering: additional HRTF disabled.</translation>
+    </message>
+    <message>
+        <source>Ative o motor de áudio para usar HRTF.</source>
+        <translation>Enable the audio engine to use HRTF.</translation>
+    </message>
+    <message>
+        <source>HRTF aguarda uma saída OpenAL compatível. Inicie a reprodução neste dispositivo.</source>
+        <translation>HRTF needs a compatible OpenAL output. Start playback on this device.</translation>
+    </message>
+    <message>
+        <source>HRTF: caixas virtuais para fones, inclusive em músicas estéreo. IAMF exige um arquivo .iamf compatível; não está disponível no streaming do Spotify.</source>
+        <translation>HRTF: virtual speakers for headphones, including stereo music. IAMF requires a compatible .iamf file; it is unavailable in Spotify streaming.</translation>
+    </message>
+    <message>
+        <source>Os efeitos usam limitador de picos de amostra. Ganhos altos podem reduzir a dinâmica; não há garantia de teto true peak.</source>
+        <translation>Effects use a sample-peak limiter. High gains can reduce dynamics; a true-peak ceiling is not guaranteed.</translation>
+    </message>
+    <message>
+        <source>Restaurar padrão…</source>
+        <translation>Restore defaults…</translation>
+    </message>
+</context>
+<context>
     <name>AuthManager</name>
     <message>
         <source>Informe o Client ID do seu app do Spotify.</source>
-        <translation>Enter your Spotify app&apos;s Client ID.</translation>
+        <translation>Enter your Spotify app's Client ID.</translation>
     </message>
     <message>
         <source>O Client ID tem 32 caracteres, só números e letras de a a f. Copie de novo do painel.</source>
@@ -72,11 +199,11 @@
     </message>
     <message>
         <source>O Spotify não conhece esse Client ID. Confira se copiou o Client ID, e não o Client Secret.</source>
-        <translation>Spotify doesn&apos;t know this Client ID. Check that you copied the Client ID, not the Client Secret.</translation>
+        <translation>Spotify doesn't know this Client ID. Check that you copied the Client ID, not the Client Secret.</translation>
     </message>
     <message>
         <source>Não consegui abrir a porta %1 para o login: %2</source>
-        <translation>Couldn&apos;t open port %1 for the login: %2</translation>
+        <translation>Couldn't open port %1 for the login: %2</translation>
     </message>
     <message>
         <source>Login não concluído</source>
@@ -100,7 +227,7 @@
     </message>
     <message>
         <source>Login feito. Pode fechar esta aba e voltar para o Tonal.</source>
-        <translation>You&apos;re logged in. You can close this tab and go back to Tonal.</translation>
+        <translation>You're logged in. You can close this tab and go back to Tonal.</translation>
     </message>
     <message>
         <source>Sessão expirada, faça login de novo.</source>
@@ -123,7 +250,7 @@
     </message>
     <message>
         <source>Não consegui abrir o álbum</source>
-        <translation>Couldn&apos;t open the album</translation>
+        <translation>Couldn't open the album</translation>
     </message>
     <message>
         <source>Single</source>
@@ -139,7 +266,7 @@
     </message>
     <message>
         <source>Não consegui abrir a playlist</source>
-        <translation>Couldn&apos;t open the playlist</translation>
+        <translation>Couldn't open the playlist</translation>
     </message>
     <message>
         <source>Playlist privada</source>
@@ -147,7 +274,7 @@
     </message>
     <message>
         <source>Não consegui atualizar Sua Biblioteca</source>
-        <translation>Couldn&apos;t update Your Library</translation>
+        <translation>Couldn't update Your Library</translation>
     </message>
     <message>
         <source>Salvo em Sua Biblioteca</source>
@@ -390,11 +517,11 @@
     <name>LibrespotProcess</name>
     <message>
         <source>Não consegui iniciar o librespot: %1</source>
-        <translation>Couldn&apos;t start librespot: %1</translation>
+        <translation>Couldn't start librespot: %1</translation>
     </message>
     <message>
-        <source>librespot não encontrado. Rode &quot;cargo install librespot --locked&quot; ou coloque o librespot.exe ao lado do Tonal.exe.</source>
-        <translation>librespot not found. Run &quot;cargo install librespot --locked&quot; or put librespot.exe next to Tonal.exe.</translation>
+        <source>librespot não encontrado. Rode "cargo install librespot --locked" ou coloque o librespot.exe ao lado do Tonal.exe.</source>
+        <translation>librespot not found. Run "cargo install librespot --locked" or put librespot.exe next to Tonal.exe.</translation>
     </message>
     <message>
         <source>Iniciando o motor de áudio...</source>
@@ -465,7 +592,7 @@
     </message>
     <message>
         <source>Na página do app, copie o &lt;b&gt;Client ID&lt;/b&gt;. Ao voltar para cá ele é colado sozinho.</source>
-        <translation>On the app&apos;s page, copy the &lt;b&gt;Client ID&lt;/b&gt;. It&apos;s pasted automatically when you come back here.</translation>
+        <translation>On the app's page, copy the &lt;b&gt;Client ID&lt;/b&gt;. It's pasted automatically when you come back here.</translation>
     </message>
     <message>
         <source>Client ID</source>
@@ -485,11 +612,11 @@
     </message>
     <message>
         <source>O Spotify não conhece esse Client ID. Confira se copiou o &lt;b&gt;Client ID&lt;/b&gt;, e não o &lt;b&gt;Client Secret&lt;/b&gt;.</source>
-        <translation>Spotify doesn&apos;t know this Client ID. Check that you copied the &lt;b&gt;Client ID&lt;/b&gt;, not the &lt;b&gt;Client Secret&lt;/b&gt;.</translation>
+        <translation>Spotify doesn't know this Client ID. Check that you copied the &lt;b&gt;Client ID&lt;/b&gt;, not the &lt;b&gt;Client Secret&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Não deu para conferir agora (sem internet?). Você ainda pode tentar entrar.</source>
-        <translation>Couldn&apos;t check right now (no internet?). You can still try to log in.</translation>
+        <translation>Couldn't check right now (no internet?). You can still try to log in.</translation>
     </message>
     <message>
         <source>Aguardando o navegador...</source>
@@ -501,7 +628,7 @@
     </message>
     <message>
         <source>Se o navegador mostrar &lt;b&gt;Invalid redirect URI&lt;/b&gt;, o endereço do passo 2 não foi cadastrado exatamente igual: confira, clique em Save e tente de novo.</source>
-        <translation>If the browser shows &lt;b&gt;Invalid redirect URI&lt;/b&gt;, the address from step 2 wasn&apos;t registered exactly as shown: check it, click Save and try again.</translation>
+        <translation>If the browser shows &lt;b&gt;Invalid redirect URI&lt;/b&gt;, the address from step 2 wasn't registered exactly as shown: check it, click Save and try again.</translation>
     </message>
     <message>
         <source>Cancelar</source>
@@ -524,7 +651,7 @@
     <name>LyricsPage</name>
     <message>
         <source>Esta letra não está sincronizada com a música.</source>
-        <translation>These lyrics aren&apos;t synced to the song.</translation>
+        <translation>These lyrics aren't synced to the song.</translation>
     </message>
     <message>
         <source>Letras do LRCLIB (lrclib.net), um acervo aberto mantido por voluntários.</source>
@@ -536,7 +663,7 @@
     </message>
     <message>
         <source>Ainda não temos a letra desta música</source>
-        <translation>We don&apos;t have the lyrics for this song yet</translation>
+        <translation>We don't have the lyrics for this song yet</translation>
     </message>
     <message>
         <source>♪ Esta música é instrumental</source>
@@ -544,7 +671,7 @@
     </message>
     <message>
         <source>Não consegui buscar a letra</source>
-        <translation>Couldn&apos;t get the lyrics</translation>
+        <translation>Couldn't get the lyrics</translation>
     </message>
     <message>
         <source>Toque uma música para ver a letra</source>
@@ -621,6 +748,14 @@
         <source>Autorizar</source>
         <translation>Authorize</translation>
     </message>
+    <message>
+        <source>Use a barra de reprodução. Ctrl+E abre os efeitos e arquivos locais.</source>
+        <translation>Use the playback bar. Ctrl+E opens effects and local files.</translation>
+    </message>
+    <message>
+        <source>Áudio e arquivos locais…</source>
+        <translation>Audio and local files…</translation>
+    </message>
 </context>
 <context>
     <name>PlayButton</name>
@@ -645,7 +780,7 @@
     </message>
     <message>
         <source>Não consegui atualizar suas Músicas Curtidas.</source>
-        <translation>Couldn&apos;t update your Liked Songs.</translation>
+        <translation>Couldn't update your Liked Songs.</translation>
     </message>
     <message>
         <source>Adicionada às Músicas Curtidas</source>
@@ -661,11 +796,19 @@
     </message>
     <message>
         <source>Não consegui adicionar à fila</source>
-        <translation>Couldn&apos;t add to the queue</translation>
+        <translation>Couldn't add to the queue</translation>
     </message>
     <message>
         <source>Não consegui trocar de dispositivo.</source>
-        <translation>Couldn&apos;t switch devices.</translation>
+        <translation>Couldn't switch devices.</translation>
+    </message>
+    <message>
+        <source>Arquivo local</source>
+        <translation>Local file</translation>
+    </message>
+    <message>
+        <source>Abra outro arquivo pelo painel de áudio.</source>
+        <translation>Open another file from the audio panel.</translation>
     </message>
 </context>
 <context>
@@ -743,11 +886,11 @@
     </message>
     <message>
         <source>Não consegui criar a playlist</source>
-        <translation>Couldn&apos;t create the playlist</translation>
+        <translation>Couldn't create the playlist</translation>
     </message>
     <message>
         <source>Não consegui salvar a playlist</source>
-        <translation>Couldn&apos;t save the playlist</translation>
+        <translation>Couldn't save the playlist</translation>
     </message>
     <message>
         <source>Playlist excluída</source>
@@ -755,7 +898,7 @@
     </message>
     <message>
         <source>Não consegui excluir a playlist</source>
-        <translation>Couldn&apos;t delete the playlist</translation>
+        <translation>Couldn't delete the playlist</translation>
     </message>
     <message>
         <source>Adicionada a %1</source>
@@ -763,7 +906,7 @@
     </message>
     <message>
         <source>Não consegui adicionar à playlist</source>
-        <translation>Couldn&apos;t add to the playlist</translation>
+        <translation>Couldn't add to the playlist</translation>
     </message>
     <message>
         <source>Removida desta playlist</source>
@@ -771,11 +914,11 @@
     </message>
     <message>
         <source>Não consegui remover a música</source>
-        <translation>Couldn&apos;t remove the song</translation>
+        <translation>Couldn't remove the song</translation>
     </message>
     <message>
         <source>Não consegui mover a música</source>
-        <translation>Couldn&apos;t move the song</translation>
+        <translation>Couldn't move the song</translation>
     </message>
 </context>
 <context>
@@ -844,8 +987,8 @@
         <translation>Playlists</translation>
     </message>
     <message>
-        <source>Nenhum resultado para &quot;%1&quot;</source>
-        <translation>No results for &quot;%1&quot;</translation>
+        <source>Nenhum resultado para "%1"</source>
+        <translation>No results for "%1"</translation>
     </message>
     <message>
         <source>Melhor resultado</source>
@@ -872,7 +1015,7 @@
     </message>
     <message>
         <source>Não consegui falar com o setlist.fm (%1).</source>
-        <translation>Couldn&apos;t reach setlist.fm (%1).</translation>
+        <translation>Couldn't reach setlist.fm (%1).</translation>
     </message>
     <message>
         <source>O setlist.fm respondeu com erro %1.</source>
@@ -1112,11 +1255,11 @@
         <translation>%1 min</translation>
     </message>
     <message>
-        <source>d &apos;de&apos; MMMM &apos;de&apos; yyyy</source>
+        <source>d 'de' MMMM 'de' yyyy</source>
         <translation>MMMM d, yyyy</translation>
     </message>
     <message>
-        <source>d &apos;de&apos; MMM &apos;de&apos; yyyy</source>
+        <source>d 'de' MMM 'de' yyyy</source>
         <translation>MMM d, yyyy</translation>
     </message>
     <message>
@@ -1242,12 +1385,39 @@
         <source>Reiniciar agora</source>
         <translation>Restart now</translation>
     </message>
+    <message>
+        <source>Áudio e efeitos…</source>
+        <translation>Audio and effects…</translation>
+    </message>
 </context>
 <context>
     <name>TrackRow</name>
     <message>
         <source>Mais opções</source>
         <translation>More options</translation>
+    </message>
+</context>
+<context>
+    <name>tonal::audio::AudioEngine</name>
+    <message>
+        <source>Não foi possível salvar as configurações de áudio</source>
+        <translation>Could not save audio settings</translation>
+    </message>
+    <message>
+        <source>Arquivo não encontrado</source>
+        <translation>File not found</translation>
+    </message>
+    <message>
+        <source>Abrindo arquivo local…</source>
+        <translation>Opening local file…</translation>
+    </message>
+    <message>
+        <source>Medindo loudness da faixa (cache local)…</source>
+        <translation>Measuring track loudness (local cache)…</translation>
+    </message>
+    <message>
+        <source>Dispositivo removido; tentando reconectar…</source>
+        <translation>Device removed; reconnecting…</translation>
     </message>
 </context>
 </TS>

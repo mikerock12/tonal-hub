@@ -68,7 +68,7 @@ Rectangle {
 
                 Label {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: qsTr("Bem-vindo ao Tonal")
+                    text: qsTr("Bem-vindo ao Tonalify")
                     color: Theme.textPrimary
                     font.pixelSize: 30
                     font.weight: Font.Bold
@@ -103,7 +103,7 @@ Rectangle {
                         }
 
                         Step { n: 2; text: qsTr("Preencha assim (no Redirect URIs, cole e clique em <b>Add</b>), marque <b>Web API</b>, aceite os termos e clique em <b>Save</b>:") }
-                        CopyRow { label: qsTr("App name"); value: "Tonal" }
+                        CopyRow { label: qsTr("App name"); value: "Tonalify" }
                         CopyRow { label: qsTr("App description"); value: qsTr("Player pessoal") }
                         CopyRow { label: qsTr("Redirect URIs"); value: App.auth.redirectUri }
 

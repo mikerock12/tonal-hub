@@ -1,0 +1,7 @@
+<resources>
+    <item name="now_title" type="id" />
+    <item name="now_artist" type="id" />
+    <item name="play_pause" type="id" />
+    <item name="pcm_metrics" type="id" />
+    <item name="playback_status" type="id" />
+</resources>

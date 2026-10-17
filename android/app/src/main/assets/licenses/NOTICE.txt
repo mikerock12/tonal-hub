@@ -1,0 +1,27 @@
+Tonal Android 0.3.0-local — experimental local build.
+Tonal: MIT, Copyright (c) 2026 Natheus. See Tonal-MIT.txt.
+librespot 0.8.0: MIT, Copyright (c) 2015 Paul Lietar.
+Source: https://github.com/librespot-org/librespot/tree/v0.8.0
+The locally vendored librespot-core solver uses a reusable SHA-1 prefix state
+and stack buffer, and checks its original five-second deadline every 4096
+candidates. Protocol and proof verification are unchanged.
+The Android host selects the complete Linux desktop OAuth protocol profile:
+client ID, client version, User-Agent and client-token platform data agree with
+the engine's separate desktop OAuth authorization. Native playback stays Android.
+Android-only librespot-core, librespot-audio, librespot-playback and librespot-connect patches also
+share the bounded encrypted cache across sessions, publish partial HTTP ranges,
+retry interrupted downloads, preserve playback during control reconnection,
+and resume prematurely interrupted tracks at the last decoded position.
+Corresponding modified source is in android/native/vendor in the local source
+archive. These crates retain the original MIT license and copyright notices.
+Symphonia 0.5.5: Mozilla Public License 2.0. The unmodified source is available
+at https://github.com/pdeljanov/Symphonia/tree/v0.5.5 and in the Cargo registry
+selected by android/native/Cargo.lock. See Symphonia-MPL-2.0.txt.
+Other Rust dependencies and their license expressions are listed in
+RUST-DEPENDENCIES.txt. Java platform APIs are provided by Android.
+The bundled benchmark.ogg is generated synthetic pink noise, not a song.
+Spotify is a trademark of Spotify AB. This experimental client is unofficial.
+
+Native Android audio components and corresponding build sources: see audio/android-audio.lock and the Tonal-Android-0.3.0-audio-sources.tar.gz local distribution. FFmpeg and OpenAL are dynamically linked, replaceable shared libraries. OpenAL default SADIE HRTF data: Apache-2.0. Local compatibility patches are described in the lock and CMakeLists.txt. No GPL or nonfree FFmpeg components enabled. libebur128: MIT. libiamf/OAR: BSD-3-Clause with accompanying patent notices; Eigen: MPL-2.0/BSD; Abseil: Apache-2.0; Opus/FLAC/PFFFT/FDK notices included.
+The NDK libc++ shared runtime is included; its toolchain notices, including
+Apache-2.0 with LLVM exceptions, are in audio/LLVM-runtime/NOTICE.

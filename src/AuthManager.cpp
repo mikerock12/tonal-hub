@@ -1,6 +1,7 @@
 #include "AuthManager.h"
 
 #include <QCryptographicHash>
+#include <QCoreApplication>
 #include <QDesktopServices>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -16,6 +17,7 @@
 #include <QUrlQuery>
 
 #include "TokenStore.h"
+#include "NetworkDeadline.h"
 
 namespace {
 
@@ -79,7 +81,9 @@ AuthManager::AuthManager(QNetworkAccessManager *nam, QObject *parent)
 {
     m_refreshTimer.setSingleShot(true);
     connect(&m_refreshTimer, &QTimer::timeout, this, &AuthManager::refresh);
-    loadTokens();
+    if(!QCoreApplication::arguments().contains(QStringLiteral("--local-only"))
+       && !QCoreApplication::arguments().contains(QStringLiteral("--audio-smoke-test")))
+        loadTokens();
 }
 
 QString AuthManager::redirectUri() const
@@ -323,7 +327,9 @@ void AuthManager::requestToken(const QByteArray &formBody, bool isRefresh)
 {
     QNetworkRequest req(QUrl(QString::fromLatin1(kTokenUrl)));
     req.setHeader(QNetworkRequest::ContentTypeHeader, QStringLiteral("application/x-www-form-urlencoded"));
+    req.setTransferTimeout(15000);
     QNetworkReply *reply = m_nam->post(req, formBody);
+    setReplyDeadline(reply, m_tokenDeadlineMs);
 
     connect(reply, &QNetworkReply::finished, this, [this, reply, isRefresh] {
         reply->deleteLater();

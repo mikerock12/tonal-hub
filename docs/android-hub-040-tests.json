@@ -1,0 +1,318 @@
+{
+  "version": "0.4.0-local",
+  "recorded_at_utc": "2026-10-17T00:55:46.841100+00:00",
+  "local_only": true,
+  "git_commit_push_pr_performed": false,
+  "artifacts": {
+    "universal": {
+      "path": "out/android/Tonal-Android-0.4.0-local.apk",
+      "sha256": "2d0f269c75b62af4aca01ce04641b5de88fc855cf650709f72b1bede5d59426b",
+      "size_bytes": 46256174,
+      "abis": [
+        "arm64-v8a",
+        "x86_64"
+      ],
+      "elf_and_zip_alignment": 16384,
+      "license_files": 698,
+      "test_credentials_absent": true
+    },
+    "arm64": {
+      "path": "out/android/Tonal-Android-0.4.0-arm64-v8a.apk",
+      "sha256": "3612cb649cf29cb50040eb0dca95c5edc48ef9fa96fdd1d547cb5b0a9dcb5770",
+      "size_bytes": 24474664,
+      "abis": [
+        "arm64-v8a"
+      ],
+      "elf_and_zip_alignment": 16384,
+      "license_files": 698,
+      "test_credentials_absent": true
+    },
+    "sources": {
+      "path": "out/android/Tonal-Android-0.4.0-audio-sources.tar.gz",
+      "sha256": "9dd3748d05ca1f25e2c843773c44f68fd92f0a242901d93e3fb74b4596d2a630",
+      "size_bytes": 49044275,
+      "verified_source_files": 34
+    }
+  },
+  "certificate_sha256": "464ae7cf34f4f145541569db215f8fcdef5deda1be31921d8e366eed20aa22c2",
+  "passed": true,
+  "core_checks": {
+    "passed": true,
+    "checks": [
+      "resume_uses_actual_pcm_track_and_position",
+      "restore_preserves_queue_and_atomic_seek",
+      "pause_cancels_resume_without_losing_selection",
+      "new_selection_replaces_old_resume",
+      "stop_cancels_all_recovery_intent",
+      "exact_artist_ahead_of_remixes_and_unrelated_profiles",
+      "provider_score_breaks_homonym_ties",
+      "musicbrainz_is_metadata_only",
+      "unicode_and_word_normalization",
+      "reject_cleartext_streams",
+      "reject_url_userinfo",
+      "diagnostics_redact_urls_and_credentials",
+      "real_jni_connection_failures_hit_bounded_recovery_budget",
+      "no_unbounded_restart_loop_after_budget",
+      "explicit_pause_cancels_service_resume"
+    ]
+  },
+  "device_integration": {
+    "version": "0.4.0-local",
+    "passed": true,
+    "checks": [
+      {
+        "name": "hub_launcher_works",
+        "passed": true
+      },
+      {
+        "name": "tonalify_keeps_spotify_catalog",
+        "passed": true
+      },
+      {
+        "name": "core_and_real_jni_recovery",
+        "passed": true,
+        "output": "core-tests.txt"
+      },
+      {
+        "name": "exact_veruca_salt_artist_first",
+        "passed": true
+      },
+      {
+        "name": "musicbrainz_artist_albums_editions_tracks_metadata_only",
+        "passed": true,
+        "tracks": 3
+      },
+      {
+        "name": "nirvana_relevance_uses_api_score",
+        "passed": true
+      },
+      {
+        "name": "public_live_show_decodes_through_shared_dsp",
+        "passed": true,
+        "frames": 152591,
+        "buffered_bytes": 393216
+      },
+      {
+        "name": "stream_progress_and_bounded_disk_reserve",
+        "passed": true,
+        "underruns": 0
+      },
+      {
+        "name": "pause_stops_pcm_without_restart",
+        "passed": true
+      },
+      {
+        "name": "resume_continues_same_stream",
+        "passed": true
+      },
+      {
+        "name": "offline_uses_downloaded_reserve",
+        "passed": true,
+        "additional_frames": 322560
+      },
+      {
+        "name": "indie_uses_own_output_profiles_and_dsp_panel",
+        "passed": true
+      },
+      {
+        "name": "switch_player_pauses_previous_audio",
+        "passed": true
+      },
+      {
+        "name": "stopped_stream_cleans_its_disk_reserve",
+        "passed": true,
+        "removed_directories": 1
+      }
+    ],
+    "error": null,
+    "benchmark_apk_sha256": "4f29d14966446a5e3fcf02d68b0b2ef882e16afd3a4e6c1f3bd9f81c9675c620",
+    "physical_bluetooth_tested": false,
+    "spotify_real_stream_tested": false
+  },
+  "native_audio": {
+    "passed": true,
+    "checks": [
+      "native_dsp_bypass_eq_bass_compressor_limiter_ramp_hrtf_multichannel_binaural_nan",
+      {
+        "file": "stereo-44100.wav",
+        "metadata": {
+          "rate": 44100,
+          "channels": 2,
+          "binaural": false,
+          "lufs": -19.990736,
+          "peak": 0.100061,
+          "replayGain": null,
+          "replayPeak": 0
+        }
+      },
+      {
+        "file": "stereo-96000.wav",
+        "metadata": {
+          "rate": 96000,
+          "channels": 2,
+          "binaural": false,
+          "lufs": -20.010679,
+          "peak": 0.100006,
+          "replayGain": null,
+          "replayPeak": 0
+        }
+      },
+      {
+        "file": "stereo.flac",
+        "metadata": {
+          "rate": 48000,
+          "channels": 2,
+          "binaural": false,
+          "lufs": -19.993211,
+          "peak": 0.100006,
+          "replayGain": null,
+          "replayPeak": 0
+        }
+      },
+      {
+        "file": "stereo.mp3",
+        "metadata": {
+          "rate": 48000,
+          "channels": 2,
+          "binaural": false,
+          "lufs": -20.438634,
+          "peak": 0.097101,
+          "replayGain": null,
+          "replayPeak": 0
+        }
+      },
+      {
+        "file": "stereo.m4a",
+        "metadata": {
+          "rate": 48000,
+          "channels": 2,
+          "binaural": false,
+          "lufs": -20.002501,
+          "peak": 0.111663,
+          "replayGain": null,
+          "replayPeak": 0
+        }
+      },
+      {
+        "file": "replaygain.flac",
+        "metadata": {
+          "rate": 48000,
+          "channels": 2,
+          "binaural": false,
+          "lufs": -19.993211,
+          "peak": 0.100006,
+          "replayGain": -3,
+          "replayPeak": 0
+        }
+      },
+      {
+        "file": "surround-51.wav",
+        "metadata": {
+          "rate": 48000,
+          "channels": 6,
+          "binaural": false,
+          "lufs": -21.737077,
+          "peak": 0.05004,
+          "replayGain": null,
+          "replayPeak": 0
+        }
+      },
+      {
+        "file": "surround-71.wav",
+        "metadata": {
+          "rate": 48000,
+          "channels": 8,
+          "binaural": false,
+          "lufs": -19.637683,
+          "peak": 0.05004,
+          "replayGain": null,
+          "replayPeak": 0
+        }
+      },
+      {
+        "file": "stereo.iamf",
+        "metadata": {
+          "rate": 48000,
+          "channels": 2,
+          "binaural": true,
+          "lufs": -20.056272,
+          "peak": 0.100861,
+          "replayGain": null,
+          "replayPeak": 0
+        }
+      },
+      {
+        "file": "surround.iamf",
+        "metadata": {
+          "rate": 48000,
+          "channels": 2,
+          "binaural": true,
+          "lufs": -26.675487,
+          "peak": 0.050497,
+          "replayGain": null,
+          "replayPeak": 0
+        }
+      },
+      {
+        "file": "quiet.wav",
+        "metadata": {
+          "rate": 48000,
+          "channels": 2,
+          "binaural": false,
+          "lufs": -19.993211,
+          "peak": 0.100006,
+          "replayGain": null,
+          "replayPeak": 0
+        }
+      },
+      {
+        "file": "loud.wav",
+        "metadata": {
+          "rate": 48000,
+          "channels": 2,
+          "binaural": false,
+          "lufs": -7.952371,
+          "peak": 0.399994,
+          "replayGain": null,
+          "replayPeak": 0
+        }
+      },
+      "invalid_file_rejected",
+      "decode_cancellation",
+      "profiles_persistence_and_isolation"
+    ]
+  },
+  "release_upgrade": {
+    "passed": true,
+    "apk_sha256": "2d0f269c75b62af4aca01ce04641b5de88fc855cf650709f72b1bede5d59426b",
+    "before": {
+      "version": "0.3.0-local",
+      "code": "4",
+      "first_install": "2026-10-15 06:39:54",
+      "app_id": "10218",
+      "ce_inode": "770154"
+    },
+    "after": {
+      "version": "0.4.0-local",
+      "code": "5",
+      "first_install": "2026-10-15 06:39:54",
+      "app_id": "10218",
+      "ce_inode": "770154"
+    },
+    "updated_without_uninstall": true,
+    "data_directory_preserved": true,
+    "release_hub_and_public_search": true
+  },
+  "reports": [
+    "out/android/updates-0.4.0/result.json",
+    "out/android/audio-features-0.4.0/result.json",
+    "out/android/release-upgrade-0.4.0/result.json"
+  ],
+  "limitations": {
+    "physical_poco_bluetooth_or_car_tested": false,
+    "authenticated_spotify_stream_retested": false,
+    "new_official_spotify_benchmark": false,
+    "jamendo_own_credentials_tested": false,
+    "opensubsonic_own_server_tested": false
+  }
+}
