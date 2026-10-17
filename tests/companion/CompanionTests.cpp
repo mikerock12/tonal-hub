@@ -11,10 +11,13 @@
 #include <iostream>
 #include <stdexcept>
 
+#include "MuseTests.h"
+
 class CompanionTests {
   static void require(bool yes,const char *why){if(!yes)throw std::runtime_error(why);}
 public:
   static void run(){
+    testMuse();
     QTemporaryDir dir;require(dir.isValid(),"temporary store unavailable");
     const QVariantMap song{{"provider","Internet Archive"},{"id","concert/01.mp3"},{"title","Synthetic Fire"},{"artist","Example"},{"genre","punk"},{"durationMs",2000},{"playable",true},{"stream","https://archive.org/download/concert/01.mp3"},{"password","never-store-this"}};
     {
@@ -54,12 +57,19 @@ public:
       require(weekly["plays"].toInt()==3&&weekly["ms"].toDouble()==180000&&monthly["ms"].toDouble()==300000,"period or duration totals incorrect");
       require(weekly["rows"].toList()[0].toMap()["tracks"].toList().size()==1,"chart drilldown duplicated tracks");
       require(weekly["vibe"].toString()=="Clima intenso"&&!weekly["recommendations"].toList().isEmpty(),"lexical evidence or genre recommendations missing");
+      auto detail=weekly["rows"].toList()[0].toMap();require(detail["trackCount"].toInt()==1&&detail["plays"].toInt()==3&&detail["tracks"].toList()[0].toMap()["listenedMs"].toDouble()==180000,"detailed listening time or count missing");
+      m.rememberSearch("  Nirvana  ");m.rememberSearch("L7");m.rememberSearch("nirvana");require(m.searches().size()==2&&m.searches()[0]=="nirvana","search history deduplication failed");m.forgetSearch("L7");require(m.searches().size()==1,"search history removal failed");
+      m.setLyricStyle("lyricFont","Mono");m.setLyricStyle("translationColor","#FFBBD9");m.setLyricStyle("lyricSize",999);m.setLyricStyle("translationFont","invalid");require(m.lyricStyle()["lyricFont"]=="Mono"&&m.lyricStyle()["lyricSize"].toInt()==44&&m.lyricStyle()["translationFont"]=="Sans","lyric preferences validation failed");
+      require(m.insights(7)["modelCoverage"].toInt()==1,"trained topic coverage missing");
+      m.addToPlaylist(playlist,song);require(m.m_data["tracks"].toObject()[MusicCompanion::key(song)].toObject()["topics"].toObject().size()==8,"playlist erased trained analysis");
       m.m_pendingMs=0;m.flush();
     }
     QFile file(dir.path()+"/music-library.sqlite");require(file.open(QIODevice::ReadOnly),"SQLite database missing");auto bytes=file.readAll();require(!bytes.contains("never-store-this")&&!bytes.contains("token=private")&&!bytes.contains("fire rage fight"),"private payload or lyric text leaked to library");
     MusicCompanion restored(nullptr,dir.path());require(restored.favorites().size()==1&&restored.playlists().size()==1,"library did not survive restart");
+    require(restored.searches().size()==1&&restored.lyricStyle()["translationColor"]=="#FFBBD9","search or style did not persist");
     auto backup=QUrl::fromLocalFile(dir.path()+"/portable.tonal-backup.json");require(restored.exportBackup(backup),"backup export failed");
     restored.deletePlaylist(restored.playlists()[0].toMap()["id"].toString());require(restored.restoreBackup(backup)&&restored.playlists().size()==1,"backup restore failed");
+    require(restored.lyricStyle()["lyricFont"]=="Mono"&&restored.searches().size()==1,"preferences absent from restored backup");
     auto args=QCoreApplication::arguments();int exportAt=args.indexOf("--export");if(exportAt>=0)require(restored.exportBackup(QUrl::fromLocalFile(args.value(exportAt+1))),"interop export failed");
     int importAt=args.indexOf("--import");if(importAt>=0)require(restored.restoreBackup(QUrl::fromLocalFile(args.value(importAt+1)))&&!restored.favorites().isEmpty(),"Android backup import failed");
     restored.clearHistory();require(restored.statistics(7,"artists")["plays"].toInt()==0&&restored.favorites().size()==1,"clear history removed library or kept counts");

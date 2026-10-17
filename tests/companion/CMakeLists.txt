@@ -6,7 +6,7 @@ qt_standard_project_setup(REQUIRES 6.8)
 get_filename_component(ROOT "../.." ABSOLUTE)
 qt_add_executable(TonalCompanionChecks CompanionTests.cpp
     "${ROOT}/src/companion/MusicCompanion.h" "${ROOT}/src/companion/MusicCompanion.cpp"
-    "${ROOT}/src/companion/PersonalDatabase.h" "${ROOT}/src/companion/PersonalDatabase.cpp")
+    "${ROOT}/src/companion/PersonalDatabase.h" "${ROOT}/src/companion/PersonalDatabase.cpp" "${ROOT}/src/companion/PersonalInsights.cpp" "${ROOT}/src/insights/TinyMusicModel.cpp")
 target_include_directories(TonalCompanionChecks PRIVATE "${ROOT}/src")
 target_link_libraries(TonalCompanionChecks PRIVATE Qt6::Core Qt6::Network Qt6::Sql)
 if(MSVC)

@@ -18,6 +18,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Reproduce the tiny local model from its original training corpus
+        shell: pwsh
+        run: |
+          python training/train_muse.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          git diff --exit-code -- src/insights/MuseWeights.inc
       - name: Install Qt 6.8.3
         shell: pwsh
         run: |

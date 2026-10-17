@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import "qrc:/companion/qml/companion" as Personal
 import QtQuick.Dialogs
 
 ApplicationWindow {
@@ -109,9 +110,14 @@ ApplicationWindow {
         }
         RowLayout {
             visible: !hubMode; Layout.fillWidth: true
-            TextField { id: search; objectName: "indieSearch"; text: initialQuery; Layout.fillWidth: true; placeholderText: "Artista, música ou show"; onAccepted: catalog.search(text, selectedProvider) }
+            TextField { id: search; objectName: "indieSearch"; text: initialQuery; Layout.fillWidth: true; placeholderText: "Artista, música ou show"; onAccepted: {music.rememberSearch(text);catalog.search(text, selectedProvider)} }
             ComboBox { id: sources; Layout.preferredWidth: 190; model: ["Todas as fontes", "Audius", "MusicBrainz", "Internet Archive", "Aadam Jacobs", "Live Music Archive", "Jamendo", "OpenSubsonic"]; onActivated: { selectedProvider = currentIndex === 0 ? "all" : currentText; catalog.search(search.text, selectedProvider) } }
-            Button { text: "Buscar"; onClicked: catalog.search(search.text, selectedProvider) }
+            Button { text: "Buscar"; onClicked: {music.rememberSearch(search.text);catalog.search(search.text, selectedProvider)} }
+        }
+        RowLayout {visible:!hubMode&&!search.text.length;Layout.fillWidth:true
+            Label{text:"Buscas recentes";font.bold:true}
+            ComboBox{id:recent;Layout.fillWidth:true;model:music.searches;onActivated:{search.text=currentText;music.rememberSearch(currentText);catalog.search(currentText,selectedProvider)}}
+            Button{text:"Limpar";onClicked:music.forgetSearch("")}
         }
         RowLayout {
             visible: !hubMode; Layout.fillWidth: true
@@ -157,7 +163,7 @@ ApplicationWindow {
                     }
                     Button { visible: modelData.kind !== "track"; text: modelData.kind === "artist" ? "Ver músicas / álbuns" : "Ver faixas / edições"; onClicked: catalog.open(modelData) }
                     Button { visible: modelData.playable === true; text: "Reproduzir"; onClicked: window.playItem(modelData) }
-                    Button { visible: modelData.playable === true; text: {music.favorites;return music.liked(modelData)?"♥":"♡"} onClicked: music.favorite(modelData) }
+                    Personal.ActionIcon {symbol:"heart";filled:{window.musicRevision;return music.liked(modelData)} description:filled?"Remover das favoritas":"Favoritar música";visible:modelData.playable===true; onClicked: music.favorite(modelData) }
                     Button { visible: !!modelData.url; text: "Fonte"; onClicked: hub.external(modelData.url) }
                 }
             }
@@ -187,7 +193,7 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Image { source:music.current.image || ""; Layout.preferredWidth:44; Layout.preferredHeight:44; fillMode:Image.PreserveAspectFit; asynchronous:true; sourceSize.width:88; sourceSize.height:88; MouseArea { anchors.fill:parent; onClicked:window.openMusic(true) } }
                     Label { text:music.current.title || "Escolha uma música"; elide:Text.ElideRight; Layout.fillWidth:true; MouseArea { anchors.fill:parent; cursorShape:Qt.PointingHandCursor; onClicked:window.openMusic(true) } }
-                    Button { text:{window.musicRevision;return music.liked(music.current)?"♥":"♡"} font.pixelSize:24; enabled:!!music.current.title; onClicked:music.favorite(music.current) }
+                    Personal.ActionIcon {symbol:"heart";filled:{window.musicRevision;return music.liked(music.current)} description:filled?"Remover das favoritas":"Favoritar música"; enabled:!!music.current.title; onClicked:music.favorite(music.current) }
                     Button { text: "Anterior"; enabled: queueIndex > 0; onClicked: playAt(queueIndex - 1) }
                     Button { text: audio.sourceFailed ? "Tentar novamente" : audio.localPlaying ? "Pausar" : "Reproduzir"; enabled: audio.localActive; onClicked: { if (audio.sourceFailed) { if (queueIndex >= 0) catalog.resolve(playerItem); else filePicker.open() } else audio.toggleLocalPlay() } }
                     Button { text: "Próxima"; enabled: queueIndex >= 0 && queueIndex + 1 < playQueue.length; onClicked: playAt(queueIndex + 1) }

@@ -24,7 +24,7 @@ with apk.open('rb') as raw, zipfile.ZipFile(apk) as archive:
             assert not any(n.startswith(f'lib/{abi}/') for n in names)
             continue
         libraries = [n for n in names if n.startswith(f'lib/{abi}/') and n.endswith('.so')]
-        expected = {'libtonal_android.so','libtonal_audio.so','libopenal.so','libc++_shared.so',
+        expected = {'libtonal_muse.so','libtonal_android.so','libtonal_audio.so','libopenal.so','libc++_shared.so',
                     'libavfilter.so','libavformat.so','libavcodec.so','libavutil.so','libswresample.so'}
         assert {Path(n).name for n in libraries} == expected
         results = {}

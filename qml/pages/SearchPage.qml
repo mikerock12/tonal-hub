@@ -28,9 +28,7 @@ Flickable {
         // guardado como JSON: listas no registro do Windows voltam com tipos inconsistentes
         property string recentJson: "[]"
     }
-    property var recentSearches: {
-        try { return JSON.parse(history.recentJson) } catch (e) { return [] }
-    }
+    property var recentSearches: App.music.searches
 
     onQueryChanged: { filter = "all"; search(); discoveryDelay.restart() }
     Timer {
@@ -38,13 +36,11 @@ Flickable {
         interval: 600; repeat: false
         onTriggered: App.discovery.search(root.query, "extras")
     }
-    Component.onCompleted: { search(); discoveryDelay.restart() }
+    Component.onCompleted: { if(!App.music.searches.length){try{JSON.parse(history.recentJson).slice().reverse().forEach(q=>App.music.rememberSearch(q))}catch(e){}} search(); discoveryDelay.restart() }
 
     function rememberQuery() {
         if (query === "") return
-        const list = recentSearches.filter(q => q.toLowerCase() !== query.toLowerCase())
-        list.unshift(query)
-        history.recentJson = JSON.stringify(list.slice(0, 10))
+        App.music.rememberSearch(query)
     }
 
     function mapTrack(t) {
@@ -76,6 +72,7 @@ Flickable {
             if (serial !== root.requestSerial) return   // resposta de uma busca antiga
             root.loading = false
             if (status !== 200) return
+            root.rememberQuery()
             const valid = x => x !== null
             root.tracks = data.tracks ? data.tracks.items.filter(valid).map(root.mapTrack) : []
             root.artists = data.artists ? data.artists.items.filter(valid).map(a => root.mapCard("artist", a)) : []
@@ -163,7 +160,7 @@ Flickable {
             Chip {
                 visible: root.recentSearches.length > 0
                 text: qsTr("Limpar buscas recentes")
-                onClicked: history.recentJson = "[]"
+                onClicked: App.music.forgetSearch("")
             }
         }
 

@@ -19,6 +19,7 @@ def main():
 import QtQuick
 QtObject {
     function dominantColor(url, callback) { callback("#344455") }
+    property QtObject audio:QtObject{property var metrics:({});property bool visualizerActive:false}
     property QtObject player: QtObject {
         property string trackUri: "spotify:track:fixture"
         property string coverUrl: ""
@@ -46,9 +47,14 @@ QtObject {
     }
     property QtObject music: QtObject {
         property var current: ({uri:"spotify:track:fixture"})
+        property string background:"Aurora"
+        property string photo:""
+        property var lyricStyle:({lyricFont:"Sans",translationFont:"Sans",lyricColor:"#F5F5F5",translationColor:"#CEE9F0",lyricSize:26,translationSize:21})
+        function setLyricStyle(key,value){let style=Object.assign({},lyricStyle);style[key]=value;lyricStyle=style}
         property var lines: []
         property string lyricStatus: ""
         property bool busy: false
+        signal changed()
         property string lastLanguage: ""
         property int translateCalls: 0
         function useDisplayedLyrics(uri, source) {
@@ -61,7 +67,9 @@ QtObject {
 }
 ''', encoding='utf-8')
     # Use the production page, changing only its module import for the test doubles.
-    (OUT / 'LyricsPage.qml').write_text('import LyricsHarness 1.0\n' + (ROOT / 'qml/pages/LyricsPage.qml').read_text(encoding='utf-8'), encoding='utf-8')
+    (OUT / 'LyricsPage.qml').write_text('import LyricsHarness 1.0\n' + (ROOT / 'qml/pages/LyricsPage.qml').read_text(encoding='utf-8').replace('qrc:/companion/qml/companion','.'), encoding='utf-8')
+    for source in (ROOT / 'qml/companion').glob('*.qml'):
+        shutil.copyfile(source,OUT / source.name)
     shutil.copyfile(ROOT / 'qml/components/ThinScrollBar.qml', OUT / 'ThinScrollBar.qml')
     (OUT / 'Chip.qml').write_text('import QtQuick.Controls\nButton {}\n', encoding='utf-8')
     shutil.copyfile(Path(__file__).with_name('tst_inline.qml'), OUT / 'tst_inline.qml')

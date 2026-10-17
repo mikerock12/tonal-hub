@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import "qrc:/companion/qml/companion" as Personal
 
 // Letra da faixa que está tocando (App.lyrics, do LRCLIB). Na letra sincronizada a linha atual fica em
 // destaque, a lista acompanha a música e um clique numa linha pula para ela.
@@ -44,7 +45,9 @@ Item {
         root.sync()
         Qt.callLater(root.translateCurrent)
     }
-    Component.onDestruction: App.lyrics.active = false
+    Component.onDestruction: {App.lyrics.active=false;if(App.audio)App.audio.visualizerActive=false}
+    function updateVisualizer(){if(App.audio)App.audio.visualizerActive=root.visible&&App.player.isPlaying&&(App.music.background==="Ondas"||App.music.background==="Espectro")}
+    onVisibleChanged:updateVisualizer()
 
     function updateTint() {
         const url = App.player.coverUrl
@@ -80,7 +83,7 @@ Item {
     Connections {
         target: App.player
         function onPositionChanged() { root.sync() }
-        function onStateChanged() { root.sync() }
+        function onStateChanged() { root.sync();root.updateVisualizer() }
         function onTrackChanged() { root.updateTint() }
     }
     Connections {
@@ -92,7 +95,7 @@ Item {
             if (root.autoTranslate) Qt.callLater(root.translateCurrent)
         }
     }
-    Connections { target: App.music; function onLyricsChanged() { if(root.autoTranslate) Qt.callLater(root.translateCurrent) } }
+    Connections { target: App.music; function onChanged(){root.updateVisualizer()} function onLyricsChanged() { if(root.autoTranslate) Qt.callLater(root.translateCurrent) } }
 
     Rectangle {
         anchors.fill: parent
@@ -115,10 +118,10 @@ Item {
                 Label { text: App.player.artistsText || ""; textFormat: Text.PlainText; font.pixelSize: 16; color: Theme.textPrimary; Layout.fillWidth: true; elide: Text.ElideRight }
                 Label { text: App.player.albumName || ""; textFormat: Text.PlainText; color: Theme.textSecondary; Layout.fillWidth: true; elide: Text.ElideRight }
                 RowLayout {
-                    Button { text:"‹"; Accessible.name:qsTr("Anterior"); onClicked:App.player.previous() }
-                    Button { text: App.player.isPlaying ? qsTr("Pausar") : qsTr("Reproduzir"); onClicked: App.player.togglePlay() }
-                    Button { text:"›"; Accessible.name:qsTr("Próxima"); onClicked:App.player.next() }
-                    Button { text: App.player.liked ? "♥" : "♡"; font.pixelSize: 24; Accessible.name: qsTr("Favoritar música"); onClicked: App.player.toggleLike() }
+                    Personal.ActionIcon { symbol:"prev";description:qsTr("Anterior"); onClicked:App.player.previous() }
+                    Personal.ActionIcon { symbol:App.player.isPlaying?"pause":"play";description:App.player.isPlaying ? qsTr("Pausar") : qsTr("Reproduzir"); onClicked: App.player.togglePlay() }
+                    Personal.ActionIcon { symbol:"next";description:qsTr("Próxima"); onClicked:App.player.next() }
+                    Personal.ActionIcon { symbol:"heart";filled:App.player.liked;description:qsTr("Favoritar música"); onClicked: App.player.toggleLike() }
                 }
             }
         }
@@ -134,9 +137,10 @@ Item {
         Flow {
             width: parent.width
             spacing: 8
-            Button {
+            Personal.ActionIcon {
+                symbol:"translate"
+                description:"Traduzir pt-BR"
                 objectName: "translateLyricsButton"
-                text: App.music.busy && root.translationMatches ? qsTr("Traduzindo…") : qsTr("Traduzir pt-BR")
                 enabled: (root.synced || root.status === Lyrics.Plain) && !App.music.busy
                 onClicked: {
                     root.autoTranslate = true
@@ -145,6 +149,9 @@ Item {
                     root.translateCurrent()
                 }
             }
+            Personal.ActionIcon{symbol:"expand";description:"Expandir letras em tela cheia";onClicked:fullscreen.present()}
+            Personal.ActionIcon{symbol:"font";description:"Fontes e cores";onClicked:appearance.open()}
+            ComboBox{model:backdrop.modes;currentIndex:Math.max(0,model.indexOf(App.music.background));onActivated:App.music.background=currentText}
             Label {
                 objectName: "lyricsSourceLanguage"
                 text: qsTr("Idioma detectado automaticamente")
@@ -177,6 +184,9 @@ Item {
         }
     }
 
+    Personal.LyricBackdrop{id:backdrop;anchors.top:translationBar.bottom;anchors.bottom:parent.bottom;width:parent.width;mode:App.music.background;playing:App.player.isPlaying;active:root.visible&&!fullscreen.visible;metrics:App.audio ? App.audio.metrics : ({})}
+    Personal.LyricStyleDialog{id:appearance;controller:App.music}
+    Personal.LyricsFullscreen{id:fullscreen;controller:App.music;verses:root.translationMatches ? root.translationLines : App.lyrics.lines;playing:App.player.isPlaying;position:App.player.positionMs;metrics:App.audio ? App.audio.metrics : ({})}
     ListView {
         id: list
         anchors.top: translationBar.bottom
@@ -241,9 +251,10 @@ Item {
                     text: line.modelData.text !== "" ? line.modelData.text : (root.synced ? "♪" : " ")
                     textFormat: Text.PlainText
                     wrapMode: Text.Wrap
-                    font.pixelSize: 28
+                    font.pixelSize: App.music.lyricStyle.lyricSize
+                    font.family:fullscreen.fontFamily(App.music.lyricStyle.lyricFont)
                     font.weight: Font.Bold
-                    color: Theme.textPrimary
+                    color: App.music.lyricStyle.lyricColor
                 }
                 Text {
                     objectName: "lyricTranslationLine"
@@ -252,8 +263,9 @@ Item {
                     textFormat: Text.PlainText
                     visible: showTranslation.checked && text.length > 0
                     wrapMode: Text.Wrap
-                    font.pixelSize: 22
-                    color: "#d1e6ed"
+                    font.pixelSize: App.music.lyricStyle.translationSize
+                    font.family:fullscreen.fontFamily(App.music.lyricStyle.translationFont)
+                    color: App.music.lyricStyle.translationColor
                 }
             }
 

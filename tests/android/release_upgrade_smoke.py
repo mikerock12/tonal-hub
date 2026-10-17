@@ -29,7 +29,7 @@ def click(text):
         run('shell','input','tap',(b[0]+b[2])//2,(b[1]+b[3])//2);time.sleep(.5);return
     raise AssertionError('Missing '+text)
 assert run('shell','getprop','ro.kernel.qemu')=='1' and 'Tonal_Local_20261015' in run('emu','avd','name')
-before=identity();assert before['version'] in ('0.3.0-local','0.4.0-local','0.5.0-local'),before
+before=identity();assert before['version'] in ('0.3.0-local','0.4.0-local','0.5.0-local','0.6.0-local',VERSION+'-local'),before
 apk=ROOT/f'out/android/Tonal-Android-{VERSION}-local.apk';assert 'Success' in run('install','-r',apk)
 after=identity();assert after['version']==VERSION+'-local' and after['code']==CODE,after
 assert before['first_install']==after['first_install'] and before['app_id']==after['app_id'] and before['ce_inode']==after['ce_inode'],(before,after)

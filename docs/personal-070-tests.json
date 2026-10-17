@@ -1,0 +1,190 @@
+{
+  "version": "0.7.0-local",
+  "windows_ctest": {
+    "passed": true,
+    "suites": 8,
+    "log": "out/ctest-070-final.log",
+    "note": "The UI audio fixture is now 12 seconds; the previous 3-second file could end before asynchronous HRTF selection on a busy host."
+  },
+  "qt_lyrics_ui": {
+    "passed": true,
+    "tests": 4,
+    "log": "out/lyrics-inline-ui/results.txt"
+  },
+  "android_instrumentation": {
+    "passed": true,
+    "checks": [
+      "companion_lrc_multistamps_offset_and_fractions",
+      "companion_signed_urls_and_passwords_excluded",
+      "companion_favorites_and_playlist_deduplication",
+      "companion_periods_chart_drilldown_lyric_mood_and_genre_suggestions",
+      "detailed_tracks_albums_counts_and_actual_time",
+      "native_model_1000_calls_mean_us=4719.87",
+      "search_history_and_independent_lyric_styles",
+      "companion_clear_history_preserves_library",
+      "rare_archive_audio_demos_mp3_preference_private_and_path_filter",
+      "rare_archive_dark_items_rejected",
+      "companion_portable_backup_restore",
+      "companion_sqlite_transaction_persistence",
+      "resume_uses_actual_pcm_track_and_position",
+      "restore_preserves_queue_and_atomic_seek",
+      "pause_cancels_resume_without_losing_selection",
+      "new_selection_replaces_old_resume",
+      "stop_cancels_all_recovery_intent",
+      "exact_artist_ahead_of_remixes_and_unrelated_profiles",
+      "provider_score_breaks_homonym_ties",
+      "musicbrainz_is_metadata_only",
+      "unicode_and_word_normalization",
+      "reject_cleartext_streams",
+      "reject_url_userinfo",
+      "diagnostics_redact_urls_and_credentials",
+      "real_jni_connection_failures_hit_bounded_recovery_budget",
+      "no_unbounded_restart_loop_after_budget",
+      "explicit_pause_cancels_service_resume"
+    ]
+  },
+  "android_ui": {
+    "passed": true,
+    "checks": [
+      {
+        "name": "song_page_fetches_lyrics_without_pressing_search",
+        "passed": true,
+        "lines": 25
+      },
+      {
+        "name": "song_page_heart_updates_favorites",
+        "passed": true
+      },
+      {
+        "name": "automatic_source_language_translation",
+        "passed": true,
+        "translated_lines": 25
+      },
+      {
+        "name": "fullscreen_controls_auto_hide",
+        "passed": true
+      },
+      {
+        "name": "fullscreen_effect_picker_and_independent_appearance",
+        "passed": true
+      },
+      {
+        "name": "open_page_follows_next_track_and_fetches_lyrics",
+        "passed": true,
+        "lines": 26
+      },
+      {
+        "name": "statistics_cards_visible",
+        "passed": true
+      },
+      {
+        "name": "climate_card_opens_detailed_model_and_coverage",
+        "passed": true
+      },
+      {
+        "name": "song_page_metadata_follows_current_track",
+        "passed": true
+      }
+    ],
+    "spotify_authenticated": false,
+    "physical_bluetooth": false
+  },
+  "android_initial_upgrade": {
+    "passed": true,
+    "apk_sha256": "d5a64126edd47693e04817920250f128c56b14a755d370e603da195acf36d56d",
+    "before": {
+      "version": "0.6.0-local",
+      "code": "7",
+      "first_install": "2026-10-15 06:39:54",
+      "app_id": "10218",
+      "ce_inode": "770154"
+    },
+    "after": {
+      "version": "0.7.0-local",
+      "code": "8",
+      "first_install": "2026-10-15 06:39:54",
+      "app_id": "10218",
+      "ce_inode": "770154"
+    },
+    "updated_without_uninstall": true,
+    "data_directory_preserved": true,
+    "release_hub_and_public_search": true
+  },
+  "windows_installer": {
+    "installation": {
+      "DisplayVersion": "0.7.0.0",
+      "InstallLocation": "D:\\PROJETOS\\Tonal-Player-Matheus\\out\\installer-smoke-0700\\app\\"
+    },
+    "files_match": {
+      "TonalHub.exe": true,
+      "Tonalify.exe": true,
+      "IndieTonal.exe": true,
+      "qt.conf": true,
+      "platforms/qwindows.dll": true,
+      "sqldrivers/qsqlite.dll": true,
+      "CREDITS.md": true,
+      "WINDOWS_INSTALLER_LOCAL.md": true
+    },
+    "installed_app_startup_without_sdk_plugin_paths": true,
+    "reinstallation_preserves_unmanaged_files": true,
+    "isolated_uninstallation": true,
+    "passed": true
+  },
+  "performance": {
+    "samples": [
+      {
+        "label": "local_audio_player",
+        "seconds": 8.000422299999627,
+        "cpu_percent_one_core": 4.124782263056481,
+        "pss_kib": 49526
+      },
+      {
+        "label": "local_audio_fullscreen_effect",
+        "seconds": 8.000073100003647,
+        "cpu_percent_one_core": 14.99986293874556,
+        "pss_kib": 56931
+      }
+    ],
+    "audio": {
+      "frames": 1685376,
+      "blocks": 1464,
+      "dspNanos": 652812400,
+      "maxDspNanos": 13955300,
+      "overBudgetBlocks": 0,
+      "underruns": 0,
+      "recoveries": 0,
+      "bufferFrames": 6658,
+      "rate": 44100,
+      "channels": 2,
+      "routeKey": "38b75442b7404f97139c7dce",
+      "route": "sdk_gphone64_x86_64 • Saída de mídia",
+      "hrtfRequested": false,
+      "eq": false,
+      "enabled": true,
+      "binauralSource": false,
+      "paused": false,
+      "volume": 1,
+      "pauseQueuedFrames": 0,
+      "pauseFadeMs": 0,
+      "engineStatus": "Reproduzindo",
+      "currentUri": "",
+      "positionMs": 0
+    },
+    "emulator": true,
+    "physical_bluetooth": false,
+    "spotify_comparison": false,
+    "note": "Short exploratory measurement on shared Windows host, synthetic Vorbis audio; no battery or phone performance claim."
+  },
+  "model_evaluation": "docs/muse-evaluation-v1.json",
+  "apk_checks": {
+    "arm64": "c5cdd408a2867074936ac819872fd398e4654607095bf58a62568a5e59d8e6c2",
+    "universal": "0f80ab4b5bec87fc63a5425f6acfd959c3c2327fae7ca03e693ecb60113a5b8b",
+    "native_16k_alignment": true,
+    "private_seed_present": false
+  },
+  "limitations": [
+    "No new side-by-side Spotify benchmark",
+    "No physical POCO or Bluetooth listening test",
+    "Synthetic theme evaluation only; no real-song accuracy estimate"
+  ]
+}

@@ -21,6 +21,8 @@ class MusicCompanion : public QObject {
   Q_PROPERTY(bool historyEnabled READ historyEnabled WRITE setHistoryEnabled NOTIFY changed)
   Q_PROPERTY(QString background READ background WRITE setBackground NOTIFY changed)
   Q_PROPERTY(QString photo READ photo WRITE setPhoto NOTIFY changed)
+  Q_PROPERTY(QVariantList searches READ searches NOTIFY changed)
+  Q_PROPERTY(QVariantMap lyricStyle READ lyricStyle NOTIFY changed)
 public:
   explicit MusicCompanion(QObject *parent=nullptr,const QString &root={});
   ~MusicCompanion() override;
@@ -36,6 +38,11 @@ public:
   void setBackground(const QString &);
   QString photo() const{return m_data.value("photo").toString();}
   void setPhoto(const QString &);
+  QVariantList searches() const;
+  QVariantMap lyricStyle() const;
+  Q_INVOKABLE void rememberSearch(const QString &);
+  Q_INVOKABLE void forgetSearch(const QString &query={});
+  Q_INVOKABLE void setLyricStyle(const QString &,const QVariant &);
   Q_INVOKABLE void selectTrack(const QVariantMap &);
   Q_INVOKABLE void pulse(bool playing,int positionMs);
   Q_INVOKABLE bool liked(const QVariantMap &) const;
@@ -49,6 +56,7 @@ public:
   Q_INVOKABLE QVariantList playlistTracks(const QString &) const;
   Q_INVOKABLE void play(const QVariantList &tracks,int index=0){emit queueRequested(tracks,index);}
   Q_INVOKABLE QVariantMap statistics(int days,const QString &dimension) const;
+  Q_INVOKABLE QVariantMap insights(int days) const;
   Q_INVOKABLE void clearHistory();
   Q_INVOKABLE void setGenre(const QString &);
   Q_INVOKABLE void editMetadata(const QString &,const QString &);

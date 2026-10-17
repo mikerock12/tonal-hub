@@ -8,14 +8,16 @@ out.mkdir(parents=True, exist_ok=True)
 ffmpeg = root / 'out/audio-deps/ffmpeg/ffmpeg-n8.1-latest-win64-lgpl-shared-8.1/bin/ffmpeg.exe'
 def run(*args):
     subprocess.run([str(ffmpeg), '-hide_banner', '-loglevel', 'error', '-y', *map(str,args)], check=True)
-def tone(name, rate, amp=.1, channels=2, frequency=1000):
+def tone(name, rate, amp=.1, channels=2, frequency=1000, seconds=3):
     data=array.array('h')
-    for i in range(rate*3):
+    for i in range(rate*seconds):
         for c in range(channels):
             data.append(round(32767*amp*math.sin(2*math.pi*(frequency if channels<=2 else (300+c*150))*i/rate)))
     with wave.open(str(out/name),'wb') as f:
         f.setnchannels(channels); f.setsampwidth(2);f.setframerate(rate);f.writeframes(data.tobytes())
 for rate in (44100,48000,96000): tone(f'stereo-{rate}.wav',rate)
+tone('stereo-ui-48000.wav',48000,seconds=12)
+
 tone('quiet.wav',48000,.1);tone('loud.wav',48000,.4)
 tone('surround.wav',48000,.05,6)
 tone('surround-8.wav',48000,.05,8)

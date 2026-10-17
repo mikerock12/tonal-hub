@@ -9,6 +9,26 @@ Item {
     TestCase {
         name: "InlineLyricTranslation"
         when: windowShown
+        function test_fullscreen_styles_and_controls() {
+            const full=findChild(page,"lyricsFullscreenWindow")
+            verify(full!==null)
+            full.present()
+            tryCompare(full,"visibility",5) // QWindow::FullScreen
+            const controls=findChild(full,"lyricsFullscreenControls")
+            verify(controls!==null)
+            verify(controls.visible)
+            App.music.setLyricStyle("lyricFont","Mono")
+            App.music.setLyricStyle("translationColor","#FFBBD9")
+            compare(full.style.lyricFont,"Mono")
+            compare(full.style.translationColor,"#FFBBD9")
+            App.music.background="Estrelas"
+            wait(3700)
+            compare(controls.visible,false)
+            full.reveal()
+            compare(controls.visible,true)
+            full.close()
+            tryCompare(full,"visible",false)
+        }
         function test_translation_and_track_change() {
             const button = findChild(page, "translateLyricsButton")
             verify(button !== null)

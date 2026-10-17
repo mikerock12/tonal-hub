@@ -55,15 +55,10 @@ Dialog {
     }
     Connections {
         target: panel.controller
-        function onChanged(){if(panel.visible)panel.refresh()}
+        function onChanged(){if(panel.visible){panel.refresh();if(panel.audioEngine)panel.audioEngine.visualizerActive=tabs.currentIndex===2&&(panel.controller.background==="Ondas"||panel.controller.background==="Espectro")}}
         function onLyricsChanged(){lyrics.model=panel.controller.lines;Qt.callLater(panel.ensureLyrics)}
         function onCurrentChanged(){Qt.callLater(panel.ensureLyrics)}
         function onMessage(text){panel.notice=text}
-    }
-    Timer {
-        interval: 50; repeat: true
-        running: panel.visible && tabs.currentIndex===2 && panel.playing && ["Aurora","Ondas","Espectro"].indexOf(panel.controller.background)>=0
-        onTriggered:{panel.phase+=0.045;stage.requestPaint()}
     }
     onVisibleChanged: if(audioEngine) audioEngine.visualizerActive=visible && tabs.currentIndex===2 && (controller.background==="Ondas" || controller.background==="Espectro")
     ColumnLayout {
@@ -71,8 +66,8 @@ Dialog {
         RowLayout {
             Layout.fillWidth: true
             Label { text: panel.controller.current.title || "Escolha uma música no player"; textFormat: Text.PlainText; font.pixelSize: 20; font.bold: true; elide: Text.ElideRight; Layout.fillWidth: true }
-            Button { text: {panel.revision;return panel.controller.liked(panel.controller.current)?"♥ Favorita":"♡ Favoritar"} enabled: !!panel.controller.current.title; onClicked: panel.controller.favorite(panel.controller.current) }
-            Button { text: "+ Playlist"; enabled: !!panel.controller.current.title; onClicked: addMenu.open() }
+            ActionIcon { symbol:"heart";filled:{panel.revision;return panel.controller.liked(panel.controller.current)} description:filled?"Remover das favoritas":"Favoritar música"; enabled: !!panel.controller.current.title; onClicked: panel.controller.favorite(panel.controller.current) }
+            ActionIcon { symbol:"plus";description:"Adicionar à playlist"; enabled: !!panel.controller.current.title; onClicked: addMenu.open() }
             Button { text: "Backup"; onClicked: backupMenu.open() }
             Menu { id: backupMenu; MenuItem { text:"Exportar backup…"; onTriggered: backupSave.open() } MenuItem { text:"Restaurar backup…"; onTriggered: restoreConfirm.open() } }
             Menu { id: addMenu; Repeater { model: panel.controller.playlists; MenuItem { required property var modelData; text: modelData.name; onTriggered: panel.controller.addToPlaylist(modelData.id,panel.controller.current) } } MenuItem { text: "Criar playlist…"; onTriggered: createDialog.open() } }
@@ -118,7 +113,7 @@ Dialog {
                 Label { text:"Artistas, músicas e estilos que marcaram seus dias"; color:"#a5a8ad" }
                 RowLayout {
                     ComboBox { id: period; textRole: "text"; valueRole: "value"; model:[{text:"7 dias",value:7},{text:"30 dias",value:30},{text:"90 dias",value:90},{text:"180 dias",value:180}]; onActivated: panel.refresh() }
-                    ComboBox { id: dimension; textRole: "text"; valueRole: "value"; model:[{text:"Bandas / artistas",value:"artists"},{text:"Músicas",value:"tracks"},{text:"Estilos",value:"genres"},{text:"Por dia",value:"days"}]; onActivated: panel.refresh() }
+                    ComboBox { id: dimension; textRole: "text"; valueRole: "value"; model:[{text:"Bandas / artistas",value:"artists"},{text:"Músicas",value:"tracks"},{text:"Álbuns",value:"albums"},{text:"Estilos",value:"genres"},{text:"Por dia",value:"days"}]; onActivated: panel.refresh() }
                     CheckBox { text: "Registrar escutas locais"; checked: panel.controller.historyEnabled; onToggled: panel.controller.historyEnabled=checked }
                     Button { text: "Apagar histórico"; onClicked: clearDialog.open() }
                 }
@@ -128,7 +123,14 @@ Dialog {
                         Label { text:(panel.stats.plays || 0)+" escutas qualificadas • "+(panel.stats.vibe || "Seu histórico começa aqui"); color:"#b8c6ce" }
                     }
                 }
-                Label { text: panel.stats.explanation || ""; wrapMode: Text.WordWrap; color: "#b5c9d6"; Layout.fillWidth: true }
+                Rectangle {Layout.fillWidth:true;implicitHeight:100;radius:14;color:"#303044"
+                    Column {anchors.fill:parent;anchors.margins:14;spacing:5
+                        Label{text:"CLIMA DO REPERTÓRIO • abrir análise";font.pixelSize:11;color:"#b5c9d6"}
+                        Label{text:panel.stats.vibe || "Dados insuficientes";font.pixelSize:21;font.bold:true}
+                        Label{text:panel.stats.explanation || "";width:parent.width;wrapMode:Text.Wrap;font.pixelSize:12}
+                    }
+                    MouseArea{anchors.fill:parent;cursorShape:Qt.PointingHandCursor;onClicked:climate.open()}
+                }
                 ListView {
                     id: chart; Layout.fillWidth: true; Layout.fillHeight: true; clip: true; spacing: 5; model: panel.stats.rows || []; ScrollBar.vertical: ScrollBar {}
                     delegate: Rectangle {
@@ -136,7 +138,7 @@ Dialog {
                         width: chart.width; height: 54; color: "#1b2935"; radius: 5
                         Rectangle { anchors.left: parent.left; anchors.top: parent.top; anchors.bottom: parent.bottom; width: parent.width*modelData.ms/Math.max(1,...panel.stats.rows.map(r=>r.ms)); color: "#176078"; radius: 5 }
                         Label { anchors.fill: parent; anchors.margins: 12; text: modelData.label+" • "+(modelData.ms/60000).toFixed(1)+" min • "+modelData.plays+" escutas"; textFormat: Text.PlainText; elide: Text.ElideRight }
-                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { panel.drillTracks=modelData.tracks;panel.displayTracks=modelData.tracks;panel.selectedPlaylist="";tabs.currentIndex=0 } }
+                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { drill.report=modelData;drill.open() } }
                     }
                     Label { anchors.centerIn: parent; visible: chart.count===0; text: "Seu histórico começa aqui\nOuça músicas para descobrir seus artistas e estilos mais ouvidos."; wrapMode: Text.WordWrap; width: parent.width-30; horizontalAlignment: Text.AlignHCenter; color:"#a5a8ad" }
                 }
@@ -154,40 +156,31 @@ Dialog {
                     }
                 }
                 RowLayout {
-                    Button { text:"Anterior"; enabled:!!panel.controller.current.title; onClicked:panel.previousRequested() }
-                    Button { text:panel.playing?"Pausar":"Reproduzir"; enabled:!!panel.controller.current.title; onClicked:panel.togglePlayback() }
-                    Button { text:"Próxima"; enabled:!!panel.controller.current.title; onClicked:panel.nextRequested() }
+                    ActionIcon { symbol:"prev";description:"Anterior"; enabled:!!panel.controller.current.title; onClicked:panel.previousRequested() }
+                    ActionIcon { symbol:panel.playing?"pause":"play";description:panel.playing?"Pausar":"Reproduzir"; enabled:!!panel.controller.current.title; onClicked:panel.togglePlayback() }
+                    ActionIcon { symbol:"next";description:"Próxima"; enabled:!!panel.controller.current.title; onClicked:panel.nextRequested() }
                     Slider { Layout.fillWidth:true; from:0; to:Math.max(1,panel.controller.current.durationMs || 0); value:panel.position; enabled:(panel.controller.current.durationMs || 0)>0; onMoved:panel.controller.seek(Math.round(value)) }
                 }
                 RowLayout {
-                    Button { text: "Buscar letra"; enabled: !panel.controller.busy; onClicked: panel.controller.fetchLyrics() }
+                    ActionIcon { symbol:"refresh";description:"Atualizar letra"; enabled: !panel.controller.busy; onClicked: panel.controller.fetchLyrics() }
                     Label { text:"Idioma automático"; color:"#a5a8ad" }
-                    Button { text: "Traduzir pt-BR"; enabled: !panel.controller.busy && panel.controller.lines.length>0; onClicked:{panel.translatedTrack="";panel.autoTranslation=true;panel.ensureLyrics()} }
+                    ActionIcon { symbol:"translate";description:"Traduzir pt-BR"; enabled: !panel.controller.busy && panel.controller.lines.length>0; onClicked:{panel.translatedTrack="";panel.autoTranslation=true;panel.ensureLyrics()} }
+                    ActionIcon { symbol:"font";description:"Fontes e cores";onClicked:appearance.open() }
+                    ActionIcon { symbol:"expand";description:"Expandir letras em tela cheia";onClicked:fullscreen.present() }
                     Button { text: "Importar / editar"; onClicked: editDialog.open() }
                     CheckBox { text: "Acompanhar"; checked: panel.followLyrics; onToggled: panel.followLyrics=checked }
                 }
                 Label { text: panel.controller.lyricStatus; textFormat: Text.PlainText; wrapMode: Text.WordWrap; Layout.fillWidth: true; color: "#b5c9d6" }
                 Label { text: "Buscar envia título/artista ao LRCLIB; traduzir envia a letra ao Google Tradutor. Letra/versão e tradução podem não estar disponíveis."; wrapMode: Text.WordWrap; Layout.fillWidth: true; font.pixelSize: 11; color: "#a3b8c8" }
                 RowLayout {
-                    ComboBox { model:["Aurora","Ondas","Espectro","Capa","Foto","Sem animação"]; Component.onCompleted: currentIndex=Math.max(0,model.indexOf(panel.controller.background)); onActivated: {panel.controller.background=currentText;panel.audioEngine.visualizerActive=panel.visible && tabs.currentIndex===2 && (currentText==="Ondas"||currentText==="Espectro");stage.requestPaint()} }
+                    ComboBox { model:stage.modes; Component.onCompleted: currentIndex=Math.max(0,model.indexOf(panel.controller.background)); onActivated: {panel.controller.background=currentText;panel.audioEngine.visualizerActive=panel.visible && tabs.currentIndex===2 && (currentText==="Ondas"||currentText==="Espectro");stage.requestPaint()} }
                     Button { text: "Escolher foto da banda"; onClicked: photoPicker.open() }
                     Label { text: "Ondas / espectro: PCM real antes do volume"; font.pixelSize: 11; color: "#a3b8c8" }
                 }
                 Rectangle {
                     Layout.fillWidth: true; Layout.fillHeight: true; color: "#070f18"; radius: 10; clip: true
                     Image { anchors.fill: parent; source: panel.controller.background==="Foto"?panel.controller.photo:panel.controller.background==="Capa"?(panel.controller.current.image || ""):""; fillMode: Image.PreserveAspectCrop; asynchronous: true; sourceSize.width: 1400; sourceSize.height: 1000 }
-                    Canvas {
-                        id: stage; anchors.fill: parent
-                        onPaint: {
-                            let c=getContext("2d");c.reset();let w=width,h=height,mode=panel.controller.background
-                            if(mode==="Aurora") {for(let i=0;i<4;i++){let x=w*(0.5+0.4*Math.sin(panel.phase*0.4+i)),y=h*(0.5+0.3*Math.cos(panel.phase*0.3+i*2)),g=c.createRadialGradient(x,y,0,x,y,w*0.65);g.addColorStop(0,["#124c65","#243858","#244a40","#292443"][i]);g.addColorStop(1,"transparent");c.fillStyle=g;c.fillRect(0,0,w,h)}}
-                            let data=mode==="Ondas"?panel.audioEngine.metrics.waveform:panel.audioEngine.metrics.spectrum
-                            if((mode==="Ondas"||mode==="Espectro") && data && data.length && panel.playing) {
-                                c.strokeStyle="#54e0d1";c.fillStyle="#338a9c";c.lineWidth=3;c.beginPath()
-                                for(let i=0;i<data.length;i++){if(mode==="Ondas"){let y=h*0.5+data[i]*h*0.32;i?c.lineTo(i*w/(data.length-1),y):c.moveTo(0,y)}else c.fillRect(i*w/data.length,h*(1-data[i]*0.8),w/data.length-3,h*data[i]*0.8)}c.stroke()
-                            }
-                        }
-                    }
+                    LyricBackdrop {id:stage;anchors.fill:parent;mode:panel.controller.background;playing:panel.playing;active:panel.visible&&tabs.currentIndex===2&&!fullscreen.visible;metrics:panel.audioEngine ? panel.audioEngine.metrics : ({})}
                     Rectangle { anchors.fill: parent; color: "#99040a12" }
                     ListView {
                         id: lyrics; anchors.fill: parent; anchors.margins: 18; model: panel.controller.lines; clip: true; spacing: 20; ScrollBar.vertical: ScrollBar {}
@@ -196,8 +189,8 @@ Dialog {
                         delegate: Column {
                             required property var modelData; required property int index
                             width: lyrics.width-18; spacing: 6
-                            Label { width: parent.width; text: modelData.text; textFormat: Text.PlainText; wrapMode: Text.WordWrap; font.pixelSize: panel.highlighted===index?30:25; font.bold: true; color: panel.highlighted===index?"#8bf3e0":"#f2f5fa" }
-                            Label { width: parent.width; text: modelData.translation || ""; textFormat: Text.PlainText; visible: text.length>0; wrapMode: Text.WordWrap; font.pixelSize: 21; color: "#d1e6ed" }
+                            Label { width: parent.width; text: modelData.text; textFormat: Text.PlainText; wrapMode: Text.WordWrap; font.pixelSize:panel.controller.lyricStyle.lyricSize; font.family:fullscreen.fontFamily(panel.controller.lyricStyle.lyricFont); font.bold:true;color:panel.controller.lyricStyle.lyricColor;opacity:panel.highlighted<0||panel.highlighted===index?1:.55 }
+                            Label { width: parent.width; text: modelData.translation || ""; textFormat: Text.PlainText; visible: text.length>0; wrapMode: Text.WordWrap; font.pixelSize:panel.controller.lyricStyle.translationSize;font.family:fullscreen.fontFamily(panel.controller.lyricStyle.translationFont);color:panel.controller.lyricStyle.translationColor }
                             MouseArea { anchors.fill: parent; enabled: modelData.time>=0; onClicked: panel.controller.seek(modelData.time) }
                         }
                     }
@@ -205,6 +198,10 @@ Dialog {
             }
         }
     }
+    StatisticsDetail{id:drill;controller:panel.controller}
+    ClimateDetail{id:climate;controller:panel.controller;days:period.currentValue || 7}
+    LyricStyleDialog{id:appearance;controller:panel.controller}
+    LyricsFullscreen{id:fullscreen;controller:panel.controller;playing:panel.playing;position:panel.position;metrics:panel.audioEngine ? panel.audioEngine.metrics : ({})}
     Dialog { id: createDialog; anchors.centerIn: parent; title:"Criar playlist pessoal"; standardButtons: Dialog.Ok|Dialog.Cancel; TextField { id: newName; placeholderText:"Nome da playlist"; maximumLength:100 } onAccepted: {let id=panel.controller.createPlaylist(newName.text);if(id&&panel.controller.current.title)panel.controller.addToPlaylist(id,panel.controller.current);newName.clear()} }
     Dialog { id: renameDialog; anchors.centerIn: parent; title:"Renomear playlist"; standardButtons: Dialog.Ok|Dialog.Cancel; TextField { id: renameField; placeholderText:"Novo nome"; maximumLength:100 } onAccepted: panel.controller.renamePlaylist(panel.selectedPlaylist,renameField.text) }
     Dialog { id: deleteDialog; anchors.centerIn: parent; title:"Excluir esta playlist pessoal?"; standardButtons: Dialog.Yes|Dialog.No; onAccepted: {panel.controller.deletePlaylist(panel.selectedPlaylist);panel.selectedPlaylist="";panel.refresh()} }

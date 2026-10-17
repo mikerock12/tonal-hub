@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.21)
+project(tonal_muse LANGUAGES CXX)
+add_library(tonal_muse SHARED MuseJni.cpp ../../src/insights/TinyMusicModel.cpp)
+target_compile_features(tonal_muse PRIVATE cxx_std_17)
+target_include_directories(tonal_muse PRIVATE ../../src/insights)
+target_compile_options(tonal_muse PRIVATE -O2 -fvisibility=hidden)
+target_link_options(tonal_muse PRIVATE -Wl,-z,max-page-size=16384)

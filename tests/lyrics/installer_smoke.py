@@ -8,10 +8,10 @@ import time
 import winreg
 
 ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / 'out/installer-smoke-0600'
+OUT = ROOT / 'out/installer-smoke-0700'
 TARGET = OUT / 'app'
-SETUP = ROOT / 'out/release-local/Tonal-Hub-0.6.0.0-Windows-x64-Setup.exe'
-STAGE = ROOT / 'out/release-local/Tonal-Hub-0.6.0-local'
+SETUP = ROOT / 'out/release-local/Tonal-Hub-0.7.0.0-Windows-x64-Setup.exe'
+STAGE = ROOT / 'out/release-local/Tonal-Hub-0.7.0-local'
 KEY = r'Software\Microsoft\Windows\CurrentVersion\Uninstall\{D47D88D5-B58A-49D2-868C-68A55BC3B4E2}_is1'
 
 
@@ -51,7 +51,7 @@ def main():
                QT_FORCE_STDERR_LOGGING='1', QT_QPA_FONTDIR=str(Path(env['WINDIR']) / 'Fonts'))
     with (OUT / 'startup.log').open('w', encoding='utf-8') as log:
         run([TARGET / 'Tonalify.exe', '--audio-smoke-test', '--local-only', '--audio-settings',
-             '--local-file', ROOT / 'out/audio-fixtures/stereo-48000.wav'], cwd=TARGET,
+             '--local-file', ROOT / 'out/audio-fixtures/stereo-ui-48000.wav'], cwd=TARGET,
             env=env, stdout=log, stderr=log)
     report['installed_app_startup_without_sdk_plugin_paths'] = True
     # Reinstall to the same location and check that user-added files survive the update.
