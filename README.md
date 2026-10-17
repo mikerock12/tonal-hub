@@ -23,6 +23,9 @@ New in the personal **0.5.0** build: [rare fan recordings and demos](docs/RARE_R
 [favorites, playlists, listening charts, lyric backgrounds, pt-BR translation and SQLite backups](docs/PERSONAL_LIBRARY_050.md).
 Local Windows/Android deliverables are generated in `out/`; they are separate from the original project's public releases.
 
+Windows installer and direct translation on the lyrics screen (0.5.0, correction 1):
+[installation and build instructions](docs/WINDOWS_INSTALLER_LOCAL.md).
+
 ![Tonal playing an album](docs/tonal.png)
 
 ## Actually lightweight

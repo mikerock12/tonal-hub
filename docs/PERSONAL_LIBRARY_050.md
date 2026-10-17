@@ -3,6 +3,9 @@
 ## Onde abrir
 
 - Windows Tonalify: menu da conta → **Biblioteca pessoal, estatísticas e letras…**.
+- Windows Tonalify com a correção de letras: na própria tela do microfone,
+  **Traduzir pt-BR**. Selecione o idioma original e a tradução aparece abaixo
+  de cada verso, sem precisar abrir o painel pessoal.
 - Windows IndieTonal: **Sua música**.
 - Android: ícone de coração no cabeçalho de cada player.
 

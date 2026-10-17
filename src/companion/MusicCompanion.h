@@ -55,6 +55,7 @@ public:
   Q_INVOKABLE void fetchLyrics();
   Q_INVOKABLE void translate(const QString &language);
   Q_INVOKABLE void importLyrics(const QString &,bool translation=false);
+  Q_INVOKABLE bool useDisplayedLyrics(const QString &trackUri,const QVariantList &lines);
   Q_INVOKABLE void seek(int ms){emit seekRequested(ms);}
   Q_INVOKABLE bool exportBackup(const QUrl &);
   Q_INVOKABLE bool restoreBackup(const QUrl &);

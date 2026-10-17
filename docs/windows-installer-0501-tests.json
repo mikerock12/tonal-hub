@@ -1,0 +1,65 @@
+{
+  "version": "0.5.0-correction-1",
+  "installer_version": "0.5.0.1",
+  "platform": "Windows x64",
+  "date": "2026-10-17",
+  "artifacts": {
+    "out/release-local/Tonal-Hub-0.5.0.1-Windows-x64-Setup.exe": {
+      "bytes": 81282460,
+      "sha256": "c7d00dd94b5bbcacde1d987877d1a1a855c356a2e8661544807025ea1c32dfb8"
+    },
+    "out/release-local/Tonal-Hub-0.5.0-letras-local.zip": {
+      "bytes": 114835225,
+      "sha256": "5fea0ae18325c9ae7c98e80309bac094a911070cb204d06a88ed5340d61ed650"
+    }
+  },
+  "installer": {
+    "installation": {
+      "DisplayVersion": "0.5.0.1",
+      "InstallLocation": "D:\\PROJETOS\\Tonal-Player-Matheus\\out\\installer-smoke-0501\\app\\"
+    },
+    "files_match": {
+      "TonalHub.exe": true,
+      "Tonalify.exe": true,
+      "IndieTonal.exe": true,
+      "qt.conf": true,
+      "platforms/qwindows.dll": true,
+      "sqldrivers/qsqlite.dll": true,
+      "CREDITS.md": true,
+      "WINDOWS_INSTALLER_LOCAL.md": true
+    },
+    "installed_app_startup_without_sdk_plugin_paths": true,
+    "reinstallation_preserves_unmanaged_files": true,
+    "isolated_uninstallation": true,
+    "passed": true
+  },
+  "companion_unit": {
+    "passed": true,
+    "checks": [
+      "displayed lyric timing and blank lines preserved",
+      "stale track URI rejected",
+      "existing translations retained for the same version",
+      "replacement cancels stale asynchronous translation"
+    ]
+  },
+  "actual_qml_page": {
+    "passed": true,
+    "checks": [
+      "button visible and clickable on the lyrics page",
+      "translates the displayed source without another lyrics lookup",
+      "shows Portuguese below the original",
+      "hides stale results after original version or track changes",
+      "button disabled during lyric loading and translation"
+    ]
+  },
+  "live_translation": {
+    "passed": true,
+    "http_status": 200,
+    "input": "synthetic phrase only"
+  },
+  "limits": [
+    "No physical Bluetooth test",
+    "No new Spotify CPU/RAM benchmark",
+    "Android APK unchanged in this Windows-only correction"
+  ]
+}

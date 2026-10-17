@@ -29,6 +29,17 @@ public:
       auto lrc=MusicCompanion::parseLyrics("[ar:Fixture]\n[offset:-100]\n[00:01.20][00:02.345]Synthetic line\n[00:00.50]Earlier line");
       require(lrc.size()==3&&lrc[0].toMap()["time"].toInt()==400&&lrc[2].toMap()["time"].toInt()==2245,"LRC fractions, multiple stamps or offset broken");
       m.importLyrics("[00:00.00]fire rage fight\n[00:01.00]dance");
+      auto displayed=m.lines();displayed.insert(1,QVariantMap{{"time",500},{"text",""}});
+      const int generation=m.m_generation;
+      require(!m.useDisplayedLyrics("spotify:track:stale",displayed)&&m.m_generation==generation,"stale screen replaced current lyrics");
+      auto screenSong=song;screenSong["uri"]="spotify:track:fixture";m.selectTrack(screenSong);
+      require(m.useDisplayedLyrics("spotify:track:fixture",displayed)&&m.lines()==displayed,"displayed line times or blank verses changed");
+      m.importLyrics("fogo\n\ndança",true);auto translatedLines=m.lines();
+      require(m.useDisplayedLyrics("spotify:track:fixture",displayed)&&m.lines()==translatedLines,"reopening screen erased translation");
+      auto other=displayed;auto changed=other[0].toMap();changed["text"]="Another version";other[0]=changed;
+      const int oldGeneration=m.m_generation;m.m_busy=true;
+      require(m.useDisplayedLyrics("spotify:track:fixture",other)&&!m.busy()&&m.m_generation>oldGeneration&&!m.lines()[0].toMap().contains("translation"),"changed lyric version kept stale translation or request");
+      m.selectTrack(song);m.importLyrics("[00:00.00]fire rage fight\n[00:01.00]dance");
       require(m.current()["lyricsAnalyzed"].toBool(),"lyric evidence not analyzed");
       m.setFavorite(song,true);require(m.m_data["tracks"].toObject()[MusicCompanion::key(song)].toObject()["lyricsAnalyzed"].toBool(),"favorite erased lyric evidence");
       m.pulse(true,0);QThread::msleep(20);m.pulse(true,20);require(m.m_pendingMs>0&&m.m_pendingMs<=20,"actual progress not bounded by elapsed time");

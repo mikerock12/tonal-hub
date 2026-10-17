@@ -34,6 +34,11 @@ jobs:
           cmake --build out/ci --config Release --parallel 2
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ctest --test-dir out/ci -C Release --output-on-failure
+      - name: Test translation on the actual lyrics screen without network access
+        shell: pwsh
+        run: |
+          $env:QTDIR = "$env:RUNNER_TEMP/Qt/6.8.3/msvc2022_64"
+          python tests/lyrics/run_ui.py
   android-java:
     runs-on: ubuntu-latest
     timeout-minutes: 20

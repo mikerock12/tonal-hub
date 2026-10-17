@@ -14,6 +14,17 @@ Item {
     readonly property bool synced: status === Lyrics.Synced
     // Destaca a linha um pouco antes: a posição do Spotify chega com o atraso da rede.
     readonly property int lead: 250
+    readonly property var translationLines: App.music.lines
+    readonly property bool translationMatches: {
+        if (App.music.current.uri !== App.player.trackUri || translationLines.length !== App.lyrics.lines.length || !translationLines.length)
+            return false
+        const original = App.lyrics.lines
+        for (let i = 0; i < original.length; ++i)
+            if (original[i].text !== translationLines[i].text || original[i].time !== translationLines[i].time)
+                return false
+        return true
+    }
+    readonly property bool hasTranslation: translationMatches && translationLines.some(row => !!row.translation)
 
     Component.onCompleted: {
         App.lyrics.active = true
@@ -74,9 +85,73 @@ Item {
         Behavior on color { ColorAnimation { duration: 400 } }
     }
 
+    Column {
+        id: translationBar
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.margins: 16
+        spacing: 6
+
+        Flow {
+            width: parent.width
+            spacing: 8
+            Button {
+                objectName: "translateLyricsButton"
+                text: App.music.busy && root.translationMatches ? qsTr("Traduzindo…") : qsTr("Traduzir pt-BR")
+                enabled: (root.synced || root.status === Lyrics.Plain) && !App.music.busy
+                onClicked: {
+                    if (App.music.useDisplayedLyrics(App.player.trackUri, App.lyrics.lines)) {
+                        showTranslation.checked = true
+                        App.music.translate(sourceLanguage.currentValue)
+                    }
+                }
+            }
+            ComboBox {
+                id: sourceLanguage
+                objectName: "lyricsSourceLanguage"
+                width: 150
+                textRole: "text"
+                valueRole: "value"
+                model: [{text:qsTr("Inglês"),value:"en"},{text:qsTr("Espanhol"),value:"es"},
+                        {text:qsTr("Francês"),value:"fr"},{text:qsTr("Alemão"),value:"de"},
+                        {text:qsTr("Italiano"),value:"it"},{text:qsTr("Japonês"),value:"ja"},
+                        {text:qsTr("Coreano"),value:"ko"},{text:qsTr("Português"),value:"pt"}]
+                enabled: !App.music.busy
+                ToolTip.visible: hovered
+                ToolTip.text: qsTr("Idioma da letra original")
+            }
+            CheckBox {
+                id: showTranslation
+                text: qsTr("Mostrar tradução")
+                checked: true
+                visible: root.hasTranslation
+            }
+        }
+        Label {
+            width: parent.width
+            text: root.translationMatches ? App.music.lyricStatus : qsTr("Traduza a letra para português sem sair desta tela.")
+            textFormat: Text.PlainText
+            color: Theme.textSecondary
+            font.pixelSize: 12
+            wrapMode: Text.Wrap
+        }
+        Label {
+            width: parent.width
+            text: qsTr("Ao traduzir, a letra é enviada ao Google Tradutor. A tradução automática pode conter erros.")
+            color: Theme.textSecondary
+            font.pixelSize: 11
+            wrapMode: Text.Wrap
+        }
+    }
+
     ListView {
         id: list
-        anchors.fill: parent
+        anchors.top: translationBar.bottom
+        anchors.topMargin: 8
+        anchors.bottom: parent.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
         anchors.leftMargin: 48
         anchors.rightMargin: 24
         visible: root.synced || root.status === Lyrics.Plain
@@ -84,7 +159,7 @@ Item {
         reuseItems: true
         clip: true
         boundsBehavior: Flickable.StopAtBounds
-        topMargin: 40
+        topMargin: 16
         bottomMargin: height * 0.5          // deixa as últimas linhas subirem até a altura da linha atual
         ScrollBar.vertical: ThinScrollBar { }
 
@@ -113,23 +188,42 @@ Item {
             font.pixelSize: 14
         }
 
-        delegate: Text {
+        delegate: Item {
             id: line
             required property var modelData
             required property int index
 
             width: ListView.view.width
-            topPadding: 6
-            bottomPadding: 6
-            rightPadding: 24
-            text: modelData.text !== "" ? modelData.text : (root.synced ? "♪" : " ")
-            wrapMode: Text.Wrap
-            font.pixelSize: 28
-            font.weight: Font.Bold
-            color: Theme.textPrimary
+            height: verse.implicitHeight + 12
             opacity: !root.synced || hover.containsMouse || index === root.current ? 1
                      : index < root.current ? 0.7 : 0.45
             Behavior on opacity { NumberAnimation { duration: 200 } }
+
+            Column {
+                id: verse
+                width: parent.width
+                y: 6
+                spacing: 5
+                Text {
+                    width: parent.width - 24
+                    text: line.modelData.text !== "" ? line.modelData.text : (root.synced ? "♪" : " ")
+                    textFormat: Text.PlainText
+                    wrapMode: Text.Wrap
+                    font.pixelSize: 28
+                    font.weight: Font.Bold
+                    color: Theme.textPrimary
+                }
+                Text {
+                    objectName: "lyricTranslationLine"
+                    width: parent.width - 24
+                    text: root.translationMatches ? (root.translationLines[line.index].translation || "") : ""
+                    textFormat: Text.PlainText
+                    visible: showTranslation.checked && text.length > 0
+                    wrapMode: Text.Wrap
+                    font.pixelSize: 22
+                    color: "#d1e6ed"
+                }
+            }
 
             MouseArea {
                 id: hover
