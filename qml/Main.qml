@@ -9,7 +9,7 @@ ApplicationWindow {
     Loader { id: musicLoader; onLoaded: item.open() }
     Binding { target: musicLoader.item; property: "position"; value: App.player.positionMs; when: !!musicLoader.item }
     Binding { target: musicLoader.item; property: "playing"; value: App.player.isPlaying && App.player.playingHere; when: !!musicLoader.item }
-    Connections { target: musicLoader.item; function onDiscover(artist){Nav.go("search",{query:artist})} }
+    Connections { target: musicLoader.item; function onDiscover(artist){Nav.go("search",{query:artist})} function onTogglePlayback(){App.player.togglePlay()} function onPreviousRequested(){App.player.previous()} function onNextRequested(){App.player.next()} }
 
     width: 1280
     height: 820

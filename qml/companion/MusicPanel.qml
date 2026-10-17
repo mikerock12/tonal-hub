@@ -15,24 +15,38 @@ Dialog {
     property var drillTracks: null
     property var stats: ({rows:[],recommendations:[]})
     property string notice: ""
+    property string lyricTrack: ""
+    property string translatedTrack: ""
+    property bool autoTranslation: true
+    property alias section: tabs.currentIndex
+    function ensureLyrics() {
+        if (!visible || tabs.currentIndex!==2 || !controller.current.title) return
+        const track=controller.current.provider+"|"+(controller.current.id || controller.current.uri)
+        if(lyricTrack!==track){lyricTrack=track;translatedTrack="";if(!controller.lines.length&&!controller.busy)controller.fetchLyrics()}
+        if(autoTranslation&&!controller.busy&&controller.lines.length&&translatedTrack!==track){translatedTrack=track;controller.translate("auto")}
+    }
+    function showSong(){tabs.currentIndex=2;open();ensureLyrics()}
     property bool followLyrics: true
     property int highlighted: -1
     property real phase: 0
     signal discover(string artist)
+    signal togglePlayback()
+    signal previousRequested()
+    signal nextRequested()
     parent: Overlay.overlay
     width: Math.min(1120,parent ? parent.width-32 : 1000)
     height: Math.min(800,parent ? parent.height-32 : 700)
     anchors.centerIn: parent
     modal: true
-    title: "Sua música • biblioteca, estatísticas e letras"
+    title: "Sua música"
     standardButtons: Dialog.Close
-    background: Rectangle { color: "#121b24"; radius: 14; border.color: "#385065" }
+    background: Rectangle { color: "#141517"; radius: 18; border.color: "#303237" }
     function refresh() {
         revision++
         stats=controller.statistics(period.currentValue || 7,dimension.currentValue || "artists")
         displayTracks=drillTracks!==null ? drillTracks : selectedPlaylist ? controller.playlistTracks(selectedPlaylist) : controller.favorites
     }
-    onOpened: refresh()
+    onOpened: {refresh();ensureLyrics()}
     onPositionChanged: {
         let found=-1
         for(let i=0;i<controller.lines.length;i++) if(controller.lines[i].time>=0 && controller.lines[i].time<=position) found=i
@@ -42,7 +56,8 @@ Dialog {
     Connections {
         target: panel.controller
         function onChanged(){if(panel.visible)panel.refresh()}
-        function onLyricsChanged(){lyrics.model=panel.controller.lines}
+        function onLyricsChanged(){lyrics.model=panel.controller.lines;Qt.callLater(panel.ensureLyrics)}
+        function onCurrentChanged(){Qt.callLater(panel.ensureLyrics)}
         function onMessage(text){panel.notice=text}
     }
     Timer {
@@ -65,7 +80,7 @@ Dialog {
         Label { visible: panel.notice.length>0; text: panel.notice; textFormat: Text.PlainText; wrapMode: Text.WordWrap; color: "#ffcc8d"; Layout.fillWidth: true }
         TabBar {
             id: tabs; Layout.fillWidth: true
-            onCurrentIndexChanged: if(panel.audioEngine)panel.audioEngine.visualizerActive=panel.visible && currentIndex===2 && (panel.controller.background==="Ondas" || panel.controller.background==="Espectro")
+            onCurrentIndexChanged: {if(panel.audioEngine)panel.audioEngine.visualizerActive=panel.visible && currentIndex===2 && (panel.controller.background==="Ondas" || panel.controller.background==="Espectro");Qt.callLater(panel.ensureLyrics)}
             TabButton { text: "Favoritas e playlists" }
             TabButton { text: "Estatísticas" }
             TabButton { text: "Letras e cenário" }
@@ -99,13 +114,20 @@ Dialog {
                 }
             }
             ColumnLayout {
+                Label { text:"Seu ritmo"; font.pixelSize:28; font.bold:true }
+                Label { text:"Artistas, músicas e estilos que marcaram seus dias"; color:"#a5a8ad" }
                 RowLayout {
                     ComboBox { id: period; textRole: "text"; valueRole: "value"; model:[{text:"7 dias",value:7},{text:"30 dias",value:30},{text:"90 dias",value:90},{text:"180 dias",value:180}]; onActivated: panel.refresh() }
                     ComboBox { id: dimension; textRole: "text"; valueRole: "value"; model:[{text:"Bandas / artistas",value:"artists"},{text:"Músicas",value:"tracks"},{text:"Estilos",value:"genres"},{text:"Por dia",value:"days"}]; onActivated: panel.refresh() }
                     CheckBox { text: "Registrar escutas locais"; checked: panel.controller.historyEnabled; onToggled: panel.controller.historyEnabled=checked }
                     Button { text: "Apagar histórico"; onClicked: clearDialog.open() }
                 }
-                Label { text: ((panel.stats.ms || 0)/60000).toFixed(1)+" min • "+(panel.stats.plays || 0)+" escutas qualificadas • "+(panel.stats.vibe || "Dados insuficientes"); font.pixelSize: 18 }
+                Rectangle { Layout.fillWidth:true; implicitHeight:82; color:"#263a45"; radius:14
+                    Column { anchors.fill:parent; anchors.margins:14; spacing:5
+                        Label { text:((panel.stats.ms || 0)/60000).toFixed(0)+" minutos de música"; font.pixelSize:24; font.bold:true }
+                        Label { text:(panel.stats.plays || 0)+" escutas qualificadas • "+(panel.stats.vibe || "Seu histórico começa aqui"); color:"#b8c6ce" }
+                    }
+                }
                 Label { text: panel.stats.explanation || ""; wrapMode: Text.WordWrap; color: "#b5c9d6"; Layout.fillWidth: true }
                 ListView {
                     id: chart; Layout.fillWidth: true; Layout.fillHeight: true; clip: true; spacing: 5; model: panel.stats.rows || []; ScrollBar.vertical: ScrollBar {}
@@ -116,16 +138,31 @@ Dialog {
                         Label { anchors.fill: parent; anchors.margins: 12; text: modelData.label+" • "+(modelData.ms/60000).toFixed(1)+" min • "+modelData.plays+" escutas"; textFormat: Text.PlainText; elide: Text.ElideRight }
                         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { panel.drillTracks=modelData.tracks;panel.displayTracks=modelData.tracks;panel.selectedPlaylist="";tabs.currentIndex=0 } }
                     }
-                    Label { anchors.centerIn: parent; visible: chart.count===0; text: "O histórico começa com esta versão. Ouça músicas para preencher o gráfico."; wrapMode: Text.WordWrap; width: parent.width-30; horizontalAlignment: Text.AlignHCenter }
+                    Label { anchors.centerIn: parent; visible: chart.count===0; text: "Seu histórico começa aqui\nOuça músicas para descobrir seus artistas e estilos mais ouvidos."; wrapMode: Text.WordWrap; width: parent.width-30; horizontalAlignment: Text.AlignHCenter; color:"#a5a8ad" }
                 }
                 Label { text: "Sugestões editoriais por estilo informado • toque para buscar"; color: "#b5c9d6" }
                 Flow { Layout.fillWidth: true; spacing: 5; Repeater { model: panel.stats.recommendations || []; Button { required property string modelData; text: modelData; onClicked: {panel.discover(modelData);panel.close()} } } }
             }
             ColumnLayout {
                 RowLayout {
+                    Image { Layout.preferredWidth:110; Layout.preferredHeight:110; source:panel.controller.current.image || ""; fillMode:Image.PreserveAspectFit; asynchronous:true; sourceSize.width:220; sourceSize.height:220 }
+                    ColumnLayout { Layout.fillWidth:true
+                        Label { text:"TOCANDO AGORA"; color:"#a5a8ad"; font.pixelSize:11 }
+                        Label { text:panel.controller.current.title || "Escolha uma música"; textFormat:Text.PlainText; font.pixelSize:26; font.bold:true; wrapMode:Text.Wrap; Layout.fillWidth:true }
+                        Label { text:panel.controller.current.artist || ""; textFormat:Text.PlainText; color:"#c4c7cc" }
+                        Label { text:(panel.controller.current.album || "")+" • "+(panel.controller.current.provider || ""); textFormat:Text.PlainText; color:"#a5a8ad"; Layout.fillWidth:true; elide:Text.ElideRight }
+                    }
+                }
+                RowLayout {
+                    Button { text:"Anterior"; enabled:!!panel.controller.current.title; onClicked:panel.previousRequested() }
+                    Button { text:panel.playing?"Pausar":"Reproduzir"; enabled:!!panel.controller.current.title; onClicked:panel.togglePlayback() }
+                    Button { text:"Próxima"; enabled:!!panel.controller.current.title; onClicked:panel.nextRequested() }
+                    Slider { Layout.fillWidth:true; from:0; to:Math.max(1,panel.controller.current.durationMs || 0); value:panel.position; enabled:(panel.controller.current.durationMs || 0)>0; onMoved:panel.controller.seek(Math.round(value)) }
+                }
+                RowLayout {
                     Button { text: "Buscar letra"; enabled: !panel.controller.busy; onClicked: panel.controller.fetchLyrics() }
-                    ComboBox { id: language; textRole:"text"; valueRole:"value"; model:[{text:"Inglês",value:"en"},{text:"Espanhol",value:"es"},{text:"Francês",value:"fr"},{text:"Alemão",value:"de"},{text:"Italiano",value:"it"},{text:"Japonês",value:"ja"},{text:"Coreano",value:"ko"},{text:"Português",value:"pt"}] }
-                    Button { text: "Traduzir pt-BR"; enabled: !panel.controller.busy && panel.controller.lines.length>0; onClicked: panel.controller.translate(language.currentValue) }
+                    Label { text:"Idioma automático"; color:"#a5a8ad" }
+                    Button { text: "Traduzir pt-BR"; enabled: !panel.controller.busy && panel.controller.lines.length>0; onClicked:{panel.translatedTrack="";panel.autoTranslation=true;panel.ensureLyrics()} }
                     Button { text: "Importar / editar"; onClicked: editDialog.open() }
                     CheckBox { text: "Acompanhar"; checked: panel.followLyrics; onToggled: panel.followLyrics=checked }
                 }

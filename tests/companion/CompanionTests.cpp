@@ -29,6 +29,8 @@ public:
       auto lrc=MusicCompanion::parseLyrics("[ar:Fixture]\n[offset:-100]\n[00:01.20][00:02.345]Synthetic line\n[00:00.50]Earlier line");
       require(lrc.size()==3&&lrc[0].toMap()["time"].toInt()==400&&lrc[2].toMap()["time"].toInt()==2245,"LRC fractions, multiple stamps or offset broken");
       m.importLyrics("[00:00.00]fire rage fight\n[00:01.00]dance");
+      require(m.retryLyrics(503,m.m_generation)&&m.retryLyrics(429,m.m_generation)&&!m.retryLyrics(503,m.m_generation)&&!m.retryLyrics(401,m.m_generation),"lyric retries not bounded to temporary failures");
+      ++m.m_generation; // invalidate the queued retries before continuing with another version
       auto displayed=m.lines();displayed.insert(1,QVariantMap{{"time",500},{"text",""}});
       const int generation=m.m_generation;
       require(!m.useDisplayedLyrics("spotify:track:stale",displayed)&&m.m_generation==generation,"stale screen replaced current lyrics");
@@ -63,7 +65,7 @@ public:
     restored.clearHistory();require(restored.statistics(7,"artists")["plays"].toInt()==0&&restored.favorites().size()==1,"clear history removed library or kept counts");
     if(args.contains("--live-translation")){
       QObject::connect(&restored.m_net,&QNetworkAccessManager::finished,&restored,[](QNetworkReply *r){std::cerr<<"Synthetic translation HTTP="<<r->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt()<<" error="<<int(r->error())<<" bytes="<<r->bytesAvailable()<<" ssl="<<QSslSocket::supportsSsl()<<"\n";});
-      restored.selectTrack(song);restored.importLyrics("[00:00.00]Hello world");restored.translate("en");QElapsedTimer deadline;deadline.start();
+      restored.selectTrack(song);restored.importLyrics("[00:00.00]Hello world");restored.translate("auto");QElapsedTimer deadline;deadline.start();
       while(restored.busy()&&deadline.elapsed()<30000){QCoreApplication::processEvents();QThread::msleep(20);}
       auto translated=restored.lines().value(0).toMap()["translation"].toString();if(!translated.contains("Olá",Qt::CaseInsensitive))std::cerr<<"Translation status: "<<restored.lyricStatus().toStdString()<<"\n";require(translated.contains("Olá",Qt::CaseInsensitive),"live pt-BR translation failed");std::cout<<"LIVE_TRANSLATION_PASS: synthetic phrase translated to Portuguese\n";
     }

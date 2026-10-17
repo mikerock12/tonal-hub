@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Layouts
 
 // Letra da faixa que está tocando (App.lyrics, do LRCLIB). Na letra sincronizada a linha atual fica em
 // destaque, a lista acompanha a música e um clique numa linha pula para ela.
@@ -25,11 +26,23 @@ Item {
         return true
     }
     readonly property bool hasTranslation: translationMatches && translationLines.some(row => !!row.translation)
+    property bool autoTranslate: true
+    property string requestedTranslation: ""
+    function translateCurrent() {
+        if (!(synced || status === Lyrics.Plain) || App.music.busy) return
+        const key = App.player.trackUri + "|" + App.lyrics.lines.map(row => row.time+":"+row.text).join("\n")
+        if (requestedTranslation === key) return
+        if (App.music.useDisplayedLyrics(App.player.trackUri, App.lyrics.lines)) {
+            requestedTranslation = key
+            App.music.translate("auto")
+        }
+    }
 
     Component.onCompleted: {
         App.lyrics.active = true
         root.updateTint()
         root.sync()
+        Qt.callLater(root.translateCurrent)
     }
     Component.onDestruction: App.lyrics.active = false
 
@@ -76,8 +89,10 @@ Item {
             root.follow = true
             list.positionViewAtBeginning()
             root.sync()
+            if (root.autoTranslate) Qt.callLater(root.translateCurrent)
         }
     }
+    Connections { target: App.music; function onLyricsChanged() { if(root.autoTranslate) Qt.callLater(root.translateCurrent) } }
 
     Rectangle {
         anchors.fill: parent
@@ -85,9 +100,32 @@ Item {
         Behavior on color { ColorAnimation { duration: 400 } }
     }
 
+    Rectangle {
+        id: songHero
+        anchors.top: parent.top; anchors.left: parent.left; anchors.right: parent.right
+        height: Math.min(210, root.height * 0.3)
+        color: "transparent"
+        RowLayout {
+            anchors.fill: parent; anchors.margins: 20; spacing: 22
+            Image { Layout.preferredHeight: parent.height; Layout.preferredWidth: parent.height; source: App.player.coverUrl; fillMode: Image.PreserveAspectFit; asynchronous: true; sourceSize.width: 420; sourceSize.height: 420 }
+            ColumnLayout {
+                Layout.fillWidth: true; spacing: 8
+                Label { text: qsTr("TOCANDO AGORA"); font.pixelSize: 11; color: Theme.textSecondary }
+                Label { text: App.player.trackName || qsTr("Sua música"); textFormat: Text.PlainText; color:Theme.textPrimary; font.pixelSize: 28; font.bold: true; wrapMode: Text.Wrap; Layout.fillWidth: true; maximumLineCount: 2 }
+                Label { text: App.player.artistsText || ""; textFormat: Text.PlainText; font.pixelSize: 16; color: Theme.textPrimary; Layout.fillWidth: true; elide: Text.ElideRight }
+                Label { text: App.player.albumName || ""; textFormat: Text.PlainText; color: Theme.textSecondary; Layout.fillWidth: true; elide: Text.ElideRight }
+                RowLayout {
+                    Button { text:"‹"; Accessible.name:qsTr("Anterior"); onClicked:App.player.previous() }
+                    Button { text: App.player.isPlaying ? qsTr("Pausar") : qsTr("Reproduzir"); onClicked: App.player.togglePlay() }
+                    Button { text:"›"; Accessible.name:qsTr("Próxima"); onClicked:App.player.next() }
+                    Button { text: App.player.liked ? "♥" : "♡"; font.pixelSize: 24; Accessible.name: qsTr("Favoritar música"); onClicked: App.player.toggleLike() }
+                }
+            }
+        }
+    }
     Column {
         id: translationBar
-        anchors.top: parent.top
+        anchors.top: songHero.bottom
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.margins: 16
@@ -101,29 +139,23 @@ Item {
                 text: App.music.busy && root.translationMatches ? qsTr("Traduzindo…") : qsTr("Traduzir pt-BR")
                 enabled: (root.synced || root.status === Lyrics.Plain) && !App.music.busy
                 onClicked: {
-                    if (App.music.useDisplayedLyrics(App.player.trackUri, App.lyrics.lines)) {
-                        showTranslation.checked = true
-                        App.music.translate(sourceLanguage.currentValue)
-                    }
+                    root.autoTranslate = true
+                    root.requestedTranslation = ""
+                    showTranslation.checked = true
+                    root.translateCurrent()
                 }
             }
-            ComboBox {
-                id: sourceLanguage
+            Label {
                 objectName: "lyricsSourceLanguage"
-                width: 150
-                textRole: "text"
-                valueRole: "value"
-                model: [{text:qsTr("Inglês"),value:"en"},{text:qsTr("Espanhol"),value:"es"},
-                        {text:qsTr("Francês"),value:"fr"},{text:qsTr("Alemão"),value:"de"},
-                        {text:qsTr("Italiano"),value:"it"},{text:qsTr("Japonês"),value:"ja"},
-                        {text:qsTr("Coreano"),value:"ko"},{text:qsTr("Português"),value:"pt"}]
-                enabled: !App.music.busy
-                ToolTip.visible: hovered
-                ToolTip.text: qsTr("Idioma da letra original")
+                text: qsTr("Idioma detectado automaticamente")
+                color: Theme.textSecondary
+                height: 40
+                verticalAlignment: Text.AlignVCenter
             }
             CheckBox {
                 id: showTranslation
                 text: qsTr("Mostrar tradução")
+                palette.windowText: Theme.textPrimary
                 checked: true
                 visible: root.hasTranslation
             }

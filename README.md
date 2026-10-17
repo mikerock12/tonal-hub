@@ -28,6 +28,8 @@ Windows installer and direct translation on the lyrics screen (0.5.0, correction
 
 ![Tonal playing an album](docs/tonal.png)
 
+Página da música, letras e tradução automáticas e interface 0.6.0: [guia e instaláveis](docs/SONG_PAGE_060.md).
+
 ## Actually lightweight
 
 <picture>

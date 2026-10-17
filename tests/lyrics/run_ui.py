@@ -24,6 +24,12 @@ QtObject {
         property string coverUrl: ""
         property int positionMs: 0
         property bool isPlaying: false
+        property string trackName: "Synthetic song"
+        property string artistsText: "Example artist"
+        property string albumName: "Example album"
+        property bool liked: false
+        function togglePlay(){isPlaying=!isPlaying}
+        function toggleLike(){liked=!liked}
         signal positionChanged()
         signal stateChanged()
         signal trackChanged()
@@ -44,12 +50,13 @@ QtObject {
         property string lyricStatus: ""
         property bool busy: false
         property string lastLanguage: ""
+        property int translateCalls: 0
         function useDisplayedLyrics(uri, source) {
             if (uri !== current.uri) return false
             lines = source.slice()
             return true
         }
-        function translate(language) { lastLanguage=language; busy=true; lyricStatus="Traduzindo para pt-BR" }
+        function translate(language) { translateCalls++; lastLanguage=language; busy=true; lyricStatus="Traduzindo para pt-BR" }
     }
 }
 ''', encoding='utf-8')

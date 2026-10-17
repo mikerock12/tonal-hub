@@ -74,6 +74,7 @@ private:
   void save();void flush();void checkpoint();
   void get(const QUrl &,std::function<void(int,const QJsonDocument &)>);
   void acceptLyrics(const QJsonObject &);
+  bool retryLyrics(int status,int generation);
   void nextTranslation(int);
   void updateTone();
   QJsonObject m_data;
@@ -81,6 +82,7 @@ private:
   QVariantList m_lines;
   QString m_path,m_lyricStatus="Abra uma música e busque sua letra.",m_session;
   int m_generation=0,m_position=0,m_translationIndex=0;
+  int m_lyricRetryCount=0;QString m_lyricRetryKey;
   bool m_playing=false,m_busy=false;
   qint64 m_pendingMs=0,m_sessionMs=0;
   bool m_counted=false;

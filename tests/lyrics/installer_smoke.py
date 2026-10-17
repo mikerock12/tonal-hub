@@ -8,10 +8,10 @@ import time
 import winreg
 
 ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / 'out/installer-smoke-0501'
+OUT = ROOT / 'out/installer-smoke-0600'
 TARGET = OUT / 'app'
-SETUP = ROOT / 'out/release-local/Tonal-Hub-0.5.0.1-Windows-x64-Setup.exe'
-STAGE = ROOT / 'out/release-local/Tonal-Hub-0.5.0-letras-local'
+SETUP = ROOT / 'out/release-local/Tonal-Hub-0.6.0.0-Windows-x64-Setup.exe'
+STAGE = ROOT / 'out/release-local/Tonal-Hub-0.6.0-local'
 KEY = r'Software\Microsoft\Windows\CurrentVersion\Uninstall\{D47D88D5-B58A-49D2-868C-68A55BC3B4E2}_is1'
 
 

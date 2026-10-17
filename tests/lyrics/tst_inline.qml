@@ -12,9 +12,9 @@ Item {
         function test_translation_and_track_change() {
             const button = findChild(page, "translateLyricsButton")
             verify(button !== null)
-            verify(button.visible && button.enabled)
-            mouseClick(button)
-            compare(App.music.lastLanguage, "en")
+            verify(button.visible)
+            tryCompare(App.music, "lastLanguage", "auto")
+            compare(App.music.translateCalls, 1)
             compare(App.music.lines[0].text, "Hello world")
             compare(App.music.lines.length, 3) // blank verse must not shift the translation
             verify(page.translationMatches)
@@ -37,7 +37,15 @@ Item {
             App.player.trackChanged()
             tryCompare(page, "hasTranslation", false)
             App.lyrics.status = Lyrics.Loading
+            App.lyrics.lines = []
+            App.lyrics.changed()
             verify(!button.enabled)
+            App.music.current = ({uri:"spotify:track:next"})
+            App.lyrics.lines = [{time:0,text:"Next synthetic song"}]
+            App.lyrics.status = Lyrics.Synced
+            App.lyrics.changed()
+            tryCompare(App.music, "translateCalls", 2)
+            compare(App.music.lines[0].text, "Next synthetic song")
         }
     }
 }

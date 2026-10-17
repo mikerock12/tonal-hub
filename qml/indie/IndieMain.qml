@@ -18,12 +18,14 @@ ApplicationWindow {
     property var playerItem: ({})
     property var playQueue: []
     property int queueIndex: -1
-    function openMusic(){if(musicLoader.item)musicLoader.item.open();else musicLoader.setSource("qrc:/companion/qml/companion/MusicPanel.qml",{controller:music,audioEngine:audio})}
-    Loader { id: musicLoader; onLoaded: item.open() }
+    property bool songRequested: false
+    property int musicRevision: 0
+    function openMusic(song=false,section=0){songRequested=song;if(musicLoader.item){if(song)musicLoader.item.showSong();else{musicLoader.item.section=section;musicLoader.item.open()}}else musicLoader.setSource("qrc:/companion/qml/companion/MusicPanel.qml",{controller:music,audioEngine:audio,section:song?2:section})}
+    Loader { id: musicLoader; onLoaded: {if(window.songRequested)item.showSong();else item.open()} }
     Binding { target: musicLoader.item; property:"position"; value:audio ? audio.positionMs : 0; when:!!musicLoader.item }
     Binding { target: musicLoader.item; property:"playing"; value:audio ? audio.localPlaying : false; when:!!musicLoader.item }
-    Connections { target: musicLoader.item; function onDiscover(artist){search.text=artist;catalog.search(artist,selectedProvider)} }
-    Connections { target: music; function onQueueRequested(tracks,index){playQueue=tracks;playAt(index)} function onMessage(text){window.notice=text} }
+    Connections { target: musicLoader.item; function onDiscover(artist){search.text=artist;catalog.search(artist,selectedProvider)} function onTogglePlayback(){audio.toggleLocalPlay()} function onPreviousRequested(){playAt(queueIndex-1)} function onNextRequested(){playAt(queueIndex+1)} }
+    Connections { target: music; function onChanged(){window.musicRevision++} function onQueueRequested(tracks,index){playQueue=tracks;playAt(index)} function onMessage(text){window.notice=text} }
     function kindMatches(item, kind) {
         return kind === "all" || item.kind === kind || (kind === "album" && (item.kind === "playlist" || item.kind === "release"))
     }
@@ -37,7 +39,7 @@ ApplicationWindow {
         playAt(playQueue.findIndex(entry => entry.provider === item.provider && entry.id === item.id))
     }
     function stopPlayback() { playQueue = []; queueIndex = -1; audio.returnToSpotify() }
-    function showPanel(name) { if(name==="music")openMusic();else if (name === "connections") { config.populate(); config.open() } else if (name === "effects") effects.open(); else if (name === "shows") selectedKind = "show" }
+    function showPanel(name) { if(name==="music")openMusic();else if(name==="song")openMusic(true);else if(name==="statistics")openMusic(false,1);else if (name === "connections") { config.populate(); config.open() } else if (name === "effects") effects.open(); else if (name === "shows") selectedKind = "show" }
     Connections { target: hub; function onError(message) { window.notice = message } }
     Connections {
         target: catalog
@@ -183,7 +185,9 @@ ApplicationWindow {
                 anchors.fill: parent; anchors.margins: 12; spacing: 4
                 RowLayout {
                     Layout.fillWidth: true
-                    Label { text: audio.localActive ? audio.localName : "Escolha uma faixa de uma fonte com reprodução disponível"; elide: Text.ElideRight; Layout.fillWidth: true }
+                    Image { source:music.current.image || ""; Layout.preferredWidth:44; Layout.preferredHeight:44; fillMode:Image.PreserveAspectFit; asynchronous:true; sourceSize.width:88; sourceSize.height:88; MouseArea { anchors.fill:parent; onClicked:window.openMusic(true) } }
+                    Label { text:music.current.title || "Escolha uma música"; elide:Text.ElideRight; Layout.fillWidth:true; MouseArea { anchors.fill:parent; cursorShape:Qt.PointingHandCursor; onClicked:window.openMusic(true) } }
+                    Button { text:{window.musicRevision;return music.liked(music.current)?"♥":"♡"} font.pixelSize:24; enabled:!!music.current.title; onClicked:music.favorite(music.current) }
                     Button { text: "Anterior"; enabled: queueIndex > 0; onClicked: playAt(queueIndex - 1) }
                     Button { text: audio.sourceFailed ? "Tentar novamente" : audio.localPlaying ? "Pausar" : "Reproduzir"; enabled: audio.localActive; onClicked: { if (audio.sourceFailed) { if (queueIndex >= 0) catalog.resolve(playerItem); else filePicker.open() } else audio.toggleLocalPlay() } }
                     Button { text: "Próxima"; enabled: queueIndex >= 0 && queueIndex + 1 < playQueue.length; onClicked: playAt(queueIndex + 1) }

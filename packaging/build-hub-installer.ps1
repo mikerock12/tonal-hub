@@ -1,11 +1,11 @@
 param(
     [string]$SourceDir,
     [string]$Compiler,
-    [ValidatePattern('^\d+\.\d+\.\d+\.\d+$')][string]$AppVersion='0.5.0.1'
+    [ValidatePattern('^\d+\.\d+\.\d+\.\d+$')][string]$AppVersion='0.6.0.0'
 )
 $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot -Parent
-if(-not $SourceDir){$SourceDir=Join-Path $root 'out/release-local/Tonal-Hub-0.5.0-letras-local'}
+if(-not $SourceDir){$SourceDir=Join-Path $root 'out/release-local/Tonal-Hub-0.6.0-local'}
 $SourceDir=(Resolve-Path -LiteralPath $SourceDir).Path
 foreach($file in @('TonalHub.exe','Tonalify.exe','IndieTonal.exe','qt.conf','platforms/qwindows.dll','sqldrivers/qsqlite.dll','CREDITS.md')){
     if(-not (Test-Path -LiteralPath (Join-Path $SourceDir $file))){throw "Pacote incompleto: falta $file"}
