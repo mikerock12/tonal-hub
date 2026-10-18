@@ -75,6 +75,7 @@ signals:
   void streamConfigurationChanged();
   void backendFailed(const QString &);
   void spotifyInputEnded();
+  void spotifyInputInvalid(const QString &reason);
 
 private:
   void changed();

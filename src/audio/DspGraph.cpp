@@ -157,6 +157,11 @@ bool DspGraph::process(const AudioFrame &in, AudioFrame &out, QString &error)
     out.format = in.format;
     out.pts = in.pts;
     out.samples.clear();
+    if (!in.validPcm())
+    {
+        error = "PCM de entrada inválido; bloco recusado antes dos filtros";
+        return false;
+    }
     const auto channels = in.format.channels.size();
     for (int offset = 0; offset < in.frames(); offset += 256)
     {
@@ -213,6 +218,12 @@ bool DspGraph::process(const AudioFrame &in, AudioFrame &out, QString &error)
         }
     }
     m_nextPts = in.pts + in.frames();
+    if (!out.validPcm())
+    {
+        out.samples.clear();
+        error = "PCM inválido na saída dos filtros";
+        return false;
+    }
     return true;
 }
 bool DspGraph::drain(AudioFrame &out, QString &error)

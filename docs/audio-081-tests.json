@@ -1,0 +1,63 @@
+{
+  "version": "0.8.1 Windows",
+  "recorded_at_utc": "2026-10-18T15:34:34.315767+00:00",
+  "original_incident_track_identified": false,
+  "before_fix_regression": "FAIL PCM alignment after discard offset=1 pending=0 repeated=0",
+  "partial_frame_flush_cases": 28,
+  "all_exact_after_fix": true,
+  "local_ctest": {
+    "passed": 8,
+    "failed": 0,
+    "log": "out/ctest-081-final.log"
+  },
+  "remote_ci_pcm_regression_added": true,
+  "invalid_pcm_blocked_before_DSP_and_OpenAL": true,
+  "single_invalid_source_recovered": true,
+  "persistent_invalid_source_restarts_bounded": true,
+  "real_session": {
+    "copied_cache_bytes": 48244208,
+    "copied_cache_files": 5,
+    "credentials_logged": false,
+    "final_pcm_frames": 1620642,
+    "metrics": {
+      "averageDspUs": 148.95870700239576,
+      "binaural": false,
+      "channels": 2,
+      "hrtfActive": false,
+      "invalidSamples": 0,
+      "overFullScale": 0,
+      "peakDbfs": -20.12428846914323,
+      "sampleRate": 44100,
+      "spectrum": [],
+      "underruns": 9,
+      "waveform": []
+    },
+    "new_track_during_recovery_played": true,
+    "passed": true,
+    "physical_audio_tested": false,
+    "readiness_only": false,
+    "real_spotify_session": true,
+    "recorded_at_utc": "2026-10-18T15:32:38Z",
+    "recovery_events": 2,
+    "steady_pcm_frames": 662016,
+    "steady_seconds": 15,
+    "steady_underruns": 0,
+    "track_returns_and_seeks": 4,
+    "unexpected_exit_resumed": true,
+    "unexpected_recoveries_during_transitions": 0
+  },
+  "standalone_package_startup": true,
+  "installed_version": "0.8.1.0",
+  "installed_binary_matches_package": true,
+  "installed_startup": true,
+  "isolated_installer_uninstall_test": "Skipped: existing production installation protected; actual upgrade tested instead",
+  "personal_data_preserved": {
+    "IndieTonal\\audio.json": true,
+    "Tonal\\audio.json": true,
+    "Tonal\\preferences.json": true,
+    "Tonal\\personal\\music-library.sqlite": true
+  },
+  "physical_audio_audition": false,
+  "installer_sha256": "646468e081375965f27168bee0defb3156b358f7eb1e13d96651cc5d4f4c3c33",
+  "apk": "Unchanged 0.8.0: Windows pipe path is not used by Android"
+}
