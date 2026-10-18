@@ -34,6 +34,7 @@ App::App(QObject *parent)
 {
     connect(m_player,&Player::playbackRequested,m_listeningMix,&ListeningMix::cancel);
     connect(m_listeningMix,&ListeningMix::ready,this,[this](const QVariantList& tracks){m_music->rememberTracks(tracks);QStringList uris;for(auto v:tracks){auto t=v.toMap();uris<<t["uri"].toString();}m_player->playOrderedUris(uris);});
+    connect(m_listeningMix,&ListeningMix::resumeReady,this,[this](const QVariantList& tracks,int position){m_music->rememberTracks(tracks);QStringList uris;for(auto v:tracks)uris<<v.toMap()["uri"].toString();m_player->playOrderedUrisAt(uris,position);});
     m_librespot->setAudioEngine(m_audio);
     m_player->setAudioEngine(m_audio);
     connect(m_music,&MusicCompanion::metadataRequested,this,[this](const QVariantMap &t){

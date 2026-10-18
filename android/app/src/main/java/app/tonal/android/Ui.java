@@ -36,9 +36,10 @@ final class Ui {
             switch(name){
                 case "now":canvas.drawCircle(12,12,9,p);canvas.drawCircle(12,12,3,p);canvas.drawArc(6,6,18,18,210,60,false,p);break;
                 case "lyrics":canvas.drawLine(4,5,20,5,p);canvas.drawLine(4,10,17,10,p);canvas.drawLine(4,15,20,15,p);canvas.drawLine(4,20,14,20,p);break;
-                case "shake":canvas.drawLine(3,5,15,5,p);canvas.drawLine(3,12,11,12,p);canvas.drawLine(3,19,15,19,p);canvas.drawLine(17,4,21,8,p);canvas.drawLine(21,8,17,12,p);canvas.drawLine(21,13,17,17,p);canvas.drawLine(17,17,21,21,p);break;
-                case "random":canvas.drawRoundRect(3,3,21,21,4,4,p);p.setStyle(Paint.Style.FILL);canvas.drawCircle(8,8,1.6f,p);canvas.drawCircle(16,16,1.6f,p);canvas.drawCircle(12,12,1.6f,p);break;
-                case "discover":canvas.drawCircle(12,12,9,p);Path compass=new Path();compass.moveTo(16,7);compass.lineTo(14,14);compass.lineTo(7,17);compass.lineTo(10,10);compass.close();canvas.drawPath(compass,p);break;
+                case "shake":canvas.save();canvas.rotate(-14,12,12);canvas.drawRoundRect(8,6,16,18,1,1,p);canvas.drawLine(10,9,14,9,p);canvas.drawLine(10,12,14,12,p);canvas.drawLine(10,15,13,15,p);canvas.restore();canvas.drawLine(2,7,1,11,p);canvas.drawLine(1,11,3,15,p);canvas.drawLine(21,7,23,11,p);canvas.drawLine(23,11,22,15,p);break;
+                case "random":canvas.drawLine(3,5,7,5,p);canvas.drawLine(7,5,17,19,p);canvas.drawLine(17,19,22,19,p);canvas.drawLine(18,15,22,19,p);canvas.drawLine(22,19,18,23,p);canvas.drawLine(3,19,7,19,p);canvas.drawLine(7,19,17,5,p);canvas.drawLine(17,5,22,5,p);canvas.drawLine(18,1,22,5,p);canvas.drawLine(22,5,18,9,p);break;
+                case "discover":canvas.drawCircle(8,8,5.5f,p);canvas.drawLine(4,12,1,16,p);triangle(canvas,7,5.5f,10.5f,8,7,10.5f);canvas.drawLine(19,2,19,8,p);canvas.drawLine(16,5,22,5,p);canvas.drawLine(10,16,13,16,p);canvas.drawLine(13,16,18,22,p);canvas.drawLine(18,22,23,22,p);canvas.drawLine(21,20,23,22,p);canvas.drawLine(10,22,13,22,p);canvas.drawLine(13,22,18,16,p);canvas.drawLine(18,16,23,16,p);canvas.drawLine(21,14,23,16,p);break;
+                case "queue":canvas.drawLine(3,5,21,5,p);canvas.drawLine(3,10,21,10,p);canvas.drawLine(3,15,13,15,p);triangle(canvas,17,14,23,18,17,22);break;
                 case "up":canvas.drawLine(5,15,12,8,p);canvas.drawLine(12,8,19,15,p);break;
                 case "down":canvas.drawLine(5,9,12,16,p);canvas.drawLine(12,16,19,9,p);break;
                 case "chevron":canvas.drawLine(8,5,16,12,p);canvas.drawLine(16,12,8,19,p);break;

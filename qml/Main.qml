@@ -5,7 +5,7 @@ import QtQuick.Controls
 ApplicationWindow {
     id: window
     property alias audioEffectsController: audioPanel
-    function openMusic(){if(musicLoader.item)musicLoader.item.open();else musicLoader.setSource("qrc:/companion/qml/companion/MusicPanel.qml",{controller:App.music,audioEngine:App.audio,textPlaylistAvailable:true,mixController:App.listeningMix})}
+    function openMusic(){if(musicLoader.item)musicLoader.item.open();else musicLoader.setSource("qrc:/companion/qml/companion/MusicPanel.qml",{controller:App.music,audioEngine:App.audio,textPlaylistAvailable:true,mixController:App.listeningMix,transportPlayer:App.player})}
     property string pendingTextPlaylistId:""
     function openTextPlaylist(id){pendingTextPlaylistId=id || "";if(!textPlaylistLoader.active)textPlaylistLoader.active=true;else if(textPlaylistLoader.item){if(pendingTextPlaylistId)textPlaylistLoader.item.resume(pendingTextPlaylistId);else textPlaylistLoader.item.fresh()}}
     Loader {id:textPlaylistLoader;active:false;sourceComponent:Component {TextPlaylistDialog {controller:App.textPlaylist}} onLoaded:{if(window.pendingTextPlaylistId)item.resume(window.pendingTextPlaylistId);else item.fresh()}}

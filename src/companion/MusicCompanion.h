@@ -102,6 +102,7 @@ private:
   void get(const QUrl &,std::function<void(int,const QJsonDocument &)>);
   void acceptLyrics(const QJsonObject &);
   bool retryLyrics(int status,int generation);
+  void fetchLyricsAttempt();
   void nextTranslation(int);
   void updateTone();
   QJsonObject m_data;

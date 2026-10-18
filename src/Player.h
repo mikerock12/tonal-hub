@@ -108,6 +108,7 @@ public:
   // Toca uma lista solta de faixas (ex.: resultados de busca).
   Q_INVOKABLE void playUris(const QStringList &uris, int offsetIndex = 0);
   Q_INVOKABLE void playOrderedUris(const QStringList &uris);
+  void playOrderedUrisAt(const QStringList &uris,int position);
   Q_INVOKABLE void addToQueue(const QString &uri);
   Q_INVOKABLE void transferTo(const QString &deviceId);
   Q_INVOKABLE void refresh();

@@ -17,7 +17,8 @@ Item {
     function rawRows(){let rows=[];for(let i=0;i<trackModel.count;i++)rows.push(JSON.parse(JSON.stringify(trackModel.get(i))));return rows}
     function mixRows(){return rawRows().map(t=>({provider:"Spotify",id:t.uri,uri:t.uri,title:t.name,artist:t.artistsText,artistId:t.artistId,album:t.album,albumId:t.albumId,image:t.coverUrl,durationMs:t.durationMs,year:parseInt(root.year)||0}))}
     function ensureMix(action){if(loading||loadingMix){Nav.toast("Aguarde o carregamento da seleção.");return}if(nextUrl!==""&&trackModel.count<500){pendingMix=action;loadingMix=true;loadMore()}else action()}
-    function shakeList(){App.listeningMix.cancel();ensureMix(function(){if(!root.listShaken){root.originalOrder=root.rawRows();const order=App.listeningMix.order(root.originalOrder.length,root.mixSeed);trackModel.clear();for(let i of order)trackModel.append(root.originalOrder[i]);root.listShaken=true}else{trackModel.clear();for(let t of root.originalOrder)trackModel.append(t);root.listShaken=false}root.mixTouched=true})}
+    function restoreOrder(){if(!listShaken)return;App.listeningMix.cancel();trackModel.clear();for(let t of originalOrder)trackModel.append(t);listShaken=false;mixTouched=true}
+    function shakeList(){App.listeningMix.cancel();ensureMix(function(){if(!root.listShaken)root.originalOrder=root.rawRows();let before=JSON.stringify(root.rawRows().map(t=>t.uri));let order=[];for(let attempt=0;attempt<5;attempt++){root.mixSeed=Math.floor(Math.random()*2147483647);order=App.listeningMix.order(root.originalOrder.length,root.mixSeed);if(JSON.stringify(order.map(i=>root.originalOrder[i].uri))!==before)break}trackModel.clear();for(let i of order)trackModel.append(root.originalOrder[i]);root.listShaken=true;root.mixTouched=true})}
     Connections{target:App.player;function onPlaybackRequested(){root.pendingMix=null;root.loadingMix=false}}
     property bool showListening:false
     property int journalRevision:0
@@ -359,7 +360,7 @@ Item {
 
     function playAll() {
         if (isCurrentContext&&!mixTouched) { App.player.togglePlay(); return }
-        if (trackModel.count > 0) playFrom(0)
+        if (trackModel.count > 0) playFrom(root.randomPlayback?Math.floor(Math.random()*trackModel.count):0)
         else if (playUri !== "") App.player.playContext(playUri)
     }
 
@@ -529,7 +530,7 @@ Item {
                         playing: root.isCurrentContext && App.player.isPlaying
                         onClicked: root.playAll()
                     }
-                    Personal.ActionIcon {anchors.verticalCenter:parent.verticalCenter;symbol:"shake";description:"Embaralhar lista / restaurar ordem";filled:root.listShaken;enabled:!root.loading&&!root.loadingMix;onClicked:root.shakeList()}
+                    Personal.ActionIcon {anchors.verticalCenter:parent.verticalCenter;symbol:"shake";description:"Shake: sortear ordem; segure para restaurar";filled:root.listShaken;enabled:!root.loading&&!root.loadingMix;onClicked:root.shakeList();onPressAndHold:root.restoreOrder()}
                     Personal.ActionIcon {anchors.verticalCenter:parent.verticalCenter;symbol:"random";description:"Reprodução aleatória";filled:root.randomPlayback;onClicked:{App.listeningMix.cancel();root.pendingMix=null;root.loadingMix=false;root.mixTouched=true;root.randomPlayback=!root.randomPlayback}}
                     Personal.ActionIcon {anchors.verticalCenter:parent.verticalCenter;symbol:"discover";description:"Descoberta 2+1: uma faixa externa a cada duas";filled:root.discoveryPlayback;onClicked:{App.listeningMix.cancel();root.pendingMix=null;root.loadingMix=false;root.mixTouched=true;root.discoveryPlayback=!root.discoveryPlayback}}
                     IconButton {
