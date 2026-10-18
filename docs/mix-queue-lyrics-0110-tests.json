@@ -1,0 +1,193 @@
+{
+  "version": "0.11.0",
+  "recorded_at_utc": "2026-10-18T22:47:39.862129+00:00",
+  "passed": true,
+  "features": [
+    "fresh visual Shake on each tap; hold to restore original without Spotify writes",
+    "independent playback random-priority ordering and random initial song for collection Play",
+    "weighted random 2+1 candidates with genre/era/lyric-topic affinity and novelty preference",
+    "song-page controls and current/prepared queue with explicit apply at current position",
+    "motion/shuffle/discovery/queue vector icons",
+    "immersive lyrics start with hidden controls; reveal first, align and hide second",
+    "bounded transient-error recovery and strict matching fallback search for LRCLIB"
+  ],
+  "cpp_ctest": {
+    "passed": 10,
+    "failed": 0,
+    "seconds": 53.18,
+    "log_sha256": "3f6bbb2ad2237e00dc9011ab9878dde74d388e21f0500025f4cb0b2ace2535c4",
+    "coverage": [
+      "shared ordering/weighted discovery invariants over 100 seeds",
+      "Qt mix controller preview does not start playback; apply retains position",
+      "transport cancellation and delayed-response guards",
+      "PCM alignment, finite samples, DSP and HRTF integration",
+      "personal library, text playlist import, player/hub startup"
+    ]
+  },
+  "qt_ui": {
+    "lyrics": {
+      "passed": 6,
+      "failed": 0,
+      "log_sha256": "1ccc10a7480f8613ecf717c53fb6268074b98768a1a4bb51c0e779c3a6cde53b"
+    },
+    "mix_and_queue": {
+      "passed": 4,
+      "failed": 0,
+      "log_sha256": "dac6d30747111dc77dc09cf5bc1d31ac4e1620065f49006dc433280d21ec8530"
+    },
+    "text_playlist": {
+      "passed": 3,
+      "failed": 0,
+      "log_sha256": "ce9a27e55e785ae95d22da6c36e4cbcd7aba1ec7153b74ea6b2c209754517ae7"
+    }
+  },
+  "android_emulator": {
+    "passed": true,
+    "lyrics_503_recovery": {
+      "passed": true,
+      "requests": 4,
+      "search_fallback": 1,
+      "busy_cleared": true,
+      "lines": 3
+    },
+    "fullscreen_two_taps": [
+      {
+        "aligned": false,
+        "controls_visible": true,
+        "sync": {}
+      },
+      {
+        "aligned": true,
+        "controls_visible": false,
+        "sync": {
+          "offsetMs": 1000,
+          "enabled": true
+        }
+      },
+      {
+        "aligned": false,
+        "controls_visible": true,
+        "sync": {
+          "offsetMs": 1000,
+          "enabled": true
+        }
+      }
+    ],
+    "queue_preview_does_not_start_playback": true,
+    "native_header_present_across_song_library_statistics_lyrics": true,
+    "six_icon_navigation_controls": true,
+    "temporary_shake_restores_visible_original_order": true,
+    "random_and_discovery_controls_work": true,
+    "native_cpp_jni": {
+      "native_cpp_via_jni": true,
+      "sequence": [
+        0,
+        1,
+        -1,
+        2,
+        3,
+        -2,
+        4,
+        5,
+        -3
+      ],
+      "shaken_order": [
+        4,
+        3,
+        1,
+        5,
+        2,
+        0
+      ],
+      "real_spotify_writes": 0
+    },
+    "real_spotify_writes": 0,
+    "physical_phone": false,
+    "screenshots_skipped": true,
+    "screenshots": {}
+  },
+  "windows_installer": {
+    "passed": true,
+    "previous_version": "0.10.0.0",
+    "installed_version": "0.11.0.0",
+    "files_match": {
+      "TonalHub.exe": true,
+      "Tonalify.exe": true,
+      "IndieTonal.exe": true,
+      "qt.conf": true,
+      "platforms/qwindows.dll": true,
+      "sqldrivers/qsqlite.dll": true,
+      "CREDITS.md": true,
+      "TEXT_TO_TONALIFY_090.md": true,
+      "LISTENING_MIX_0100.md": true,
+      "MIX_QUEUE_LYRICS_0110.md": true,
+      "licenses/PLAYLISTSPOTIFY-PORT.md": true
+    },
+    "installed_startup_without_sdk_paths": true,
+    "personal_data_preserved": {
+      "IndieTonal\\audio.json": true,
+      "Tonal\\audio.json": true,
+      "Tonal\\preferences.json": true,
+      "Tonal\\personal\\music-library.sqlite": true
+    },
+    "installer_sha256": "60bfa7570d8410dd087acdee00771193901d7761f2f255ebe98c0dff25ed4ba6",
+    "installer_bytes": 81537384,
+    "physical_audition": false,
+    "uninstall_test": "Existing installation upgraded; not uninstalled"
+  },
+  "apk_validation": {
+    "passed": true,
+    "apks": {
+      "Tonal-Android-0.11.0-local.apk": {
+        "bytes": 47002908,
+        "sha256": "29a76222e4f245631dee6af05803288ece26a40a8b0ab37091535ad8e935829f",
+        "abis": [
+          "arm64-v8a",
+          "x86_64"
+        ],
+        "versionCode": 12,
+        "versionName": "0.11.0-local",
+        "debuggable": false,
+        "same_signer_as_0100": true
+      },
+      "Tonal-Android-0.11.0-arm64-v8a.apk": {
+        "bytes": 24967101,
+        "sha256": "c7b9aa403db963494af16718373dfed33740a113019bf42efecde4478f386a1c",
+        "abis": [
+          "arm64-v8a"
+        ],
+        "versionCode": 12,
+        "versionName": "0.11.0-local",
+        "debuggable": false,
+        "same_signer_as_0100": true
+      }
+    }
+  },
+  "live_lrclib": {
+    "service": "LRCLIB",
+    "query": "Get Back / Veruca Salt / American Thighs / 193 s",
+    "lyrics_text_saved": false,
+    "http_status": 200,
+    "synced_available": false,
+    "plain_available": true,
+    "duration": 193.0
+  },
+  "bounds": {
+    "source_queue": 500,
+    "external_candidates": 120,
+    "catalog_requests": 12,
+    "catalog_preparation_deadline_ms": 6500,
+    "initial_android_queue_rows": 100,
+    "lyric_session_cache_tracks": 30,
+    "lyric_retry_count": 2
+  },
+  "limitations": [
+    "Synthetic catalog and lyrics outage fixtures; no real Spotify playlist writes or discovery playback session in this delivery.",
+    "Physical POCO/Bluetooth listening not performed; no new CPU/RAM comparison benchmark.",
+    "Spotify queue service can return a partial queue; collection size and source preservation limit insertion capacity.",
+    "LRCLIB service availability and synchronized lyrics depend on the upstream server.",
+    "Initial parallel tests ran with less than 600 MiB host memory and timed out; complete isolated CTest rerun passed.",
+    "Headless emulator screencap stalled: final Android interaction checks used UIAutomator hierarchy and app-generated event receipts, skipping screenshots. A separate final-version song-layout capture was inspected."
+  ],
+  "credits": "Matheus Nunes (natheus) — https://github.com/natheus/tonal-player; original MIT license preserved"
+}

@@ -7,25 +7,27 @@ As extensões Tonal Hub, Tonalify, IndieTonal, Android e os recursos adicionais
 são desenvolvimentos deste projeto derivado. Consulte [CREDITS.md](CREDITS.md)
 e a licença MIT original, preservada em [LICENSE](LICENSE).
 
-## Entrega pessoal atual: 0.8.0
+## Entrega pessoal atual: 0.11.0
 
-[Correções, uso das letras e limites](docs/PLAYER_POLISH_080.md) ·
-[benchmark local Windows/Android e funcionalidades](docs/BENCHMARK_080.md) ·
-[relatório interativo](docs/benchmarks/2026-10-17/report.html).
+[Guia de fila, sorteios e letras](docs/MIX_QUEUE_LYRICS_0110.md) ·
+[criação de playlists por texto em C++](docs/TEXT_TO_TONALIFY_090.md) ·
+[modos de reprodução](docs/LISTENING_MIX_0100.md).
 
 Instaláveis gerados localmente em `out/` (não são releases do projeto original):
 
-- Windows x64: `out/release-local/Tonal-Hub-0.8.0.0-Windows-x64-Setup.exe`.
-  Feche players antigos, instale e abra **Tonal Hub** pelo atalho novo.
-- POCO X7 Pro/Android ARM64: `out/android/Tonal-Android-0.8.0-arm64-v8a.apk`.
-  Atualize por cima da versão anterior, preservando os dados; não desinstale antes.
-- APK universal, também com x86_64: `out/android/Tonal-Android-0.8.0-local.apk`.
+- Windows x64: `out/release-local/Tonal-Hub-0.11.0.0-Windows-x64-Setup.exe`.
+- POCO X7 Pro/Android ARM64: `out/android/Tonal-Android-0.11.0-arm64-v8a.apk`.
+- APK universal, também com x86_64: `out/android/Tonal-Android-0.11.0-local.apk`.
 
-Capas e metadados preservados, controles proporcionais, estatísticas nas listas,
-consulta de estilos, sincronia manual das letras, contorno/neon/fontes e retomada
-de tradução estão descritos no guia 0.8. O clique numa linha agora alinha a letra
-ao áudio; não busca outro ponto da música. O benchmark histórico 0.1 abaixo é
-do projeto original e não substitui a nova medição 0.8 com seus limites explícitos.
+Atualize por cima da versão anterior, preservando os dados; não desinstale antes.
+Shake sorteia uma nova ordem a cada toque e restaura a original ao segurar o ícone.
+A página da música oferece os modos e a fila, com prévia antes de aplicar.
+Letras em tela cheia começam sem controles: o primeiro toque os revela; o segundo,
+numa linha, alinha a letra e oculta os controles. Recuperação limitada de falhas
+LRCLIB não interfere na reprodução de áudio.
+
+O [benchmark 0.8](docs/BENCHMARK_080.md) e o [relatório interativo](docs/benchmarks/2026-10-17/report.html)
+são medições históricas daquela versão; não representam um benchmark da 0.11.
 
 Exportar/importar a biblioteca pessoal no app continua disponível. O auxiliar
 `packaging/backup-personal-windows.py --output PASTA_NOVA` também copia os bancos

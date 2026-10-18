@@ -19,7 +19,7 @@ Item {
             tryCompare(full,"visibility",5) // QWindow::FullScreen
             const controls=findChild(full,"lyricsFullscreenControls")
             verify(controls!==null)
-            verify(controls.visible)
+            verify(!controls.visible)
             App.music.setLyricStyle("lyricFont","Mono")
             App.music.setLyricStyle("translationColor","#FFBBD9")
             compare(full.style.lyricFont,"Mono")
@@ -27,8 +27,18 @@ Item {
             App.music.background="Estrelas"
             wait(3700)
             compare(controls.visible,false)
-            full.reveal()
+            const offset=App.music.syncOffset
+            const verse=full.verseItem(0)
+            verify(verse!==null)
+            mouseClick(verse,verse.width/2,verse.height/2) // hidden: reveal only
             compare(controls.visible,true)
+            compare(App.music.syncOffset,offset)
+            mouseClick(verse,verse.width/2,verse.height/2) // visible: align, then hide
+            compare(App.music.syncOffset,-full.position)
+            compare(controls.visible,false)
+            mouseClick(verse,verse.width/2,verse.height/2) // hidden again: reveal without changing alignment
+            compare(controls.visible,true)
+            compare(App.music.syncOffset,-full.position)
             full.close()
             tryCompare(full,"visible",false)
         }

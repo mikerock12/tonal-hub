@@ -8,6 +8,21 @@ Dialog {
     required property var controller
     required property var audioEngine
     property var mixController:null
+    property var transportPlayer:null
+    property var songQueueSource:[]
+    property var queuedRows:[]
+    property bool queueEdited:false
+    property string queueAnchor:""
+    function queueRows(){return transportPlayer ? transportPlayer.queue.map(t=>({provider:"Spotify",id:t.uri,uri:t.uri,title:t.name,artist:t.artists,image:t.coverUrl,durationMs:t.durationMs})) : []}
+    function openQueue(){queueEdited=false;queueAnchor=controller.current.uri || "";songQueueSource=[controller.current].concat(queueRows());queuedRows=songQueueSource;queueDialog.open();if(transportPlayer)transportPlayer.refreshQueue()}
+    function remixSong(shake){
+        if(!songQueueSource.length||queueAnchor!==(controller.current.uri || "")){queueAnchor=controller.current.uri || "";songQueueSource=[controller.current].concat(queueRows())}
+        let source=songQueueSource.slice();if(shake&&mixController&&source.length>2){let rest=source.slice(1);source=[source[0]].concat(mixController.order(rest.length,Math.floor(Math.random()*2147483647)).map(i=>rest[i]))}
+        queueEdited=true;queuedRows=[];queueDialog.open();mixController.preview(source,0,randomPlayback,discoveryPlayback,false)
+    }
+    Connections{target:panel.transportPlayer;ignoreUnknownSignals:true;function onQueueChanged(){if(queueDialog.visible&&!panel.queueEdited){panel.songQueueSource=[panel.controller.current].concat(panel.queueRows());panel.queuedRows=panel.songQueueSource}}}
+    Connections{target:panel.mixController;ignoreUnknownSignals:true;function onChanged(){if(panel.queueEdited&&!panel.mixController.busy)panel.queuedRows=panel.mixController.previewQueue}}
+
     property bool listShaken:false
     property bool randomPlayback:false
     property bool discoveryPlayback:false
@@ -44,10 +59,11 @@ Dialog {
     parent: Overlay.overlay
     width: Math.min(1120,parent ? parent.width-32 : 1000)
     height: Math.min(800,parent ? parent.height-90 : 700)
-    anchors.horizontalCenter: parent.horizontalCenter
+    x: parent ? (parent.width-width)/2 : 0
     y:72
     modal: false
     title: "Sua música"
+    palette.window:"#141517";palette.windowText:"#f5f5f5";palette.text:"#f5f5f5";palette.base:"#20252d";palette.button:"#263440";palette.buttonText:"#f5f5f5"
     standardButtons: Dialog.NoButton
     background: Rectangle { color: "#141517"; radius: 18; border.color: "#303237" }
     function playSelection(index){if(mixController)mixController.play(displayTracks,index,randomPlayback,discoveryPlayback,false);else controller.play(displayTracks,index)}
@@ -95,7 +111,7 @@ Dialog {
             Layout.fillWidth: true; Layout.fillHeight: true; currentIndex: tabs.currentIndex
             ColumnLayout {
                 RowLayout {visible:!!panel.mixController
-                    ActionIcon{symbol:"shake";description:"Embaralhar lista / restaurar ordem";filled:panel.listShaken;onClicked:{panel.mixController.cancel();panel.listShaken=!panel.listShaken;panel.refresh()}}
+                    ActionIcon{symbol:"shake";description:"Shake: sortear ordem; segure para restaurar";filled:panel.listShaken;onClicked:{panel.mixController.cancel();panel.listShaken=true;panel.mixSeed=Math.floor(Math.random()*2147483647);panel.refresh()}onPressAndHold:{panel.listShaken=false;panel.refresh()}}
                     ActionIcon{symbol:"random";description:"Reprodução aleatória";filled:panel.randomPlayback;onClicked:{panel.mixController.cancel();panel.randomPlayback=!panel.randomPlayback}}
                     ActionIcon{symbol:"discover";description:"Descoberta 2+1";filled:panel.discoveryPlayback;onClicked:{panel.mixController.cancel();panel.discoveryPlayback=!panel.discoveryPlayback}}
                     Label{text:panel.mixController?panel.mixController.status:"";wrapMode:Text.WordWrap;Layout.fillWidth:true;color:"#9bcfe1"}
@@ -191,6 +207,13 @@ Dialog {
                     Slider { Layout.fillWidth:true; from:0; to:Math.max(1,panel.controller.current.durationMs || 0); value:panel.position; enabled:(panel.controller.current.durationMs || 0)>0; onMoved:panel.controller.seek(Math.round(value)) }
                 }
                 RowLayout {
+                    visible:!!panel.mixController&&!!panel.transportPlayer&&panel.controller.current.provider==="Spotify"
+                    ActionIcon{symbol:"shake";description:"Sortear outra ordem da fila";onClicked:panel.remixSong(true)}
+                    ActionIcon{symbol:"random";description:"Reprodução aleatória / ordem da lista";filled:panel.randomPlayback;onClicked:{panel.randomPlayback=!panel.randomPlayback;panel.remixSong(false)}}
+                    ActionIcon{symbol:"discover";description:"Descoberta 2+1 / desativar";filled:panel.discoveryPlayback;onClicked:{panel.discoveryPlayback=!panel.discoveryPlayback;panel.remixSong(false)}}
+                    ActionIcon{objectName:"songQueueButton";symbol:"queue";description:"Ver fila de reprodução";onClicked:panel.openQueue()}
+                }
+                RowLayout {
                     ActionIcon { symbol:"refresh";description:"Atualizar letra"; enabled: !panel.controller.busy; onClicked: panel.controller.fetchLyrics() }
                     Label { text:"Idioma automático"; color:"#a5a8ad" }
                     ActionIcon { symbol:"translate";description:"Traduzir pt-BR"; enabled: !panel.controller.busy && panel.controller.lines.length>0; onClicked:{panel.translatedTrack="";panel.autoTranslation=true;panel.ensureLyrics()} }
@@ -228,6 +251,22 @@ Dialog {
                     }
                 }
             }
+        }
+    }
+    Dialog{id:queueDialog;objectName:"songQueueDialog";title:panel.queueEdited?"Prévia da nova fila":"Fila de reprodução";modal:true;parent:Overlay.overlay;anchors.centerIn:parent;width:Math.min(640,parent.width-32);height:Math.min(620,parent.height-48);standardButtons:Dialog.Close
+        palette.window:"#141517";palette.windowText:"#f5f5f5";palette.text:"#f5f5f5";palette.button:"#263440";palette.buttonText:"#f5f5f5"
+        background:Rectangle{color:"#171b24";radius:18;border.color:"#354052"}
+        header:Label{text:queueDialog.title;color:"#f5f5f5";font.pixelSize:22;font.bold:true;padding:18}
+        ColumnLayout{anchors.fill:parent
+            Label{Layout.fillWidth:true;wrapMode:Text.Wrap;color:"#c4c7cc";text:panel.queueEdited?"Confira a ordem e aplique para tocar. A faixa atual será retomada na posição atual.":"Agora e próximas músicas informadas pelo Spotify. A fila do serviço pode ser parcial."}
+            Label{visible:!!panel.mixController;color:"#00b3ef";text:panel.mixController?panel.mixController.status:"";Layout.fillWidth:true;wrapMode:Text.Wrap}
+            ListView{Layout.fillWidth:true;Layout.fillHeight:true;clip:true;model:panel.queuedRows;spacing:8;ScrollBar.vertical:ScrollBar{}
+                delegate:Column{required property var modelData;required property int index;width:ListView.view.width;spacing:3
+                    Label{width:parent.width;text:(index===0?"Agora • ":index+" • ")+(modelData.title||"");textFormat:Text.PlainText;color:modelData.mixExternal?"#00b3ef":"#f5f5f5";elide:Text.ElideRight;font.bold:true}
+                    Label{width:parent.width;text:(modelData.artist||"")+(modelData.mixExternal?" • Descoberta":"");textFormat:Text.PlainText;color:"#a5a8ad";elide:Text.ElideRight}
+                }
+            }
+            Button{text:"Aplicar e reproduzir fila";visible:panel.queueEdited;enabled:panel.mixController&&!panel.mixController.busy&&panel.queuedRows.length>0;onClicked:{if(panel.queueAnchor!==(panel.controller.current.uri||"")){panel.notice="A música mudou. Prepare a fila novamente.";queueDialog.close();return}panel.mixController.applyPreview(panel.position);queueDialog.close()}}
         }
     }
     FileDialog{id:syncExport;fileMode:FileDialog.SaveFile;nameFilters:["Ajuste Tonal (*.json)"];onAccepted:panel.controller.exportSyncFeedback(selectedFile)}

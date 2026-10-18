@@ -1,4 +1,4 @@
-param([switch]$Zip,[ValidatePattern('^[A-Za-z0-9._-]+$')][string]$PackageName='Tonal-Hub-0.10.0-local')
+param([switch]$Zip,[ValidatePattern('^[A-Za-z0-9._-]+$')][string]$PackageName='Tonal-Hub-0.11.0-local')
 $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot -Parent
 $build=Join-Path $root 'out\build\release'
@@ -36,6 +36,7 @@ Copy-Item -LiteralPath (Join-Path $root 'docs\TONALIFY_RECOVERY_LOCAL.md') -Dest
 Copy-Item -LiteralPath (Join-Path $root 'docs\AUDIO_PCM_081.md') -Destination $stage -Force
 Copy-Item -LiteralPath (Join-Path $root 'docs\TEXT_TO_TONALIFY_090.md') -Destination $stage -Force
 Copy-Item -LiteralPath (Join-Path $root 'docs/LISTENING_MIX_0100.md') -Destination $stage -Force
+Copy-Item -LiteralPath (Join-Path $root 'docs/MIX_QUEUE_LYRICS_0110.md') -Destination $stage -Force
 Get-ChildItem -LiteralPath $stage -Filter '*.exe' | ForEach-Object {
     $hash=Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256
     "$($hash.Hash.ToLower())  $($_.Name)"

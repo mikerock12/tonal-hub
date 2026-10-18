@@ -27,9 +27,10 @@ AbstractButton {
             case "chart":line(3,21,21,21);line(6,17,6,11);line(12,17,12,6);line(18,17,18,3);break
             case "lyrics":line(4,5,20,5);line(4,10,17,10);line(4,15,20,15);line(4,20,14,20);break
             case "save":line(12,3,12,16);line(7,11,12,16);line(12,16,17,11);line(4,18,4,21);line(4,21,20,21);line(20,21,20,18);break
-            case "shake":line(3,5,15,5);line(3,12,11,12);line(3,19,15,19);line(17,4,21,8);line(21,8,17,12);line(21,13,17,17);line(17,17,21,21);break
-            case "random":c.rect(3,3,18,18);c.fillRect(7,7,3,3);c.fillRect(11,11,3,3);c.fillRect(15,15,3,3);break
-            case "discover":c.arc(12,12,9,0,Math.PI*2);c.moveTo(16,7);c.lineTo(14,14);c.lineTo(7,17);c.lineTo(10,10);c.closePath();break
+            case "shake":c.save();c.translate(12,12);c.rotate(-.25);c.rect(-4,-6,8,12);line(-1,-3,2,-3);line(-1,0,2,0);line(-1,3,1,3);c.restore();line(2,7,1,11);line(1,11,3,15);line(21,7,23,11);line(23,11,22,15);break
+            case "random":line(3,5,7,5);line(7,5,17,19);line(17,19,22,19);line(18,15,22,19);line(22,19,18,23);line(3,19,7,19);line(7,19,17,5);line(17,5,22,5);line(18,1,22,5);line(22,5,18,9);break
+            case "discover":c.arc(8,8,5.5,0,Math.PI*2);line(4,12,1,16);c.moveTo(7,5.5);c.lineTo(10.5,8);c.lineTo(7,10.5);c.closePath();line(19,2,19,8);line(16,5,22,5);line(10,16,13,16);line(13,16,18,22);line(18,22,23,22);line(21,20,23,22);line(10,22,13,22);line(13,22,18,16);line(18,16,23,16);line(21,14,23,16);break
+            case "queue":line(3,5,21,5);line(3,10,21,10);line(3,15,13,15);c.moveTo(17,14);c.lineTo(23,18);c.lineTo(17,22);c.closePath();break
             case "audio":for(let i=0;i<3;i++){let x=5+i*7,y=7+(i%2)*9;line(x,3,x,21);c.moveTo(x+2,y);c.arc(x,y,2,0,Math.PI*2)}break
             case "heart":c.moveTo(12,21);c.bezierCurveTo(-7,8,6,-2,12,7);c.bezierCurveTo(18,-2,31,8,12,21);if(button.filled)c.fill();break
             case "play":c.moveTo(7,4);c.lineTo(20,12);c.lineTo(7,20);c.closePath();c.fill();break

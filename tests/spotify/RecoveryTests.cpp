@@ -542,6 +542,8 @@ public:
     mix.play(source,0,false,true,true);require(spin([&]{return !mix.busy();},8000),"mix failed to complete");require(completions==1&&result.size()==9&&result[0]==source[0]&&result[1]==source[1]&&result[2].toMap()["uri"].toString().contains("external"),"2+1 queue cadence failed");require(mutations==0&&requests<=12,"mix changed remote playlist or exceeded query budget");
     QVariantList longList;for(int i=0;i<650;++i){auto t=source[0].toMap();t["uri"]=QString("spotify:track:long%1").arg(i);t["id"]=t["uri"];longList<<t;}mix.play(longList,600,false,false,false);require(completions==2&&result.size()==50&&result.first().toMap()["uri"]=="spotify:track:long600","long personal playlist lost selected track");
     hang=true;mix.play(source,0,false,true,true);mix.cancel();spin([]{return false;},150);require(!mix.busy()&&completions==2,"cancelled discovery stole playback");hang=false;blocked=true;mix.play(source,0,false,true,true);require(spin([&]{return !mix.busy();})&&result==source&&completions==3,"API failure did not preserve source selection");
+    const int beforePreview=completions;mix.preview(source,0,true,false);require(!mix.busy()&&completions==beforePreview&&mix.previewQueue().size()==6,"queue preview started playback");
+    int applied=0,resume=-1;QObject::connect(&mix,&ListeningMix::resumeReady,&mix,[&](const auto& rows,int p){require(rows==mix.previewQueue(),"applied queue differs from preview");++applied;resume=p;});mix.applyPreview(12345);require(applied==1&&resume==12345,"queue position not preserved");
     std::cout<<"PASS listening mix: 2+1, readonly bounded discovery, stale callbacks and offline fallback\n";
   }
   static void playlistTransport() {

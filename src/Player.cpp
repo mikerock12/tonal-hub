@@ -756,7 +756,8 @@ void Player::playUris(const QStringList &uris, int offsetIndex) {
   sendPlay(body, targetDeviceForPlay());
 }
 
-void Player::playOrderedUris(const QStringList& uris){if(uris.isEmpty())return;emit playbackRequested();cancelResume();if(localPlayback())m_audio->returnToSpotify();m_lastUris=uris.mid(0,500);m_shuffle=false;emit stateChanged();QJsonObject body{{"uris",QJsonArray::fromStringList(m_lastUris)},{"offset",QJsonObject{{"position",0}}}};sendPlay(body,targetDeviceForPlay(),false,true);}
+void Player::playOrderedUris(const QStringList& uris){playOrderedUrisAt(uris,0);}
+void Player::playOrderedUrisAt(const QStringList& uris,int position){if(uris.isEmpty())return;emit playbackRequested();cancelResume();if(localPlayback())m_audio->returnToSpotify();m_lastUris=uris.mid(0,500);m_shuffle=false;emit stateChanged();QJsonObject body{{"uris",QJsonArray::fromStringList(m_lastUris)},{"position_ms",std::max(0,position)},{"offset",QJsonObject{{"position",0}}}};sendPlay(body,targetDeviceForPlay(),false,true);}
 
 void Player::addToQueue(const QString &uri) {
   m_api->post(
