@@ -20,6 +20,7 @@ QtObject {
     signal contentChanged(string playlistId)
     // Falta a permissão de editar playlists: o Main.qml mostra o aviso.
     signal permissionNeeded()
+    signal textImportRequested()
 
     // Quem entrou antes de o Tonal pedir playlist-modify-private não pode editar. A ação fica guardada e roda
     // quando a nova autorização chegar (o Main.qml chama runPending).

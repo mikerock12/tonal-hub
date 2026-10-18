@@ -59,6 +59,11 @@ public:
   Q_INVOKABLE void favorite(const QVariantMap &);
   void setFavorite(const QVariantMap &,bool);
   Q_INVOKABLE QString createPlaylist(const QString &);
+  QString importPlaylist(const QString &name,const QString &description,const QString &cover,
+                         const QVariantList &tracks);
+  Q_INVOKABLE QVariantMap playlistDetails(const QString &id) const;
+  void updatePlaylistDetails(const QString &id,const QVariantMap &patch);
+  void persist(std::function<void(bool)> done);
   Q_INVOKABLE void renamePlaylist(const QString &,const QString &);
   Q_INVOKABLE void deletePlaylist(const QString &);
   Q_INVOKABLE void addToPlaylist(const QString &,const QVariantMap &);

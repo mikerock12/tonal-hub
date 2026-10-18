@@ -134,8 +134,19 @@ void SpotifyApi::call(const QString &method, const QString &path,
       doc.isNull() ? QByteArray() : doc.toJson(QJsonDocument::Compact);
   enqueue({verb, buildUrl(path, query), payload, std::move(cb)});
 }
+void SpotifyApi::raw(const QByteArray &method,const QString &path,const QVariantMap &query,
+                     const QByteArray &body,const QByteArray &contentType,Callback cb,
+                     std::function<bool()> isCurrent) {
+  Pending p{method,buildUrl(path,query),body,std::move(cb)};
+  p.contentType=contentType;p.retryServer=false;p.isCurrent=std::move(isCurrent);
+  enqueue(std::move(p));
+}
 
 void SpotifyApi::enqueue(Pending p) {
+  if(p.url.scheme()!="https"||p.url.host()!="api.spotify.com"||
+     !p.url.userInfo().isEmpty()||p.url.port()!=-1||!p.url.path().startsWith("/v1/")) {
+    if(p.cb)p.cb(400,{});return;
+  }
   if (!m_auth->isAuthenticated()) {
     if (p.cb)
       p.cb(401, {});
@@ -168,7 +179,7 @@ void SpotifyApi::send(Pending p) {
   req.setRawHeader("Accept", "application/json");
   if (!p.body.isEmpty())
     req.setHeader(QNetworkRequest::ContentTypeHeader,
-                  QStringLiteral("application/json"));
+                  QString::fromLatin1(p.contentType));
   req.setTransferTimeout(20000);
 
   QNetworkReply *reply = nullptr;
@@ -202,7 +213,7 @@ void SpotifyApi::send(Pending p) {
                          [this, p]() mutable { send(std::move(p)); });
       return;
     }
-    if ((status == 502 || status == 503) && p.attempts < 3) {
+    if (p.retryServer && (status == 502 || status == 503) && p.attempts < 3) {
       QTimer::singleShot(800 * p.attempts, this,
                          [this, p]() mutable { send(std::move(p)); });
       return;

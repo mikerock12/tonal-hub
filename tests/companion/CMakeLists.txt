@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 project(TonalPersonalChecks LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
-find_package(Qt6 6.8 REQUIRED COMPONENTS Core Network Sql Qml)
+find_package(Qt6 6.8 REQUIRED COMPONENTS Core Gui Network Sql Qml)
 qt_standard_project_setup(REQUIRES 6.8)
 get_filename_component(ROOT "../.." ABSOLUTE)
 qt_add_executable(TonalCompanionChecks CompanionTests.cpp
@@ -22,6 +22,19 @@ endif()
 qt_add_resources(TonalCompanionChecks "rules" PREFIX "/companion" BASE "${ROOT}" FILES "${ROOT}/resources/music-rules.json")
 enable_testing()
 add_test(NAME personal_library COMMAND TonalCompanionChecks)
+add_executable(TonalTextPlaylistChecks ../playlist/ImportChecks.cpp
+    "${ROOT}/src/playlist/TextPlaylistCore.cpp" "${ROOT}/src/playlist/TextPlaylistImport.cpp"
+    "${ROOT}/src/playlist/TextPlaylistImport.hpp"
+    "${ROOT}/src/companion/MusicCompanion.cpp" "${ROOT}/src/companion/MusicCompanion.h"
+    "${ROOT}/src/companion/PersonalDatabase.cpp" "${ROOT}/src/companion/PersonalInsights.cpp"
+    "${ROOT}/src/insights/TinyMusicModel.cpp")
+target_include_directories(TonalTextPlaylistChecks PRIVATE "${ROOT}/src")
+target_link_libraries(TonalTextPlaylistChecks PRIVATE Qt6::Core Qt6::Gui Qt6::Network Qt6::Sql)
+if(MSVC)
+    target_compile_options(TonalTextPlaylistChecks PRIVATE /utf-8)
+endif()
+qt_add_resources(TonalTextPlaylistChecks "text_rules" PREFIX "/companion" BASE "${ROOT}" FILES "${ROOT}/resources/music-rules.json")
+add_test(NAME text_playlist_import COMMAND TonalTextPlaylistChecks)
 if(WIN32)
     add_executable(TonalPcmPipeChecks ../audio/PcmPipeChecks.cpp
         "${ROOT}/src/audio/NativePcmPipe.cpp")

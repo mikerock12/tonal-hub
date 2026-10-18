@@ -19,6 +19,7 @@ class QQmlEngine;
 #include "indie/CatalogService.h"
 #include "indie/HubController.h"
 #include "companion/MusicCompanion.h"
+#include "playlist/TextPlaylistImport.hpp"
 
 // Registro dos tipos C++ que o QML enxerga (sem criação pelo QML).
 struct AuthManagerForeign {
@@ -34,6 +35,7 @@ struct AudioEngineForeign {
 struct IndieCatalogForeign { Q_GADGET QML_FOREIGN(CatalogService) QML_ANONYMOUS };
 struct TonalHubForeign { Q_GADGET QML_FOREIGN(HubController) QML_ANONYMOUS };
 struct MusicCompanionForeign { Q_GADGET QML_FOREIGN(MusicCompanion) QML_ANONYMOUS };
+struct TextPlaylistForeign { Q_GADGET QML_FOREIGN(TextPlaylistImport) QML_ANONYMOUS };
 struct SpotifyApiForeign {
     Q_GADGET
     QML_FOREIGN(SpotifyApi)
@@ -79,6 +81,7 @@ class App : public QObject
     Q_PROPERTY(CatalogService *discovery READ discovery CONSTANT)
     Q_PROPERTY(HubController *hub READ hub CONSTANT)
     Q_PROPERTY(MusicCompanion *music READ music CONSTANT)
+    Q_PROPERTY(TextPlaylistImport *textPlaylist READ textPlaylist CONSTANT)
     // Idioma em uso nesta execução: "pt" ou "en".
     Q_PROPERTY(QString language READ language CONSTANT)
 
@@ -103,6 +106,7 @@ public:
     CatalogService *discovery() const { return m_discovery; }
     HubController *hub() const { return m_hub; }
     MusicCompanion *music() const { return m_music; }
+    TextPlaylistImport *textPlaylist() const { return m_textPlaylist; }
     QString language() const;
 
     // Idioma do próximo início: o salvo no menu ou, sem escolha, o do Windows (português ou, senão, inglês).
@@ -137,4 +141,5 @@ private:
     CatalogService *m_discovery;
     HubController *m_hub;
     MusicCompanion *m_music;
+    TextPlaylistImport *m_textPlaylist;
 };

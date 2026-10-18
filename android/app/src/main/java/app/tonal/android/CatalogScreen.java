@@ -118,6 +118,7 @@ final class CatalogScreen {
         LinearLayout all=ui.column();content.addView(all);message(all,"Buscando…");request(path,json->{all.removeAllViews();int count=0;for(int k=1;k<TYPES.length;k++){String kind=TYPES[k];JSONObject group=json.optJSONObject(kind+"s");JSONArray list=group==null?null:group.optJSONArray("items");if(list==null||list.length()==0)continue;heading(all,FILTERS[k]);ArrayList<JSONObject> tracks=new ArrayList<>();for(int i=0;i<list.length();i++){JSONObject item=list.optJSONObject(i);if(item!=null)tracks.add(item);}for(int i=0;i<Math.min(4,tracks.size());i++){JSONObject item=tracks.get(i);if(kind.equals("track"))song(all,item,tracks,"",i,"");else entityRow(all,item,kind);count++;}all.addView(ui.action("Ver "+FILTERS[k].toLowerCase(new Locale("pt","BR")),()->{route.filter=kind;route.y=0;render();}));}if(count==0)message(all,"Nenhum resultado para “"+route.query+"”. Tente outro nome.");},e->problem(all,e,this::render));
     }
     private void renderLibrary(){
+        content.addView(ui.action("Criar playlist…",host::createPlaylist));
         title("Sua Biblioteca");chips(new String[]{"Playlists","Álbuns","Artistas"},new String[]{"playlist","album","artist"},route.filter,v->{route.filter=v;route.y=0;render();});
         content.addView(item("Músicas Curtidas","Playlist • Sua coleção","","album",()->open(new Route("liked","","Músicas Curtidas","",""))));
         LinearLayout list=ui.column();content.addView(list);

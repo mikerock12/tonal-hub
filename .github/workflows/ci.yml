@@ -45,6 +45,8 @@ jobs:
         run: |
           $env:QTDIR = "$env:RUNNER_TEMP/Qt/6.8.3/msvc2022_64"
           python tests/lyrics/run_ui.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tests/playlist/run_ui.py
   android-java:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -62,5 +64,10 @@ jobs:
           gradle-version: '8.14.3'
       - name: Install Android platform
         run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - name: Test shared portable C++ playlist rules
+        run: |
+          mkdir -p out/ci-playlist
+          g++ -std=c++20 -O2 -Isrc tests/playlist/CoreChecks.cpp src/playlist/TextPlaylistCore.cpp -o out/ci-playlist/core-checks
+          out/ci-playlist/core-checks
       - name: Compile both Android variants without account credentials
         run: gradle -p android compileReleaseJavaWithJavac compileBenchmarkJavaWithJavac compileComparisonJavaWithJavac :automation:compileDebugJavaWithJavac --console=plain

@@ -1,0 +1,187 @@
+{
+  "version": "0.9.0",
+  "recorded_at_utc": "2026-10-18T17:06:31.425236+00:00",
+  "native_architecture": {
+    "shared_rules": "C++20 portable, same TextPlaylistCore.cpp compiled for Windows/MSVC and Android/NDK",
+    "windows_ui": "Existing Qt/QML",
+    "android_ui": "Existing Android Views with JNI",
+    "react_webview_electron_node_embedded": false,
+    "new_background_service": false,
+    "wizard_lazy_loaded_on_windows": true
+  },
+  "local_ctest": {
+    "passed": 9,
+    "failed": 0,
+    "seconds": 49.99,
+    "log": "out/ctest-090-lazy-fixed.log"
+  },
+  "windows_playlist_ui": {
+    "passed": 3,
+    "failed": 0,
+    "production_dialog_with_mock_controller": true
+  },
+  "windows_lyrics_ui": {
+    "passed": 6,
+    "failed": 0
+  },
+  "portable_core_on_android": {
+    "passed": true,
+    "result": "PLAYLIST_CORE_PASS",
+    "runtime": "Android x86_64 libc++ on dedicated emulator"
+  },
+  "android_native_ui": {
+    "passed": true,
+    "serial": "emulator-5560",
+    "package": "app.tonal.android.benchmark",
+    "native_views": true,
+    "shared_cpp_via_JNI": true,
+    "real_spotify_writes": 0,
+    "before_explicit_cloud_request": {
+      "fixture": true,
+      "native_cpp": true,
+      "real_spotify_writes": 0,
+      "local_id": "ea098c7a-5893-472c-a031-fc1f8302c06d",
+      "local_tracks": 3,
+      "description": "Native_CPP_playlist_test",
+      "has_cover": true,
+      "cloud_creates": 0,
+      "cloud_writes": 0,
+      "cloud_items": 0,
+      "cover_mime": "",
+      "public": false,
+      "uncertain": false,
+      "message": "Playlist salva no Tonalify. Deseja salvar também na conta Spotify?"
+    },
+    "response_lost_after_server_applied_batch": {
+      "fixture": true,
+      "native_cpp": true,
+      "real_spotify_writes": 0,
+      "local_id": "ea098c7a-5893-472c-a031-fc1f8302c06d",
+      "local_tracks": 3,
+      "description": "Native_CPP_playlist_test",
+      "has_cover": true,
+      "cloud_creates": 1,
+      "cloud_writes": 2,
+      "cloud_items": 3,
+      "cover_mime": "",
+      "public": false,
+      "uncertain": true,
+      "message": "Spotify HTTP 503: resposta de teste perdida. Sua playlist local está salva. Na próxima tentativa, o conteúdo será conferido antes de continuar."
+    },
+    "verified_resume_without_duplicates": {
+      "fixture": true,
+      "native_cpp": true,
+      "real_spotify_writes": 0,
+      "local_id": "ea098c7a-5893-472c-a031-fc1f8302c06d",
+      "local_tracks": 3,
+      "description": "Native_CPP_playlist_test",
+      "has_cover": true,
+      "cloud_creates": 1,
+      "cloud_writes": 3,
+      "cloud_items": 3,
+      "cover_mime": "image/jpeg",
+      "public": false,
+      "uncertain": false,
+      "message": "Playlist e capa salvas no Tonalify e no Spotify."
+    },
+    "screenshots": {
+      "cloud-recovered.png": "ea0e9878e13296c014fe653ffbb01fe6829d40233f61253be1d9e2e1ab746d9d",
+      "local-saved.png": "9a9f9bc1ae61d25658832bbed23f24e16e72acfa10140f2c3f60425137ee3dd6",
+      "paste.png": "598dfcc7484dc101ff9e4d2482b584c79dd34e35215022a51c48db030635e47a",
+      "review.png": "f7bb996b0d0f803d16988e51fdd5304c81736dd0e78184b85f85b8fa5a7151a2"
+    }
+  },
+  "tested_contracts": [
+    "Timestamp/header/number cleanup, artist detection, reverse input, Unicode/accents and limits",
+    "Candidate ranking, karaoke/tribute penalty and manual review for ambiguous artists",
+    "Local-first save with description, JPEG cover and ordered reprises",
+    "Explicit private Spotify copy; no remote writes during parsing/review/local-save",
+    "201 tracks in ordered batches no larger than 100",
+    "Lost creation response is not blindly retried",
+    "Lost batch response verified against remote order before resuming; no duplicates",
+    "Cover retry without re-creating playlist or re-uploading tracks",
+    "Stale callbacks cannot overwrite new drafts",
+    "Disk failure blocks external writes before durable checkpoint",
+    "Same-origin bearer restriction and no automatic 503 POST retry",
+    "Local backup restore preserves cover/description/cloud state/reprises"
+  ],
+  "windows_installation": {
+    "passed": true,
+    "previous_version": "0.8.1.0",
+    "installed_version": "0.9.0.0",
+    "files_match": {
+      "TonalHub.exe": true,
+      "Tonalify.exe": true,
+      "IndieTonal.exe": true,
+      "qt.conf": true,
+      "platforms/qwindows.dll": true,
+      "sqldrivers/qsqlite.dll": true,
+      "CREDITS.md": true,
+      "TEXT_TO_TONALIFY_090.md": true,
+      "licenses/PLAYLISTSPOTIFY-PORT.md": true
+    },
+    "installed_startup_without_sdk_paths": true,
+    "personal_data_preserved": {
+      "IndieTonal\\audio.json": true,
+      "Tonal\\audio.json": true,
+      "Tonal\\preferences.json": true,
+      "Tonal\\personal\\music-library.sqlite": true
+    },
+    "installer_sha256": "5be0ee2295a018484b848a88f7538e7a0ae029bf8be8e3a3a6053b5de1f254ed",
+    "installer_bytes": 81495651,
+    "physical_audition": false,
+    "uninstall_test": "Existing installation upgraded; not uninstalled"
+  },
+  "android_release_artifacts": [
+    {
+      "name": "Tonal-Android-0.9.0-local.apk",
+      "size": 46901785,
+      "sha256": "58739895c1b7ef6abc2775811d3a22ea02abb165f85bf200b4b1e8ab495fecd0",
+      "abis": [
+        "arm64-v8a",
+        "x86_64"
+      ],
+      "signature_verified": true,
+      "zip_integrity": true,
+      "version": "0.9.0-local",
+      "versionCode": 10,
+      "provenance_included": true
+    },
+    {
+      "name": "Tonal-Android-0.9.0-arm64-v8a.apk",
+      "size": 24903754,
+      "sha256": "69c7a4651d73316e3073d9f28944c10396395bfe899af6a626a55ae7dd3e3256",
+      "abis": [
+        "arm64-v8a"
+      ],
+      "signature_verified": true,
+      "zip_integrity": true,
+      "version": "0.9.0-local",
+      "versionCode": 10,
+      "provenance_included": true
+    }
+  ],
+  "limitations": {
+    "real_spotify_playlist_creation_tested": false,
+    "real_cloud_writes_during_tests": 0,
+    "physical_poco_x7_pro_tested": false,
+    "physical_audio_audition": false,
+    "hardware_benchmark_performed_this_release": false,
+    "cover_upload_may_require_existing_account_oauth_reauthorization": true,
+    "android_signing": "Existing local debug signing identity retained, release is not debuggable",
+    "backup_phone_scope": "Physical phone personal database not accessible here; use in-app Exportar backup on phone"
+  },
+  "imported_playlist_backup_roundtrip": {
+    "passed": true,
+    "metadata": [
+      "description",
+      "cover",
+      "spotifyId",
+      "syncedCount",
+      "coverSynced",
+      "cloudComplete"
+    ],
+    "ordered_reprises_retained": true,
+    "log": "out/ctest-090-backup-roundtrip.log"
+  }
+}
