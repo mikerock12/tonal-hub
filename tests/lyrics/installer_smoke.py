@@ -2,16 +2,18 @@
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import time
 import winreg
 
 ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / 'out/installer-smoke-0700'
+VERSION=re.search(r'project\(Tonal VERSION ([0-9.]+)',(ROOT/'CMakeLists.txt').read_text()).group(1)
+OUT = ROOT / ('out/installer-smoke-'+VERSION.replace('.','')+'0'+os.environ.get('TONAL_INSTALLER_TEST_SUFFIX',''))
 TARGET = OUT / 'app'
-SETUP = ROOT / 'out/release-local/Tonal-Hub-0.7.0.0-Windows-x64-Setup.exe'
-STAGE = ROOT / 'out/release-local/Tonal-Hub-0.7.0-local'
+SETUP = ROOT / f'out/release-local/Tonal-Hub-{VERSION}.0-Windows-x64-Setup.exe'
+STAGE = ROOT / f'out/release-local/Tonal-Hub-{VERSION}-local'
 KEY = r'Software\Microsoft\Windows\CurrentVersion\Uninstall\{D47D88D5-B58A-49D2-868C-68A55BC3B4E2}_is1'
 
 
@@ -32,7 +34,7 @@ def main():
     assert registration() is None, 'A Hub installation already exists; refusing to modify it.'
     assert not TARGET.exists(), 'Test target already exists; refusing to overwrite it.'
     OUT.mkdir(parents=True, exist_ok=True)
-    report = {}
+    report = {"installer_sha256":hashlib.sha256(SETUP.read_bytes()).hexdigest()}
     run([SETUP, '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/NOICONS', '/TASKS=',
          f'/DIR={TARGET}', f'/LOG={OUT / "install.log"}'])
     registered = registration()

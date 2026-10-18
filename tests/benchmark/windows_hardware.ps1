@@ -1,0 +1,2 @@
+$ErrorActionPreference='Stop'
+@{cpu=@(Get-CimInstance Win32_Processor | Select-Object Name,NumberOfCores,NumberOfLogicalProcessors);os=Get-CimInstance Win32_OperatingSystem | Select-Object Caption,Version,BuildNumber;gpu=@(Get-CimInstance Win32_VideoController | Select-Object Name,DriverVersion,AdapterRAM);disks=@(Get-CimInstance Win32_DiskDrive | Select-Object Model,Size,MediaType)} | ConvertTo-Json -Depth 5 -Compress

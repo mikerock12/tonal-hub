@@ -11,6 +11,11 @@ def run(*args,binary=False,timeout=50):
     value=subprocess.check_output([str(ADB),'-s',SERIAL,*map(str,args)],timeout=timeout)
     return value if binary else value.decode('utf-8',errors='replace').strip()
 def nodes():
+    if os.environ.get('TONAL_FAST_UI')=='1':
+        result=run('shell','am','instrument','-w','app.tonal.automation/app.tonal.automation.Probe')
+        match=re.search(r'INSTRUMENTATION_RESULT: result=(.*)',result)
+        if not match:raise AssertionError('UI probe failed: '+result[:300])
+        return json.loads(match.group(1))
     for _ in range(4):
         result=run('shell','uiautomator','dump','/data/local/tmp/tonal-companion.xml')
         if 'dumped' in result:return list(ET.fromstring(run('exec-out','cat','/data/local/tmp/tonal-companion.xml')).iter('node'))
@@ -20,6 +25,7 @@ def click(label,contains=False,scroll=False):
     for attempt in range(8 if scroll else 2):
         candidates=nodes()
         for node in candidates:
+            if node.get('class','').endswith('EditText'):continue
             text=[node.get('text',''),node.get('content-desc','')]
             if not any(label.casefold() in t.casefold() if contains else label.casefold()==t.casefold() for t in text):continue
             bounds=list(map(int,re.findall(r'\d+',node.get('bounds',''))))
@@ -34,7 +40,10 @@ def launch(**extras):
     run(*args)
 def snapshot():
     launch(indieSnapshot=True);time.sleep(.2)
-    return json.loads(run('exec-out','run-as',PACKAGE,'cat','files/indie-snapshot.json'))
+    for attempt in range(6):
+        try:return json.loads(run('exec-out','run-as',PACKAGE,'cat','files/indie-snapshot.json'))
+        except json.JSONDecodeError:time.sleep(.4)
+    raise AssertionError('Snapshot incomplete after bounded retries')
 def wait(predicate,timeout=65):
     end=time.monotonic()+timeout
     while time.monotonic()<end:

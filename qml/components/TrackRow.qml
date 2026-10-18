@@ -5,6 +5,9 @@ import QtQuick.Controls
 Item {
     id: root
 
+    property bool showStats:false
+    property string statisticKey:""
+    property var listening:({})
     property int number: 1
     property string title
     property string artists
@@ -34,7 +37,7 @@ Item {
     signal artistClicked()
     signal albumClicked()
 
-    implicitHeight: 56
+    implicitHeight: showStats ? 74 : 56
     readonly property bool hovered: hover.hovered
     readonly property real albumWidth: showAlbum ? Math.max(0, (width - 48 - 76 - (showAdded ? 150 : 0)) * 0.38) : 0
     readonly property real addedWidth: showAdded && width > 820 ? 150 : 0
@@ -186,6 +189,7 @@ Item {
                     }
                 }
             }
+            Label{visible:root.showStats;text:(root.listening.plays || 0)+" escutas · "+((root.listening.ms || 0)/60000).toFixed(1)+" min";color:"#7ddbff";font.pixelSize:12}
         }
     }
 

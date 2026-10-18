@@ -6,9 +6,12 @@ Item {
     width: 850
     height: 700
     LyricsPage { id: page; anchors.fill: parent }
+    ClimateDetail{id:climate;controller:App.music;parent:page}
     TestCase {
         name: "InlineLyricTranslation"
         when: windowShown
+        function test_climate_cards(){climate.open();tryCompare(climate,"visible",true);compare(climate.report.artistCount,1);compare(climate.report.themes[0].label,"rebeldia");grabImage(page).save("climate-cards.png");climate.close()}
+        function test_manual_sync_toggle(){App.music.alignLyrics(1,15000);compare(App.music.syncOffset,-14000);App.music.syncEnabled=false;compare(App.music.lineAt(15000),-1);App.music.syncEnabled=true}
         function test_fullscreen_styles_and_controls() {
             const full=findChild(page,"lyricsFullscreenWindow")
             verify(full!==null)

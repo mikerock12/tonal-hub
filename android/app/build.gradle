@@ -6,8 +6,8 @@ android {
         applicationId 'app.tonal.android'
         minSdk 28
         targetSdk 36
-        versionCode 8
-        versionName '0.7.0-local'
+        versionCode 9
+        versionName '0.8.0-local'
         if (project.hasProperty('tonalAbi')) {
             ndk { abiFilters project.property('tonalAbi').toString() }
         }
@@ -17,6 +17,7 @@ android {
     buildTypes {
         release { minifyEnabled false; signingConfig signingConfigs.debug }
         benchmark { initWith release; debuggable true; applicationIdSuffix '.benchmark' }
+        comparison { initWith release; debuggable false; applicationIdSuffix '.comparison' }
     }
     packaging { jniLibs { useLegacyPackaging = false } }
 }

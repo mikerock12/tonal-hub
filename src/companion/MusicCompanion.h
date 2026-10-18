@@ -6,6 +6,7 @@
 #include <QElapsedTimer>
 #include <QThread>
 #include <QVariantList>
+#include <QSet>
 #include <QJsonDocument>
 #include <functional>
 #include <memory>
@@ -22,6 +23,8 @@ class MusicCompanion : public QObject {
   Q_PROPERTY(QString background READ background WRITE setBackground NOTIFY changed)
   Q_PROPERTY(QString photo READ photo WRITE setPhoto NOTIFY changed)
   Q_PROPERTY(QVariantList searches READ searches NOTIFY changed)
+  Q_PROPERTY(bool syncEnabled READ syncEnabled WRITE setSyncEnabled NOTIFY lyricsChanged)
+  Q_PROPERTY(int syncOffset READ syncOffset NOTIFY lyricsChanged)
   Q_PROPERTY(QVariantMap lyricStyle READ lyricStyle NOTIFY changed)
 public:
   explicit MusicCompanion(QObject *parent=nullptr,const QString &root={});
@@ -43,6 +46,13 @@ public:
   Q_INVOKABLE void rememberSearch(const QString &);
   Q_INVOKABLE void forgetSearch(const QString &query={});
   Q_INVOKABLE void setLyricStyle(const QString &,const QVariant &);
+  bool syncEnabled() const;int syncOffset() const;void setSyncEnabled(bool);
+  Q_INVOKABLE void alignLyrics(int row,int position);
+  Q_INVOKABLE int lineAt(int position) const;
+  Q_INVOKABLE bool exportSyncFeedback(const QUrl &);
+  Q_INVOKABLE QVariantMap summary(const QString &kind,const QString &value) const;
+  Q_INVOKABLE void mergeMetadata(const QString &key,const QVariantMap &);
+  Q_INVOKABLE void refreshMetadata();
   Q_INVOKABLE void selectTrack(const QVariantMap &);
   Q_INVOKABLE void pulse(bool playing,int positionMs);
   Q_INVOKABLE bool liked(const QVariantMap &) const;
@@ -72,6 +82,7 @@ public:
   static QVariantList parseLyrics(const QString &);
   static QVariantMap tone(const QString &,const QString &genre);
 signals:
+  void metadataRequested(const QVariantMap &track);
   void changed();void currentChanged();void lyricsChanged();
   void message(const QString &);
   void queueRequested(const QVariantList &,int);
@@ -79,6 +90,7 @@ signals:
   void spotifyFavoriteRequested(const QVariantMap &,bool);
 private:
   friend class CompanionTests;
+  QString syncKey() const;void metadataNext();
   void save();void flush();void checkpoint();
   void get(const QUrl &,std::function<void(int,const QJsonDocument &)>);
   void acceptLyrics(const QJsonObject &);
@@ -99,7 +111,9 @@ private:
   QNetworkAccessManager m_net;
   QHash<QString,QVariantList> m_lyricCache;
   QHash<QString,QString> m_translationCache;
-  QString m_language;
+  QString m_language;int m_translationRetries=0,m_translationFailures=0;
+  QStringList m_metadataQueue;QSet<QString> m_metadataPending;bool m_metadataBusy=false;
+  mutable quint64 m_revision=0,m_summaryRevision=~quint64(0);mutable QHash<QString,QVariantMap> m_summary;
   QObject *m_disk=nullptr;QThread m_diskThread;
   std::shared_ptr<QJsonObject> m_written=std::make_shared<QJsonObject>();
 };

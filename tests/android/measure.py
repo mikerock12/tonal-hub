@@ -10,6 +10,8 @@ import time
 parser = argparse.ArgumentParser()
 parser.add_argument('--adb', required=True)
 parser.add_argument('--package', required=True)
+parser.add_argument('--serial',default='emulator-5560')
+parser.add_argument('--component',default='')
 parser.add_argument('--scenario', choices=['idle', 'local', 'effects', 'streaming'], default='idle')
 parser.add_argument('--label', required=True)
 parser.add_argument('--output', type=Path, required=True)
@@ -23,7 +25,7 @@ args = parser.parse_args()
 args.output.mkdir(parents=True, exist_ok=True)
 
 def adb(*command, check=True):
-    result = subprocess.run([args.adb, *command], capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=45)
+    result = subprocess.run([args.adb, '-s',args.serial,*command], capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=45)
     if check and result.returncode:
         raise RuntimeError(result.stderr.strip() or result.stdout.strip())
     return result.stdout.strip()
@@ -44,7 +46,7 @@ def ticks():
         result[pid] = int(fields[11]) + int(fields[12])
     return result
 
-component = adb('shell', 'cmd', 'package', 'resolve-activity', '--brief', '-a', 'android.intent.action.MAIN', '-c', 'android.intent.category.LAUNCHER', args.package).splitlines()[-1]
+component = args.component or adb('shell', 'cmd', 'package', 'resolve-activity', '--brief', '-a', 'android.intent.action.MAIN', '-c', 'android.intent.category.LAUNCHER', args.package).splitlines()[-1]
 if '/' not in component:
     raise RuntimeError('Launcher activity not found')
 
@@ -95,7 +97,8 @@ for index in range(args.samples):
     cpu_ticks = sum(max(0, after[pid] - before[pid]) for pid in before.keys() & after.keys())
     # Cached Android processes can be frozen. Do not make a Binder request into
     # the app: it can time out or wake it and perturb the next CPU sample.
-    memory = adb('shell', 'dumpsys', 'meminfo', '--local', '-s', '-S', args.package)
+    memory = '\n'.join(adb('shell','dumpsys','meminfo','--local','-s','-S',pid) for pid in after)
+    if len(re.findall(r'TOTAL PSS:',memory))!=len(after):raise RuntimeError('A process memory counter is missing; refusing an incomplete total')
     (args.output / f'meminfo-{index+1}.txt').write_text(memory, encoding='utf-8')
     pss = sum(map(int, re.findall(r'TOTAL PSS:\s*(\d+)', memory)))
     if not pss:

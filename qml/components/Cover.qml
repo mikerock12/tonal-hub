@@ -11,6 +11,9 @@ Item {
     property real radius: Theme.radiusCover
     property string placeholderIcon: round ? Icons.personS : Icons.noteS
 
+    property int retries:0
+    onSourceChanged:{retries=0;retry.stop();img.source=root.source}
+    Timer{id:retry;interval:1000*(root.retries+1);onTriggered:{const url=root.source;img.source="";img.source=url}}
     readonly property bool ready: img.status === Image.Ready
 
     Rectangle {
@@ -30,6 +33,7 @@ Item {
 
     Image {
         id: img
+        onStatusChanged:if(status===Image.Error&&root.source&&root.retries<2){root.retries++;retry.restart()}
         anchors.fill: parent
         source: root.source
         asynchronous: true

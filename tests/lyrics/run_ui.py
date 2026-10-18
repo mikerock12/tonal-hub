@@ -54,6 +54,13 @@ QtObject {
         property var lines: []
         property string lyricStatus: ""
         property bool busy: false
+        function refreshMetadata(){}
+        function insights(days){return {vibe:"Clima intenso",ms:60000,plays:3,coverage:1,lyricCoverage:1,artistCount:1,albumCount:1,modelCoverage:1,themes:[{label:"rebeldia",percent:75}],artists:[{label:"Artista de teste",ms:60000,plays:3,trackCount:1,tracks:[]}],albums:[],genres:[],model:"Modelo de teste"}}
+        property bool syncEnabled:true
+        property int syncOffset:0
+        function alignLyrics(row,pos){syncOffset=row*1000-pos;syncEnabled=true}
+        function lineAt(pos){return syncEnabled?0:-1}
+        function exportSyncFeedback(url){return true}
         signal changed()
         property string lastLanguage: ""
         property int translateCalls: 0

@@ -149,6 +149,8 @@ private:
   QTimer m_tickTimer;
   QTimer m_volumeTimer;
   QElapsedTimer m_positionClock;
+  QElapsedTimer m_transportIntentClock;
+  uint64_t m_transportGeneration = 0;
   int m_positionBase = 0;
   int m_pendingVolume = -1;
   bool m_requestInFlight = false;

@@ -63,4 +63,4 @@ jobs:
       - name: Install Android platform
         run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
       - name: Compile both Android variants without account credentials
-        run: gradle -p android compileReleaseJavaWithJavac compileBenchmarkJavaWithJavac --console=plain
+        run: gradle -p android compileReleaseJavaWithJavac compileBenchmarkJavaWithJavac compileComparisonJavaWithJavac :automation:compileDebugJavaWithJavac --console=plain

@@ -1,10 +1,15 @@
 import QtQuick
 import QtQuick.Controls
+import "qrc:/companion/qml/companion" as Personal
 
 // Página de artista: banner, populares e discografia.
 Flickable {
     id: root
 
+    property bool showListening:false
+    property int journalRevision:0
+    Connections{target:App.music;function onChanged(){root.journalRevision++}}
+    Personal.StatisticsDetail{id:listeningDetail;controller:App.music}
     property var route
     readonly property string artistId: route && route.params ? (route.params.id || "") : ""
 
@@ -238,6 +243,7 @@ Flickable {
             }
         }
 
+        Row{spacing:12;Button{text:root.showListening?"Ocultar estatísticas":"Estatísticas";onClicked:root.showListening=!root.showListening}Button{visible:root.showListening;text:{root.journalRevision;const s=App.music.summary("artist",root.name);return(s.plays||0)+" escutas · "+((s.ms||0)/60000).toFixed(1)+" min · "+(s.tracks||0)+" músicas"}onClicked:{listeningDetail.report=App.music.statistics(180,"artists").rows.find(r=>r.label===root.name)||{};listeningDetail.open()}}}
         // Populares
         Column {
             visible: root.popular.length > 0
@@ -252,6 +258,8 @@ Flickable {
                     required property int index
                     width: parent.width
                     number: index + 1
+                    showStats:root.showListening
+                    listening:{root.journalRevision;return App.music.summary("track","Spotify|||"+modelData.uri)}
                     title: modelData.name
                     artists: modelData.artistsText
                     album: modelData.album

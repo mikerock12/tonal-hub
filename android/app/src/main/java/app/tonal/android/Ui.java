@@ -27,13 +27,16 @@ final class Ui {
     void clickable(View v,Runnable click){v.setOnClickListener(w->click.run());v.setFocusable(true);v.setBackground(new RippleDrawable(android.content.res.ColorStateList.valueOf(0x335fffff),v.getBackground(),background(0xffffffff,8)));}
     TextView pill(String text,boolean active,Runnable click){TextView v=text(text,13,active?BG:TEXT);v.setGravity(Gravity.CENTER);pad(v,16,11);rounded(v,active?TEXT:CARD,24);clickable(v,click);return v;}
     TextView action(String text,Runnable click){TextView v=text(text,14,TEXT);v.setGravity(Gravity.CENTER);pad(v,16,13);rounded(v,CARD,8);clickable(v,click);return v;}
-    ImageButton icon(String name,String description,Runnable click){ImageButton b=new ImageButton(context);b.setImageDrawable(new Symbol(name,TEXT));b.setContentDescription(description);b.setTooltipText(description);b.setBackground(background(0x00000000,24));b.setPadding(dp(12),dp(12),dp(12),dp(12));b.setMinimumWidth(dp(48));b.setMinimumHeight(dp(48));clickable(b,click);return b;}
+    ImageButton icon(String name,String description,Runnable click){ImageButton b=new ImageButton(context);b.setImageDrawable(new Symbol(name,TEXT));b.setScaleType(ImageView.ScaleType.CENTER_INSIDE);b.setContentDescription(description);b.setTooltipText(description);b.setBackground(background(0x00000000,24));b.setPadding(dp(12),dp(12),dp(12),dp(12));b.setMinimumWidth(dp(48));b.setMinimumHeight(dp(48));clickable(b,click);return b;}
     ImageButton favorite(boolean liked,Runnable click){ImageButton b=icon(liked?"heart_filled":"heart",liked?"Remover das favoritas":"Favoritar música",click);b.setImageDrawable(new Symbol(liked?"heart_filled":"heart",liked?BLUE:TEXT));return b;}
     static final class Symbol extends Drawable {
         private final String name;private final Paint p=new Paint(3);
         Symbol(String name,int color){this.name=name;p.setColor(color);p.setStrokeWidth(1.8f);p.setStrokeCap(Paint.Cap.ROUND);p.setStrokeJoin(Paint.Join.ROUND);}
-        public void draw(Canvas canvas){canvas.save();Rect b=getBounds();canvas.translate(b.left,b.top);canvas.scale(b.width()/24f,b.height()/24f);p.setStyle(Paint.Style.STROKE);
+        public void draw(Canvas canvas){canvas.save();Rect b=getBounds();float side=Math.min(b.width(),b.height());canvas.translate(b.left+(b.width()-side)/2f,b.top+(b.height()-side)/2f);canvas.scale(side/24f,side/24f);p.setStyle(Paint.Style.STROKE);
             switch(name){
+                case "chevron":canvas.drawLine(8,5,16,12,p);canvas.drawLine(16,12,8,19,p);break;
+                case "chart":canvas.drawLine(3,21,21,21,p);for(int i=0;i<3;i++){int x=5+i*6;canvas.drawRoundRect(x,15-i*5,x+3,20,1,1,p);}break;
+                case "save":canvas.drawLine(12,3,12,16,p);canvas.drawLine(7,11,12,16,p);canvas.drawLine(12,16,17,11,p);canvas.drawLine(4,18,4,21,p);canvas.drawLine(4,21,20,21,p);canvas.drawLine(20,21,20,18,p);break;
                 case "search":canvas.drawCircle(10,10,6,p);canvas.drawLine(15,15,21,21,p);break;
                 case "back":canvas.drawLine(15,4,7,12,p);canvas.drawLine(7,12,15,20,p);break;
                 case "home":{Path h=new Path();h.moveTo(3,10);h.lineTo(12,3);h.lineTo(21,10);h.lineTo(21,21);h.lineTo(15,21);h.lineTo(15,14);h.lineTo(9,14);h.lineTo(9,21);h.lineTo(3,21);h.close();canvas.drawPath(h,p);break;}
@@ -59,6 +62,8 @@ final class Ui {
             }canvas.restore();
         }
         private void triangle(Canvas c,float a,float b,float d,float e,float f,float g){Path path=new Path();path.moveTo(a,b);path.lineTo(d,e);path.lineTo(f,g);path.close();c.drawPath(path,p);}
+        public int getIntrinsicWidth(){return Math.round(24*android.content.res.Resources.getSystem().getDisplayMetrics().density);}
+        public int getIntrinsicHeight(){return getIntrinsicWidth();}
         public void setAlpha(int a){p.setAlpha(a);}public void setColorFilter(ColorFilter f){p.setColorFilter(f);}public int getOpacity(){return PixelFormat.TRANSLUCENT;}
     }
 }

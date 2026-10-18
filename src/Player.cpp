@@ -186,10 +186,15 @@ void Player::refresh() {
   if (!m_auth->isAuthenticated() || m_requestInFlight)
     return;
   m_requestInFlight = true;
+  const auto transportGeneration = m_transportGeneration;
   m_api->get(QStringLiteral("/me/player"),
              {{QStringLiteral("additional_types"), QStringLiteral("episode")}},
-             [this](int status, const QJsonDocument &doc) {
+             [this, transportGeneration](int status, const QJsonDocument &doc) {
                m_requestInFlight = false;
+               if (transportGeneration != m_transportGeneration) {
+                 refreshSoon(250);
+                 return;
+               }
                if (status == 200 && doc.isObject())
                  applyState(doc.object());
                else if (status == 204)
@@ -267,6 +272,12 @@ void Player::applyState(const QJsonObject &obj) {
   m_activeDeviceId = device.value(QStringLiteral("id")).toString();
   m_activeDeviceName = device.value(QStringLiteral("name")).toString();
   m_librespot->setPlaybackExpected(m_isPlaying && playingHere());
+  // Connect controls can arrive without a matching librespot debug command.
+  // Reconcile the physical sink with confirmed session state as a fallback.
+  // Give recent local controls time to settle; a stale GET must not undo pause.
+  if (m_audio && (!m_transportIntentClock.isValid() ||
+                  m_transportIntentClock.elapsed() >= 2000))
+    m_audio->setSpotifyPaused(!m_isPlaying || !playingHere());
   emit stateChanged();
 
   if (device.contains(QStringLiteral("volume_percent")) &&
@@ -513,6 +524,8 @@ void Player::sendPlay(const QJsonObject &body, const QString &deviceId,
   QVariantMap q;
   if (!deviceId.isEmpty())
     q.insert(QStringLiteral("device_id"), deviceId);
+  ++m_transportGeneration;
+  m_transportIntentClock.restart();
   m_api->put(
       QStringLiteral("/me/player/play"), q,
       body.isEmpty() ? QJsonDocument() : QJsonDocument(body),
@@ -536,6 +549,8 @@ void Player::togglePlay() {
     m_audio->toggleLocalPlay();
     return;
   }
+  ++m_transportGeneration;
+  m_transportIntentClock.restart();
   if (m_audio)
     m_audio->setSpotifyPaused(m_isPlaying);
   if (m_isPlaying) {
@@ -569,6 +584,8 @@ void Player::pause() {
     return;
   }
   cancelResume();
+  ++m_transportGeneration;
+  m_transportIntentClock.restart();
   m_librespot->setPlaybackExpected(false);
   if (m_audio)
     m_audio->setSpotifyPaused(true);
@@ -745,6 +762,8 @@ void Player::transferTo(const QString &deviceId) {
   cancelResume();
   if (deviceId.isEmpty())
     return;
+  ++m_transportGeneration;
+  m_transportIntentClock.restart();
   const QJsonObject body{
       {QStringLiteral("device_ids"), QJsonArray{deviceId}},
       {QStringLiteral("play"), true},

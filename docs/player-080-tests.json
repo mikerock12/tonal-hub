@@ -1,0 +1,91 @@
+{
+  "windows_ctest": {
+    "passed": true,
+    "executables": 8
+  },
+  "remote_transport_regression": {
+    "passed": true
+  },
+  "qml": {
+    "passed": true,
+    "checks": 6
+  },
+  "android_core": {
+    "passed": true,
+    "checks": [
+      "companion_lrc_multistamps_offset_and_fractions",
+      "companion_signed_urls_and_passwords_excluded",
+      "companion_favorites_and_playlist_deduplication",
+      "companion_periods_chart_drilldown_lyric_mood_and_genre_suggestions",
+      "detailed_tracks_albums_counts_and_actual_time",
+      "native_model_1000_calls_mean_us=1749.8881",
+      "search_history_and_independent_lyric_styles",
+      "album_queue_metadata_and_cover_survive_sparse_playback_updates",
+      "transport_icon_preserves_aspect_in_wide_button",
+      "manual_lyric_alignment_toggle_version_identity_and_private_feedback",
+      "outline_effects_and_independent_typography_validation",
+      "long_translation_rows_preserve_unicode_and_row_identity",
+      "metadata_artist_disambiguation_and_sourced_genre_order",
+      "closed_metadata_client_does_not_queue_or_retain_activity_requests",
+      "companion_clear_history_preserves_library",
+      "rare_archive_audio_demos_mp3_preference_private_and_path_filter",
+      "rare_archive_dark_items_rejected",
+      "companion_portable_backup_restore",
+      "companion_sqlite_transaction_persistence",
+      "resume_uses_actual_pcm_track_and_position",
+      "restore_preserves_queue_and_atomic_seek",
+      "pause_cancels_resume_without_losing_selection",
+      "new_selection_replaces_old_resume",
+      "stop_cancels_all_recovery_intent",
+      "exact_artist_ahead_of_remixes_and_unrelated_profiles",
+      "provider_score_breaks_homonym_ties",
+      "musicbrainz_is_metadata_only",
+      "unicode_and_word_normalization",
+      "reject_cleartext_streams",
+      "reject_url_userinfo",
+      "diagnostics_redact_urls_and_credentials",
+      "real_jni_connection_failures_hit_bounded_recovery_budget",
+      "no_unbounded_restart_loop_after_budget",
+      "explicit_pause_cancels_service_resume"
+    ]
+  },
+  "android_translation": {
+    "passed": true,
+    "checks": [
+      "transient_failure_retries_bounded",
+      "failed_verse_does_not_stop_remaining_translation",
+      "manual_resume_translates_only_missing_rows",
+      "cached_tail_increments_ui_version_without_network"
+    ]
+  },
+  "android_song_page": {
+    "passed": true
+  },
+  "android_catalog": {
+    "passed": true
+  },
+  "android_release_upgrade": {
+    "passed": true,
+    "apk_sha256": "6f75d13d318a9c179963b61e2ea3c7c318ef0df20b21499bd85763a1889ac18c",
+    "updated_without_uninstall": true,
+    "data_directory_preserved": true,
+    "release_hub_and_public_search": true
+  },
+  "windows_installer": {
+    "installer_sha256": "a5ac9320fdfd56bc8a2295c0177ef9784a2a028d6b7b07c5c31a22db4a73cbf0",
+    "files_match": {
+      "TonalHub.exe": true,
+      "Tonalify.exe": true,
+      "IndieTonal.exe": true,
+      "qt.conf": true,
+      "platforms/qwindows.dll": true,
+      "sqldrivers/qsqlite.dll": true,
+      "CREDITS.md": true,
+      "WINDOWS_INSTALLER_LOCAL.md": true
+    },
+    "installed_app_startup_without_sdk_plugin_paths": true,
+    "reinstallation_preserves_unmanaged_files": true,
+    "isolated_uninstallation": true,
+    "passed": true
+  }
+}
