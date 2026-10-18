@@ -6,6 +6,19 @@ import "qrc:/companion/qml/companion" as Personal
 Item {
     id: root
 
+    property bool listShaken:false
+    property bool randomPlayback:false
+    property bool discoveryPlayback:false
+    property bool mixTouched:false
+    property bool loadingMix:false
+    property var pendingMix:null
+    property var originalOrder:[]
+    property int mixSeed:Math.floor(Math.random()*2147483647)
+    function rawRows(){let rows=[];for(let i=0;i<trackModel.count;i++)rows.push(JSON.parse(JSON.stringify(trackModel.get(i))));return rows}
+    function mixRows(){return rawRows().map(t=>({provider:"Spotify",id:t.uri,uri:t.uri,title:t.name,artist:t.artistsText,artistId:t.artistId,album:t.album,albumId:t.albumId,image:t.coverUrl,durationMs:t.durationMs,year:parseInt(root.year)||0}))}
+    function ensureMix(action){if(loading||loadingMix){Nav.toast("Aguarde o carregamento da seleção.");return}if(nextUrl!==""&&trackModel.count<500){pendingMix=action;loadingMix=true;loadMore()}else action()}
+    function shakeList(){App.listeningMix.cancel();ensureMix(function(){if(!root.listShaken){root.originalOrder=root.rawRows();const order=App.listeningMix.order(root.originalOrder.length,root.mixSeed);trackModel.clear();for(let i of order)trackModel.append(root.originalOrder[i]);root.listShaken=true}else{trackModel.clear();for(let t of root.originalOrder)trackModel.append(t);root.listShaken=false}root.mixTouched=true})}
+    Connections{target:App.player;function onPlaybackRequested(){root.pendingMix=null;root.loadingMix=false}}
     property bool showListening:false
     property int journalRevision:0
     Connections{target:App.music;function onChanged(){root.journalRevision++}}
@@ -57,6 +70,7 @@ Item {
     // ------------------------------------------------------------ dados
     function reset() {
         serial++
+        listShaken=false;randomPlayback=false;discoveryPlayback=false;mixTouched=false;loadingMix=false;pendingMix=null;originalOrder=[]
         trackModel.clear()
         // Depois de clear() + append() o ListView põe currentIndex em 0 sozinho, e a primeira
         // faixa aparecia selecionada sem ninguém clicar nela.
@@ -146,7 +160,7 @@ Item {
         App.api.call("GET", url, {}, null, function(status, data) {
             if (s !== root.serial) return
             root.loading = false
-            if (status !== 200) return
+            if (status !== 200) {root.loadingMix=false;root.pendingMix=null;Nav.toast("Não foi possível carregar a seleção completa.");return}
             if (root.kind === "album") {
                 root.appendTracks(data.items, null)
             } else {
@@ -154,6 +168,7 @@ Item {
                 root.appendPlaylistEntries(data.items)
             }
             root.nextUrl = data.next || ""
+            if(root.loadingMix){if(root.nextUrl!==""&&trackModel.count<500)root.loadMore();else{root.loadingMix=false;let action=root.pendingMix;root.pendingMix=null;if(root.nextUrl!=="")Nav.toast("Mix limitado às primeiras 500 músicas carregadas.");if(action)action()}}
         })
     }
 
@@ -325,6 +340,8 @@ Item {
     }
 
     function playFrom(index) {
+        if(mixTouched||listShaken||randomPlayback||discoveryPlayback){ensureMix(function(){App.listeningMix.play(root.mixRows(),index,root.randomPlayback,root.discoveryPlayback,root.kind==="album")});return}
+
         const row = trackModel.get(index)
         if (kind === "liked" && playUri === "") {
             // perfil ainda não carregou: toca a lista carregada
@@ -341,7 +358,7 @@ Item {
     }
 
     function playAll() {
-        if (isCurrentContext) { App.player.togglePlay(); return }
+        if (isCurrentContext&&!mixTouched) { App.player.togglePlay(); return }
         if (trackModel.count > 0) playFrom(0)
         else if (playUri !== "") App.player.playContext(playUri)
     }
@@ -490,7 +507,8 @@ Item {
             // Barra de ações
             Item {
                 width: parent.width
-                height: 104
+                height: root.mixTouched ? 140 : 104
+                Label{anchors.left:parent.left;anchors.right:parent.right;anchors.bottom:parent.bottom;anchors.margins:8;anchors.leftMargin:24;color:Theme.textSecondary;font.pixelSize:12;wrapMode:Text.WordWrap;visible:root.mixTouched;text:App.listeningMix.status || "Ordem temporária • Reproduzir aplica os modos selecionados. A playlist salva permanece na ordem original."}
 
                 Rectangle {
                     anchors.fill: parent
@@ -511,19 +529,9 @@ Item {
                         playing: root.isCurrentContext && App.player.isPlaying
                         onClicked: root.playAll()
                     }
-                    IconButton {
-                        anchors.verticalCenter: parent.verticalCenter
-                        iconSize: 30
-                        strokePath: Icons.shuffleS
-                        strokeWidth: 1.8
-                        active: App.player.shuffle
-                        showActiveDot: true
-                        tooltip: qsTr("Tocar aleatoriamente")
-                        onClicked: {
-                            if (!App.player.shuffle) App.player.toggleShuffle()
-                            if (!root.isCurrentContext) root.playAll()
-                        }
-                    }
+                    Personal.ActionIcon {anchors.verticalCenter:parent.verticalCenter;symbol:"shake";description:"Embaralhar lista / restaurar ordem";filled:root.listShaken;enabled:!root.loading&&!root.loadingMix;onClicked:root.shakeList()}
+                    Personal.ActionIcon {anchors.verticalCenter:parent.verticalCenter;symbol:"random";description:"Reprodução aleatória";filled:root.randomPlayback;onClicked:{App.listeningMix.cancel();root.pendingMix=null;root.loadingMix=false;root.mixTouched=true;root.randomPlayback=!root.randomPlayback}}
+                    Personal.ActionIcon {anchors.verticalCenter:parent.verticalCenter;symbol:"discover";description:"Descoberta 2+1: uma faixa externa a cada duas";filled:root.discoveryPlayback;onClicked:{App.listeningMix.cancel();root.pendingMix=null;root.loadingMix=false;root.mixTouched=true;root.discoveryPlayback=!root.discoveryPlayback}}
                     IconButton {
                         anchors.verticalCenter: parent.verticalCenter
                         visible: root.kind === "album" || (root.kind === "playlist" && !root.owned)
@@ -535,7 +543,7 @@ Item {
                         tooltip: root.saved ? qsTr("Remover de Sua Biblioteca") : qsTr("Salvar em Sua Biblioteca")
                         onClicked: root.toggleSaved()
                     }
-                    Button{anchors.verticalCenter:parent.verticalCenter;text:root.showListening?"Ocultar estatísticas":"Estatísticas";onClicked:root.showListening=!root.showListening}
+                    Personal.ActionIcon{anchors.verticalCenter:parent.verticalCenter;symbol:"chart";description:root.showListening?"Ocultar estatísticas":"Mostrar estatísticas";filled:root.showListening;onClicked:root.showListening=!root.showListening}
                     IconButton {
                         id: moreButton
                         anchors.verticalCenter: parent.verticalCenter
@@ -607,7 +615,7 @@ Item {
             isPlaying: App.player.isPlaying
             selected: list.currentIndex === index
             onSelectRequested: list.currentIndex = index
-            draggable: root.kind === "playlist" && root.owned
+            draggable: root.kind === "playlist" && root.owned && !root.listShaken && !root.loadingMix
             dragging: root.dragIndex === index
             onDragStarted: root.dragStart(index)
             onDragMoved: (sx, sy) => root.dragMove(sx, sy)

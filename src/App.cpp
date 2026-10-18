@@ -30,7 +30,10 @@ App::App(QObject *parent)
     , m_hub(new HubController(this))
     , m_music(new MusicCompanion(this))
     , m_textPlaylist(new TextPlaylistImport(m_music,[this](const QByteArray &method,const QString &path,const QVariantMap &query,const QByteArray &body,const QByteArray &mime,TextPlaylistImport::Reply cb,std::function<bool()> current){m_api->raw(method,path,query,body,mime,std::move(cb),std::move(current));},this))
+    , m_listeningMix(new ListeningMix(m_api,m_music,this))
 {
+    connect(m_player,&Player::playbackRequested,m_listeningMix,&ListeningMix::cancel);
+    connect(m_listeningMix,&ListeningMix::ready,this,[this](const QVariantList& tracks){m_music->rememberTracks(tracks);QStringList uris;for(auto v:tracks){auto t=v.toMap();uris<<t["uri"].toString();}m_player->playOrderedUris(uris);});
     m_librespot->setAudioEngine(m_audio);
     m_player->setAudioEngine(m_audio);
     connect(m_music,&MusicCompanion::metadataRequested,this,[this](const QVariantMap &t){

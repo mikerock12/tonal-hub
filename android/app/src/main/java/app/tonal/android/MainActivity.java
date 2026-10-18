@@ -28,13 +28,13 @@ public final class MainActivity extends Activity {
     private final ArrayList<TextView> tabs=new ArrayList<>();
     private JSONObject currentTrack;
     private Runnable pendingPlayback;
-    private final Consumer<String> commandObserver=command->{if(command.equals("pause")){pendingPlayback=null;}};
+    private final Consumer<String> commandObserver=command->{if(command.equals("pause")){pendingPlayback=null;}if(command.equals("pause")||command.equals("toggle")||command.equals("next")||command.equals("prev")||command.startsWith("seek|"))cancelMix();};
     private boolean connecting,diagnostics,shuffle,repeat,clockPlaying;
     private int positionMs,durationMs,playbackRevision;
     private String expectedUri="",engineDeviceId="";
     private long expectedUntil;
     private long positionAt;
-    private SpotifyClient api,engineApi;
+    private SpotifyClient api,engineApi;private ListeningMix listeningMix;
     private final Handler handler=new Handler(Looper.getMainLooper());
     
     private boolean destroyed,polling,local,authorizingEngine;
@@ -58,7 +58,7 @@ public final class MainActivity extends Activity {
         api=new SpotifyClient(this);engineApi=new SpotifyClient(this,true);ui=new Ui(this);artwork=new Artwork(this);
         diagnostics=getIntent().getBooleanExtra("benchmark",false)||getIntent().getBooleanExtra("selfTest",false)||(BuildConfig.DEBUG&&(getIntent().getBooleanExtra("streamingBenchmark",false)||getIntent().getBooleanExtra("catalogTest",false)));
         buildShell();catalog=new CatalogScreen(this,api,artwork,body);
-        setContentView(root);if(BuildConfig.DEBUG&&getIntent().getBooleanExtra("openTextPlaylist",false))handler.post(()->TextPlaylistWizard.show(this,api));NativeBridge.listeners.add(statusListener);NativeBridge.commandListeners.add(commandObserver);home();String literal=getIntent().getStringExtra("literalQuery");if(literal!=null)catalog.search(literal);
+        setContentView(root);if(BuildConfig.DEBUG&&getIntent().getBooleanExtra("mixUiFixture",false))handler.post(this::mixUiFixture);if(BuildConfig.DEBUG&&getIntent().getBooleanExtra("openTextPlaylist",false))handler.post(()->TextPlaylistWizard.show(this,api));NativeBridge.listeners.add(statusListener);NativeBridge.commandListeners.add(commandObserver);home();String literal=getIntent().getStringExtra("literalQuery");if(literal!=null)catalog.search(literal);
         if(Build.VERSION.SDK_INT>=33)getOnBackInvokedDispatcher().registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT,()->{if(!catalog.back())finish();});
         if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=android.content.pm.PackageManager.PERMISSION_GRANTED)requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},10);
         loadDsp();
@@ -118,14 +118,20 @@ public final class MainActivity extends Activity {
         engineApi.worker.execute(()->{try{String token=cached?"":engineApi.accessToken();runOnUiThread(()->PlaybackService.start(this,"connect",token));}catch(Exception error){runOnUiThread(()->{connecting=false;pendingPlayback=null;status.setText(error.getMessage());stopService(new Intent(this,PlaybackService.class));});}});
     }
     private void clearAudioCredentials(){for(String name:new String[]{"librespot",SpotifyClient.ENGINE_CACHE})new File(new File(getFilesDir(),name),"credentials.json").delete();}
+    private void mixUiFixture(){if(!BuildConfig.DEBUG)return;try{MusicStore store=MusicStore.get(this);for(int i=1;i<=6;i++){JSONObject t=new JSONObject();MusicStore.put(t,"provider","Fixture");MusicStore.put(t,"id","mix-fixture-"+i);MusicStore.put(t,"uri","fixture:"+i);MusicStore.put(t,"title","Mix Fixture "+i);MusicStore.put(t,"artist","Test Band");MusicStore.put(t,"album","Test Album");MusicStore.put(t,"genre","grunge");MusicStore.put(t,"year",1994);MusicStore.put(t,"durationMs",180000);store.favorite(t,true);if(i==1)store.select(t);}store.lines=new JSONArray().put(new JSONObject().put("text","Synthetic line for layout verification").put("time",-1));store.lyricStatus="Letra sintética de teste local";
+        ArrayList<String> source=new ArrayList<>(),pool=new ArrayList<>();for(int i=0;i<6;i++)Collections.addAll(source,"s"+i,"Source Band","album","grunge","1994","0","0");for(int i=0;i<3;i++)Collections.addAll(pool,"p"+i,"New Band "+i,"other","grunge","1993","0","0");int[] plan=ListeningMixNative.plan(source.toArray(new String[0]),pool.toArray(new String[0]),0,false,true,42,true);JSONArray sequence=new JSONArray(),order=new JSONArray();for(int n:plan)sequence.put(n);for(int n:ListeningMixNative.order(6,42))order.put(n);JSONObject report=new JSONObject().put("native_cpp_via_jni",true).put("sequence",sequence).put("shaken_order",order).put("real_spotify_writes",0);java.nio.file.Files.write(new File(getExternalFilesDir(null),"listening-mix-tests.json").toPath(),report.toString().getBytes(StandardCharsets.UTF_8));MusicPanel.showSong(this,api);
+        }catch(Exception e){throw new IllegalStateException("Native mix fixture failed",e);}}
+    View toolbar(Runnable leave,Runnable favorites){
+        LinearLayout header=ui.row();ui.pad(header,12,4);ImageView logo=new ImageView(this);logo.setImageDrawable(new Ui.Symbol("logo",Ui.BLUE));header.addView(logo,new LinearLayout.LayoutParams(dp(30),dp(30)));TextView brand=ui.title("  Tonalify",20);brand.setSingleLine();brand.setContentDescription("Tonal Hub");ui.clickable(brand,()->{leave.run();home();});ui.weight(header,brand);
+        header.addView(ui.icon("search","Buscar no Spotify",()->{leave.run();search();}),new LinearLayout.LayoutParams(dp(44),dp(44)));
+        header.addView(ui.icon("heart","Biblioteca pessoal, estatísticas e letras",favorites),new LinearLayout.LayoutParams(dp(44),dp(44)));
+        header.addView(ui.icon("audio","Áudio",this::audioSettings),new LinearLayout.LayoutParams(dp(44),dp(44)));
+        header.addView(ui.icon("account","Conta",this::account),new LinearLayout.LayoutParams(dp(44),dp(44)));return header;
+    }
     private void buildShell(){
         root=ui.column();root.setBackgroundColor(Ui.BG);
         Ui.insets(root);
-        LinearLayout header=ui.row();ui.pad(header,12,4);ImageView logo=new ImageView(this);logo.setImageDrawable(new Ui.Symbol("logo",Ui.BLUE));header.addView(logo,new LinearLayout.LayoutParams(dp(30),dp(30)));TextView brand=ui.title("  Tonalify",20);brand.setSingleLine();brand.setContentDescription("Tonal Hub");ui.clickable(brand,()->HubActivity.open(this,HubActivity.class,""));ui.weight(header,brand);
-        header.addView(ui.icon("search","Buscar no Spotify",this::search),new LinearLayout.LayoutParams(dp(44),dp(44)));
-        header.addView(ui.icon("heart","Biblioteca pessoal, estatísticas e letras",()->MusicPanel.show(this,api)),new LinearLayout.LayoutParams(dp(44),dp(44)));
-        header.addView(ui.icon("audio","Áudio",this::audioSettings),new LinearLayout.LayoutParams(dp(44),dp(44)));
-        header.addView(ui.icon("account","Conta",this::account),new LinearLayout.LayoutParams(dp(44),dp(44)));root.addView(header);
+        root.addView(toolbar(()->{},()->MusicPanel.show(this,api)));
         status=ui.text(NativeBridge.status,11,Ui.MUTED);status.setId(R.id.playback_status);status.setMaxLines(2);ui.pad(status,16,2);root.addView(status);
         body=ui.column();root.addView(body,new LinearLayout.LayoutParams(-1,0,1));
         LinearLayout transport=ui.column();ui.pad(transport,10,4);LinearLayout mini=ui.row();ui.pad(mini,8,5);ui.rounded(mini,Ui.CARD,8);
@@ -151,7 +157,10 @@ public final class MainActivity extends Activity {
             case "Sair do Spotify":pendingPlayback=null;connecting=false;stopService(new Intent(this,PlaybackService.class));api.logout();engineApi.logout();clearAudioCredentials();local=false;currentTrack=null;currentUri="";now.setText("Escolha sua música");byline.setText("Spotify e arquivos locais");nowCover.setImageDrawable(new Ui.Symbol("image",Ui.MUTED));home();break;
         }}).setNegativeButton("Fechar",null).show();
     }
+    void cancelMix(){if(listeningMix!=null)listeningMix.cancel();}
+    void playMix(ArrayList<JSONObject> tracks,int selected,boolean random,boolean discovery,boolean album){if(listeningMix==null)listeningMix=new ListeningMix(api,MusicStore.get(this));listeningMix.prepare(tracks,selected,random,discovery,album,result->{if(!destroyed&&!result.isEmpty()){NativeBridge.command("shuffle:off");playTracks(result,0,"",result.get(0));}},this::notice);}
     void playTracks(ArrayList<JSONObject> tracks,int index,String context,JSONObject selected){
+        cancelMix();
         if(!api.loggedIn()){login();return;}if(index<0||index>=tracks.size())return;
         if(!selected.optString("uri").startsWith("spotify:track:")||selected.optBoolean("is_local")||(selected.has("is_playable")&&!selected.optBoolean("is_playable"))){notice("Esta faixa não está disponível para streaming nesta conta.");return;}
         for(JSONObject metadata:tracks)MusicStore.get(this).remember(MusicStore.spotifyTrack(metadata));
@@ -161,7 +170,8 @@ public final class MainActivity extends Activity {
         if(NativeBridge.ready){Runnable run=pendingPlayback;pendingPlayback=null;run.run();}else if(!connecting)connectSpotify();
     }
     void searchArtist(String query){catalog.search(query);}
-    void playPersonal(JSONArray values){ArrayList<JSONObject> tracks=new ArrayList<>();for(Object v:MusicStore.values(values)){JSONObject t=(JSONObject)v;if(t.optString("provider").equals("Local")){if(tracks.isEmpty()){playLocal(new File(t.optString("localFile")),t.optString("title"));return;}continue;}if(!t.optString("provider").equals("Spotify"))continue;JSONObject item=new JSONObject();MusicStore.put(item,"uri",t.optString("uri"));MusicStore.put(item,"name",t.optString("title"));MusicStore.put(item,"duration_ms",t.optInt("durationMs"));JSONObject artist=new JSONObject();MusicStore.put(artist,"name",t.optString("artist"));MusicStore.put(artist,"id",t.optString("artistId"));MusicStore.put(item,"artists",new JSONArray().put(artist));JSONObject album=new JSONObject();MusicStore.put(album,"name",t.optString("album"));MusicStore.put(album,"id",t.optString("albumId"));JSONObject img=new JSONObject();MusicStore.put(img,"url",t.optString("image"));MusicStore.put(album,"images",new JSONArray().put(img));MusicStore.put(item,"album",album);tracks.add(item);}if(!tracks.isEmpty())playTracks(tracks,0,"",tracks.get(0));}
+    void playPersonal(JSONArray values){playPersonalMix(values,false,false);}
+    void playPersonalMix(JSONArray values,boolean random,boolean discovery){ArrayList<JSONObject> tracks=new ArrayList<>();for(Object v:MusicStore.values(values)){JSONObject t=(JSONObject)v;if(t.optString("provider").equals("Local")){if(tracks.isEmpty()){playLocal(new File(t.optString("localFile")),t.optString("title"));return;}continue;}if(!t.optString("provider").equals("Spotify"))continue;JSONObject item=new JSONObject();MusicStore.put(item,"uri",t.optString("uri"));MusicStore.put(item,"name",t.optString("title"));MusicStore.put(item,"duration_ms",t.optInt("durationMs"));JSONObject artist=new JSONObject();MusicStore.put(artist,"name",t.optString("artist"));MusicStore.put(artist,"id",t.optString("artistId"));MusicStore.put(item,"artists",new JSONArray().put(artist));JSONObject album=new JSONObject();MusicStore.put(album,"name",t.optString("album"));MusicStore.put(album,"id",t.optString("albumId"));if(t.optInt("year")>0)MusicStore.put(album,"release_date",String.valueOf(t.optInt("year")));JSONObject img=new JSONObject();MusicStore.put(img,"url",t.optString("image"));MusicStore.put(album,"images",new JSONArray().put(img));MusicStore.put(item,"album",album);tracks.add(item);}if(!tracks.isEmpty()){if(random||discovery)playMix(tracks,0,random,discovery,false);else playTracks(tracks,0,"",tracks.get(0));}}
     void trackPersonalMenu(JSONObject track){MusicPanel.trackMenu(this,api,track);}
     private void setTrack(JSONObject item){MusicStore journal=MusicStore.get(this);journal.select(MusicStore.spotifyTrack(item));if(musicMetadata==null){if(journal.metadata!=null)journal.metadata.close();musicMetadata=new MusicMetadata(journal,api);journal.metadata=musicMetadata;}musicMetadata.enrich(journal.current);currentTrack=item;currentUri=item.optString("uri");if(!currentUri.isEmpty()&&!currentUri.equals(queriedLikeUri)){queriedLikeUri=currentUri;String requested=currentUri;api.get("me/library/contains?uris="+SpotifyClient.encode(requested),r->{JSONArray items=r.optJSONArray("items");if(requested.equals(currentUri)&&items!=null&&items.length()>0)MusicStore.get(this).favorite(MusicStore.spotifyTrack(item),items.optBoolean(0));},error->{});}now.setText(item.optString("name"));byline.setText(CatalogScreen.artists(item));durationMs=item.optInt("duration_ms");artwork.load(nowCover,journal.current.optString("image"));}
     private void updatePlayer(JSONObject json){if(local||!NativeBridge.ready)return;JSONObject device=json.optJSONObject("device");if(engineDeviceId.isEmpty())try{engineDeviceId=new String(java.nio.file.Files.readAllBytes(new File(new File(getFilesDir(),SpotifyClient.ENGINE_CACHE),"device-id").toPath()),StandardCharsets.UTF_8).trim();}catch(IOException ignored){}if(device==null||engineDeviceId.isEmpty()||!engineDeviceId.equals(device.optString("id")))return;JSONObject item=json.optJSONObject("item");if(item!=null){if(!expectedUri.isEmpty()){if(!expectedUri.equals(item.optString("uri"))&&SystemClock.elapsedRealtime()<expectedUntil)return;expectedUri="";}if(!item.optString("uri").equals(currentUri)||currentTrack==null||Artwork.url(currentTrack).isEmpty())setTrack(item);positionMs=json.optInt("progress_ms");positionAt=SystemClock.elapsedRealtime();clockPlaying=NativeBridge.playing&&json.optBoolean("is_playing");durationMs=item.optInt("duration_ms");}}
@@ -205,5 +215,5 @@ public final class MainActivity extends Activity {
     }
     @Override protected void onStart(){super.onStart();handler.removeCallbacks(ticker);handler.post(ticker);}
     @Override protected void onStop(){handler.removeCallbacks(ticker);super.onStop();}
-    @Override protected void onDestroy(){destroyed=true;MusicStore journal=MusicStore.get(this);if(journal.metadata!=null&&journal.metadata.uses(api)){journal.metadata.close();journal.metadata=null;}musicMetadata=null;NativeBridge.listeners.remove(statusListener);NativeBridge.commandListeners.remove(commandObserver);handler.removeCallbacks(ticker);catalog.close();artwork.close();api.close();engineApi.close();super.onDestroy();}
+    @Override protected void onDestroy(){destroyed=true;cancelMix();MusicStore journal=MusicStore.get(this);if(journal.metadata!=null&&journal.metadata.uses(api)){journal.metadata.close();journal.metadata=null;}musicMetadata=null;NativeBridge.listeners.remove(statusListener);NativeBridge.commandListeners.remove(commandObserver);handler.removeCallbacks(ticker);catalog.close();artwork.close();api.close();engineApi.close();super.onDestroy();}
 }

@@ -505,7 +505,7 @@ QString Player::targetDeviceForPlay() const {
 }
 
 void Player::sendPlay(const QJsonObject &body, const QString &deviceId,
-                      bool retried) {
+                      bool retried, bool ordered) {
   if (deviceId.isEmpty() &&
       (m_librespot->state() == LibrespotProcess::Starting ||
        m_librespot->state() == LibrespotProcess::Crashed)) {
@@ -524,15 +524,17 @@ void Player::sendPlay(const QJsonObject &body, const QString &deviceId,
   QVariantMap q;
   if (!deviceId.isEmpty())
     q.insert(QStringLiteral("device_id"), deviceId);
-  ++m_transportGeneration;
+  const auto intent=++m_transportGeneration;
   m_transportIntentClock.restart();
   m_api->put(
       QStringLiteral("/me/player/play"), q,
       body.isEmpty() ? QJsonDocument() : QJsonDocument(body),
-      [this, body, retried](int status, const QJsonDocument &) {
+      [this, body, retried, ordered, intent, deviceId](int status, const QJsonDocument &) {
+        if(ordered&&intent!=m_transportGeneration)return;
+        if(ordered&&status>=200&&status<300){QVariantMap query{{"state",false}};if(!deviceId.isEmpty())query["device_id"]=deviceId;m_api->put("/me/player/shuffle",query,{},[this,intent](int s,const QJsonDocument&){if(intent!=m_transportGeneration)return;if(s>=200&&s<300){m_shuffle=false;emit stateChanged();}else emit message(tr("Não foi possível confirmar a ordem do mix no dispositivo."));});}
         if (status == 404 && !retried && !m_localDeviceId.isEmpty()) {
           // NO_ACTIVE_DEVICE: o dispositivo ativo sumiu, toca aqui.
-          sendPlay(body, m_localDeviceId, true);
+          sendPlay(body, m_localDeviceId, true, ordered);
           return;
         }
         if (status == 404)
@@ -545,6 +547,7 @@ void Player::sendPlay(const QJsonObject &body, const QString &deviceId,
 }
 
 void Player::togglePlay() {
+  emit playbackRequested();
   if (localPlayback()) {
     m_audio->toggleLocalPlay();
     return;
@@ -578,6 +581,7 @@ void Player::togglePlay() {
 }
 
 void Player::pause() {
+  emit playbackRequested();
   if (localPlayback()) {
     if (m_audio->localPlaying())
       m_audio->toggleLocalPlay();
@@ -601,6 +605,7 @@ void Player::pause() {
 }
 
 void Player::next() {
+  emit playbackRequested();
   if (localPlayback()) {
     emit message(tr("Abra outro arquivo pelo painel de áudio."));
     return;
@@ -613,6 +618,7 @@ void Player::next() {
 }
 
 void Player::previous() {
+  emit playbackRequested();
   if (localPlayback()) {
     m_audio->seekLocal(0);
     return;
@@ -713,6 +719,8 @@ void Player::toggleLike() {
 
 void Player::playContext(const QString &contextUri, const QString &offsetUri,
                          int offsetIndex) {
+  emit playbackRequested();
+  ++m_transportGeneration;
   if (localPlayback())
     m_audio->returnToSpotify();
   cancelResume();
@@ -728,6 +736,8 @@ void Player::playContext(const QString &contextUri, const QString &offsetUri,
 }
 
 void Player::playUris(const QStringList &uris, int offsetIndex) {
+  emit playbackRequested();
+  ++m_transportGeneration;
   if (localPlayback())
     m_audio->returnToSpotify();
   cancelResume();
@@ -745,6 +755,8 @@ void Player::playUris(const QStringList &uris, int offsetIndex) {
   };
   sendPlay(body, targetDeviceForPlay());
 }
+
+void Player::playOrderedUris(const QStringList& uris){if(uris.isEmpty())return;emit playbackRequested();cancelResume();if(localPlayback())m_audio->returnToSpotify();m_lastUris=uris.mid(0,500);m_shuffle=false;emit stateChanged();QJsonObject body{{"uris",QJsonArray::fromStringList(m_lastUris)},{"offset",QJsonObject{{"position",0}}}};sendPlay(body,targetDeviceForPlay(),false,true);}
 
 void Player::addToQueue(const QString &uri) {
   m_api->post(

@@ -21,3 +21,12 @@ extern "C" JNIEXPORT jdoubleArray JNICALL Java_app_tonal_android_TextPlaylistNat
     for(int i=0;i<count;++i){auto t=static_cast<jstring>(e->GetObjectArrayElement(titles,i)),a=static_cast<jstring>(e->GetObjectArrayElement(artists,i));input.push_back({fromString(e,t),fromString(e,a),pop[i]});e->DeleteLocalRef(t);e->DeleteLocalRef(a);}
     auto ranked=tonal::playlist::rank({bytes(e,artist),bytes(e,title),{}},input);std::vector<jdouble> out;for(const auto &r:ranked){out.push_back(r.index);out.push_back(r.score);out.push_back(r.highConfidence?1:0);}auto result=e->NewDoubleArray(jsize(out.size()));e->SetDoubleArrayRegion(result,0,jsize(out.size()),out.data());return result;
 }
+
+#include "playback/ListeningMixCore.hpp"
+namespace {
+jintArray mixInts(JNIEnv*e,const std::vector<int>&v){auto a=e->NewIntArray(jsize(v.size()));e->SetIntArrayRegion(a,0,jsize(v.size()),v.data());return a;}
+std::vector<tonal::mix::Track> mixTracks(JNIEnv*e,jobjectArray array,int limit){std::vector<tonal::mix::Track> out;if(!array)return out;int n=e->GetArrayLength(array);if(n%7||n>limit*7)return out;for(int i=0;i<n;i+=7){std::string f[7];for(int j=0;j<7;++j){auto s=static_cast<jstring>(e->GetObjectArrayElement(array,i+j));f[j]=fromString(e,s);e->DeleteLocalRef(s);}int year=std::atoi(f[4].c_str()),heard=std::atoi(f[5].c_str());out.push_back({f[0],f[1],f[2],f[3],year,bool(heard&1),bool(heard&2),unsigned(std::atoi(f[6].c_str()))});}return out;}
+}
+extern "C" JNIEXPORT jintArray JNICALL Java_app_tonal_android_ListeningMixNative_order(JNIEnv*e,jclass,jint count,jint seed){return mixInts(e,tonal::mix::order(count,seed));}
+extern "C" JNIEXPORT jintArray JNICALL Java_app_tonal_android_ListeningMixNative_plan(JNIEnv*e,jclass,jobjectArray source,jobjectArray pool,jint selected,jboolean random,jboolean discover,jint seed,jboolean album){try{return mixInts(e,tonal::mix::plan(mixTracks(e,source,500),mixTracks(e,pool,120),selected,random,discover,seed,album));}catch(const std::exception&x){error(e,x);return nullptr;}}
+extern "C" JNIEXPORT jobjectArray JNICALL Java_app_tonal_android_ListeningMixNative_queries(JNIEnv*e,jclass,jstring genres,jint year){return strings(e,tonal::mix::queries(fromString(e,genres),year));}

@@ -7,6 +7,11 @@ Dialog {
     id: panel
     required property var controller
     required property var audioEngine
+    property var mixController:null
+    property bool listShaken:false
+    property bool randomPlayback:false
+    property bool discoveryPlayback:false
+    property int mixSeed:Math.floor(Math.random()*2147483647)
     property bool textPlaylistAvailable:false
     signal textPlaylistRequested()
     signal textPlaylistResume(string id)
@@ -38,16 +43,19 @@ Dialog {
     signal nextRequested()
     parent: Overlay.overlay
     width: Math.min(1120,parent ? parent.width-32 : 1000)
-    height: Math.min(800,parent ? parent.height-32 : 700)
-    anchors.centerIn: parent
-    modal: true
+    height: Math.min(800,parent ? parent.height-90 : 700)
+    anchors.horizontalCenter: parent.horizontalCenter
+    y:72
+    modal: false
     title: "Sua música"
-    standardButtons: Dialog.Close
+    standardButtons: Dialog.NoButton
     background: Rectangle { color: "#141517"; radius: 18; border.color: "#303237" }
+    function playSelection(index){if(mixController)mixController.play(displayTracks,index,randomPlayback,discoveryPlayback,false);else controller.play(displayTracks,index)}
     function refresh() {
         revision++
         stats=controller.statistics(period.currentValue || 7,dimension.currentValue || "artists")
         displayTracks=drillTracks!==null ? drillTracks : selectedPlaylist ? controller.playlistTracks(selectedPlaylist) : controller.favorites
+        if(listShaken&&mixController){let original=displayTracks;displayTracks=mixController.order(original.length,mixSeed).map(i=>original[i])}
     }
     onOpened: {refresh();controller.refreshMetadata();ensureLyrics()}
     onPositionChanged: {
@@ -70,7 +78,8 @@ Dialog {
             Label { text: panel.controller.current.title || "Escolha uma música no player"; textFormat: Text.PlainText; font.pixelSize: 20; font.bold: true; elide: Text.ElideRight; Layout.fillWidth: true }
             ActionIcon { symbol:"heart";filled:{panel.revision;return panel.controller.liked(panel.controller.current)} description:filled?"Remover das favoritas":"Favoritar música"; enabled: !!panel.controller.current.title; onClicked: panel.controller.favorite(panel.controller.current) }
             ActionIcon { symbol:"plus";description:"Adicionar à playlist"; enabled: !!panel.controller.current.title; onClicked: addMenu.open() }
-            Button { text: "Backup"; onClicked: backupMenu.open() }
+            ActionIcon {symbol:"save";description:"Backup da biblioteca";onClicked:backupMenu.open()}
+            ActionIcon {symbol:"close";description:"Fechar página da música";onClicked:panel.close()}
             Menu { id: backupMenu; MenuItem { text:"Exportar backup…"; onTriggered: backupSave.open() } MenuItem { text:"Restaurar backup…"; onTriggered: restoreConfirm.open() } }
             Menu { id: addMenu; Repeater { model: panel.controller.playlists; MenuItem { required property var modelData; text: modelData.name; onTriggered: panel.controller.addToPlaylist(modelData.id,panel.controller.current) } } MenuItem { text: "Criar playlist…"; onTriggered: createDialog.open() } MenuItem {text:"Criar com Text to Tonalify…";visible:panel.textPlaylistAvailable;onTriggered:panel.textPlaylistRequested()} }
         }
@@ -78,13 +87,19 @@ Dialog {
         TabBar {
             id: tabs; Layout.fillWidth: true
             onCurrentIndexChanged: {if(panel.audioEngine)panel.audioEngine.visualizerActive=panel.visible && currentIndex===2 && (panel.controller.background==="Ondas" || panel.controller.background==="Espectro");Qt.callLater(panel.ensureLyrics)}
-            TabButton { text: "Favoritas e playlists" }
-            TabButton { text: "Estatísticas" }
-            TabButton { text: "Letras e cenário" }
+            TabButton { Accessible.name:"Biblioteca";contentItem:ActionIcon{symbol:"library";description:"Biblioteca";filled:tabs.currentIndex===0;onClicked:tabs.currentIndex=0} }
+            TabButton { Accessible.name:"Estatísticas";contentItem:ActionIcon{symbol:"chart";description:"Estatísticas";filled:tabs.currentIndex===1;onClicked:tabs.currentIndex=1} }
+            TabButton { Accessible.name:"Letras";contentItem:ActionIcon{symbol:"lyrics";description:"Letras";filled:tabs.currentIndex===2;onClicked:tabs.currentIndex=2} }
         }
         StackLayout {
             Layout.fillWidth: true; Layout.fillHeight: true; currentIndex: tabs.currentIndex
             ColumnLayout {
+                RowLayout {visible:!!panel.mixController
+                    ActionIcon{symbol:"shake";description:"Embaralhar lista / restaurar ordem";filled:panel.listShaken;onClicked:{panel.mixController.cancel();panel.listShaken=!panel.listShaken;panel.refresh()}}
+                    ActionIcon{symbol:"random";description:"Reprodução aleatória";filled:panel.randomPlayback;onClicked:{panel.mixController.cancel();panel.randomPlayback=!panel.randomPlayback}}
+                    ActionIcon{symbol:"discover";description:"Descoberta 2+1";filled:panel.discoveryPlayback;onClicked:{panel.mixController.cancel();panel.discoveryPlayback=!panel.discoveryPlayback}}
+                    Label{text:panel.mixController?panel.mixController.status:"";wrapMode:Text.WordWrap;Layout.fillWidth:true;color:"#9bcfe1"}
+                }
                 RowLayout {
                     ComboBox { Layout.fillWidth: true; textRole: "name"; valueRole: "id"; model: [{name:"Músicas favoritas",id:""}].concat(panel.controller.playlists); onActivated: {panel.drillTracks=null;panel.selectedPlaylist=currentValue;panel.refresh()} }
                     Button { text: "Criar"; onClicked: createDialog.open() }
@@ -115,7 +130,7 @@ Dialog {
                                 Label { text: modelData.title; textFormat: Text.PlainText; elide: Text.ElideRight; Layout.fillWidth: true; font.bold: true }
                                 Label { text: (modelData.artist || "Artista não informado")+" • "+modelData.provider; textFormat: Text.PlainText; color: "#b5c9d6"; elide: Text.ElideRight; Layout.fillWidth: true }
                             }
-                            Button { text: "▶"; onClicked: panel.controller.play(panel.displayTracks,index) }
+                            Button { text: "▶"; onClicked: panel.playSelection(index) }
                             Button { text: panel.selectedPlaylist?"Remover":"♥"; onClicked: panel.selectedPlaylist?panel.controller.removeFromPlaylist(panel.selectedPlaylist,index):panel.controller.favorite(modelData) }
                         }
                     }

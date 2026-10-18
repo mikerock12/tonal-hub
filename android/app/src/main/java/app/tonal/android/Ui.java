@@ -34,6 +34,11 @@ final class Ui {
         Symbol(String name,int color){this.name=name;p.setColor(color);p.setStrokeWidth(1.8f);p.setStrokeCap(Paint.Cap.ROUND);p.setStrokeJoin(Paint.Join.ROUND);}
         public void draw(Canvas canvas){canvas.save();Rect b=getBounds();float side=Math.min(b.width(),b.height());canvas.translate(b.left+(b.width()-side)/2f,b.top+(b.height()-side)/2f);canvas.scale(side/24f,side/24f);p.setStyle(Paint.Style.STROKE);
             switch(name){
+                case "now":canvas.drawCircle(12,12,9,p);canvas.drawCircle(12,12,3,p);canvas.drawArc(6,6,18,18,210,60,false,p);break;
+                case "lyrics":canvas.drawLine(4,5,20,5,p);canvas.drawLine(4,10,17,10,p);canvas.drawLine(4,15,20,15,p);canvas.drawLine(4,20,14,20,p);break;
+                case "shake":canvas.drawLine(3,5,15,5,p);canvas.drawLine(3,12,11,12,p);canvas.drawLine(3,19,15,19,p);canvas.drawLine(17,4,21,8,p);canvas.drawLine(21,8,17,12,p);canvas.drawLine(21,13,17,17,p);canvas.drawLine(17,17,21,21,p);break;
+                case "random":canvas.drawRoundRect(3,3,21,21,4,4,p);p.setStyle(Paint.Style.FILL);canvas.drawCircle(8,8,1.6f,p);canvas.drawCircle(16,16,1.6f,p);canvas.drawCircle(12,12,1.6f,p);break;
+                case "discover":canvas.drawCircle(12,12,9,p);Path compass=new Path();compass.moveTo(16,7);compass.lineTo(14,14);compass.lineTo(7,17);compass.lineTo(10,10);compass.close();canvas.drawPath(compass,p);break;
                 case "up":canvas.drawLine(5,15,12,8,p);canvas.drawLine(12,8,19,15,p);break;
                 case "down":canvas.drawLine(5,9,12,16,p);canvas.drawLine(12,16,19,9,p);break;
                 case "chevron":canvas.drawLine(8,5,16,12,p);canvas.drawLine(16,12,8,19,p);break;

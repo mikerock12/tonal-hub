@@ -12,6 +12,7 @@
 #include <memory>
 
 class MusicCompanion : public QObject {
+  friend class ListeningMix;
   Q_OBJECT
   Q_PROPERTY(QVariantMap current READ current NOTIFY currentChanged)
   Q_PROPERTY(QVariantList favorites READ favorites NOTIFY changed)
@@ -37,6 +38,7 @@ public:
   bool busy() const{return m_busy;}
   bool historyEnabled() const{return m_data.value("history").toBool(true);}
   void setHistoryEnabled(bool);
+  void rememberTracks(const QVariantList&);
   QString background() const{return m_data.value("background").toString("Aurora");}
   void setBackground(const QString &);
   QString photo() const{return m_data.value("photo").toString();}

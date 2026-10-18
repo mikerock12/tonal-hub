@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(Tonal VERSION 0.9.0 LANGUAGES C CXX)
+project(Tonal VERSION 0.10.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -18,7 +18,7 @@ target_link_libraries(tonal_companion PUBLIC Qt6::Core Qt6::Network Qt6::Sql)
 if(MSVC)
     target_compile_options(tonal_companion PRIVATE /utf-8 /W4)
 endif()
-add_library(tonal_playlist_core STATIC src/playlist/TextPlaylistCore.cpp)
+add_library(tonal_playlist_core STATIC src/playlist/TextPlaylistCore.cpp src/playback/ListeningMixCore.cpp)
 target_include_directories(tonal_playlist_core PUBLIC src)
 add_library(tonal_text_playlist STATIC src/playlist/TextPlaylistImport.hpp src/playlist/TextPlaylistImport.cpp)
 target_link_libraries(tonal_text_playlist PUBLIC tonal_playlist_core tonal_companion Qt6::Gui)
@@ -30,6 +30,7 @@ endif()
 set(TONAL_SOURCES
     src/main.cpp
     src/App.h               src/App.cpp
+    src/playback/ListeningMix.hpp src/playback/ListeningMix.cpp
     src/AuthManager.h       src/AuthManager.cpp
     src/TokenStore.h        src/TokenStore.cpp
     src/SpotifyApi.h        src/SpotifyApi.cpp
@@ -209,6 +210,9 @@ get_target_property(TONAL_QT_CORE_PATH Qt6::Core IMPORTED_LOCATION_RELEASE)
 get_filename_component(TONAL_QT_BIN "${TONAL_QT_CORE_PATH}" DIRECTORY)
 get_filename_component(TONAL_QT_ROOT "${TONAL_QT_BIN}/.." ABSOLUTE)
 if(BUILD_TESTING)
+    add_executable(TonalMixChecks tests/mix/CoreChecks.cpp)
+    target_link_libraries(TonalMixChecks PRIVATE tonal_playlist_core)
+    add_test(NAME listening_mix_core COMMAND TonalMixChecks)
     add_executable(TonalTextPlaylistTests tests/playlist/ImportChecks.cpp)
     target_link_libraries(TonalTextPlaylistTests PRIVATE tonal_text_playlist)
     if(MSVC)
@@ -235,9 +239,9 @@ if(BUILD_TESTING)
 endif()
 if(BUILD_TESTING AND TONAL_ADVANCED_AUDIO)
     add_executable(TonalSpotifyRecoveryTests tests/spotify/RecoveryTests.cpp
-        src/LibrespotProcess.cpp src/Player.cpp src/SpotifyApi.cpp src/AuthManager.cpp)
+        src/LibrespotProcess.cpp src/Player.cpp src/SpotifyApi.cpp src/AuthManager.cpp src/playback/ListeningMix.cpp src/playback/ListeningMix.hpp)
     target_include_directories(TonalSpotifyRecoveryTests PRIVATE src)
-    target_link_libraries(TonalSpotifyRecoveryTests PRIVATE tonal_audio tonal_indie_catalog Qt6::Qml)
+    target_link_libraries(TonalSpotifyRecoveryTests PRIVATE tonal_audio tonal_indie_catalog tonal_companion tonal_playlist_core Qt6::Qml)
     if(MSVC)
         target_compile_options(TonalSpotifyRecoveryTests PRIVATE /utf-8 /W4)
     endif()
