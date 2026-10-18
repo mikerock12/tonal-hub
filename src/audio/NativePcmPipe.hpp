@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <cstddef>
 #include <vector>
 namespace tonal::audio
 {
@@ -19,5 +20,8 @@ class NativePcmPipe
   private:
     void *m_read = nullptr, *m_write = nullptr;
     std::vector<char> m_pending;
+    // Absolute byte position modulo one F32 stereo frame. A flush must not
+    // reinterpret the middle of a float/channel pair as a new frame.
+    size_t m_streamOffset = 0, m_discardBytes = 0;
 };
 } // namespace tonal::audio

@@ -5,6 +5,7 @@
 #include "audio/AudioEngine.hpp"
 #include <QCoreApplication>
 #include <QDir>
+#include <QDirIterator>
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonArray>
@@ -18,6 +19,7 @@
 #include <algorithm>
 #include <cstring>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 #ifdef _WIN32
 #define NOMINMAX
@@ -166,6 +168,31 @@ public:
       require(
           QFile::copy(saved, storage.path() + "/librespot/credentials.json"),
           "Could not prepare isolated live-session cache");
+      const bool verifyTransitions = QCoreApplication::arguments().contains("--verify-transitions");
+      if (verifyTransitions) {
+        // Exercise a COPY of the user's cache/settings; never remove or change
+        // production cached audio, saved login, or DSP preferences.
+        const auto root = QFileInfo(saved).absolutePath();
+        QDirIterator files(root + "/files", QDir::Files, QDirIterator::Subdirectories);
+        qint64 bytes = 0;
+        int count = 0;
+        while (files.hasNext()) {
+          const auto input = files.next();
+          bytes += QFileInfo(input).size();
+          require(++count <= 128 && bytes <= 128 * 1024 * 1024,
+                  "Diagnostic cache copy exceeds its safety bound");
+          const auto output = storage.path() + "/librespot/" + QDir(root).relativeFilePath(input);
+          require(QDir().mkpath(QFileInfo(output).absolutePath()) && QFile::copy(input, output),
+                  "Could not copy isolated cached audio");
+        }
+        report["copied_cache_files"] = count;
+        report["copied_cache_bytes"] = bytes;
+        const auto settings = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) + "/audio.json";
+        if (QFileInfo::exists(settings)) {
+          QDir().mkpath(storage.path() + "/audio");
+          require(QFile::copy(settings, storage.path() + "/audio/audio.json"), "DSP settings copy failed");
+        }
+      }
       // The temporary cache is deleted after child shutdown. Nothing is copied
       // into the build, portable package, report, console, or repository.
       tonal::audio::AudioEngine audio(nullptr, storage.path() + "/audio");
@@ -253,6 +280,43 @@ public:
               30000),
           "New track selected during recovery did not play on the real engine");
       report["new_track_during_recovery_played"] = true;
+      if (verifyTransitions) {
+        const int before = recoveries;
+        int transitions = 0;
+        for (int n = 0; n < 4; ++n) {
+          const auto uri = tracks[n % 2];
+          auto frames = audio.spotifyFramesRead();
+          player.playUris({uri});
+          require(spin([&] { return player.trackUri() == uri &&
+                       audio.spotifyFramesRead() > frames + 96000 &&
+                       player.isPlaying() && player.playingHere(); }, 20000),
+                  "Real track change/return did not produce PCM");
+          frames = audio.spotifyFramesRead();
+          player.seek(30000 + n * 1000);
+          require(spin([&] { return audio.spotifyFramesRead() > frames + 96000; }, 15000),
+                  "Real seek stopped PCM");
+          require(audio.metrics().value("invalidSamples").toDouble() == 0 &&
+                      audio.metrics().value("peakDbfs", -120).toDouble() > -100,
+                  "Real PCM was invalid or remained silent");
+          ++transitions;
+        }
+        require(recoveries == before, "Unexpected recovery during track/seek verification");
+        report["track_returns_and_seeks"] = transitions;
+        report["metrics"] = QJsonObject::fromVariantMap(audio.metrics());
+        report["unexpected_recoveries_during_transitions"] = recoveries - before;
+        wait(2000); // exclude deliberate seeks/restarts from the steady phase
+        const auto steadyFrames = audio.spotifyFramesRead();
+        const int steadyUnderruns = audio.metrics().value("underruns").toInt();
+        wait(15000);
+        const auto steadyAdvanced = audio.spotifyFramesRead() - steadyFrames;
+        const int underrunDelta = audio.metrics().value("underruns").toInt() - steadyUnderruns;
+        report["steady_seconds"] = 15;
+        report["steady_pcm_frames"] = qint64(steadyAdvanced);
+        report["steady_underruns"] = underrunDelta;
+        require(steadyAdvanced > 44100 * 14 && underrunDelta == 0 &&
+                    recoveries == before && audio.metrics().value("invalidSamples").toDouble() == 0,
+                "Steady playback stalled, underrun, or produced invalid PCM");
+      }
       report["recovery_events"] = recoveries;
       report["final_pcm_frames"] = qint64(audio.spotifyFramesRead());
       // End only this diagnostic device's playback, with no changes to volume,
@@ -504,7 +568,7 @@ public:
       wait(800);
       require(lost == 0 && countRuns(counter) == 1,
               "watchdog restarted an intentionally paused player");
-    } else if (mode == "always-crash") {
+    } else if (mode == "always-crash" || mode == "invalid-always") {
       require(spin(
                   [&] {
                     return engine.m_autoRestartBlocked &&
@@ -513,6 +577,7 @@ public:
                   8000),
               "crash loop not bounded");
       require(countRuns(counter) == 4, "authentication reset crash budget");
+      require(audio.advancedEnabled(), "recovery disabled the user's DSP settings");
       qputenv("TONAL_TEST_RECOVERY_MODE", "healthy");
       engine.restart();
       require(spin([&] {
@@ -589,6 +654,8 @@ static int producer() {
   std::fill(std::begin(pcm), std::end(pcm), .001f);
   for (int n = 0; n < 3000; ++n) {
     if (!silent) {
+      if ((mode == "invalid-once" && run == 1) || mode == "invalid-always")
+        pcm[128] = std::numeric_limits<float>::quiet_NaN();
       DWORD written = 0;
       if (!WriteFile(output, pcm, sizeof(pcm), &written, nullptr))
         return 18;
@@ -622,7 +689,8 @@ int main(int argc, char **argv) {
       SpotifyRecoveryTests::deadlines();
 #ifdef _WIN32
       for (const auto *mode : {"crash-once", "eof-once", "stall-once",
-                               "panic-once", "paused", "always-crash"})
+                               "panic-once", "paused", "always-crash",
+                               "invalid-once", "invalid-always"})
         SpotifyRecoveryTests::pipeline(mode);
 #endif
       std::cout << "SPOTIFY_RECOVERY_PASS\n";
@@ -633,6 +701,8 @@ int main(int argc, char **argv) {
                  QJsonArray{"unexpected_process_exit",
                             "PCM_EOF_while_child_alive", "no_PCM_progress",
                             "Rust_panic", "intentional_pause_not_restarted",
+                            "invalid_PCM_recovered_without_disabling_DSP",
+                            "persistent_invalid_PCM_recovery_bounded",
                             "bounded_crash_loop_and_explicit_restart",
                             "API_and_token_total_deadlines",
                             "resume_position_and_queue",

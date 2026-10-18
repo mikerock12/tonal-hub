@@ -5,6 +5,7 @@
 #include "audio/IamfDecoderAdapter.hpp"
 #include "audio/LoudnessAnalyzer.hpp"
 #include "audio/NativePcmPipe.hpp"
+#include "PcmPipeCases.hpp"
 #include "audio/OpenALOutput.hpp"
 #include <AL/alext.h>
 #include <QCoreApplication>
@@ -82,6 +83,34 @@ void settingsTest()
     f.close();
     check(AudioSettings::load(path).bass == 0, "corrupt config fallback");
     std::cout << "PASS settings, bounds, atomic persistence\n";
+}
+void damagedPcmTest()
+{
+    AudioSettings settings;
+    settings.eqEnabled = true;
+    settings.eq[5] = 3;
+    DspGraph graph;
+    QString error;
+    auto in = tone(1000, .05);
+    in.samples.resize(1024);
+    check(graph.configure(in.format, settings, 0, error), error);
+    AudioFrame out;
+    for (float bad : {std::numeric_limits<float>::quiet_NaN(),
+                      std::numeric_limits<float>::infinity(), 1.e20f})
+    {
+        auto broken = in;
+        broken.samples[128] = bad;
+        check(!graph.process(broken, out, error) && out.samples.empty(),
+              "damaged PCM must be rejected before poisoning DSP state");
+        check(graph.process(in, out, error) && out.validPcm() && rms(out) > .001,
+              "valid audio after a bad block remains finite and audible");
+    }
+    OpenALOutput output;
+    check(output.open(in.format, false, error), error);
+    in.samples[0] = std::numeric_limits<float>::quiet_NaN();
+    check(!output.enqueue(in, error) && output.queued() == 0,
+          "invalid samples must never reach the audio device");
+    std::cout << "PASS invalid PCM blocked before DSP and OpenAL; healthy DSP state preserved\n";
 }
 void dspTest()
 {
@@ -551,11 +580,13 @@ int main(int argc, char **argv)
         check(argc > 1, "fixture directory required");
         const auto dir = QString::fromLocal8Bit(argv[1]);
         settingsTest();
+        damagedPcmTest();
         dspTest();
         decoderTest(dir);
         loudnessTest(dir);
         outputTest();
         pipeTest();
+        pipeDiscardAlignmentTest();
         iamfTest(dir);
         hrtfRenderTest();
         pauseRampTest(false);

@@ -116,6 +116,11 @@ void LibrespotProcess::setAudioEngine(tonal::audio::AudioEngine *engine) {
     if (m_process.state() != QProcess::NotRunning)
       beginRestart(true, "PCM input closed unexpectedly");
   });
+  connect(engine, &tonal::audio::AudioEngine::spotifyInputInvalid, this,
+          [this](const QString &reason) {
+            if (m_process.state() != QProcess::NotRunning)
+              beginRestart(true, "invalid PCM: " + reason);
+          });
 }
 
 QString LibrespotProcess::findExecutable() const {
@@ -447,7 +452,9 @@ void LibrespotProcess::handleLine(const QString &line) {
     qCWarning(lcLibrespot).noquote() << safeLog(line);
   else
     qCDebug(lcLibrespot).noquote() << safeLog(line);
-  if (isError || line.contains("panicked at"))
+  if (isError || line.contains("panicked at") ||
+      (line.contains(" WARN ") &&
+       (line.contains("librespot_playback") || line.contains("librespot_audio"))))
     logDiagnostic(line);
   if (m_stopping || m_restartRequested || m_autoRestartBlocked)
     return;
@@ -515,7 +522,7 @@ void LibrespotProcess::handleLine(const QString &line) {
       else if (line.contains(QLatin1String("command=Load {")))
         m_audio->setSpotifyPaused(line.contains(QLatin1String("play: false")));
       if (line.contains(QLatin1String("command=Seek(")) ||
-          line.contains(QLatin1String("Loading <")))
+          line.contains(QLatin1String("command=Load {")))
         m_audio->flushSpotify();
     }
     if (line.contains(QLatin1String("Loading <")) ||
@@ -525,6 +532,11 @@ void LibrespotProcess::handleLine(const QString &line) {
       emit playbackEvent();
     }
   }
+
+  // Loading also describes background preloads. Record it for track/cache
+  // diagnosis, but never reset the currently audible stream because of it.
+  if (line.contains("librespot_playback::player") && line.contains("Loading <"))
+    logDiagnostic(line);
 
   if (isError && m_state == Starting)
     setState(Starting, line.section(QLatin1Char(']'), 1).trimmed());

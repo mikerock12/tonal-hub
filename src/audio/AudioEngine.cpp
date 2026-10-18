@@ -605,7 +605,22 @@ void AudioEngine::run() {
     AudioFrame out;
     const auto dspStart = std::chrono::steady_clock::now();
     if (!dsp->process(in, out, error)) {
-      fail(error);
+      if (pipe) {
+        // Never pass damaged PCM through or keep a poisoned filter graph.
+        // Reopen the stream with the existing bounded recovery policy; keep
+        // the user's effects enabled instead of switching to a raw backend.
+        output.close();
+        opened = false;
+        pipe.reset();
+        dsp.reset();
+        ended = true;
+        const auto reason = error;
+        QMetaObject::invokeMethod(this, [this, generation, reason] {
+          if (m_generation == generation)
+            emit spotifyInputInvalid(reason);
+        }, Qt::QueuedConnection);
+      } else
+        fail(error);
       continue;
     }
     if(m_visualizer.load() && counters.blocks % 5 == 0)counters.visualize(out);
@@ -613,9 +628,6 @@ void AudioEngine::run() {
     counters.observe(out, std::chrono::duration<double, std::micro>(
                               std::chrono::steady_clock::now() - dspStart)
                               .count());
-    for (auto &s : out.samples)
-      if (!std::isfinite(s))
-        s = 0;
     if (!output.enqueue(out, error)) {
       fail(error);
       continue;

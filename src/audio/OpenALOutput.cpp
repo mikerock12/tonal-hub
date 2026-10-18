@@ -248,6 +248,11 @@ void OpenALOutput::collect()
 }
 bool OpenALOutput::enqueue(const AudioFrame &pcm, QString &error)
 {
+    if (!pcm.validPcm())
+    {
+        error = "PCM inválido recusado na saída de áudio";
+        return false;
+    }
     if (pcm.samples.empty())
         return true;
     if (!m_source || !(pcm.format == m_format))
