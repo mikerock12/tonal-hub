@@ -167,7 +167,11 @@ Rectangle {
                     iconSize: 16
                     strokePath: Icons.plusS
                     tooltip: qsTr("Criar playlist")
-                    onClicked: Playlists.create(function(p) { Nav.go("playlist", { id: p.id }) })
+                    onClicked: createPlaylistMenu.popup()
+                    DarkMenu { id:createPlaylistMenu
+                        DarkMenuItem {text:qsTr("Criar playlist vazia no Spotify");onTriggered:Playlists.create(function(p){Nav.go("playlist",{id:p.id})})}
+                        DarkMenuItem {text:qsTr("Criar com Text to Tonalify…");onTriggered:Playlists.textImportRequested()}
+                    }
                 }
                 IconButton {
                     iconSize: 16

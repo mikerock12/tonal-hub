@@ -530,6 +530,25 @@ public:
     std::cout << "PASS total deadlines for API/token; pending Player requests "
                  "recover\n";
   }
+  static void playlistTransport() {
+    FakeNetwork network;AuthManager auth(&network);SpotifyApi api(&network,&auth);fakeAuth(auth);
+    int requests=0,received=-1;
+    network.respond=[&](const QNetworkRequest &request,const QByteArray &body){
+      ++requests;
+      if(request.url().path().endsWith("/images")){
+        require(request.header(QNetworkRequest::ContentTypeHeader).toString()=="image/jpeg"&&body=="/9j/test-base64","cover transport changed raw JPEG payload");return Response{202,{}};
+      }
+      return Response{503,{}};
+    };
+    api.raw("POST","/me/playlists",{},"{}","application/json",[&](int s,const auto &){received=s;});
+    require(spin([&]{return received!=-1;}),"uncertain playlist POST did not finish");
+    require(received==503&&requests==1,"uncertain playlist POST retried automatically");
+    received=-1;api.raw("PUT","/playlists/fixture/images",{},"/9j/test-base64","image/jpeg",[&](int s,const auto &){received=s;});
+    require(spin([&]{return received!=-1;})&&received==202,"cover upload failed");
+    received=-1;api.raw("GET","https://other-origin.example/v1/playlists",{}, {},{},[&](int s,const auto &){received=s;});
+    require(received==400&&requests==2,"catalog token could reach another origin");
+    std::cout<<"PASS playlist raw transport: no uncertain POST retry, JPEG MIME and same-origin bearer guard\n";
+  }
   static int countRuns(const QString &path) {
     QFile file(path);
     if (!file.open(QIODevice::ReadOnly))
@@ -687,6 +706,7 @@ int main(int argc, char **argv) {
       SpotifyRecoveryTests::networkAndResume();
       SpotifyRecoveryTests::remoteTransport();
       SpotifyRecoveryTests::deadlines();
+      SpotifyRecoveryTests::playlistTransport();
 #ifdef _WIN32
       for (const auto *mode : {"crash-once", "eof-once", "stall-once",
                                "panic-once", "paused", "always-crash",

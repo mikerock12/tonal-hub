@@ -5,11 +5,16 @@ import QtQuick.Controls
 ApplicationWindow {
     id: window
     property alias audioEffectsController: audioPanel
-    function openMusic(){if(musicLoader.item)musicLoader.item.open();else musicLoader.setSource("qrc:/companion/qml/companion/MusicPanel.qml",{controller:App.music,audioEngine:App.audio})}
+    function openMusic(){if(musicLoader.item)musicLoader.item.open();else musicLoader.setSource("qrc:/companion/qml/companion/MusicPanel.qml",{controller:App.music,audioEngine:App.audio,textPlaylistAvailable:true})}
+    property string pendingTextPlaylistId:""
+    function openTextPlaylist(id){pendingTextPlaylistId=id || "";if(!textPlaylistLoader.active)textPlaylistLoader.active=true;else if(textPlaylistLoader.item){if(pendingTextPlaylistId)textPlaylistLoader.item.resume(pendingTextPlaylistId);else textPlaylistLoader.item.fresh()}}
+    Loader {id:textPlaylistLoader;active:false;sourceComponent:Component {TextPlaylistDialog {controller:App.textPlaylist}} onLoaded:{if(window.pendingTextPlaylistId)item.resume(window.pendingTextPlaylistId);else item.fresh()}}
+    Connections {target:textPlaylistLoader.item;function onAuthorizationRequested(){App.auth.login()}function onLocalPlaylistRequested(id){window.openMusic();if(musicLoader.item){musicLoader.item.section=0;musicLoader.item.selectedPlaylist=id;musicLoader.item.refresh()}}}
+    Connections {target:App.textPlaylist;function onSpotifyChanged(){Playlists.listChanged()}}
     Loader { id: musicLoader; onLoaded: item.open() }
     Binding { target: musicLoader.item; property: "position"; value: App.player.positionMs; when: !!musicLoader.item }
     Binding { target: musicLoader.item; property: "playing"; value: App.player.isPlaying && App.player.playingHere; when: !!musicLoader.item }
-    Connections { target: musicLoader.item; function onDiscover(artist){Nav.go("search",{query:artist})} function onTogglePlayback(){App.player.togglePlay()} function onPreviousRequested(){App.player.previous()} function onNextRequested(){App.player.next()} }
+    Connections { target: musicLoader.item; function onTextPlaylistRequested(){musicLoader.item.close();window.openTextPlaylist("")} function onTextPlaylistResume(id){musicLoader.item.close();window.openTextPlaylist(id)} function onDiscover(artist){Nav.go("search",{query:artist})} function onTogglePlayback(){App.player.togglePlay()} function onPreviousRequested(){App.player.previous()} function onNextRequested(){App.player.next()} }
 
     width: 1280
     height: 820
@@ -316,6 +321,7 @@ ApplicationWindow {
     Connections {
         target: Playlists
         function onPermissionNeeded() { permissionDialog.open() }
+        function onTextImportRequested() {window.openTextPlaylist("")}
     }
     Connections {
         target: App.auth

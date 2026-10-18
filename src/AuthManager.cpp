@@ -38,6 +38,7 @@ const char *kScopes =
     "user-follow-modify "
     "playlist-modify-public "
     "playlist-modify-private "
+    "ugc-image-upload "
     "playlist-read-private "
     "playlist-read-collaborative";
 

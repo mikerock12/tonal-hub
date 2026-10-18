@@ -40,6 +40,10 @@ public:
             const QJsonDocument &body, Callback cb = {});
   void del(const QString &path, const QVariantMap &query,
            const QJsonDocument &body, Callback cb = {});
+  // Import writes never retry an uncertain 5xx POST (could duplicate a list).
+  void raw(const QByteArray &method,const QString &path,const QVariantMap &query,
+           const QByteArray &body,const QByteArray &contentType,Callback cb,
+           std::function<bool()> isCurrent = {});
 
   // Para o QML: App.api.call("GET", "/me/playlists", {limit: 50}, null,
   // function(status, data) {...})
@@ -62,6 +66,8 @@ private:
     Callback cb;
     int attempts = 0;
     std::function<bool()> isCurrent;
+    QByteArray contentType = "application/json";
+    bool retryServer = true;
   };
 
   QUrl buildUrl(const QString &path, const QVariantMap &query) const;

@@ -7,6 +7,9 @@ Dialog {
     id: panel
     required property var controller
     required property var audioEngine
+    property bool textPlaylistAvailable:false
+    signal textPlaylistRequested()
+    signal textPlaylistResume(string id)
     property int position: 0
     property bool playing: false
     property int revision: 0
@@ -69,7 +72,7 @@ Dialog {
             ActionIcon { symbol:"plus";description:"Adicionar à playlist"; enabled: !!panel.controller.current.title; onClicked: addMenu.open() }
             Button { text: "Backup"; onClicked: backupMenu.open() }
             Menu { id: backupMenu; MenuItem { text:"Exportar backup…"; onTriggered: backupSave.open() } MenuItem { text:"Restaurar backup…"; onTriggered: restoreConfirm.open() } }
-            Menu { id: addMenu; Repeater { model: panel.controller.playlists; MenuItem { required property var modelData; text: modelData.name; onTriggered: panel.controller.addToPlaylist(modelData.id,panel.controller.current) } } MenuItem { text: "Criar playlist…"; onTriggered: createDialog.open() } }
+            Menu { id: addMenu; Repeater { model: panel.controller.playlists; MenuItem { required property var modelData; text: modelData.name; onTriggered: panel.controller.addToPlaylist(modelData.id,panel.controller.current) } } MenuItem { text: "Criar playlist…"; onTriggered: createDialog.open() } MenuItem {text:"Criar com Text to Tonalify…";visible:panel.textPlaylistAvailable;onTriggered:panel.textPlaylistRequested()} }
         }
         Label { visible: panel.notice.length>0; text: panel.notice; textFormat: Text.PlainText; wrapMode: Text.WordWrap; color: "#ffcc8d"; Layout.fillWidth: true }
         TabBar {
@@ -87,6 +90,18 @@ Dialog {
                     Button { text: "Criar"; onClicked: createDialog.open() }
                     Button { text: "Renomear"; enabled: !!panel.selectedPlaylist; onClicked: renameDialog.open() }
                     Button { text: "Excluir playlist"; enabled: !!panel.selectedPlaylist; onClicked: deleteDialog.open() }
+                }
+                RowLayout {visible:panel.textPlaylistAvailable
+                    Button {text:"Criar com Text to Tonalify…";onClicked:panel.textPlaylistRequested()}
+                    Button {text:"Enviar / concluir no Spotify…";enabled:panel.selectedPlaylist.length>0;onClicked:panel.textPlaylistResume(panel.selectedPlaylist)}
+                }
+                RowLayout {visible:panel.selectedPlaylist.length>0;Layout.fillWidth:true
+                    property var info:{panel.revision;return panel.selectedPlaylist&&typeof panel.controller.playlistDetails==="function"?panel.controller.playlistDetails(panel.selectedPlaylist):({})}
+                    Image {source:parent.info.cover || "";visible:source.toString().length>0;sourceSize.width:120;sourceSize.height:120;Layout.preferredWidth:90;Layout.preferredHeight:90;fillMode:Image.PreserveAspectFit}
+                    ColumnLayout {Layout.fillWidth:true
+                        Label {text:parent.parent.info.name || "";textFormat:Text.PlainText;font.pixelSize:20;font.bold:true;Layout.fillWidth:true;elide:Text.ElideRight}
+                        Label {text:parent.parent.info.description || "";textFormat:Text.PlainText;wrapMode:Text.WordWrap;color:"#b5c9d6";Layout.fillWidth:true}
+                    }
                 }
                 Label { text: "Coleções pessoais neste aparelho. No Tonalify, as playlists da conta também estão em Sua Biblioteca."; wrapMode: Text.WordWrap; Layout.fillWidth: true; color: "#b5c9d6" }
                 ListView {

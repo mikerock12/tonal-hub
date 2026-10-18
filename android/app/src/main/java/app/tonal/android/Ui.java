@@ -34,6 +34,8 @@ final class Ui {
         Symbol(String name,int color){this.name=name;p.setColor(color);p.setStrokeWidth(1.8f);p.setStrokeCap(Paint.Cap.ROUND);p.setStrokeJoin(Paint.Join.ROUND);}
         public void draw(Canvas canvas){canvas.save();Rect b=getBounds();float side=Math.min(b.width(),b.height());canvas.translate(b.left+(b.width()-side)/2f,b.top+(b.height()-side)/2f);canvas.scale(side/24f,side/24f);p.setStyle(Paint.Style.STROKE);
             switch(name){
+                case "up":canvas.drawLine(5,15,12,8,p);canvas.drawLine(12,8,19,15,p);break;
+                case "down":canvas.drawLine(5,9,12,16,p);canvas.drawLine(12,16,19,9,p);break;
                 case "chevron":canvas.drawLine(8,5,16,12,p);canvas.drawLine(16,12,8,19,p);break;
                 case "chart":canvas.drawLine(3,21,21,21,p);for(int i=0;i<3;i++){int x=5+i*6;canvas.drawRoundRect(x,15-i*5,x+3,20,1,1,p);}break;
                 case "save":canvas.drawLine(12,3,12,16,p);canvas.drawLine(7,11,12,16,p);canvas.drawLine(12,16,17,11,p);canvas.drawLine(4,18,4,21,p);canvas.drawLine(4,21,20,21,p);canvas.drawLine(20,21,20,18,p);break;

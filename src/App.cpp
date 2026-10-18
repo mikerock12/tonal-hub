@@ -29,6 +29,7 @@ App::App(QObject *parent)
     , m_discovery(new CatalogService(this))
     , m_hub(new HubController(this))
     , m_music(new MusicCompanion(this))
+    , m_textPlaylist(new TextPlaylistImport(m_music,[this](const QByteArray &method,const QString &path,const QVariantMap &query,const QByteArray &body,const QByteArray &mime,TextPlaylistImport::Reply cb,std::function<bool()> current){m_api->raw(method,path,query,body,mime,std::move(cb),std::move(current));},this))
 {
     m_librespot->setAudioEngine(m_audio);
     m_player->setAudioEngine(m_audio);

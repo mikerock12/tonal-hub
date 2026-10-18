@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(Tonal VERSION 0.8.1 LANGUAGES C CXX)
+project(Tonal VERSION 0.9.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -17,6 +17,14 @@ target_include_directories(tonal_companion PUBLIC src src/companion)
 target_link_libraries(tonal_companion PUBLIC Qt6::Core Qt6::Network Qt6::Sql)
 if(MSVC)
     target_compile_options(tonal_companion PRIVATE /utf-8 /W4)
+endif()
+add_library(tonal_playlist_core STATIC src/playlist/TextPlaylistCore.cpp)
+target_include_directories(tonal_playlist_core PUBLIC src)
+add_library(tonal_text_playlist STATIC src/playlist/TextPlaylistImport.hpp src/playlist/TextPlaylistImport.cpp)
+target_link_libraries(tonal_text_playlist PUBLIC tonal_playlist_core tonal_companion Qt6::Gui)
+if(MSVC)
+    target_compile_options(tonal_playlist_core PRIVATE /utf-8 /W4)
+    target_compile_options(tonal_text_playlist PRIVATE /utf-8 /W4)
 endif()
 
 set(TONAL_SOURCES
@@ -97,6 +105,7 @@ qt_add_qml_module(Tonal
         qml/pages/ArtistPage.qml
         qml/pages/LyricsPage.qml
         qml/pages/SetlistsPage.qml
+        qml/pages/TextPlaylistDialog.qml
 )
 
 target_link_libraries(Tonal PRIVATE
@@ -118,6 +127,7 @@ if(MSVC)
 endif()
 target_link_libraries(Tonal PRIVATE tonal_indie_catalog tonal_hub_launcher)
 target_link_libraries(Tonal PRIVATE tonal_companion)
+target_link_libraries(Tonal PRIVATE tonal_text_playlist)
 qt_add_resources(Tonal "companion_ui" PREFIX "/companion" BASE "${CMAKE_CURRENT_SOURCE_DIR}" FILES qml/companion/MusicPanel.qml qml/companion/ActionIcon.qml qml/companion/LyricBackdrop.qml qml/companion/StyledVerse.qml qml/companion/LyricStyleDialog.qml qml/companion/LyricsFullscreen.qml qml/companion/StatisticsDetail.qml qml/companion/ClimateDetail.qml resources/music-rules.json)
 foreach(program TonalHub IndieTonal)
     if(program STREQUAL "TonalHub")
@@ -199,6 +209,12 @@ get_target_property(TONAL_QT_CORE_PATH Qt6::Core IMPORTED_LOCATION_RELEASE)
 get_filename_component(TONAL_QT_BIN "${TONAL_QT_CORE_PATH}" DIRECTORY)
 get_filename_component(TONAL_QT_ROOT "${TONAL_QT_BIN}/.." ABSOLUTE)
 if(BUILD_TESTING)
+    add_executable(TonalTextPlaylistTests tests/playlist/ImportChecks.cpp)
+    target_link_libraries(TonalTextPlaylistTests PRIVATE tonal_text_playlist)
+    if(MSVC)
+        target_compile_options(TonalTextPlaylistTests PRIVATE /utf-8)
+    endif()
+    add_test(NAME text_playlist_import COMMAND TonalTextPlaylistTests)
     add_executable(TonalCompanionTests tests/companion/CompanionTests.cpp)
     target_link_libraries(TonalCompanionTests PRIVATE tonal_companion)
     qt_add_resources(TonalCompanionTests "companion_rules" PREFIX "/companion" BASE "${CMAKE_CURRENT_SOURCE_DIR}" FILES resources/music-rules.json)

@@ -13,6 +13,11 @@ O aviso de copyright e a licença MIT original permanecem em `LICENSE`.
 
 ## Extensões locais
 
+**Text to Tonalify** adapta o projeto pessoal **PlaylistSpotify**, de
+**Maicon Nunes (mikerock12)**: https://github.com/mikerock12/PlaylistSpotify.
+As regras foram portadas para C++ compartilhado entre Windows e Android,
+a pedido do próprio autor. Proveniência em `third_party/PLAYLISTSPOTIFY-PORT.md`.
+
 Tonal Hub, Tonalify, IndieTonal, a versão Android e as extensões de áudio,
 catálogo e biblioteca pessoal são alterações deste projeto derivado. Não são
 apresentadas como lançamentos oficiais do projeto original ou do Spotify.
