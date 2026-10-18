@@ -7,7 +7,7 @@
     "festivo": {"words": ["dance", "party", "happy", "celebrate", "smile", "joy", "dançar", "festa", "feliz", "alegria", "sorriso", "celebrar", "bailar", "fiesta"], "genres": ["disco", "funk", "dance", "house", "samba", "ska"]}
   },
   "recommendations": [
-    {"genres": ["grunge", "alternative rock"], "artists": ["Nirvana", "Alice In Chains", "Soundgarden", "Pearl Jam", "Mudhoney", "Veruca Salt", "The Breeders"]},
+    {"genres": ["grunge", "alternative rock"], "artists": ["Nirvana", "Alice In Chains", "Soundgarden", "Pearl Jam", "Mudhoney", "Hole", "L7", "Veruca Salt", "The Breeders"]},
     {"genres": ["punk", "ska", "hardcore"], "artists": ["Ramones", "Green Day", "The Distillers", "Rancid", "Bad Religion", "Bikini Kill"]},
     {"genres": ["metal", "thrash"], "artists": ["Metallica", "Megadeth", "Anthrax", "Testament", "Sepultura", "Slayer"]},
     {"genres": ["rock", "indie", "shoegaze"], "artists": ["Pixies", "Sonic Youth", "Dinosaur Jr.", "Garbage", "Slowdive", "The Breeders"]},

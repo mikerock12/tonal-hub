@@ -2,6 +2,8 @@
 #include "LibrespotProcess.h"
 #include "Player.h"
 #include "SpotifyApi.h"
+#include "playback/ListeningMix.hpp"
+#include "companion/MusicCompanion.h"
 #include "audio/AudioEngine.hpp"
 #include <QCoreApplication>
 #include <QDir>
@@ -495,6 +497,9 @@ public:
     player.refresh();player.pause();
     require(spin([&]{return !player.m_requestInFlight;}),"stale state request stuck");
     require(!player.m_isPlaying&&audio.spotifyPaused(),"in-flight GET overrode explicit pause");
+    int plays=0,shuffles=0;QByteArray played;network.respond=[&](const QNetworkRequest&req,const QByteArray&body){if(req.url().path().endsWith("/shuffle")){++shuffles;return Response{};}if(req.url().path().endsWith("/play")){++plays;played=body;return Response{204,{},false,65};}return Response{};};
+    player.playOrderedUris({"spotify:track:old-mix"});player.pause();spin([]{return false;},120);require(plays==1&&shuffles==0&&audio.spotifyPaused(),"pending mix overrode explicit pause");
+    plays=0;player.playOrderedUris({"spotify:track:old-mix"});player.playUris({"spotify:track:new-selection"});spin([]{return false;},120);require(plays==2&&shuffles==0&&played.contains("new-selection"),"late ordered response changed new selection");
     std::cout<<"PASS remote Connect pause/resume, foreign device and stale poll guards\n";
   }
   static void deadlines() {
@@ -529,6 +534,15 @@ public:
             "player did not recover after token timeout");
     std::cout << "PASS total deadlines for API/token; pending Player requests "
                  "recover\n";
+  }
+  static void listeningMix() {
+    FakeNetwork network;AuthManager auth(&network);SpotifyApi api(&network,&auth);fakeAuth(auth);QTemporaryDir storage;MusicCompanion music(nullptr,storage.path());ListeningMix mix(&api,&music);int mutations=0,requests=0;bool hang=false,blocked=false;
+    network.respond=[&](const QNetworkRequest&req,const QByteArray&body){++requests;if(!body.isEmpty())++mutations;if(hang)return Response{200,{},true};if(blocked)return Response{403,{}};require(req.url().path()=="/v1/search","mix used unsupported recommendation endpoint");QJsonArray candidates;for(int i=0;i<8;++i)candidates<<QJsonObject{{"uri",QString("spotify:track:external%1").arg(i)},{"name",QString("External song %1").arg(i)},{"artists",QJsonArray{QJsonObject{{"name",QString("New Band %1").arg(i)}}}},{"album",QJsonObject{{"id","other-album"},{"release_date","1994"}}}};return Response{200,QJsonDocument(QJsonObject{{"tracks",QJsonObject{{"total",80},{"items",candidates}}}}).toJson()};};
+    QVariantList source;for(int i=0;i<6;++i)source<<QVariantMap{{"provider","Spotify"},{"id",QString("spotify:track:source%1").arg(i)},{"uri",QString("spotify:track:source%1").arg(i)},{"artist","Hole"},{"albumId","source-album"},{"genre","grunge"},{"year",1994}};int completions=0;QVariantList result;QObject::connect(&mix,&ListeningMix::ready,&mix,[&](const auto&v){result=v;++completions;});
+    mix.play(source,0,false,true,true);require(spin([&]{return !mix.busy();},8000),"mix failed to complete");require(completions==1&&result.size()==9&&result[0]==source[0]&&result[1]==source[1]&&result[2].toMap()["uri"].toString().contains("external"),"2+1 queue cadence failed");require(mutations==0&&requests<=12,"mix changed remote playlist or exceeded query budget");
+    QVariantList longList;for(int i=0;i<650;++i){auto t=source[0].toMap();t["uri"]=QString("spotify:track:long%1").arg(i);t["id"]=t["uri"];longList<<t;}mix.play(longList,600,false,false,false);require(completions==2&&result.size()==50&&result.first().toMap()["uri"]=="spotify:track:long600","long personal playlist lost selected track");
+    hang=true;mix.play(source,0,false,true,true);mix.cancel();spin([]{return false;},150);require(!mix.busy()&&completions==2,"cancelled discovery stole playback");hang=false;blocked=true;mix.play(source,0,false,true,true);require(spin([&]{return !mix.busy();})&&result==source&&completions==3,"API failure did not preserve source selection");
+    std::cout<<"PASS listening mix: 2+1, readonly bounded discovery, stale callbacks and offline fallback\n";
   }
   static void playlistTransport() {
     FakeNetwork network;AuthManager auth(&network);SpotifyApi api(&network,&auth);fakeAuth(auth);
@@ -707,6 +721,7 @@ int main(int argc, char **argv) {
       SpotifyRecoveryTests::remoteTransport();
       SpotifyRecoveryTests::deadlines();
       SpotifyRecoveryTests::playlistTransport();
+      SpotifyRecoveryTests::listeningMix();
 #ifdef _WIN32
       for (const auto *mode : {"crash-once", "eof-once", "stall-once",
                                "panic-once", "paused", "always-crash",

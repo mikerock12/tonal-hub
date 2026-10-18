@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import "qrc:/companion/qml/companion" as Personal
 
 // Barra superior: logo, voltar/avançar, Início, busca e menu da conta.
 Item {
@@ -14,6 +15,7 @@ Item {
 
     // ---------------------------------------------------- esquerda
     Row {
+        id:leftNavigation
         anchors.left: parent.left
         anchors.leftMargin: 20
         anchors.verticalCenter: parent.verticalCenter
@@ -58,6 +60,7 @@ Item {
     // ---------------------------------------------------- centro
     Row {
         anchors.horizontalCenter: parent.horizontalCenter
+        anchors.horizontalCenterOffset:(leftNavigation.width-rightTools.width)/2
         anchors.verticalCenter: parent.verticalCenter
         spacing: 8
 
@@ -91,7 +94,7 @@ Item {
 
         TextField {
             id: search
-            width: Math.min(474, root.width - 576)
+            width: Math.min(474, Math.max(120, root.width-leftNavigation.width-rightTools.width-196))
             height: 48
             leftPadding: 48
             rightPadding: 40
@@ -160,6 +163,7 @@ Item {
 
     // ---------------------------------------------------- direita
     Row {
+        id:rightTools
         anchors.right: parent.right
         anchors.rightMargin: 16
         anchors.verticalCenter: parent.verticalCenter
@@ -212,6 +216,9 @@ Item {
                 onClicked: accountMenu.popup(parent, 0, parent.height + 8)
             }
         }
+
+        Personal.ActionIcon{anchors.verticalCenter:parent.verticalCenter;symbol:"heart";description:"Biblioteca pessoal, estatísticas e letras";onClicked:root.musicRequested()}
+        Personal.ActionIcon{anchors.verticalCenter:parent.verticalCenter;symbol:"audio";description:"Áudio e efeitos";onClicked:root.audioSettingsRequested()}
 
         // Avatar + menu da conta
         Rectangle {

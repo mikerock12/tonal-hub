@@ -22,6 +22,15 @@ AbstractButton {
             c.strokeStyle=button.ink;c.fillStyle=button.ink;c.lineWidth=1.8;c.lineCap="round";c.lineJoin="round";c.beginPath()
             const line=(a,b,x,y)=>{c.moveTo(a,b);c.lineTo(x,y)}
             switch(button.symbol){
+            case "now":c.arc(12,12,9,0,Math.PI*2);c.moveTo(15,12);c.arc(12,12,3,0,Math.PI*2);break
+            case "library":line(4,4,4,21);line(10,4,10,21);line(16,4,21,21);break
+            case "chart":line(3,21,21,21);line(6,17,6,11);line(12,17,12,6);line(18,17,18,3);break
+            case "lyrics":line(4,5,20,5);line(4,10,17,10);line(4,15,20,15);line(4,20,14,20);break
+            case "save":line(12,3,12,16);line(7,11,12,16);line(12,16,17,11);line(4,18,4,21);line(4,21,20,21);line(20,21,20,18);break
+            case "shake":line(3,5,15,5);line(3,12,11,12);line(3,19,15,19);line(17,4,21,8);line(21,8,17,12);line(21,13,17,17);line(17,17,21,21);break
+            case "random":c.rect(3,3,18,18);c.fillRect(7,7,3,3);c.fillRect(11,11,3,3);c.fillRect(15,15,3,3);break
+            case "discover":c.arc(12,12,9,0,Math.PI*2);c.moveTo(16,7);c.lineTo(14,14);c.lineTo(7,17);c.lineTo(10,10);c.closePath();break
+            case "audio":for(let i=0;i<3;i++){let x=5+i*7,y=7+(i%2)*9;line(x,3,x,21);c.moveTo(x+2,y);c.arc(x,y,2,0,Math.PI*2)}break
             case "heart":c.moveTo(12,21);c.bezierCurveTo(-7,8,6,-2,12,7);c.bezierCurveTo(18,-2,31,8,12,21);if(button.filled)c.fill();break
             case "play":c.moveTo(7,4);c.lineTo(20,12);c.lineTo(7,20);c.closePath();c.fill();break
             case "pause":c.fillRect(6,4,4,16);c.fillRect(14,4,4,16);break

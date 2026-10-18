@@ -47,6 +47,8 @@ jobs:
           python tests/lyrics/run_ui.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python tests/playlist/run_ui.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tests/mix/run_ui.py
   android-java:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -69,5 +71,7 @@ jobs:
           mkdir -p out/ci-playlist
           g++ -std=c++20 -O2 -Isrc tests/playlist/CoreChecks.cpp src/playlist/TextPlaylistCore.cpp -o out/ci-playlist/core-checks
           out/ci-playlist/core-checks
+          g++ -std=c++20 -O2 -Isrc tests/mix/CoreChecks.cpp src/playback/ListeningMixCore.cpp src/playlist/TextPlaylistCore.cpp -o out/ci-playlist/mix-checks
+          out/ci-playlist/mix-checks
       - name: Compile both Android variants without account credentials
         run: gradle -p android compileReleaseJavaWithJavac compileBenchmarkJavaWithJavac compileComparisonJavaWithJavac :automation:compileDebugJavaWithJavac --console=plain

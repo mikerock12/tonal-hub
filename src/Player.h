@@ -107,6 +107,7 @@ public:
                                int offsetIndex = -1);
   // Toca uma lista solta de faixas (ex.: resultados de busca).
   Q_INVOKABLE void playUris(const QStringList &uris, int offsetIndex = 0);
+  Q_INVOKABLE void playOrderedUris(const QStringList &uris);
   Q_INVOKABLE void addToQueue(const QString &uri);
   Q_INVOKABLE void transferTo(const QString &deviceId);
   Q_INVOKABLE void refresh();
@@ -114,6 +115,7 @@ public:
   Q_INVOKABLE void refreshDevices();
 
 signals:
+  void playbackRequested();
   void trackChanged();
   void stateChanged();
   void volumeChanged();
@@ -135,7 +137,7 @@ private:
   void findLocalDevice(int attemptsLeft);
   QString targetDeviceForPlay() const;
   void sendPlay(const QJsonObject &body, const QString &deviceId,
-                bool retried = false);
+                bool retried = false, bool ordered = false);
   void setPositionBase(int ms);
   void rememberForResume();
   void resumeAfterEngineRestart();
