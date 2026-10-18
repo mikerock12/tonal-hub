@@ -17,7 +17,7 @@ final class WebRequest {
     static String params(String base,String... pairs){StringBuilder b=new StringBuilder(base);for(int i=0;i<pairs.length;i+=2)b.append(b.indexOf("?")<0?'?':'&').append(encode(pairs[i])).append('=').append(encode(pairs[i+1]));return b.toString();}
     static HttpURLConnection open(String address,String range)throws IOException{
         for(int i=0;i<6;i++){
-            HttpURLConnection c=(HttpURLConnection)url(address).openConnection();c.setInstanceFollowRedirects(false);c.setConnectTimeout(12000);c.setReadTimeout(12000);c.setRequestProperty("User-Agent","IndieTonal/0.4.0 (https://github.com/natheus/tonal-player)");c.setRequestProperty("Accept-Encoding","identity");if(range!=null)c.setRequestProperty("Range",range);
+            HttpURLConnection c=(HttpURLConnection)url(address).openConnection();c.setInstanceFollowRedirects(false);c.setConnectTimeout(12000);c.setReadTimeout(12000);c.setRequestProperty("User-Agent","TonalHub/0.8.0 (https://github.com/mikerock12/tonal-hub)");c.setRequestProperty("Accept-Encoding","identity");if(range!=null)c.setRequestProperty("Range",range);
             ScheduledFuture<?> timeout=deadlines.schedule(c::disconnect,25,TimeUnit.SECONDS);
             int code;try{code=c.getResponseCode();}catch(IOException e){c.disconnect();throw e;}finally{timeout.cancel(false);}
             if(code==301||code==302||code==303||code==307||code==308){String next=c.getHeaderField("Location");c.disconnect();if(next==null)throw new IOException("Redirecionamento vazio");address=new URL(url(address),next).toString();continue;}

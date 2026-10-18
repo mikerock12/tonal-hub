@@ -36,7 +36,7 @@ Flickable {
         interval: 600; repeat: false
         onTriggered: App.discovery.search(root.query, "extras")
     }
-    Component.onCompleted: { if(!App.music.searches.length){try{JSON.parse(history.recentJson).slice().reverse().forEach(q=>App.music.rememberSearch(q))}catch(e){}} search(); discoveryDelay.restart() }
+    Component.onCompleted: { if(!App.music.searches.length){try{JSON.parse(history.recentJson).slice().reverse().forEach(q=>App.music.rememberSearch(q))}catch(e){} history.recentJson="[]"} search(); discoveryDelay.restart() }
 
     function rememberQuery() {
         if (query === "") return

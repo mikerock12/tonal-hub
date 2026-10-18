@@ -17,6 +17,9 @@ def identity():
         match=re.search(pattern,dump);return match.group(1).strip() if match else None
     return dict(version=field(r'versionName=([^\r\n]+)'),code=field(r'versionCode=(\d+)'),first_install=field(r'firstInstallTime=([^\r\n]+)'),app_id=field(r'(?:appId|userId)=(\d+)'),ce_inode=field(r'ceDataInode=(\d+)'))
 def nodes():
+    result=run('shell','am','instrument','-w','app.tonal.automation/app.tonal.automation.Probe')
+    match=re.search(r'INSTRUMENTATION_RESULT: result=(.*)',result)
+    if match:return json.loads(match.group(1))
     for _ in range(4):
         result=run('shell','uiautomator','dump','/data/local/tmp/tonal-release.xml')
         if 'dumped' in result:return list(ET.fromstring(run('exec-out','cat','/data/local/tmp/tonal-release.xml')).iter('node'))
@@ -29,14 +32,15 @@ def click(text):
         run('shell','input','tap',(b[0]+b[2])//2,(b[1]+b[3])//2);time.sleep(.5);return
     raise AssertionError('Missing '+text)
 assert run('shell','getprop','ro.kernel.qemu')=='1' and 'Tonal_Local_20261015' in run('emu','avd','name')
-before=identity();assert before['version'] in ('0.3.0-local','0.4.0-local','0.5.0-local','0.6.0-local',VERSION+'-local'),before
+before=identity();assert before['version'] in ('0.3.0-local','0.4.0-local','0.5.0-local','0.6.0-local','0.7.0-local',VERSION+'-local'),before
 apk=ROOT/f'out/android/Tonal-Android-{VERSION}-local.apk';assert 'Success' in run('install','-r',apk)
 after=identity();assert after['version']==VERSION+'-local' and after['code']==CODE,after
 assert before['first_install']==after['first_install'] and before['app_id']==after['app_id'] and before['ce_inode']==after['ce_inode'],(before,after)
+(OUT/'identity-upgrade.json').write_text(json.dumps(dict(passed=True,before=before,after=after,updated_without_uninstall=True,data_directory_preserved=True),indent=2),encoding='utf-8')
 run('shell','am','start','-W','--activity-reorder-to-front','-n',PACKAGE+'/app.tonal.android.HubActivity');time.sleep(1)
 assert any(n.get('text')=='Tonal Hub' for n in nodes())
 click('IndieTonal • outras fontes e shows ao vivo');assert any(n.get('text')=='IndieTonal' for n in nodes())
-edit=next(n for n in nodes() if n.get('class','').endswith('EditText'));b=list(map(int,re.findall(r'\d+',edit.get('bounds'))));run('shell','input','tap',(b[0]+b[2])//2,(b[1]+b[3])//2);run('shell','input','text','Veruca%sSalt');click('Buscar')
+edit=next(n for n in nodes() if n.get('class','').endswith('EditText'));b=list(map(int,re.findall(r'\d+',edit.get('bounds'))));run('shell','input','tap',(b[0]+b[2])//2,(b[1]+b[3])//2);run('shell','input','keycombination','113','29');run('shell','input','text','Veruca%sSalt');click('Buscar')
 deadline=time.monotonic()+60
 while time.monotonic()<deadline:
     current=nodes()

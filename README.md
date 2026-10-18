@@ -7,6 +7,30 @@ As extensões Tonal Hub, Tonalify, IndieTonal, Android e os recursos adicionais
 são desenvolvimentos deste projeto derivado. Consulte [CREDITS.md](CREDITS.md)
 e a licença MIT original, preservada em [LICENSE](LICENSE).
 
+## Entrega pessoal atual: 0.8.0
+
+[Correções, uso das letras e limites](docs/PLAYER_POLISH_080.md) ·
+[benchmark local Windows/Android e funcionalidades](docs/BENCHMARK_080.md) ·
+[relatório interativo](docs/benchmarks/2026-10-17/report.html).
+
+Instaláveis gerados localmente em `out/` (não são releases do projeto original):
+
+- Windows x64: `out/release-local/Tonal-Hub-0.8.0.0-Windows-x64-Setup.exe`.
+  Feche players antigos, instale e abra **Tonal Hub** pelo atalho novo.
+- POCO X7 Pro/Android ARM64: `out/android/Tonal-Android-0.8.0-arm64-v8a.apk`.
+  Atualize por cima da versão anterior, preservando os dados; não desinstale antes.
+- APK universal, também com x86_64: `out/android/Tonal-Android-0.8.0-local.apk`.
+
+Capas e metadados preservados, controles proporcionais, estatísticas nas listas,
+consulta de estilos, sincronia manual das letras, contorno/neon/fontes e retomada
+de tradução estão descritos no guia 0.8. O clique numa linha agora alinha a letra
+ao áudio; não busca outro ponto da música. O benchmark histórico 0.1 abaixo é
+do projeto original e não substitui a nova medição 0.8 com seus limites explícitos.
+
+Exportar/importar a biblioteca pessoal no app continua disponível. O auxiliar
+`packaging/backup-personal-windows.py --output PASTA_NOVA` também copia os bancos
+SQLite e parâmetros DSP deste PC de forma consistente, sem sessões ou senhas.
+
 A lightweight **Spotify Premium** player for Windows, built with **C++ and Qt Quick**, with audio played by
 **[librespot](https://github.com/librespot-org/librespot)**. No Electron, no embedded Chromium.
 
@@ -60,7 +84,7 @@ Windows 11, October 2026. Numbers vary between machines and with use.
   songs repeated across shows go in once
 - **Player:** play/pause, previous/next, shuffle, repeat, seek bar, volume and like
 - **Queue** and **Now Playing** view in the right panel
-- **Synced lyrics:** the current line is highlighted, the lyrics follow the song and clicking a line seeks to it
+- **Synced lyrics:** current-line highlighting, optional synchronization and local manual alignment by clicking the line being heard (0.8)
 - **Media keys** (even with Tonal minimized) and the current track with its cover in the **Windows media flyout**
 - **Spotify Connect:** Tonal shows up as a device and can also send playback to your phone or another computer
 - **Quality** 96/160/320 kbps (account menu), with volume normalization
@@ -70,7 +94,7 @@ Windows 11, October 2026. Numbers vary between machines and with use.
 - **Self-healing audio engine:** if the connection to Spotify drops, Tonal restarts librespot and resumes the
   song where it was
 
-## Install
+## Install the original upstream release
 
 Download the latest version from **[Releases](https://github.com/natheus/tonal-player/releases)**:
 

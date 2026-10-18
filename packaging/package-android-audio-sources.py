@@ -6,7 +6,7 @@ root=Path(__file__).resolve().parents[1]
 version=re.search(r"versionName '([^']+)'",(root/'android/app/build.gradle').read_text(encoding='utf-8')).group(1).removesuffix('-local')
 revision=json.loads((root/'third_party/android-audio.lock').read_text(encoding='utf-8'))['ffmpeg']['revision']
 paths=[
-    'android/audio','android/muse','src/insights','training','resources/muse-training.json','packaging/build-muse-android.ps1','docs/muse-training-v1.json','docs/TONAL_MUSE_070.md','android/app/src/main/java','android/app/src/main/res','android/app/src/main/assets','android/app/src/benchmark',
+    'android/automation/src','android/automation/build.gradle','android/audio','android/muse','src/insights','training','resources/muse-training.json','packaging/build-muse-android.ps1','docs/muse-training-v1.json','docs/TONAL_MUSE_070.md','android/app/src/main/java','android/app/src/main/res','android/app/src/main/assets','android/app/src/benchmark',
     'android/app/src/main/AndroidManifest.xml','android/app/build.gradle','android/build.gradle',
     'android/settings.gradle','android/gradle.properties','android/native/src','android/native/vendor',
     'android/native/Cargo.toml','android/native/Cargo.lock','LICENSE','CREDITS.md',

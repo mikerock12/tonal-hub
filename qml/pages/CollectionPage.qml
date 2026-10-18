@@ -1,10 +1,15 @@
 import QtQuick
 import QtQuick.Controls
+import "qrc:/companion/qml/companion" as Personal
 
 // Página de Playlist, Álbum ou Músicas Curtidas.
 Item {
     id: root
 
+    property bool showListening:false
+    property int journalRevision:0
+    Connections{target:App.music;function onChanged(){root.journalRevision++}}
+    Personal.StatisticsDetail{id:listeningDetail;controller:App.music}
     property var route
     readonly property string kind: route ? route.page : ""          // playlist | album | liked
     readonly property string itemId: route && route.params ? (route.params.id || "") : ""
@@ -530,6 +535,7 @@ Item {
                         tooltip: root.saved ? qsTr("Remover de Sua Biblioteca") : qsTr("Salvar em Sua Biblioteca")
                         onClicked: root.toggleSaved()
                     }
+                    Button{anchors.verticalCenter:parent.verticalCenter;text:root.showListening?"Ocultar estatísticas":"Estatísticas";onClicked:root.showListening=!root.showListening}
                     IconButton {
                         id: moreButton
                         anchors.verticalCenter: parent.verticalCenter
@@ -542,6 +548,7 @@ Item {
                 }
             }
 
+            Label{visible:root.showListening;x:24;width:parent.width-48;wrapMode:Text.Wrap;font.pixelSize:16;color:"#7ddbff";text:{root.journalRevision;const s=App.music.summary("album",root.ownerName+"|"+root.title);return(s.plays||0)+" escutas · "+((s.ms||0)/60000).toFixed(1)+" min · "+(s.tracks||0)+" músicas"}MouseArea{anchors.fill:parent;onClicked:{const rows=App.music.statistics(180,"albums").rows;listeningDetail.report=rows.find(r=>r.id===root.ownerName+"|"+root.title)||{};listeningDetail.open()}}}
             // Aviso de playlist sem conteúdo disponível
             Rectangle {
                 visible: !root.contentsAvailable
@@ -588,6 +595,8 @@ Item {
             x: 24
             width: list.width - 48
             number: index + 1
+            showStats:root.showListening
+            listening:{root.journalRevision;return App.music.summary("track","Spotify|||"+uri)}
             title: name
             artists: artistsText
             explicitContent: explicit

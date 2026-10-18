@@ -396,6 +396,43 @@ public:
     std::cout << "PASS resume position/queue, failed request retained, new "
                  "choice during reconnect, cancelled API retries, pause\n";
   }
+  static void remoteTransport() {
+    QTemporaryDir storage;
+    FakeNetwork network;
+    AuthManager auth(&network);
+    SpotifyApi api(&network, &auth);
+    tonal::audio::AudioEngine audio(nullptr, storage.path()+"/audio");
+    LibrespotProcess engine(nullptr, storage.path());
+    Player player(&api, &engine, &auth);
+    player.setAudioEngine(&audio);
+    fakeAuth(auth);
+    player.m_localDeviceId="local-device";
+    player.m_trackUri="spotify:track:fixture";
+    QJsonObject state{{"is_playing",true},{"progress_ms",30000},
+      {"device",QJsonObject{{"id","local-device"}}},
+      {"item",QJsonObject{{"uri","spotify:track:fixture"}}}};
+    audio.setSpotifyPaused(true);
+    player.applyState(state);
+    require(!audio.spotifyPaused(),"remote resume left the native sink paused");
+    state["is_playing"]=false;player.applyState(state);
+    require(audio.spotifyPaused(),"remote pause left the native sink running");
+    state["is_playing"]=true;state["device"]=QJsonObject{{"id","other-device"}};
+    player.applyState(state);
+    require(audio.spotifyPaused(),"foreign device resumed the local sink");
+    state["device"]=QJsonObject{{"id","local-device"}};
+    player.applyState(state);player.pause();player.applyState(state);
+    require(audio.spotifyPaused(),"eventually consistent state undid a recent pause");
+    player.m_transportIntentClock.invalidate();player.applyState(state);
+    require(!audio.spotifyPaused(),"confirmed remote resume failed after intent guard");
+    const auto oldState=QJsonDocument(state).toJson();
+    network.respond=[oldState](const QNetworkRequest &req,const QByteArray &){
+      return req.url().path().endsWith("/player") ? Response{200,oldState,false,100} : Response{};
+    };
+    player.refresh();player.pause();
+    require(spin([&]{return !player.m_requestInFlight;}),"stale state request stuck");
+    require(!player.m_isPlaying&&audio.spotifyPaused(),"in-flight GET overrode explicit pause");
+    std::cout<<"PASS remote Connect pause/resume, foreign device and stale poll guards\n";
+  }
   static void deadlines() {
     QTemporaryDir storage;
     FakeNetwork network;
@@ -581,6 +618,7 @@ int main(int argc, char **argv) {
   else {
     try {
       SpotifyRecoveryTests::networkAndResume();
+      SpotifyRecoveryTests::remoteTransport();
       SpotifyRecoveryTests::deadlines();
 #ifdef _WIN32
       for (const auto *mode : {"crash-once", "eof-once", "stall-once",

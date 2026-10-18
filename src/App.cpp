@@ -1,6 +1,7 @@
 #include "App.h"
 
 #include <QClipboard>
+#include <QJsonArray>
 #include <QGuiApplication>
 #include <QJSEngine>
 #include <QNetworkAccessManager>
@@ -31,6 +32,11 @@ App::App(QObject *parent)
 {
     m_librespot->setAudioEngine(m_audio);
     m_player->setAudioEngine(m_audio);
+    connect(m_music,&MusicCompanion::metadataRequested,this,[this](const QVariantMap &t){
+        if(t.value("provider")!="Spotify"||!m_auth->isAuthenticated())return;
+        QString id=t.value("uri").toString().section(':',-1);if(id.size()!=22)return;const auto key=MusicCompanion::key(t);
+        m_api->get("/tracks/"+id,{},[this,key](int status,const QJsonDocument &doc){if(status!=200)return;auto track=doc.object(),album=track["album"].toObject();auto artists=track["artists"].toArray();QVariantMap patch{{"album",album["name"].toString()},{"albumId",album["id"].toString()}};auto images=album["images"].toArray();if(!images.isEmpty())patch["image"]=images[0].toObject()["url"].toString();if(!artists.isEmpty()){auto id=artists[0].toObject()["id"].toString();patch["artistId"]=id;m_api->get("/artists/"+id,{},[this,key](int status,const QJsonDocument &doc){if(status!=200)return;QStringList genres;for(auto v:doc.object()["genres"].toArray())if(genres.size()<4)genres<<v.toString();if(!genres.isEmpty())m_music->mergeMetadata(key,{{"genre",genres.join(", ")},{"genreSource","Spotify • artista"}});});}m_music->mergeMetadata(key,patch);});
+    });
     auto selected = [this] {
         if (!m_player->hasTrack()) return;
         QVariantMap t{{"provider",m_player->localPlayback()?"Local":"Spotify"},
@@ -39,6 +45,8 @@ App::App(QObject *parent)
           {"album",m_player->albumName()},{"image",m_player->coverUrlLarge()},
           {"durationMs",m_player->durationMs()},{"playable",true}};
         if (m_player->localPlayback()) t["localFile"]=m_audio->localFileUrl().toString();
+        if(!m_player->artists().isEmpty())t["artistId"]=m_player->artists().first().toMap()["id"];
+        t["albumId"]=m_player->albumUri().section(':',-1);
         m_music->selectTrack(t);
     };
     connect(m_player,&Player::trackChanged,this,selected);

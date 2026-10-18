@@ -46,10 +46,9 @@ Dialog {
         stats=controller.statistics(period.currentValue || 7,dimension.currentValue || "artists")
         displayTracks=drillTracks!==null ? drillTracks : selectedPlaylist ? controller.playlistTracks(selectedPlaylist) : controller.favorites
     }
-    onOpened: {refresh();ensureLyrics()}
+    onOpened: {refresh();controller.refreshMetadata();ensureLyrics()}
     onPositionChanged: {
-        let found=-1
-        for(let i=0;i<controller.lines.length;i++) if(controller.lines[i].time>=0 && controller.lines[i].time<=position) found=i
+        const found=controller.lineAt(position)
         highlighted=found
         if(followLyrics && found>=0) lyrics.positionViewAtIndex(found,ListView.Center)
     }
@@ -168,7 +167,9 @@ Dialog {
                     ActionIcon { symbol:"font";description:"Fontes e cores";onClicked:appearance.open() }
                     ActionIcon { symbol:"expand";description:"Expandir letras em tela cheia";onClicked:fullscreen.present() }
                     Button { text: "Importar / editar"; onClicked: editDialog.open() }
-                    CheckBox { text: "Acompanhar"; checked: panel.followLyrics; onToggled: panel.followLyrics=checked }
+                    CheckBox { text: "Sincronia"; checked:panel.controller.syncEnabled;onToggled:panel.controller.syncEnabled=checked }
+                    Label{text:"Toque na linha que está ouvindo para alinhar";color:"#a5a8ad";font.pixelSize:12}
+                    Button{text:"Exportar ajuste";onClicked:syncExport.open()}
                 }
                 Label { text: panel.controller.lyricStatus; textFormat: Text.PlainText; wrapMode: Text.WordWrap; Layout.fillWidth: true; color: "#b5c9d6" }
                 Label { text: "Buscar envia título/artista ao LRCLIB; traduzir envia a letra ao Google Tradutor. Letra/versão e tradução podem não estar disponíveis."; wrapMode: Text.WordWrap; Layout.fillWidth: true; font.pixelSize: 11; color: "#a3b8c8" }
@@ -189,15 +190,17 @@ Dialog {
                         delegate: Column {
                             required property var modelData; required property int index
                             width: lyrics.width-18; spacing: 6
-                            Label { width: parent.width; text: modelData.text; textFormat: Text.PlainText; wrapMode: Text.WordWrap; font.pixelSize:panel.controller.lyricStyle.lyricSize; font.family:fullscreen.fontFamily(panel.controller.lyricStyle.lyricFont); font.bold:true;color:panel.controller.lyricStyle.lyricColor;opacity:panel.highlighted<0||panel.highlighted===index?1:.55 }
-                            Label { width: parent.width; text: modelData.translation || ""; textFormat: Text.PlainText; visible: text.length>0; wrapMode: Text.WordWrap; font.pixelSize:panel.controller.lyricStyle.translationSize;font.family:fullscreen.fontFamily(panel.controller.lyricStyle.translationFont);color:panel.controller.lyricStyle.translationColor }
-                            MouseArea { anchors.fill: parent; enabled: modelData.time>=0; onClicked: panel.controller.seek(modelData.time) }
+                            StyledVerse{width:parent.width;text:modelData.text;appearance:panel.controller.lyricStyle;playing:panel.playing&&panel.visible}
+                            StyledVerse{width:parent.width;text:modelData.translation || "";visible:text.length>0;translation:true;appearance:panel.controller.lyricStyle;playing:panel.playing&&panel.visible}
+                            MouseArea{anchors.fill:parent;onClicked:panel.controller.alignLyrics(index,panel.position)}
+
                         }
                     }
                 }
             }
         }
     }
+    FileDialog{id:syncExport;fileMode:FileDialog.SaveFile;nameFilters:["Ajuste Tonal (*.json)"];onAccepted:panel.controller.exportSyncFeedback(selectedFile)}
     StatisticsDetail{id:drill;controller:panel.controller}
     ClimateDetail{id:climate;controller:panel.controller;days:period.currentValue || 7}
     LyricStyleDialog{id:appearance;controller:panel.controller}

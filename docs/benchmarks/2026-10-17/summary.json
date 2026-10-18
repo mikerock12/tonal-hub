@@ -1,0 +1,652 @@
+{
+  "date": "2026-10-17",
+  "version": "0.8.0-local",
+  "summary": [
+    {
+      "platform": "Windows",
+      "app": "tonalify",
+      "scenario": "Reproduzindo",
+      "memory_kind": "USS",
+      "memory": {
+        "median": 122.552734375,
+        "mean": 122.5556640625,
+        "minimum": 122.08984375,
+        "maximum": 123.01953125
+      },
+      "cpu": {
+        "median": 0.0,
+        "mean": 0.4988170828541863,
+        "minimum": 0.0,
+        "maximum": 5.9968806625387785
+      },
+      "samples": 60,
+      "commit": {
+        "median": 160.275390625,
+        "mean": 160.28958333333333,
+        "minimum": 159.96875,
+        "maximum": 160.70703125
+      },
+      "rss": {
+        "median": 211.794921875,
+        "mean": 211.78274739583333,
+        "minimum": 211.234375,
+        "maximum": 212.328125
+      },
+      "processes": {
+        "median": 3.0,
+        "mean": 3,
+        "minimum": 3,
+        "maximum": 3
+      },
+      "read_bytes": 25228464,
+      "write_bytes": 22530560,
+      "churn_samples": 0
+    },
+    {
+      "platform": "Windows",
+      "app": "tonalify",
+      "scenario": "Pausado",
+      "memory_kind": "USS",
+      "memory": {
+        "median": 122.650390625,
+        "mean": 122.622265625,
+        "minimum": 122.2421875,
+        "maximum": 122.99609375
+      },
+      "cpu": {
+        "median": 0.0,
+        "mean": 0.14914723370669414,
+        "minimum": 0.0,
+        "maximum": 2.9811249477803266
+      },
+      "samples": 60,
+      "commit": {
+        "median": 160.361328125,
+        "mean": 160.30859375,
+        "minimum": 160.0,
+        "maximum": 160.60546875
+      },
+      "rss": {
+        "median": 211.880859375,
+        "mean": 211.852734375,
+        "minimum": 211.39453125,
+        "maximum": 212.3046875
+      },
+      "processes": {
+        "median": 3.0,
+        "mean": 3,
+        "minimum": 3,
+        "maximum": 3
+      },
+      "read_bytes": 0,
+      "write_bytes": 0,
+      "churn_samples": 0
+    },
+    {
+      "platform": "Windows",
+      "app": "spotify",
+      "scenario": "Reproduzindo",
+      "memory_kind": "USS",
+      "memory": {
+        "median": 540.529296875,
+        "mean": 554.1900390625,
+        "minimum": 538.82421875,
+        "maximum": 619.36328125
+      },
+      "cpu": {
+        "median": 0.0,
+        "mean": 2.8714519650971266,
+        "minimum": 0.0,
+        "maximum": 67.29655478304839
+      },
+      "samples": 60,
+      "commit": {
+        "median": 679.0859375,
+        "mean": 693.1470052083333,
+        "minimum": 677.5234375,
+        "maximum": 760.33984375
+      },
+      "rss": {
+        "median": 980.736328125,
+        "mean": 995.262890625,
+        "minimum": 978.54296875,
+        "maximum": 1067.65625
+      },
+      "processes": {
+        "median": 8.0,
+        "mean": 8,
+        "minimum": 8,
+        "maximum": 8
+      },
+      "read_bytes": 11773183,
+      "write_bytes": 5170507,
+      "churn_samples": 0
+    },
+    {
+      "platform": "Windows",
+      "app": "spotify",
+      "scenario": "Pausado",
+      "memory_kind": "USS",
+      "memory": {
+        "median": 534.822265625,
+        "mean": 534.7615234375,
+        "minimum": 527.88671875,
+        "maximum": 542.2265625
+      },
+      "cpu": {
+        "median": 0.0,
+        "mean": 0.4306190178728752,
+        "minimum": 0.0,
+        "maximum": 4.362637912894079
+      },
+      "samples": 60,
+      "commit": {
+        "median": 674.0625,
+        "mean": 673.9966145833333,
+        "minimum": 667.375,
+        "maximum": 681.36328125
+      },
+      "rss": {
+        "median": 975.931640625,
+        "mean": 975.8749348958333,
+        "minimum": 970.2734375,
+        "maximum": 982.03125
+      },
+      "processes": {
+        "median": 8.0,
+        "mean": 8,
+        "minimum": 8,
+        "maximum": 8
+      },
+      "read_bytes": 350483,
+      "write_bytes": 116769,
+      "churn_samples": 0
+    },
+    {
+      "platform": "Android emulado",
+      "app": "tonalify",
+      "scenario": "Tela inicial, sem login",
+      "memory_kind": "PSS",
+      "memory": {
+        "median": 16.986328125,
+        "mean": 16.879475911458332,
+        "minimum": 16.5888671875,
+        "maximum": 17.0478515625
+      },
+      "cpu": {
+        "median": 0.0,
+        "mean": 0.06457367689601042,
+        "minimum": 0.0,
+        "maximum": 0.3874471689146218
+      },
+      "samples": 12,
+      "processes": {
+        "median": 1.0,
+        "mean": 1,
+        "minimum": 1,
+        "maximum": 1
+      },
+      "swap_mib": 0.0
+    },
+    {
+      "platform": "Android emulado",
+      "app": "spotify",
+      "scenario": "Tela inicial, sem login",
+      "memory_kind": "PSS",
+      "memory": {
+        "median": 154.78125,
+        "mean": 154.96590169270834,
+        "minimum": 153.654296875,
+        "maximum": 156.6767578125
+      },
+      "cpu": {
+        "median": 0.0,
+        "mean": 1.0007166231291933,
+        "minimum": 0.0,
+        "maximum": 6.189775060290235
+      },
+      "samples": 12,
+      "processes": {
+        "median": 1.0,
+        "mean": 1,
+        "minimum": 1,
+        "maximum": 1
+      },
+      "swap_mib": 0.0
+    },
+    {
+      "platform": "Android emulado",
+      "app": "tonalify",
+      "scenario": "Segundo plano, sem login",
+      "memory_kind": "PSS",
+      "memory": {
+        "median": 17.0185546875,
+        "mean": 17.0185546875,
+        "minimum": 17.0185546875,
+        "maximum": 17.0185546875
+      },
+      "cpu": {
+        "median": 0.0,
+        "mean": 0.0,
+        "minimum": 0.0,
+        "maximum": 0.0
+      },
+      "samples": 3,
+      "processes": {
+        "median": 1,
+        "mean": 1,
+        "minimum": 1,
+        "maximum": 1
+      },
+      "swap_mib": 0.0
+    },
+    {
+      "platform": "Android emulado",
+      "app": "spotify",
+      "scenario": "Segundo plano, sem login",
+      "memory_kind": "PSS",
+      "memory": {
+        "median": 147.462890625,
+        "mean": 147.462890625,
+        "minimum": 147.462890625,
+        "maximum": 147.462890625
+      },
+      "cpu": {
+        "median": 0.0,
+        "mean": 0.0,
+        "minimum": 0.0,
+        "maximum": 0.0
+      },
+      "samples": 3,
+      "processes": {
+        "median": 1,
+        "mean": 1,
+        "minimum": 1,
+        "maximum": 1
+      },
+      "swap_mib": 0.0
+    },
+    {
+      "platform": "Android emulado",
+      "app": "tonalify",
+      "scenario": "Tela inicial + Hub, sem login",
+      "memory_kind": "PSS",
+      "memory": {
+        "median": 30.3662109375,
+        "mean": 30.1884765625,
+        "minimum": 29.8251953125,
+        "maximum": 30.3662109375
+      },
+      "cpu": {
+        "median": 0.0,
+        "mean": 0.1273289191452713,
+        "minimum": 0.0,
+        "maximum": 0.7639735148716279
+      },
+      "samples": 6,
+      "processes": {
+        "median": 2.0,
+        "mean": 2,
+        "minimum": 2,
+        "maximum": 2
+      },
+      "swap_mib": 0.0
+    },
+    {
+      "platform": "Android emulado",
+      "app": "tonalify",
+      "scenario": "Streaming Tonalify, autenticado",
+      "memory_kind": "PSS",
+      "memory": {
+        "median": 72.58740234375,
+        "mean": 72.65315755208333,
+        "minimum": 72.0498046875,
+        "maximum": 73.39453125
+      },
+      "cpu": {
+        "median": 5.2287261641394185,
+        "mean": 5.228921527342859,
+        "minimum": 5.0358601665611635,
+        "maximum": 5.421730466104375
+      },
+      "samples": 6,
+      "processes": {
+        "median": 1.0,
+        "mean": 1,
+        "minimum": 1,
+        "maximum": 1
+      },
+      "swap_mib": 0.0
+    }
+  ],
+  "hardware": {
+    "inventory": {
+      "gpu": [
+        {
+          "Name": "Intel(R) HD Graphics 530",
+          "DriverVersion": "26.20.100.7262",
+          "AdapterRAM": 1073741824
+        }
+      ],
+      "cpu": [
+        {
+          "Name": "Intel(R) Core(TM) i5-6500 CPU @ 3.20GHz",
+          "NumberOfCores": 4,
+          "NumberOfLogicalProcessors": 4
+        }
+      ],
+      "disks": [
+        {
+          "Model": "Lexar SSD NQ100 240GB",
+          "Size": 240054796800,
+          "MediaType": "Fixed hard disk media"
+        },
+        {
+          "Model": "WDC WD10PURZ-85U8XY0",
+          "Size": 1000202273280,
+          "MediaType": "Fixed hard disk media"
+        }
+      ],
+      "os": {
+        "Caption": "Microsoft Windows 10 Pro",
+        "Version": "10.0.19045",
+        "BuildNumber": "19045"
+      }
+    },
+    "os": "Windows-10-10.0.19045-SP0",
+    "logical_cores": 4,
+    "physical_cores": 4,
+    "ram_bytes": 17088057344
+  },
+  "windows_audio_proof": [
+    {
+      "app": "tonalify",
+      "round": 1,
+      "playing": true,
+      "title": "Get Back",
+      "artist": "Veruca Salt",
+      "position_ms": 48476,
+      "nonzero_process_audio": true,
+      "max_session_peak": 0.891250968,
+      "gpu_engine_utilization_percent": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "app": "tonalify",
+      "round": 1,
+      "playing": true,
+      "title": "Get Back",
+      "artist": "Veruca Salt",
+      "position_ms": 84850,
+      "nonzero_process_audio": true,
+      "max_session_peak": 0.891250968,
+      "gpu_engine_utilization_percent": []
+    },
+    {
+      "app": "spotify",
+      "round": 1,
+      "playing": true,
+      "title": "Get Back",
+      "artist": "Veruca Salt",
+      "position_ms": 45385,
+      "nonzero_process_audio": true,
+      "max_session_peak": 0.6203692,
+      "gpu_engine_utilization_percent": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "app": "spotify",
+      "round": 1,
+      "playing": true,
+      "title": "Get Back",
+      "artist": "Veruca Salt",
+      "position_ms": 84316,
+      "nonzero_process_audio": true,
+      "max_session_peak": 0.4819846,
+      "gpu_engine_utilization_percent": []
+    },
+    {
+      "app": "spotify",
+      "round": 2,
+      "playing": true,
+      "title": "Get Back",
+      "artist": "Veruca Salt",
+      "position_ms": 44817,
+      "nonzero_process_audio": true,
+      "max_session_peak": 0.3456448,
+      "gpu_engine_utilization_percent": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "app": "spotify",
+      "round": 2,
+      "playing": true,
+      "title": "Get Back",
+      "artist": "Veruca Salt",
+      "position_ms": 82702,
+      "nonzero_process_audio": true,
+      "max_session_peak": 0.54416,
+      "gpu_engine_utilization_percent": []
+    },
+    {
+      "app": "tonalify",
+      "round": 2,
+      "playing": true,
+      "title": "Get Back",
+      "artist": "Veruca Salt",
+      "position_ms": 44914,
+      "nonzero_process_audio": true,
+      "max_session_peak": 0.122308895,
+      "gpu_engine_utilization_percent": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "app": "tonalify",
+      "round": 2,
+      "playing": true,
+      "title": "Get Back",
+      "artist": "Veruca Salt",
+      "position_ms": 81206,
+      "nonzero_process_audio": true,
+      "max_session_peak": 0.1171571,
+      "gpu_engine_utilization_percent": []
+    }
+  ],
+  "android_pcm_proof": {
+    "before_frames": 4708160,
+    "after_frames": 6677888,
+    "before_underruns": 0,
+    "after_underruns": 0
+  },
+  "startup": {
+    "windows": {
+      "tonalify": {
+        "process_visible_in_enumeration_ms": [
+          51.10310000600293,
+          51.53709999285638,
+          170.94160000851844
+        ],
+        "note": "Process creation detection, not a ready UI or true cold OS startup"
+      },
+      "spotify": {
+        "process_visible_in_enumeration_ms": [
+          1267.8822000016226,
+          1245.3999999997905,
+          1269.8887000005925
+        ],
+        "note": "Process creation detection, not a ready UI or true cold OS startup"
+      }
+    },
+    "android": {
+      "app.tonal.android.comparison": [
+        943,
+        1182,
+        1235
+      ],
+      "com.spotify.music": [
+        2262,
+        1845,
+        1775
+      ]
+    }
+  },
+  "artifacts": {
+    "Tonal-Hub-0.8.0.0-Windows-x64-Setup.exe": {
+      "bytes": 81414615,
+      "sha256": "a5ac9320fdfd56bc8a2295c0177ef9784a2a028d6b7b07c5c31a22db4a73cbf0"
+    },
+    "Tonal-Android-0.8.0-arm64-v8a.apk": {
+      "bytes": 24723593,
+      "sha256": "db42ebe2c69e722b70b35d636a5a4361cef2ac7e4936f3c054eceb3742f64252"
+    },
+    "Tonal-Android-0.8.0-local.apk": {
+      "bytes": 46597624,
+      "sha256": "6f75d13d318a9c179963b61e2ea3c7c318ef0df20b21499bd85763a1889ac18c"
+    },
+    "Tonal-Android-0.8.0-audio-sources.tar.gz": {
+      "bytes": 49126429,
+      "sha256": "c526e7f546a4c0d5495aa09d55e110527d9064628b5c94f49195a5d6bac9b405"
+    }
+  },
+  "validation": {
+    "windows_ctest": {
+      "passed": true,
+      "executables": 8
+    },
+    "remote_transport_regression": {
+      "passed": true
+    },
+    "qml": {
+      "passed": true,
+      "checks": 6
+    },
+    "android_core": {
+      "passed": true,
+      "checks": [
+        "companion_lrc_multistamps_offset_and_fractions",
+        "companion_signed_urls_and_passwords_excluded",
+        "companion_favorites_and_playlist_deduplication",
+        "companion_periods_chart_drilldown_lyric_mood_and_genre_suggestions",
+        "detailed_tracks_albums_counts_and_actual_time",
+        "native_model_1000_calls_mean_us=1749.8881",
+        "search_history_and_independent_lyric_styles",
+        "album_queue_metadata_and_cover_survive_sparse_playback_updates",
+        "transport_icon_preserves_aspect_in_wide_button",
+        "manual_lyric_alignment_toggle_version_identity_and_private_feedback",
+        "outline_effects_and_independent_typography_validation",
+        "long_translation_rows_preserve_unicode_and_row_identity",
+        "metadata_artist_disambiguation_and_sourced_genre_order",
+        "closed_metadata_client_does_not_queue_or_retain_activity_requests",
+        "companion_clear_history_preserves_library",
+        "rare_archive_audio_demos_mp3_preference_private_and_path_filter",
+        "rare_archive_dark_items_rejected",
+        "companion_portable_backup_restore",
+        "companion_sqlite_transaction_persistence",
+        "resume_uses_actual_pcm_track_and_position",
+        "restore_preserves_queue_and_atomic_seek",
+        "pause_cancels_resume_without_losing_selection",
+        "new_selection_replaces_old_resume",
+        "stop_cancels_all_recovery_intent",
+        "exact_artist_ahead_of_remixes_and_unrelated_profiles",
+        "provider_score_breaks_homonym_ties",
+        "musicbrainz_is_metadata_only",
+        "unicode_and_word_normalization",
+        "reject_cleartext_streams",
+        "reject_url_userinfo",
+        "diagnostics_redact_urls_and_credentials",
+        "real_jni_connection_failures_hit_bounded_recovery_budget",
+        "no_unbounded_restart_loop_after_budget",
+        "explicit_pause_cancels_service_resume"
+      ]
+    },
+    "android_translation": {
+      "passed": true,
+      "checks": [
+        "transient_failure_retries_bounded",
+        "failed_verse_does_not_stop_remaining_translation",
+        "manual_resume_translates_only_missing_rows",
+        "cached_tail_increments_ui_version_without_network"
+      ]
+    },
+    "android_song_page": {
+      "passed": true
+    },
+    "android_catalog": {
+      "passed": true
+    },
+    "android_release_upgrade": {
+      "passed": true,
+      "apk_sha256": "6f75d13d318a9c179963b61e2ea3c7c318ef0df20b21499bd85763a1889ac18c",
+      "updated_without_uninstall": true,
+      "data_directory_preserved": true,
+      "release_hub_and_public_search": true
+    },
+    "windows_installer": {
+      "installer_sha256": "a5ac9320fdfd56bc8a2295c0177ef9784a2a028d6b7b07c5c31a22db4a73cbf0",
+      "files_match": {
+        "TonalHub.exe": true,
+        "Tonalify.exe": true,
+        "IndieTonal.exe": true,
+        "qt.conf": true,
+        "platforms/qwindows.dll": true,
+        "sqldrivers/qsqlite.dll": true,
+        "CREDITS.md": true,
+        "WINDOWS_INSTALLER_LOCAL.md": true
+      },
+      "installed_app_startup_without_sdk_plugin_paths": true,
+      "reinstallation_preserves_unmanaged_files": true,
+      "isolated_uninstallation": true,
+      "passed": true
+    }
+  },
+  "scope": {
+    "android_official_streaming": false,
+    "physical_bluetooth": false,
+    "quality_blind_test": false,
+    "window_visibility_controlled": false
+  }
+}

@@ -63,6 +63,7 @@ public:
   Q_INVOKABLE void setLocalVolume(int);
   void flushSpotify();
   void setSpotifyPaused(bool);
+  bool spotifyPaused() const { std::lock_guard lock(m_mutex); return m_pause; }
   uint64_t spotifyFramesRead() const { return m_spotifyFrames.load(); }
 signals:
   void settingsChanged();

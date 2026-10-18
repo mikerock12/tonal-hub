@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Dialogs
 import "qrc:/companion/qml/companion" as Personal
 
 // Letra da faixa que está tocando (App.lyrics, do LRCLIB). Na letra sincronizada a linha atual fica em
@@ -15,7 +16,7 @@ Item {
     readonly property int status: App.lyrics.status
     readonly property bool synced: status === Lyrics.Synced
     // Destaca a linha um pouco antes: a posição do Spotify chega com o atraso da rede.
-    readonly property int lead: 250
+    readonly property int lead: 0
     readonly property var translationLines: App.music.lines
     readonly property bool translationMatches: {
         if (App.music.current.uri !== App.player.trackUri || translationLines.length !== App.lyrics.lines.length || !translationLines.length)
@@ -60,13 +61,13 @@ Item {
 
     // Acha a linha atual e agenda o timer para a próxima troca de linha (em vez de conferir sem parar).
     function sync() {
-        if (!root.synced) {
+        if (!(root.synced || root.status===Lyrics.Plain) || !App.music.syncEnabled) {
             root.current = -1
             tick.stop()
             return
         }
-        const pos = App.player.positionMs + root.lead
-        const i = App.lyrics.lineAt(pos)
+        const pos = App.player.positionMs + App.music.syncOffset
+        const i = root.translationMatches ? App.music.lineAt(App.player.positionMs) : App.lyrics.lineAt(pos)
         root.current = i
         const next = App.lyrics.lineTime(i + 1)
         if (App.player.isPlaying && next >= 0) {
@@ -77,6 +78,7 @@ Item {
         }
     }
 
+    FileDialog{id:syncExport;fileMode:FileDialog.SaveFile;nameFilters:["Ajuste Tonal (*.json)"];onAccepted:App.music.exportSyncFeedback(selectedFile)}
     Timer { id: tick; onTriggered: root.sync() }
     Timer { id: resumeFollow; interval: 4000; onTriggered: root.follow = true }
 
@@ -95,7 +97,7 @@ Item {
             if (root.autoTranslate) Qt.callLater(root.translateCurrent)
         }
     }
-    Connections { target: App.music; function onChanged(){root.updateVisualizer()} function onLyricsChanged() { if(root.autoTranslate) Qt.callLater(root.translateCurrent) } }
+    Connections { target: App.music; function onChanged(){root.updateVisualizer()} function onLyricsChanged() { root.sync();if(root.autoTranslate) Qt.callLater(root.translateCurrent) } }
 
     Rectangle {
         anchors.fill: parent
@@ -151,6 +153,8 @@ Item {
             }
             Personal.ActionIcon{symbol:"expand";description:"Expandir letras em tela cheia";onClicked:fullscreen.present()}
             Personal.ActionIcon{symbol:"font";description:"Fontes e cores";onClicked:appearance.open()}
+            CheckBox{text:"Sincronia";checked:App.music.syncEnabled;onToggled:App.music.syncEnabled=checked}
+            Button{text:"Exportar ajuste";onClicked:syncExport.open()}
             ComboBox{model:backdrop.modes;currentIndex:Math.max(0,model.indexOf(App.music.background));onActivated:App.music.background=currentText}
             Label {
                 objectName: "lyricsSourceLanguage"
@@ -237,7 +241,7 @@ Item {
 
             width: ListView.view.width
             height: verse.implicitHeight + 12
-            opacity: !root.synced || hover.containsMouse || index === root.current ? 1
+            opacity: !App.music.syncEnabled || root.current<0 || hover.containsMouse || index === root.current ? 1
                      : index < root.current ? 0.7 : 0.45
             Behavior on opacity { NumberAnimation { duration: 200 } }
 
@@ -246,37 +250,34 @@ Item {
                 width: parent.width
                 y: 6
                 spacing: 5
-                Text {
+                Personal.StyledVerse {
+                    appearance:App.music.lyricStyle;playing:App.player.isPlaying&&root.visible
                     width: parent.width - 24
                     text: line.modelData.text !== "" ? line.modelData.text : (root.synced ? "♪" : " ")
                     textFormat: Text.PlainText
                     wrapMode: Text.Wrap
-                    font.pixelSize: App.music.lyricStyle.lyricSize
-                    font.family:fullscreen.fontFamily(App.music.lyricStyle.lyricFont)
-                    font.weight: Font.Bold
-                    color: App.music.lyricStyle.lyricColor
                 }
-                Text {
+                Personal.StyledVerse {
+                    appearance:App.music.lyricStyle;translation:true;playing:App.player.isPlaying&&root.visible
                     objectName: "lyricTranslationLine"
                     width: parent.width - 24
                     text: root.translationMatches ? (root.translationLines[line.index].translation || "") : ""
                     textFormat: Text.PlainText
                     visible: showTranslation.checked && text.length > 0
                     wrapMode: Text.Wrap
-                    font.pixelSize: App.music.lyricStyle.translationSize
-                    font.family:fullscreen.fontFamily(App.music.lyricStyle.translationFont)
-                    color: App.music.lyricStyle.translationColor
                 }
             }
 
             MouseArea {
                 id: hover
                 anchors.fill: parent
-                enabled: root.synced
+                enabled: root.synced || root.status===Lyrics.Plain
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
-                    App.player.seek(line.modelData.time)
+                    App.music.useDisplayedLyrics(App.player.trackUri,App.lyrics.lines)
+                    App.music.alignLyrics(line.index,App.player.positionMs)
+                    root.sync()
                     root.follow = true
                 }
             }
