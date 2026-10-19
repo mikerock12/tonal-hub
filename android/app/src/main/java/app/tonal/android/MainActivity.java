@@ -37,7 +37,7 @@ public final class MainActivity extends Activity {
     private SpotifyClient api,engineApi;private ListeningMix listeningMix;
     private final Handler handler=new Handler(Looper.getMainLooper());
     
-    private boolean destroyed,polling,local,authorizingEngine;
+    private boolean destroyed,polling,local,authorizingEngine,foreground;
     private long lastPoll;
     private String currentUri="",queriedLikeUri="";
     private final Consumer<String> statusListener=value->{if(clockPlaying)positionMs=currentPosition();positionAt=SystemClock.elapsedRealtime();clockPlaying=NativeBridge.playing;if(status!=null)status.setText(value);if(value.startsWith("Pronto •")){connecting=false;if(pendingPlayback!=null){Runnable run=pendingPlayback;pendingPlayback=null;run.run();}}if(value.startsWith("Falha")||value.startsWith("Tempo")||value.startsWith("Sessão")){connecting=false;}if(value.startsWith("Reconectando"))connecting=true;updateTransport();};
@@ -56,7 +56,7 @@ public final class MainActivity extends Activity {
         super.onCreate(savedInstanceState);getWindow().setStatusBarColor(BG);getWindow().setNavigationBarColor(BG);
         importTestSession();
         api=new SpotifyClient(this);engineApi=new SpotifyClient(this,true);ui=new Ui(this);artwork=new Artwork(this);
-        diagnostics=getIntent().getBooleanExtra("benchmark",false)||getIntent().getBooleanExtra("selfTest",false)||(BuildConfig.DEBUG&&(getIntent().getBooleanExtra("streamingBenchmark",false)||getIntent().getBooleanExtra("catalogTest",false)));
+        diagnostics=BuildConfig.DEBUG&&(getIntent().getBooleanExtra("benchmark",false)||getIntent().getBooleanExtra("selfTest",false)||getIntent().getBooleanExtra("streamingBenchmark",false)||getIntent().getBooleanExtra("catalogTest",false));
         buildShell();catalog=new CatalogScreen(this,api,artwork,body);
         setContentView(root);if(BuildConfig.DEBUG&&getIntent().getBooleanExtra("mixUiFixture",false))handler.post(this::mixUiFixture);if(BuildConfig.DEBUG&&getIntent().getBooleanExtra("openTextPlaylist",false))handler.post(()->TextPlaylistWizard.show(this,api));NativeBridge.listeners.add(statusListener);NativeBridge.commandListeners.add(commandObserver);home();String literal=getIntent().getStringExtra("literalQuery");if(literal!=null)catalog.search(literal);
         if(Build.VERSION.SDK_INT>=33)getOnBackInvokedDispatcher().registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT,()->{if(!catalog.back())finish();});
@@ -68,7 +68,7 @@ public final class MainActivity extends Activity {
             Consumer<String> autoPlay=new Consumer<>(){public void accept(String value){if(value.startsWith("Pronto •")){NativeBridge.listeners.remove(this);if(uri!=null)NativeBridge.command(uri);}}};
             NativeBridge.listeners.add(autoPlay);connectSpotify();
         }
-        if(getIntent().getBooleanExtra("selfTest",false)||getIntent().getBooleanExtra("benchmark",false)){
+        if(BuildConfig.DEBUG&&(getIntent().getBooleanExtra("selfTest",false)||getIntent().getBooleanExtra("benchmark",false))){
             boolean effects=getIntent().getBooleanExtra("effects",false);
             api.worker.execute(()->{try{Dsp.selfTest();android.util.Log.i("TonalTest","DSP_SELF_TEST PASS");
                 if(effects){float[] gains={3,2,0,-1,0,1,2,3,2,1};NativeBridge.audio.dsp.settings=new Dsp.Settings(gains,3,true);}
@@ -159,9 +159,10 @@ public final class MainActivity extends Activity {
     }
     final ArrayList<JSONObject> orderedQueue=new ArrayList<>();int orderedCursor;
     void cancelMix(){if(listeningMix!=null)listeningMix.cancel();}
-    void playMix(ArrayList<JSONObject> tracks,int selected,boolean random,boolean discovery,boolean album){if(listeningMix==null)listeningMix=new ListeningMix(api,MusicStore.get(this));listeningMix.prepare(tracks,selected,random,discovery,album,result->{if(!destroyed&&!result.isEmpty()){NativeBridge.command("shuffle:off");playTracks(result,0,"",result.get(0));}},this::notice);}
+    void playMix(ArrayList<JSONObject> tracks,int selected,boolean random,boolean discovery,boolean album){if(listeningMix==null)listeningMix=new ListeningMix(api,MusicStore.get(this));listeningMix.prepare(tracks,selected,random,discovery,album,result->{if(!destroyed&&foreground&&!result.isEmpty()){NativeBridge.command("shuffle:off");playTracks(result,0,"",result.get(0));}},this::notice);}
     void playTracks(ArrayList<JSONObject> tracks,int index,String context,JSONObject selected){playTracks(tracks,index,context,selected,0);}
     private void playTracks(ArrayList<JSONObject> tracks,int index,String context,JSONObject selected,int resumePosition){
+        if(!foreground)return;
         cancelMix();
         orderedQueue.clear();orderedCursor=0;
         if(!api.loggedIn()){login();return;}if(index<0||index>=tracks.size())return;
@@ -206,7 +207,7 @@ public final class MainActivity extends Activity {
         playbackRevision++;expectedUri="";local=true;NativeBridge.command("stop");NativeBridge.audio.release();pendingPlayback=null;connecting=false;currentTrack=null;currentUri="";durationMs=0;now.setText(name);byline.setText("Preparando áudio local…");nowCover.setImageDrawable(new Ui.Symbol("image",Ui.MUTED));
         JSONObject localTrack=new JSONObject();MusicStore.put(localTrack,"provider","Local");MusicStore.put(localTrack,"id",file.getAbsolutePath());MusicStore.put(localTrack,"title",name);MusicStore.put(localTrack,"localFile",file.getAbsolutePath());MusicStore.put(localTrack,"playable",true);MusicStore.get(this).select(localTrack);
         long generation=AudioFiles.cancel();NativeBridge.onStatus("Decodificando e analisando volume do arquivo…");
-        api.worker.execute(()->{try{AudioFiles.Prepared prepared=AudioFiles.prepare(this,file,generation);runOnUiThread(()->{if(destroyed||AudioFiles.serial.get()!=generation){prepared.file.delete();return;}prepared.activate();byline.setText(prepared.info.optBoolean("binaural")?"IAMF binaural • libiamf/OAR":"Arquivo local • FFmpeg");PlaybackService.start(this,"file",prepared.file.getAbsolutePath());});}catch(Exception error){if(AudioFiles.serial.get()==generation)runOnUiThread(()->NativeBridge.onStatus("Falha ao preparar áudio: "+error.getMessage()));}});
+        api.worker.execute(()->{try{AudioFiles.Prepared prepared=AudioFiles.prepare(this,file,generation);runOnUiThread(()->{if(destroyed||!foreground||AudioFiles.serial.get()!=generation){prepared.file.delete();return;}prepared.activate();byline.setText(prepared.info.optBoolean("binaural")?"IAMF binaural • libiamf/OAR":"Arquivo local • FFmpeg");PlaybackService.start(this,"file",prepared.file.getAbsolutePath());});}catch(Exception error){if(AudioFiles.serial.get()==generation)runOnUiThread(()->NativeBridge.onStatus("Falha ao preparar áudio: "+error.getMessage()));}});
     }
     private void loadDsp(){NativeBridge.audio.initialize(this);}
     private void audioSettings(){AudioPanel.show(this);}
@@ -225,7 +226,13 @@ public final class MainActivity extends Activity {
             if(intent.getBooleanExtra("audioSnapshot",false))java.nio.file.Files.write(new File(getFilesDir(),"audio-snapshot.json").toPath(),NativeBridge.audio.testSnapshot().put("engineStatus",NativeBridge.status).put("currentUri",currentUri).put("positionMs",currentPosition()).toString().getBytes(StandardCharsets.UTF_8));
         }catch(Exception error){android.util.Log.e("TonalTest","Audio test hook failed",error);}
     }
-    @Override protected void onStart(){super.onStart();handler.removeCallbacks(ticker);handler.post(ticker);}
-    @Override protected void onStop(){handler.removeCallbacks(ticker);super.onStop();}
+    @Override protected void onStart(){super.onStart();foreground=true;handler.removeCallbacks(ticker);handler.post(ticker);}
+    @Override protected void onStop(){
+        foreground=false;cancelMix();
+        handler.removeCallbacks(ticker);
+        // Do not start a pending selection after the user locks or leaves.
+        if(pendingPlayback!=null){pendingPlayback=null;expectedUri="";NativeBridge.command("pause");}
+        super.onStop();
+    }
     @Override protected void onDestroy(){destroyed=true;cancelMix();MusicStore journal=MusicStore.get(this);if(journal.metadata!=null&&journal.metadata.uses(api)){journal.metadata.close();journal.metadata=null;}musicMetadata=null;NativeBridge.listeners.remove(statusListener);NativeBridge.commandListeners.remove(commandObserver);handler.removeCallbacks(ticker);catalog.close();artwork.close();api.close();engineApi.close();super.onDestroy();}
 }

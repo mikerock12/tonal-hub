@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(Tonal VERSION 0.11.0 LANGUAGES C CXX)
+project(Tonal VERSION 0.11.1 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -242,6 +242,7 @@ if(BUILD_TESTING AND TONAL_ADVANCED_AUDIO)
         src/LibrespotProcess.cpp src/Player.cpp src/SpotifyApi.cpp src/AuthManager.cpp src/playback/ListeningMix.cpp src/playback/ListeningMix.hpp)
     target_include_directories(TonalSpotifyRecoveryTests PRIVATE src)
     target_link_libraries(TonalSpotifyRecoveryTests PRIVATE tonal_audio tonal_indie_catalog tonal_companion tonal_playlist_core Qt6::Qml)
+    qt_add_resources(TonalSpotifyRecoveryTests "mix_rules" PREFIX "/companion" BASE "${CMAKE_CURRENT_SOURCE_DIR}" FILES resources/music-rules.json)
     if(MSVC)
         target_compile_options(TonalSpotifyRecoveryTests PRIVATE /utf-8 /W4)
     endif()

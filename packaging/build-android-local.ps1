@@ -45,6 +45,7 @@ Copy-Item -LiteralPath (Join-Path $root 'CREDITS.md') -Destination (Join-Path $a
 Copy-Item -LiteralPath (Join-Path $root 'third_party/PLAYLISTSPOTIFY-PORT.md') -Destination (Join-Path $assets 'licenses/PLAYLISTSPOTIFY-PORT.md') -Force
 Copy-Item -LiteralPath (Join-Path $root 'docs/TEXT_TO_TONALIFY_090.md') -Destination (Join-Path $assets 'TEXT_TO_TONALIFY_090.md') -Force
 Copy-Item -LiteralPath (Join-Path $root 'docs/LISTENING_MIX_0100.md') -Destination (Join-Path $assets 'LISTENING_MIX_0100.md') -Force
+Copy-Item -LiteralPath (Join-Path $root 'docs/DISCOVERY_PLAYBACK_0111.md') -Destination (Join-Path $assets 'DISCOVERY_PLAYBACK_0111.md') -Force
 Copy-Item -LiteralPath (Join-Path $root 'docs/MIX_QUEUE_LYRICS_0110.md') -Destination (Join-Path $assets 'MIX_QUEUE_LYRICS_0110.md') -Force
 $gradleArgs=@('-p',(Join-Path $root 'android'),'assembleRelease','--console=plain')
 if($PhoneOnly){$gradleArgs+='-PtonalAbi=arm64-v8a'}
@@ -52,6 +53,6 @@ if($PhoneOnly){$gradleArgs+='-PtonalAbi=arm64-v8a'}
 if($LASTEXITCODE -ne 0){throw 'Build APK falhou'}
 $outputPath=Join-Path $root 'out\android'
 New-Item -ItemType Directory -Force $outputPath | Out-Null
-$apkName=if($PhoneOnly){'Tonal-Android-0.11.0-arm64-v8a.apk'}else{'Tonal-Android-0.11.0-local.apk'}
+$apkName=if($PhoneOnly){'Tonal-Android-0.11.1-arm64-v8a.apk'}else{'Tonal-Android-0.11.1-local.apk'}
 Copy-Item -LiteralPath (Join-Path $root 'android\app\build\outputs\apk\release\app-release.apk') -Destination (Join-Path $outputPath $apkName) -Force
 Write-Host "APK local: $outputPath\$apkName"

@@ -13,14 +13,36 @@ Dialog {
     property var queuedRows:[]
     property bool queueEdited:false
     property string queueAnchor:""
-    function queueRows(){return transportPlayer ? transportPlayer.queue.map(t=>({provider:"Spotify",id:t.uri,uri:t.uri,title:t.name,artist:t.artists,image:t.coverUrl,durationMs:t.durationMs})) : []}
-    function openQueue(){queueEdited=false;queueAnchor=controller.current.uri || "";songQueueSource=[controller.current].concat(queueRows());queuedRows=songQueueSource;queueDialog.open();if(transportPlayer)transportPlayer.refreshQueue()}
+    property bool queueLoading:false
+    property bool pendingRemix:false
+    property bool pendingShake:false
+    property string queueNotice:""
+    function queueRows(){return transportPlayer ? transportPlayer.queue.map(t=>({provider:"Spotify",id:t.uri,uri:t.uri,title:t.name,artist:t.artists,artistId:t.artistId||"",album:t.album||"",albumId:t.albumId||"",year:t.year||0,image:t.coverUrl,durationMs:t.durationMs})) : []}
+    function openQueue(){pendingRemix=false;queueEdited=false;queueNotice="";queueAnchor=controller.current.uri || "";songQueueSource=[controller.current].concat(queueRows());queuedRows=songQueueSource;queueDialog.open();if(transportPlayer){queueLoading=true;transportPlayer.refreshQueue()}}
     function remixSong(shake){
-        if(!songQueueSource.length||queueAnchor!==(controller.current.uri || "")){queueAnchor=controller.current.uri || "";songQueueSource=[controller.current].concat(queueRows())}
-        let source=songQueueSource.slice();if(shake&&mixController&&source.length>2){let rest=source.slice(1);source=[source[0]].concat(mixController.order(rest.length,Math.floor(Math.random()*2147483647)).map(i=>rest[i]))}
-        queueEdited=true;queuedRows=[];queueDialog.open();mixController.preview(source,0,randomPlayback,discoveryPlayback,false)
+        if(!mixController)return
+        mixController.cancel();queueNotice="";queueDialog.open()
+        if(!queueEdited||!songQueueSource.length||queueAnchor!==(controller.current.uri || "")){
+            queueAnchor=controller.current.uri || "";queueEdited=true;queuedRows=[]
+            if(transportPlayer){pendingRemix=true;pendingShake=shake;queueLoading=true;transportPlayer.refreshQueue();return}
+            songQueueSource=[controller.current]
+        }
+        prepareSongMix(shake)
     }
-    Connections{target:panel.transportPlayer;ignoreUnknownSignals:true;function onQueueChanged(){if(queueDialog.visible&&!panel.queueEdited){panel.songQueueSource=[panel.controller.current].concat(panel.queueRows());panel.queuedRows=panel.songQueueSource}}}
+    function prepareSongMix(shake){
+        let source=songQueueSource.slice();if(shake&&mixController&&source.length>2){let rest=source.slice(1);source=[source[0]].concat(mixController.order(rest.length,Math.floor(Math.random()*2147483647)).map(i=>rest[i]))}
+        queueEdited=true;queuedRows=[];mixController.preview(source,0,randomPlayback,discoveryPlayback,false)
+    }
+    Connections{target:panel.transportPlayer;ignoreUnknownSignals:true;function onQueueRefreshFinished(status){
+        if(!panel.queueLoading)return
+        panel.queueLoading=false
+        if(!queueDialog.visible||panel.queueAnchor!==(panel.controller.current.uri||"")){panel.pendingRemix=false;panel.queueNotice="A música mudou. Prepare a fila novamente.";return}
+        if(status!==200){panel.pendingRemix=false;panel.queueNotice="Não foi possível carregar a fila (Spotify HTTP "+status+"). Tente novamente.";panel.queueEdited=false;return}
+        panel.songQueueSource=[panel.controller.current].concat(panel.queueRows())
+        if(panel.pendingRemix){panel.pendingRemix=false;panel.prepareSongMix(panel.pendingShake)}else panel.queuedRows=panel.songQueueSource
+    }}
+    onClosed: {pendingRemix=false;queueLoading=false}
+    Connections{target:panel.controller;function onCurrentChanged(){if(panel.queueLoading){panel.pendingRemix=false;panel.queueLoading=false;panel.queueNotice="A música mudou. Prepare a fila novamente."}}}
     Connections{target:panel.mixController;ignoreUnknownSignals:true;function onChanged(){if(panel.queueEdited&&!panel.mixController.busy)panel.queuedRows=panel.mixController.previewQueue}}
 
     property bool listShaken:false
@@ -254,19 +276,20 @@ Dialog {
         }
     }
     Dialog{id:queueDialog;objectName:"songQueueDialog";title:panel.queueEdited?"Prévia da nova fila":"Fila de reprodução";modal:true;parent:Overlay.overlay;anchors.centerIn:parent;width:Math.min(640,parent.width-32);height:Math.min(620,parent.height-48);standardButtons:Dialog.Close
+        onClosed:{panel.pendingRemix=false;panel.queueLoading=false;panel.queueEdited=false;panel.songQueueSource=[]}
         palette.window:"#141517";palette.windowText:"#f5f5f5";palette.text:"#f5f5f5";palette.button:"#263440";palette.buttonText:"#f5f5f5"
         background:Rectangle{color:"#171b24";radius:18;border.color:"#354052"}
         header:Label{text:queueDialog.title;color:"#f5f5f5";font.pixelSize:22;font.bold:true;padding:18}
         ColumnLayout{anchors.fill:parent
             Label{Layout.fillWidth:true;wrapMode:Text.Wrap;color:"#c4c7cc";text:panel.queueEdited?"Confira a ordem e aplique para tocar. A faixa atual será retomada na posição atual.":"Agora e próximas músicas informadas pelo Spotify. A fila do serviço pode ser parcial."}
-            Label{visible:!!panel.mixController;color:"#00b3ef";text:panel.mixController?panel.mixController.status:"";Layout.fillWidth:true;wrapMode:Text.Wrap}
+            Label{visible:!!panel.mixController;color:"#00b3ef";text:panel.queueLoading?"Carregando a fila atual do Spotify…":panel.queueNotice|| (panel.mixController?panel.mixController.status:"");Layout.fillWidth:true;wrapMode:Text.Wrap}
             ListView{Layout.fillWidth:true;Layout.fillHeight:true;clip:true;model:panel.queuedRows;spacing:8;ScrollBar.vertical:ScrollBar{}
                 delegate:Column{required property var modelData;required property int index;width:ListView.view.width;spacing:3
                     Label{width:parent.width;text:(index===0?"Agora • ":index+" • ")+(modelData.title||"");textFormat:Text.PlainText;color:modelData.mixExternal?"#00b3ef":"#f5f5f5";elide:Text.ElideRight;font.bold:true}
                     Label{width:parent.width;text:(modelData.artist||"")+(modelData.mixExternal?" • Descoberta":"");textFormat:Text.PlainText;color:"#a5a8ad";elide:Text.ElideRight}
                 }
             }
-            Button{text:"Aplicar e reproduzir fila";visible:panel.queueEdited;enabled:panel.mixController&&!panel.mixController.busy&&panel.queuedRows.length>0;onClicked:{if(panel.queueAnchor!==(panel.controller.current.uri||"")){panel.notice="A música mudou. Prepare a fila novamente.";queueDialog.close();return}panel.mixController.applyPreview(panel.position);queueDialog.close()}}
+            Button{text:"Aplicar e reproduzir fila";visible:panel.queueEdited;enabled:!panel.queueLoading&&!panel.pendingRemix&&!panel.queueNotice&&panel.mixController&&!panel.mixController.busy&&panel.queuedRows.length>0;onClicked:{if(panel.queueAnchor!==(panel.controller.current.uri||"")){panel.notice="A música mudou. Prepare a fila novamente.";queueDialog.close();return}panel.mixController.applyPreview(panel.position);queueDialog.close()}}
         }
     }
     FileDialog{id:syncExport;fileMode:FileDialog.SaveFile;nameFilters:["Ajuste Tonal (*.json)"];onAccepted:panel.controller.exportSyncFeedback(selectedFile)}
