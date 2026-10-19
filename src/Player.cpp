@@ -50,6 +50,11 @@ QVariantMap simplifyItem(const QJsonObject &item) {
            item.value(QStringLiteral("duration_ms")).toInt());
   if (item.contains(QStringLiteral("album"))) {
     const QJsonObject album = item.value(QStringLiteral("album")).toObject();
+    const auto artists = item.value(QStringLiteral("artists")).toArray();
+    m.insert(QStringLiteral("artistId"), artists.isEmpty() ? QString() : artists.first().toObject().value(QStringLiteral("id")).toString());
+    m.insert(QStringLiteral("albumId"), album.value(QStringLiteral("id")).toString());
+    m.insert(QStringLiteral("album"), album.value(QStringLiteral("name")).toString());
+    m.insert(QStringLiteral("year"), album.value(QStringLiteral("release_date")).toString().left(4).toInt());
     m.insert(QStringLiteral("artists"),
              joinArtists(item.value(QStringLiteral("artists")).toArray()));
     m.insert(QStringLiteral("coverUrl"),
@@ -338,16 +343,73 @@ void Player::checkLiked() {
 }
 
 void Player::refreshQueue() {
+  const auto generation = m_transportGeneration;
+  const auto current = m_trackUri;
   m_api->get(QStringLiteral("/me/player/queue"), {},
-             [this](int status, const QJsonDocument &doc) {
-               if (status != 200)
-                 return;
+             [this, generation, current](int status, const QJsonDocument &doc) {
+                 if (generation != m_transportGeneration || current != m_trackUri) {
+                   emit queueRefreshFinished(409);
+                   return;
+                 }
+                 if (status != 200) {
+                   emit queueRefreshFinished(status);
+                   return;
+                 }
                m_queue.clear();
                for (const QJsonValue &v :
                     doc.object().value(QStringLiteral("queue")).toArray())
                  m_queue << simplifyItem(v.toObject());
+               // Connect devices may return no queue even for an album/playlist.
+               // Resolve that exact context, never invent a second source song.
+               if (m_queue.isEmpty() && (m_contextUri.startsWith("spotify:album:") ||
+                                         m_contextUri.startsWith("spotify:playlist:"))) {
+                 const auto id = m_contextUri.section(':', -1);
+                 const auto path = m_contextUri.startsWith("spotify:album:")
+                     ? "/albums/" + id : "/playlists/" + id + "/items?limit=50";
+                 loadContextQueue(path, m_contextUri, current, generation);
+                 return;
+               }
                emit queueChanged();
+               emit queueRefreshFinished(status);
              });
+}
+
+void Player::loadContextQueue(const QString &path, const QString &context,
+                              const QString &track, uint64_t generation,
+                              QVariantList rows, QJsonObject album, int page) {
+  m_api->get(path, {}, [this, context, track, generation, rows, album, page]
+             (int status, const QJsonDocument &doc) mutable {
+    if (generation != m_transportGeneration || track != m_trackUri || context != m_contextUri) {
+      emit queueRefreshFinished(409);
+      return;
+    }
+    if (status != 200) { emit queueRefreshFinished(status); return; }
+    auto data = doc.object();
+    if (data.contains("tracks") && context.startsWith("spotify:album:")) {
+      album = data;
+      data = data["tracks"].toObject();
+      album.remove("tracks");
+    }
+    for (const auto &value : data["items"].toArray()) {
+      auto item = value.toObject();
+      if (item.contains("item")) item = item["item"].toObject();
+      else if (item.contains("track")) item = item["track"].toObject();
+      if (!item["uri"].toString().startsWith("spotify:track:") || item["is_local"].toBool()) continue;
+      if (!item.contains("album") && !album.isEmpty()) item["album"] = album;
+      if (rows.size() < 500) rows << simplifyItem(item);
+    }
+    int at = -1;
+    for (int i = 0; i < rows.size(); ++i)
+      if (rows[i].toMap()["uri"].toString() == track) { at = i; break; }
+    const auto next = data["next"].toString();
+    if (!next.isEmpty() && rows.size() < 500 && page < 9 && (at < 0 || rows.size() - at < 20)) {
+      loadContextQueue(next, context, track, generation, rows, album, page + 1);
+      return;
+    }
+    m_queue = at < 0 ? QVariantList{} : rows.mid(at + 1);
+    emit queueChanged();
+    emit queueRefreshFinished(200);
+  });
 }
 
 void Player::refreshDevices() {

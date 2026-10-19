@@ -23,5 +23,8 @@ private:
  void prepare(const QVariantList&,int,bool,bool,bool,bool);
  QVariantList m_previewQueue;bool m_preview=false;
  QVariantMap known(const QVariantMap&)const;QString genres(const QVariantMap&)const;void search(int serial,int index);void finish(int serial);
+ void resolveGenres(int serial, QVariantMap anchor);
+ void startSearch(int serial, const QVariantMap &anchor, const QString &genre);
+ QString m_failure;
  SpotifyApi*m_api;MusicCompanion*m_music;QJsonObject m_rules;QVariantList m_source,m_pool;QStringList m_queries;QHash<QString,int> m_totals;bool m_busy=false,m_random=false,m_discovery=false,m_album=false;int m_generation=0,m_selected=0;quint32 m_seed=0;QString m_status;
 };

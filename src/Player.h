@@ -124,6 +124,7 @@ signals:
   void likedChanged();
   void localDeviceChanged();
   void queueChanged();
+  void queueRefreshFinished(int status);
   void devicesChanged();
   void message(const QString &text);
 
@@ -135,6 +136,9 @@ private:
   void refreshSoon(int ms = 400);
   void scheduleNextPoll();
   void checkLiked();
+  void loadContextQueue(const QString &path, const QString &context,
+                        const QString &track, uint64_t generation,
+                        QVariantList rows = {}, QJsonObject album = {}, int page = 0);
   void findLocalDevice(int attemptsLeft);
   QString targetDeviceForPlay() const;
   void sendPlay(const QJsonObject &body, const QString &deviceId,

@@ -13,9 +13,11 @@ public final class NativeBridge {
     static final CopyOnWriteArrayList<Consumer<String>> commandListeners=new CopyOnWriteArrayList<>();
     static final PlaybackIntent intent=new PlaybackIntent();
     static volatile long generation,lastPcm;
-    public static void start(String token,String cache,int bitrate,boolean normalize){nativeStart(token,cache,bitrate,normalize);}
+    static volatile boolean spotifyEngine;
+    public static void start(String token,String cache,int bitrate,boolean normalize){spotifyEngine=true;nativeStart(token,cache,bitrate,normalize);}
     public static void command(String command){
         synchronized(intent){intent.command(command,playing);}
+        if(command.equals("pause")||command.equals("stop")){audio.pause();playing=false;}
         Consumer<String> listener=commandListener;if(listener!=null)listener.accept(command);
         main.post(()->{for(Consumer<String> observer:commandListeners)observer.accept(command);});
         sendCommand(command);
@@ -50,12 +52,17 @@ public final class NativeBridge {
         Diagnostics.write(value);
         main.post(()->{ if(epoch==generation)for(Consumer<String> listener:listeners) listener.accept(value); });
     }
-    public static void onAudioStart(int rate) { audio.source(false,false,-70,0,Double.NaN,0); audio.startStereo(rate); playing=true; onStatus("Reproduzindo"); }
+    public static void onAudioStart(int rate) {
+        boolean allowed;synchronized(intent){allowed=intent.audioStarted(android.os.SystemClock.elapsedRealtime());}
+        if(!allowed){playing=false;audio.pause();sendCommand("pause");onDiagnostic("Áudio não solicitado bloqueado");return;}
+        audio.source(false,false,-70,0,Double.NaN,0); audio.startStereo(rate); playing=true; onStatus("Reproduzindo");
+    }
     public static void onAudioFormat(int rate,int channels) { audio.open(rate,channels); playing=true; onStatus("Reproduzindo"); }
-    public static void onAudioResume() { audio.resume(); playing=true; onStatus("Reproduzindo"); }
+    public static void onAudioResume() { if(spotifyEngine&&!intent.desired){sendCommand("pause");return;}audio.resume(); playing=true; onStatus("Reproduzindo"); }
     public static void onAudioPause() { audio.pause(); playing=false; onStatus("Pausado"); }
     private static final ThreadLocal<Boolean> audioPriority=ThreadLocal.withInitial(()->false);
     public static void onPcm(float[] samples) {
+        if(spotifyEngine&&!intent.desired)return;
         if(samples.length>0)lastPcm=android.os.SystemClock.elapsedRealtime();
         if(!audioPriority.get()){try{android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);}catch(SecurityException ignored){}audioPriority.set(true);}
         audio.write(samples);

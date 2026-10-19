@@ -4,10 +4,14 @@ package app.tonal.android;
 final class PlaybackIntent {
     String selection="", track="";
     int position;
-    boolean desired, local;
+    volatile boolean desired;
+    boolean local;
+    private long recoveryStartedAt=-1;
+    static final long RECOVERY_WINDOW_MS=120_000;
     long revision;
     void command(String command, boolean playing) {
         revision++;
+        if(command.equals("pause")||command.equals("stop")||command.equals("play")||command.equals("toggle")||command.startsWith("restore|")||command.startsWith("queue|")||command.startsWith("context|")||command.startsWith("spotify:"))recoveryStartedAt=-1;
         if(command.startsWith("restore|")){String[] parts=command.split("\\|",4);if(parts.length==4){try{position=Math.max(0,Integer.parseInt(parts[1]));track=parts[2];selection=parts[3];desired=true;local=false;}catch(NumberFormatException ignored){}}return;}
         if(command.equals("stop")){selection="";track="";position=0;desired=false;return;}
         if(command.equals("pause")){desired=false;return;}
@@ -28,4 +32,8 @@ final class PlaybackIntent {
     }
     String resumeSelection(){return !track.isEmpty()?track:selection;}
     String restoreCommand(){return "restore|"+position+"|"+track+"|"+selection;}
+    boolean canRecover(long now){return desired&&!local&&!resumeSelection().isEmpty()&&(recoveryStartedAt<0||now-recoveryStartedAt<=RECOVERY_WINDOW_MS);}
+    boolean beginRecovery(long now){if(!canRecover(now))return false;if(recoveryStartedAt<0)recoveryStartedAt=now;return true;}
+    boolean audioStarted(long now){if(!desired||(recoveryStartedAt>=0&&now-recoveryStartedAt>RECOVERY_WINDOW_MS))return false;recoveryStartedAt=-1;return true;}
+    boolean allowMediaPlay(boolean locked,boolean allowLocked){return (local||!resumeSelection().isEmpty())&&(!locked||allowLocked||desired);}
 }

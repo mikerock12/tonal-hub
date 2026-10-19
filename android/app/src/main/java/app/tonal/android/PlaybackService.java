@@ -34,7 +34,7 @@ public final class PlaybackService extends Service {
     @Override public void onCreate(){
         super.onCreate();NativeBridge.audio.initialize(this);Diagnostics.initialize(this,"tonalify");
         connectivity=getSystemService(android.net.ConnectivityManager.class);connectivity.registerDefaultNetworkCallback(network);
-        NativeBridge.commandListener=command->{if(command.equals("stop")){spotify=false;recovering=false;restartQueued=false;control.removeCallbacks(restart);}else if(command.equals("pause")){control.removeCallbacks(resume);}};
+        NativeBridge.commandListener=command->{if(command.equals("stop")){spotify=false;cancelRecovery();}else if(command.equals("pause")||command.equals("toggle")&&!NativeBridge.intent.desired){cancelRecovery();}};
         IntentFilter switching=new IntentFilter("app.tonal.android.PAUSE_TONALIFY");
         if(Build.VERSION.SDK_INT>=33)registerReceiver(switchPlayer,switching,Context.RECEIVER_NOT_EXPORTED);else registerReceiver(switchPlayer,switching);
         control.postDelayed(watchdog,5000);control.post(historyTick);
@@ -42,7 +42,12 @@ public final class PlaybackService extends Service {
         notifications.createNotificationChannel(new NotificationChannel("playback","Reprodução",NotificationManager.IMPORTANCE_LOW));
         media=new MediaSession(this,"Tonalify");
         media.setCallback(new MediaSession.Callback(){
-            @Override public void onPlay(){NativeBridge.command("play");}
+            @Override public void onPlay(){
+                boolean locked=getSystemService(KeyguardManager.class).isKeyguardLocked();
+                boolean allow=getSharedPreferences("settings",0).getBoolean("allowLockedMediaResume",false);
+                synchronized(NativeBridge.intent){if(!NativeBridge.intent.allowMediaPlay(locked,allow)){Diagnostics.write("Retomada externa não solicitada bloqueada");return;}}
+                if(audioManager.requestAudioFocus(focus)==AudioManager.AUDIOFOCUS_REQUEST_GRANTED)NativeBridge.command("play");
+            }
             @Override public void onPause(){NativeBridge.command("pause");}
             @Override public void onSkipToNext(){NativeBridge.command("next");}
             @Override public void onSkipToPrevious(){NativeBridge.command("prev");}
@@ -66,7 +71,7 @@ public final class PlaybackService extends Service {
     }
     private void update(String text){
         if(spotify&&(text.startsWith("Falha")||text.startsWith("Tempo")||text.startsWith("Sessão")))scheduleRecovery(text);
-        if(text.startsWith("Pronto •")&&recovering){recovering=false;resumeRevision=NativeBridge.intent.revision;control.post(resume);}
+        if(text.startsWith("Pronto •")&&recovering){recovering=false;control.post(resume);}
         getSystemService(NotificationManager.class).notify(1,notification(text));
         media.setPlaybackState(new PlaybackState.Builder().setActions(PlaybackState.ACTION_PLAY_PAUSE|PlaybackState.ACTION_PLAY|PlaybackState.ACTION_PAUSE|PlaybackState.ACTION_SKIP_TO_NEXT|PlaybackState.ACTION_SKIP_TO_PREVIOUS|PlaybackState.ACTION_STOP)
             .setState(NativeBridge.playing?PlaybackState.STATE_PLAYING:PlaybackState.STATE_PAUSED,PlaybackState.PLAYBACK_POSITION_UNKNOWN,1).build());
@@ -77,15 +82,17 @@ public final class PlaybackService extends Service {
     private long resumeRevision;
     private final Runnable resume=()->{
         if(destroyed||!spotify||!NativeBridge.ready)return;
-        synchronized(NativeBridge.intent){PlaybackIntent state=NativeBridge.intent;if(state.revision!=resumeRevision||!state.desired||state.local)return;
+        synchronized(NativeBridge.intent){PlaybackIntent state=NativeBridge.intent;if(state.revision!=resumeRevision||!state.canRecover(SystemClock.elapsedRealtime()))return;
             if(!state.resumeSelection().isEmpty())NativeBridge.sendCommand(state.restoreCommand());}
     };
-    private final Runnable restart=()->{restartQueued=false;if(!destroyed&&spotify){NativeBridge.sendCommand("stop");NativeBridge.audio.release();startEngine("");}};
+    private void cancelRecovery(){recovering=false;restartQueued=false;waitingNetwork=false;control.removeCallbacks(restart);control.removeCallbacks(resume);}
+    private final Runnable restart=()->{restartQueued=false;if(!destroyed&&spotify){synchronized(NativeBridge.intent){if(!NativeBridge.intent.canRecover(SystemClock.elapsedRealtime())||NativeBridge.intent.revision!=resumeRevision){cancelRecovery();return;}}NativeBridge.sendCommand("stop");NativeBridge.audio.release();startEngine("");}};
     private final Runnable watchdog=new Runnable(){public void run(){if(destroyed)return;boolean expected; synchronized(NativeBridge.intent){expected=NativeBridge.intent.desired&&!NativeBridge.intent.local&&!NativeBridge.intent.resumeSelection().isEmpty();}
         if(spotify&&NativeBridge.ready&&expected&&online()&&SystemClock.elapsedRealtime()-Math.max(startedAt,NativeBridge.lastPcm)>30000)scheduleRecovery("Motor sem progresso PCM por 30 segundos");control.postDelayed(this,5000);}};
     private boolean online(){android.net.Network current=connectivity.getActiveNetwork();android.net.NetworkCapabilities c=current==null?null:connectivity.getNetworkCapabilities(current);return c!=null&&c.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED);}
     private void scheduleRecovery(String reason){
         if(restartQueued||destroyed)return;
+        synchronized(NativeBridge.intent){if(!NativeBridge.intent.beginRecovery(SystemClock.elapsedRealtime())){cancelRecovery();if(NativeBridge.intent.desired){NativeBridge.command("pause");NativeBridge.onStatus("Retomada automática expirou. Toque em Reproduzir para continuar.");}return;}resumeRevision=NativeBridge.intent.revision;}
         if(!online()){waitingNetwork=true;recovering=true;NativeBridge.onStatus("Aguardando internet para reconectar o motor…");return;}
         long now=SystemClock.elapsedRealtime();while(!restarts.isEmpty()&&now-restarts.peekFirst()>300000)restarts.removeFirst();
         if(restarts.size()>=3){Diagnostics.write("Limite de recuperação automática atingido");NativeBridge.onStatus("Recuperação interrompida após 3 tentativas. Use Conectar motor Spotify para tentar novamente.");return;}
@@ -109,7 +116,7 @@ public final class PlaybackService extends Service {
         }else if("file".equals(action)){
             spotify=false;recovering=false;control.removeCallbacks(restart);restartQueued=false;NativeBridge.intent.local=true;
             sendBroadcast(new Intent("app.tonal.android.PAUSE_INDIE").setPackage(getPackageName()));
-            NativeBridge.audio.release();NativeBridge.ready=false;NativeBridge.playFile(value);
+            NativeBridge.spotifyEngine=false;NativeBridge.audio.release();NativeBridge.ready=false;NativeBridge.playFile(value);
         }else if("stop".equals(action)){stopSelf();}
         return START_NOT_STICKY;
     }

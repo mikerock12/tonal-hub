@@ -44,6 +44,10 @@ final class AudioPanel {
         content.addView(ui.action("Configurações Bluetooth do Android",()->{try{activity.startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS));}catch(ActivityNotFoundException e){notice.accept("Configurações Bluetooth indisponíveis neste dispositivo.");}}));
         choice("Perfil deste dispositivo",new String[]{"Automático / estéreo","Fones / headphones","Rádio de carro","Caixa de som"},config.profile,i->{config.profile=i;});
         choice("Buffer e estabilidade",new String[]{"Equilibrado • adaptação automática","Priorizar estabilidade","Menor buffer • pode falhar mais"},config.buffer,i->{config.buffer=i;});
+        if(spotify){SharedPreferences controls=activity.getSharedPreferences("settings",0);
+            check("Permitir retomar por Bluetooth ou tela bloqueada",controls.getBoolean("allowLockedMediaResume",false),on->controls.edit().putBoolean("allowLockedMediaResume",on).apply());
+            note("Desativado por padrão para impedir comandos automáticos de carro ou fones após uma pausa. A música já iniciada continua com a tela bloqueada. Para retomar pausas pelos controles externos com o aparelho bloqueado, ative esta opção.");
+        }
         note("O buffer aumenta se houver falhas. Reduzi-lo não elimina o atraso do Bluetooth. As preferências ficam salvas para esta saída; carro e caixa de som usam estéreo.");
         if(spotify){title("Streaming Spotify");SharedPreferences prefs=audio.prefs();int quality=prefs.getInt("quality",320);
         choice("Qualidade Spotify",new String[]{"320 kbps • muito alta","160 kbps • alta","96 kbps • economia"},quality==96?2:quality==160?1:0,i->{prefs.edit().putInt("quality",new int[]{320,160,96}[i]).apply();notice.accept("Qualidade salva. Reconecte o motor Spotify para aplicar.");});

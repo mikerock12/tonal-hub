@@ -101,6 +101,132 @@ protected:
 
 class SpotifyRecoveryTests {
 public:
+  // Catalog and queue reads only. Never starts an engine or changes playback.
+  static QJsonObject discoveryReadOnly() {
+    QJsonObject report{{"passed", false}, {"read_only", true},
+                       {"credentials_logged", false}};
+    try {
+      QNetworkAccessManager network;
+      AuthManager auth(&network);
+      SpotifyApi api(&network, &auth);
+      if (!auth.isAuthenticated()) {
+        report["skipped"] = "No saved Web API session";
+        return report;
+      }
+      require(spin([&] { return auth.hasValidAccessToken() || !auth.isRefreshing(); }, 25000)
+                  && auth.hasValidAccessToken(), "Cannot refresh saved catalog session");
+      bool received = false;
+      int status = 0;
+      QJsonObject queue;
+      api.get("/me/player/queue", {}, [&](int s, const QJsonDocument &d) {
+        status = s; queue = d.object(); received = true;
+      });
+      require(spin([&] { return received; }, 15000), "Queue read timed out");
+      report["queue_http"] = status;
+      // Exercise the production queue resolver, including partial Connect queues.
+      received = false;
+      QJsonObject playerState;
+      api.get("/me/player", {}, [&](int s, const QJsonDocument &d) {
+        if (s == 200) playerState = d.object(); received = true;
+      });
+      require(spin([&] { return received; }, 15000), "Playback state read timed out");
+      if (!playerState.isEmpty()) {
+        QTemporaryDir processStorage;
+        LibrespotProcess engine(nullptr, processStorage.path());
+        Player player(&api, &engine, &auth);
+        player.m_trackUri = playerState["item"].toObject()["uri"].toString();
+        player.m_contextUri = playerState["context"].toObject()["uri"].toString();
+        int resolved = -1;
+        QObject::connect(&player, &Player::queueRefreshFinished, &player, [&](int s) { resolved = s; });
+        player.refreshQueue();
+        require(spin([&] { return resolved >= 0; }, 25000), "Resolved queue read timed out");
+        report["resolved_queue_http"] = resolved;
+        report["resolved_queue_count"] = player.queue().size();
+        report["context_type"] = player.m_contextUri.section(':', 1, 1);
+        if (resolved == 200) {
+          QJsonArray items;
+          for (const auto &v : player.queue()) {
+            const auto t = v.toMap();
+            items.append(QJsonObject{{"uri", t["uri"].toString()}, {"name", t["name"].toString()},
+              {"artists", QJsonArray{QJsonObject{{"name", t["artists"].toString()}, {"id", t["artistId"].toString()}}}},
+              {"album", QJsonObject{{"id", t["albumId"].toString()}, {"name", t["album"].toString()}, {"release_date", QString::number(t["year"].toInt())}}}});
+          }
+          queue["queue"] = items;
+          queue["currently_playing"] = playerState["item"];
+        }
+      }
+      QJsonArray probes;
+      for (const QString q : {QString("genre:\"grunge\""), QString("grunge"), QString("genre:\"alternative rock\"")}) {
+        received = false;
+        api.get("/search", {{"q", q}, {"type", "track"}, {"limit", 10}},
+          [&](int s, const QJsonDocument &d) {
+            const auto tracks = d.object()["tracks"].toObject();
+            QJsonArray titles;
+            for (const auto &v : tracks["items"].toArray()) titles.append(v.toObject()["name"]);
+            probes.append(QJsonObject{{"query", q}, {"http", s}, {"total", tracks["total"]}, {"titles", titles}});
+            received = true;
+          });
+        require(spin([&] { return received; }, 15000), "Catalog probe timed out");
+      }
+      report["catalog_probes"] = probes;
+      QJsonArray cases;
+      auto check = [&](QVariantList source, const QString &name) {
+        QTemporaryDir storage;
+        MusicCompanion music(nullptr, storage.path());
+        ListeningMix mix(&api, &music);
+        mix.preview(source, 0, false, true);
+        require(spin([&] { return !mix.busy(); }, 30000), "Discovery preview timed out");
+        int outside = 0;
+        for (const auto &row : mix.previewQueue())
+          outside += row.toMap()["mixExternal"].toBool();
+        cases.append(QJsonObject{{"case", name}, {"source_count", source.size()},
+          {"queue_count", mix.previewQueue().size()}, {"outside_count", outside},
+          {"status", mix.status()}});
+      };
+      if (status == 200) {
+        QVariantList source;
+        auto items = queue["queue"].toArray();
+        items.prepend(queue["currently_playing"]);
+        for (const auto &v : items) {
+          const auto t = v.toObject(), album = t["album"].toObject();
+          const auto artists = t["artists"].toArray();
+          if (!t["uri"].toString().startsWith("spotify:track:")) continue;
+          QStringList names;
+          for (const auto &a : artists) names << a.toObject()["name"].toString();
+          source << QVariantMap{{"provider", "Spotify"}, {"id", t["uri"].toString()},
+            {"uri", t["uri"].toString()}, {"title", t["name"].toString()},
+            {"artist", names.join(", ")}, {"artistId", artists.first().toObject()["id"].toString()},
+            {"albumId", album["id"].toString()}, {"album", album["name"].toString()},
+            {"year", album["release_date"].toString().left(4).toInt()}};
+          if (source.size() == 6) break;
+        }
+        if (!source.isEmpty()) check(source, "current_queue");
+      }
+      // Stable user-requested artist; inspect the same catalog path used by the UI.
+      received = false;
+      QVariantList source;
+      api.get("/search", {{"q", "artist:Hole"}, {"type", "track"}, {"limit", 6}},
+        [&](int s, const QJsonDocument &doc) {
+          status = s;
+          for (const auto &v : doc.object()["tracks"].toObject()["items"].toArray()) {
+            const auto t = v.toObject(), album = t["album"].toObject();
+            source << QVariantMap{{"provider", "Spotify"}, {"id", t["uri"].toString()},
+              {"uri", t["uri"].toString()}, {"artist", "Hole"}, {"title", t["name"].toString()},
+              {"artistId", t["artists"].toArray().first().toObject()["id"].toString()},
+              {"albumId", album["id"].toString()},
+              {"year", album["release_date"].toString().left(4).toInt()}};
+          }
+          received = true;
+        });
+      require(spin([&] { return received; }, 15000) && status == 200, "Cannot read test artist tracks");
+      check(source, "Hole_catalog");
+      report["cases"] = cases;
+      report["passed"] = std::all_of(cases.begin(), cases.end(), [](const auto &v) {
+        return v.toObject()["source_count"].toInt() < 2 || v.toObject()["outside_count"].toInt() > 0;
+      });
+    } catch (const std::exception &e) { report["error"] = QString::fromUtf8(e.what()); }
+    return report;
+  }
   static QJsonObject liveSession(bool readyOnly = false) {
     QJsonObject report{{"passed", false},
                        {"real_spotify_session", true},
@@ -544,7 +670,36 @@ public:
     hang=true;mix.play(source,0,false,true,true);mix.cancel();spin([]{return false;},150);require(!mix.busy()&&completions==2,"cancelled discovery stole playback");hang=false;blocked=true;mix.play(source,0,false,true,true);require(spin([&]{return !mix.busy();})&&result==source&&completions==3,"API failure did not preserve source selection");
     const int beforePreview=completions;mix.preview(source,0,true,false);require(!mix.busy()&&completions==beforePreview&&mix.previewQueue().size()==6,"queue preview started playback");
     int applied=0,resume=-1;QObject::connect(&mix,&ListeningMix::resumeReady,&mix,[&](const auto& rows,int p){require(rows==mix.previewQueue(),"applied queue differs from preview");++applied;resume=p;});mix.applyPreview(12345);require(applied==1&&resume==12345,"queue position not preserved");
+    blocked=false;
+    auto single=source.mid(0,1);const int prior=requests;mix.preview(single,0,false,true);
+    require(!mix.busy()&&requests==prior&&mix.status().contains("pelo menos duas"),"single-song queue silently failed discovery");
+    mix.preview(source,0,false,true);require(spin([&]{return !mix.busy();},8000)&&mix.previewQueue().size()==9,"preview discovery failed");
+    require(completions==beforePreview,"preview changed current playback");
     std::cout<<"PASS listening mix: 2+1, readonly bounded discovery, stale callbacks and offline fallback\n";
+  }
+  static void contextQueue() {
+    FakeNetwork network; AuthManager auth(&network); fakeAuth(auth);
+    SpotifyApi api(&network, &auth); QTemporaryDir storage;
+    LibrespotProcess engine(nullptr, storage.path()); Player player(&api, &engine, &auth);
+    player.m_contextUri="spotify:album:album-fixture";player.m_trackUri="spotify:track:source0";
+    bool deny=false;
+    network.respond=[&](const QNetworkRequest &request,const QByteArray &body){
+      require(body.isEmpty(),"queue resolution mutated playback");
+      if(request.url().path()=="/v1/me/player/queue")return Response{deny?403:200,"{\"queue\":[]}"};
+      if(request.url().path()=="/v1/albums/album-fixture"){
+        QJsonArray items;
+        for(int i=0;i<6;++i)items.append(QJsonObject{{"uri",QString("spotify:track:source%1").arg(i)},
+          {"name",QString("Source %1").arg(i)}, {"artists",QJsonArray{QJsonObject{{"id","artist-fixture"},{"name","Hole"}}}}});
+        return Response{200,QJsonDocument(QJsonObject{{"id","album-fixture"},{"name","Live Through This"},{"release_date","1994-04-12"},
+          {"tracks",QJsonObject{{"items",items}}}}).toJson()};
+      }
+      return Response{};
+    };
+    int done=-1;QObject::connect(&player,&Player::queueRefreshFinished,&player,[&](int status){done=status;});
+    player.refreshQueue();require(spin([&]{return done>=0;})&&done==200&&player.queue().size()==5,"empty Connect queue did not resolve album context");
+    auto row=player.queue()[0].toMap();require(row["uri"]=="spotify:track:source1"&&row["year"]==1994&&row["artistId"]=="artist-fixture"&&row["albumId"]=="album-fixture","queue lost discovery metadata");
+    deny=true;done=-1;player.refreshQueue();require(spin([&]{return done>=0;})&&done==403,"queue failure left preview waiting");
+    std::cout<<"PASS partial Connect queue resolves exact context and preserves discovery metadata\n";
   }
   static void playlistTransport() {
     FakeNetwork network;AuthManager auth(&network);SpotifyApi api(&network,&auth);fakeAuth(auth);
@@ -703,7 +858,8 @@ static int producer() {
 int main(int argc, char **argv) {
   QCoreApplication app(argc, argv);
   const bool live = app.arguments().contains("--live-session") ||
-                    app.arguments().contains("--ready-only");
+                    app.arguments().contains("--ready-only") ||
+                    app.arguments().contains("--discovery-readonly");
   app.setOrganizationName(live ? "Tonal" : "TonalRecoveryTests");
   app.setApplicationName(live ? "Tonal" : "Playback");
   if (app.arguments().contains("--name"))
@@ -714,7 +870,9 @@ int main(int argc, char **argv) {
   if (!live)
     qputenv("RUST_LOG", "warn");
   QJsonObject report;
-  if (live)
+  if (app.arguments().contains("--discovery-readonly"))
+    report = SpotifyRecoveryTests::discoveryReadOnly();
+  else if (live)
     report = SpotifyRecoveryTests::liveSession(
         app.arguments().contains("--ready-only"));
   else {
@@ -724,6 +882,7 @@ int main(int argc, char **argv) {
       SpotifyRecoveryTests::deadlines();
       SpotifyRecoveryTests::playlistTransport();
       SpotifyRecoveryTests::listeningMix();
+      SpotifyRecoveryTests::contextQueue();
 #ifdef _WIN32
       for (const auto *mode : {"crash-once", "eof-once", "stall-once",
                                "panic-once", "paused", "always-crash",

@@ -1,0 +1,142 @@
+{
+  "version": "0.11.1",
+  "passed": true,
+  "recorded_at_utc": "2026-10-19T02:22:11.646432+00:00",
+  "windows": {
+    "ctest_passed": 10,
+    "ctest_seconds": 42.44,
+    "mix_qt_passed": 6,
+    "lyrics_qt_passed": 6,
+    "playlist_qt_passed": 3,
+    "fresh_queue_regression_failed_before_fix": true,
+    "queue_http_failure_no_preview_verified": true,
+    "partial_connect_queue_exact_album_resolution_verified_with_fake_transport": true,
+    "queue_artist_album_year_preserved": true,
+    "installed_upgrade": {
+      "passed": true,
+      "previous_version": "0.11.0.0",
+      "installed_version": "0.11.1.0",
+      "files_match": {
+        "TonalHub.exe": true,
+        "Tonalify.exe": true,
+        "IndieTonal.exe": true,
+        "qt.conf": true,
+        "platforms/qwindows.dll": true,
+        "sqldrivers/qsqlite.dll": true,
+        "CREDITS.md": true,
+        "TEXT_TO_TONALIFY_090.md": true,
+        "LISTENING_MIX_0100.md": true,
+        "MIX_QUEUE_LYRICS_0110.md": true,
+        "DISCOVERY_PLAYBACK_0111.md": true,
+        "licenses/PLAYLISTSPOTIFY-PORT.md": true
+      },
+      "installed_startup_without_sdk_paths": true,
+      "personal_data_preserved": {
+        "IndieTonal\\audio.json": true,
+        "Tonal\\audio.json": true,
+        "Tonal\\preferences.json": true,
+        "Tonal\\personal\\music-library.sqlite": true
+      },
+      "installer_sha256": "2b47d8fd923bc906bdff9d723a583ae82be969c3b99adb381141491e298d3d44",
+      "installer_bytes": 81534828,
+      "physical_audition": false,
+      "uninstall_test": "Existing installation upgraded; not uninstalled"
+    }
+  },
+  "live_spotify": {
+    "read_only": true,
+    "playback_changed": false,
+    "cases": [
+      {
+        "case": "current_queue",
+        "outside_count": 0,
+        "queue_count": 1,
+        "source_count": 1,
+        "status": "A Descoberta 2+1 precisa de pelo menos duas músicas na fila. Abra um álbum ou uma playlist e reproduza a seleção com a Descoberta ativada."
+      },
+      {
+        "case": "Hole_catalog",
+        "outside_count": 1,
+        "queue_count": 4,
+        "source_count": 3,
+        "status": "Descoberta 2+1 • 1 músicas externas. Artistas inéditos priorizados no histórico deste aparelho."
+      }
+    ],
+    "resolved_queue_count": 0,
+    "resolved_queue_http": 200,
+    "context_type": "",
+    "note": "The saved session returned one current song with no context and no upcoming queue; this now explains the two-source-song requirement. A real Hole catalog selection produced one external track after two source tracks. Context recovery was exercised with controlled API responses, not falsely claimed as reproduced on this empty-context session."
+  },
+  "android": {
+    "host_policy_checks": 16,
+    "device": {
+      "passed": true,
+      "checks": [
+        "resume_uses_actual_pcm_track_and_position",
+        "restore_preserves_queue_and_atomic_seek",
+        "pause_cancels_resume_without_losing_selection",
+        "new_selection_replaces_old_resume",
+        "stop_cancels_all_recovery_intent",
+        "exact_artist_ahead_of_remixes_and_unrelated_profiles",
+        "provider_score_breaks_homonym_ties",
+        "musicbrainz_is_metadata_only",
+        "unicode_and_word_normalization",
+        "reject_cleartext_streams",
+        "reject_url_userinfo",
+        "diagnostics_redact_urls_and_credentials",
+        "leaving_activity_cancels_pending_selection",
+        "late_ready_event_cannot_start_background_selection",
+        "unsolicited_native_start_and_pcm_blocked_without_play_intent",
+        "authorized_output_still_accepts_pcm",
+        "pause_blocks_late_pcm_after_real_output",
+        "real_jni_connection_failures_hit_bounded_recovery_budget",
+        "no_unbounded_restart_loop_after_budget",
+        "explicit_pause_cancels_service_resume",
+        "late_native_callbacks_cannot_override_explicit_pause"
+      ],
+      "release_external_test_flags_ignored": true,
+      "release_sha256": "6eebce6f410a3d9abc4cb8b028ee4362b77f0b7570f0701cfc384b8bd6cf0e35",
+      "physical_phone_tested": false,
+      "physical_bluetooth_tested": false
+    },
+    "apks": {
+      "Tonal-Android-0.11.1-local.apk": {
+        "bytes": 47004655,
+        "sha256": "6eebce6f410a3d9abc4cb8b028ee4362b77f0b7570f0701cfc384b8bd6cf0e35",
+        "abis": [
+          "arm64-v8a",
+          "x86_64"
+        ],
+        "versionCode": 13,
+        "versionName": "0.11.1-local",
+        "debuggable": false,
+        "same_signer_as_0110": true,
+        "zip_crc_verified": true,
+        "native_16k_alignment": true
+      },
+      "Tonal-Android-0.11.1-arm64-v8a.apk": {
+        "bytes": 24968848,
+        "sha256": "52953d14a0c09300852ffa1cf7ec1e7d0b42a00bfd14cf80bee3ff803610f4cf",
+        "abis": [
+          "arm64-v8a"
+        ],
+        "versionCode": 13,
+        "versionName": "0.11.1-local",
+        "debuggable": false,
+        "same_signer_as_0110": true,
+        "zip_crc_verified": true,
+        "native_16k_alignment": true
+      }
+    },
+    "initial_broad_instrumentation": {
+      "passed": false,
+      "cause": "Existing CompanionDeviceTests persistence future exceeded its 10-second timeout during the initial cold emulator run, before reaching the playback scenarios. This is preserved in the validation logs. The 21 required playback/service/JNI/lifecycle scenarios then passed in isolation on the final source."
+    }
+  },
+  "limits": [
+    "No physical POCO X7 Pro or car Bluetooth session was connected; the exact two reported spontaneous starts cannot be attributed to a single verified cause.",
+    "No new CPU/RAM comparison benchmark was run.",
+    "Cold-launch test confirms that release APK ignores external benchmark/selfTest intents. The normal in-app audio test remains available."
+  ],
+  "credits": "Original Tonal: Matheus Nunes (natheus), https://github.com/natheus/tonal-player; original MIT license preserved."
+}
