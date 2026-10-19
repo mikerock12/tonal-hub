@@ -1,8 +1,8 @@
 # Guia visual: Tonalify e IndieTonal
 
 Este guia mostra **telas reais dos aplicativos e das suítes de interface**,
-registradas durante implementações anteriores. Não são mockups ou capturas
-novas da instalação 0.11.1. Os rótulos abaixo distinguem versões e dados
+registradas em diferentes versões, incluindo os testes de fila 0.12.0. Não são
+mockups; capturas de teste não representam sessões reais Spotify. Os rótulos distinguem versões e dados
 sintéticos. Algumas telas históricas ainda usam botões de texto; as capturas
 0.11 mostram o cabeçalho com ícones. Fontes e dimensões variam com o aparelho.
 
@@ -176,3 +176,21 @@ Original Tonal: **Matheus Nunes (natheus)**,
 [projeto original](https://github.com/natheus/tonal-player). Imagens de catálogo
 pertencem aos respectivos titulares; os PNGs preservam as telas registradas,
 sem edição do conteúdo para simular funcionalidades.
+
+## 8. Descobertas preservadas e análise de letras — 0.12.0
+
+Na Fila, Shake e Aleatório preservam as músicas azuis marcadas como Descoberta.
+Reabrir a janela mantém o estado confirmado. Apenas desligar Descoberta remove
+as próximas externas na prévia; Aplicar confirma. A música atual continua.
+A caixa de análise permite interromper a busca de letras das candidatas; os
+resultados refinam preparações futuras, sem alterar a fila já confirmada.
+
+<img src="screenshots/desktop-fila-0120.png" width="650" alt="Windows: janela de fila com opção de análise das letras">
+
+*Windows 0.12.0: suíte QML real com controladores simulados e dados sintéticos.*
+
+<img src="screenshots/android-fila-preservada-0120.png" width="300" alt="Android: descobertas preservadas após Shake e Aleatório">
+<img src="screenshots/android-descoberta-desligada-0120.png" width="300" alt="Android: próximas descobertas removidas somente após desligar o modo">
+
+*Android 0.12.0: APK benchmark em AVD, nomes sintéticos. Prévia sem iniciar
+reprodução ou escrever em playlists reais. [Relatório dos testes](discovery-enrichment-0120-tests.json).*

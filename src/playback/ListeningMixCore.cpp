@@ -17,11 +17,26 @@ std::vector<int> plan(const std::vector<Track>& source,const std::vector<Track>&
  // Playback draws independent random priorities, rather than reusing the visual
  // Fisher-Yates shuffle. Preserve a song explicitly chosen by the listener.
  std::vector<int> src;if(random){std::mt19937 playback(seed^0x9e3779b9u);std::vector<std::pair<uint64_t,int>> keys;for(int i=0;i<count;++i)if(i!=selected)keys.push_back({(uint64_t(playback())<<32)|playback(),i});std::sort(keys.begin(),keys.end());src.push_back(selected);for(auto key:keys)src.push_back(key.second);}else for(int i=selected;i<count;++i)src.push_back(i);
+ // Existing discoveries belong to the queue, not to a new catalog lottery.
+ // Preserve every remaining occurrence when another mode changes; only the
+ // discovery switch can remove them. Never interrupt a current external song.
+ const bool anyExternal=std::any_of(src.begin(),src.end(),[&](int i){return source[i].external;});
+ const bool futureExternal=std::any_of(src.begin(),src.end(),[&](int i){return i!=selected&&source[i].external;});
+ const bool retained=futureExternal||(!discover&&anyExternal)||(anyExternal&&pool.empty());
+ if(retained){
+   std::vector<int> result,inside,outside;
+   for(int i:src){if(i==selected)continue;(source[i].external?outside:inside).push_back(i);}
+   result.push_back(selected);int cadence=source[selected].external?0:1;size_t next=0;
+   for(int i:inside){result.push_back(i);if(++cadence==2){cadence=0;if(discover&&next<outside.size())result.push_back(outside[next++]);}}
+   // A short remainder must not discard previously accepted discoveries.
+   if(discover)while(next<outside.size())result.push_back(outside[next++]);
+   return result;
+ }
  std::set<std::string> ids,artists,albums;for(const auto&t:source){ids.insert(t.id);artists.insert(playlist::normalize(t.artist));if(!t.album.empty())albums.insert(t.album);}
  std::vector<std::pair<double,int>> ranked;std::mt19937 rng(seed^0x73d1ac9u);
  if(discover)for(int i=0;i<std::min(120,int(pool.size()));++i){const auto&t=pool[i];auto artist=playlist::normalize(t.artist);if(t.id.empty()||artist.empty()||ids.count(t.id)||artists.count(artist)||(album&&!t.album.empty()&&albums.count(t.album)))continue;double score=0;for(int j=0;j<std::min(12,count);++j)score=std::max(score,affinity(source[(selected+j)%count],t));if(score<1.1)continue;double weight=score*(t.artistHeard?1.:8.)*(t.heard?1.:2.);double u=(double(rng())+1.)/(double(UINT32_MAX)+2.);ranked.push_back({std::log(u)/weight,i});}
  std::sort(ranked.begin(),ranked.end(),[](auto a,auto b){return a.first>b.first;});std::vector<int> outside;std::set<std::string> usedArtists;for(auto [score,i]:ranked){const auto&t=pool[i];if(!ids.insert(t.id).second||!usedArtists.insert(playlist::normalize(t.artist)).second)continue;outside.push_back(i);}
- std::vector<int> result;size_t next=0;int inside=0;for(size_t pos=0;pos<src.size();++pos){int i=src[pos];if(result.size()==500)break;result.push_back(i);if(++inside==2){inside=0;const size_t remaining=src.size()-pos-1;if(next<outside.size()&&result.size()+remaining<500)result.push_back(-outside[next++]-1);}}return result;
+ std::vector<int> result;size_t next=0;int inside=0;for(size_t pos=0;pos<src.size();++pos){int i=src[pos];if(result.size()==500)break;result.push_back(i);if(!source[i].external&&++inside==2){inside=0;const size_t remaining=src.size()-pos-1;if(next<outside.size()&&result.size()+remaining<500)result.push_back(-outside[next++]-1);}}return result;
 }
 std::vector<std::string> queries(const std::string& genres,int year){std::vector<std::string> out;for(auto g:tags(genres)){if(out.size()>=6)break;g.erase(std::remove(g.begin(),g.end(),'"'),g.end());auto q="genre:\""+g+"\"";if(year>=1900&&year<=2100)out.push_back(q+" year:"+std::to_string(std::max(1900,year-8))+"-"+std::to_string(std::min(2100,year+8)));out.push_back(q);}return out;}
 }

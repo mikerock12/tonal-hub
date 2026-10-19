@@ -48,3 +48,12 @@ if(MSVC)
  target_compile_options(TonalMixCoreChecks PRIVATE /utf-8)
 endif()
 add_test(NAME listening_mix_core COMMAND TonalMixCoreChecks)
+
+add_executable(TonalDiscoveryEnrichmentChecks ../mix/EnrichmentChecks.cpp
+    "${ROOT}/src/playback/DiscoveryLyrics.cpp" "${ROOT}/src/insights/TinyMusicModel.cpp")
+target_include_directories(TonalDiscoveryEnrichmentChecks PRIVATE "${ROOT}/src")
+target_link_libraries(TonalDiscoveryEnrichmentChecks PRIVATE Qt6::Core Qt6::Network)
+if(MSVC)
+ target_compile_options(TonalDiscoveryEnrichmentChecks PRIVATE /utf-8)
+endif()
+add_test(NAME discovery_lyrics_enrichment COMMAND TonalDiscoveryEnrichmentChecks)

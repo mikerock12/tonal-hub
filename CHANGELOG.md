@@ -1,5 +1,14 @@
 # Changelog
 
+## Tonal Hub pessoal 0.12.0 — 19/10/2026
+
+- Descobertas aceitas preservadas ao reorganizar a fila por Shake/Aleatório;
+  estado ao reabrir controles e desativação explícita sem cortar a faixa atual.
+- Letras das candidatas em segundo plano, análise local TonalMuse, cache derivado
+  limitado, cancelamento, opt-out e limites de rede. Sem extração acústica.
+- [Funcionamento e validação](docs/DISCOVERY_ENRICHMENT_0120.md).
+
+
 ## Documentação pessoal — 19/10/2026 (produto 0.11.1)
 
 - Contexto persistente em contexto.md e AGENTS.md; especificação da Descoberta

@@ -10,12 +10,20 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
-**Produto atual: 0.11.1. Documentação consolidada em 19/10/2026.**
+**Produto atual: 0.12.0. Documentação consolidada em 19/10/2026.**
 
-[Guia visual com 16 capturas](docs/GUIA_VISUAL.md) ·
+[Guia visual com 19 capturas](docs/GUIA_VISUAL.md) ·
 [Regras da Descoberta 2+1](docs/DESCOBERTA_2_MAIS_1.md) ·
 [Benchmarks realizados](docs/BENCHMARKS.md) ·
 [Contexto do projeto](contexto.md) · [Instruções de manutenção](AGENTS.md).
+
+## Novidades 0.12.0
+
+Descoberta 2+1 preservada ao usar Shake/Aleatório e ao reabrir a fila.
+Busca automática de letras das candidatas, com análise local, cache limitado
+e opção de desligar. A fila confirmada não muda durante a análise.
+BPM, timbre e tonalidade ainda não são extraídos.
+[Funcionamento e limites](docs/DISCOVERY_ENRICHMENT_0120.md).
 
 ## O que cada aplicativo faz
 
@@ -69,7 +77,9 @@ contribuir. Artista e faixa inéditos no histórico local recebem multiplicador
 16; artista conhecido/faixa inédita, 2; ambos conhecidos, 1.
 
 É sorteio ponderado entre candidatos de páginas limitadas de busca, sem
-promessa de nunca repetir. Não analisa BPM, timbre ou a letra de toda candidata.
+promessa de nunca repetir. Busca letras do lote em segundo plano e reutiliza os
+temas em preparações futuras; a cobertura depende do LRCLIB. Não extrai BPM,
+timbre ou tonalidade. Shake e Aleatório preservam as descobertas aceitas.
 Até 120 candidatos; fila até 500 entradas; se as originais ocupam todas as
 posições, extras não cabem. Preparação: 15 s Windows e 6,5 s Android.
 
@@ -104,7 +114,7 @@ universal de áudio nem sincronização bidirecional entre serviços.
 
 ## Desempenho: números medidos, com escopo
 
-**Resultados históricos da versão 0.8, em 17/10/2026. Não são benchmark da 0.11.1.**
+**Resultados históricos da versão 0.8, em 17/10/2026. Não são benchmark da 0.12.0.**
 
 | Plataforma/cenário | Tonalify: RAM mediana / CPU média | Spotify: RAM mediana / CPU média |
 |---|---:|---:|
@@ -128,7 +138,19 @@ latência acústica ou qualidade Bluetooth no POCO X7 Pro. Animações têm cust
 [Relatório HTML interativo: baixar/abrir](docs/benchmarks/2026-10-17/report.html) ·
 [JSON](docs/benchmarks/2026-10-17/summary.json) · [CSV](docs/benchmarks/2026-10-17/samples.csv).
 
-## Instalar a entrega pessoal 0.11.1
+## Instalar a entrega pessoal 0.12.0
+
+| Plataforma | Arquivo local | Download privado |
+|---|---|---|
+| Windows x64 | `out/release-local/Tonal-Hub-0.12.0.0-Windows-x64-Setup.exe` | [Instalador](https://drive.google.com/file/d/1zpXGG0ur089T4LiN68Fop9cjFeUsh2Vr/view) |
+| POCO X7 Pro / ARM64 | `out/android/Tonal-Android-0.12.0-arm64-v8a.apk` | [APK ARM64](https://drive.google.com/file/d/15qz-5SYsuuQwwvkAW444NvrLstuAHIQo/view) |
+| ARM64 + emulador x86_64 | `out/android/Tonal-Android-0.12.0-local.apk` | [APK universal](https://drive.google.com/file/d/1_2r5T0dIxxuvQD63a97hEL02iKZkKvlh/view) |
+
+[Pacote e backup privado 0.12.0](https://drive.google.com/drive/folders/15bxn_XcZianWzzp9E5GdYI8deVqm1fy5).
+Acesso restrito ao proprietário. [Mudanças e testes](docs/DISCOVERY_ENRICHMENT_0120.md).
+As duas variantes Android têm os mesmos recursos; ARM64 é a menor para o POCO.
+
+### Entrega anterior 0.11.1
 
 | Destino | Arquivo local | Download no Drive privado |
 |---|---|---|

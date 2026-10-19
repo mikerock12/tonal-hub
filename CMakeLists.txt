@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(Tonal VERSION 0.11.1 LANGUAGES C CXX)
+project(Tonal VERSION 0.12.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -12,7 +12,7 @@ qt_standard_project_setup(REQUIRES 6.8)
 
 include(cmake/AudioDependencies.cmake)
 
-add_library(tonal_companion STATIC src/companion/MusicCompanion.h src/companion/MusicCompanion.cpp src/companion/PersonalDatabase.h src/companion/PersonalDatabase.cpp src/insights/TinyMusicModel.cpp src/companion/PersonalInsights.cpp)
+add_library(tonal_companion STATIC src/playback/DiscoveryLyrics.hpp src/playback/DiscoveryLyrics.cpp src/companion/MusicCompanion.h src/companion/MusicCompanion.cpp src/companion/PersonalDatabase.h src/companion/PersonalDatabase.cpp src/insights/TinyMusicModel.cpp src/companion/PersonalInsights.cpp)
 target_include_directories(tonal_companion PUBLIC src src/companion)
 target_link_libraries(tonal_companion PUBLIC Qt6::Core Qt6::Network Qt6::Sql)
 if(MSVC)
