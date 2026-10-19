@@ -1,6 +1,6 @@
 {
   "documented_on": "2026-10-19",
-  "scope": "Real app/test screenshots with version and fixture provenance per image. Historical captures preserved; three new 0.12.0 interface test captures.",
+  "scope": "Real app/test screenshots with version and fixture provenance per image. Historical captures preserved; two new 0.12.0 native Android queue captures.",
   "captures": [
     {
       "file": "desktop-modos.png",
@@ -193,18 +193,6 @@
       "height": 1280,
       "bytes": 108794,
       "sha256": "52de01013c950a30ebbf807e02f60e6a18c81cfebc422b1544419095225fc6ed"
-    },
-    {
-      "file": "desktop-fila-0120.png",
-      "source": "out/mix-ui/song-queue.png",
-      "platform": "Windows",
-      "capture_context": "0.12.0: validação de interface",
-      "note": "0.12.0: suíte QML real com controladores simulados; não é uma sessão Spotify.",
-      "transformation": "none; original PNG bytes copied",
-      "width": 616,
-      "height": 466,
-      "bytes": 27910,
-      "sha256": "a7169e1262df0e659cefa3e8c02a60090afc0b09f2142de4bc1edc8a4adb7db6"
     },
     {
       "file": "android-fila-preservada-0120.png",

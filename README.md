@@ -12,7 +12,7 @@ As entregas pessoais não são releases oficiais do projeto original ou do Spoti
 
 **Produto atual: 0.12.0. Documentação consolidada em 19/10/2026.**
 
-[Guia visual com 19 capturas](docs/GUIA_VISUAL.md) ·
+[Guia visual com 18 capturas](docs/GUIA_VISUAL.md) ·
 [Regras da Descoberta 2+1](docs/DESCOBERTA_2_MAIS_1.md) ·
 [Benchmarks realizados](docs/BENCHMARKS.md) ·
 [Contexto do projeto](contexto.md) · [Instruções de manutenção](AGENTS.md).
