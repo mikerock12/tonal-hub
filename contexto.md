@@ -1,7 +1,6 @@
 # Contexto do Tonal Hub
 
-Atualizado em **19/10/2026**. Estado do produto: **0.11.1**; esta atualização
-é documental e não muda os binários. Leia também [AGENTS.md](AGENTS.md).
+Atualizado em **19/10/2026**. Estado do produto: **0.12.0**; mudanças de produto em Windows e Android. Leia também [AGENTS.md](AGENTS.md).
 
 ## Projeto, autoria e objetivo
 
@@ -181,3 +180,24 @@ não uma garantia absoluta de ausência de segredos. Novos commits devem manter
 a separação entre fontes públicas e backup pessoal privado.
 O perfil tem um README no repositório mikerock12/mikerock12 com a seção
 Projetos em destaque; preservar os projetos existentes ao acrescentar o Tonal Hub.
+
+## Entrega 0.12.0 — Descoberta independente e letras
+
+As descobertas aceitas pertencem à fila; Shake/Aleatório as preservam sem nova
+consulta de catálogo. Desligar Descoberta remove as próximas externas na prévia;
+Aplicar confirma. A faixa atual permanece. O estado acompanha a fila ao reabrir.
+Cache efêmero por seleção permite reaplicar os modos de uma mesma coleção.
+
+DiscoveryLyrics busca letras LRCLIB em segundo plano (12 referências/120 candidatas),
+um pedido por vez, intervalo 1,25 s, prazo 6 s, resposta 256 KiB, cache de até
+2.000 escores com expiração. Não guarda as letras nem cria escutas; não altera
+a fila confirmada. Opt-out na Fila, cancelamento e espera de serviço preservada
+entre seleções. TonalMuse usa até 12 mil caracteres. Sem extração acústica
+de BPM/timbre/tonalidade e sem novo benchmark de CPU/RAM. Detalhes e testes:
+[DISCOVERY_ENRICHMENT_0120.md](docs/DISCOVERY_ENRICHMENT_0120.md).
+
+Validação 0.12.0: 10 CTest Windows, 5 portáteis, QML 9/6/3, Android 21 de serviço
+e 24 JNI/cache; teste da fila confirmou Shake/Aleatório/reabertura/desativação.
+Upgrade Windows preservou dados e APKs mantêm identidade/assinatura (código 14).
+Tentativas interrompidas, limitações e hashes constam no relatório JSON.
+Backup privado 0.12: https://drive.google.com/drive/folders/15bxn_XcZianWzzp9E5GdYI8deVqm1fy5.

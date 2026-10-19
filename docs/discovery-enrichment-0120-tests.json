@@ -1,0 +1,134 @@
+{
+  "format": "tonal-discovery-enrichment-validation-v1",
+  "version": "0.12.0",
+  "recorded_at_utc": "2026-10-19T22:13:36.584673+00:00",
+  "windows": {
+    "native_ctest_passed": 10,
+    "portable_companion_ctest_passed": 5,
+    "qml_mix_passed": 9,
+    "qml_lyrics_passed": 6,
+    "qml_playlist_passed": 3,
+    "queue_tests": [
+      "accepted external identities survive 99 random seeds",
+      "explicit disable removes future external tracks",
+      "current external song preserved on disable",
+      "short remainder retains accepted extras",
+      "same collection reuses accepted extras without catalog",
+      "discarded preview restarts from committed queue",
+      "cached themes influence affinity"
+    ],
+    "enrichment_tests": [
+      "matched title/artist/duration",
+      "reject other recording",
+      "cache and negative cache",
+      "derived scores only",
+      "persistent opt-out",
+      "cancel late response",
+      "provider cooldown survives new selection",
+      "existing tiny C++ model"
+    ],
+    "installed_upgrade": {
+      "from": "0.11.1.0",
+      "to": "0.12.0.0",
+      "personal_data_preserved": true,
+      "startup_without_sdk_paths": true
+    },
+    "installer": {
+      "bytes": 81550847,
+      "sha256": "dcd7144338bfb0bf4e238e00b575d0e03c19a73b35a630de34ce590ca35e1406"
+    }
+  },
+  "android": {
+    "variants_compiled": [
+      "release",
+      "benchmark",
+      "comparison",
+      "automation debug"
+    ],
+    "abis": [
+      "arm64-v8a",
+      "x86_64"
+    ],
+    "native_service_lifecycle_checks": 21,
+    "native_jni_and_cache_identity_checks": {
+      "passed": true,
+      "checks": 24,
+      "actual_cpp_jni": true,
+      "network_requests": 0,
+      "playback_commands": 0
+    },
+    "queue_ui": {
+      "passed": true,
+      "native_cpp_jni_checks": {
+        "passed": true,
+        "checks": 24,
+        "actual_cpp_jni": true,
+        "network_requests": 0,
+        "playback_commands": 0
+      },
+      "shake_keeps_discoveries": true,
+      "random_keeps_discoveries": true,
+      "reopen_keeps_discoveries": true,
+      "only_discovery_toggle_removes_future_outsiders": true,
+      "preview_did_not_apply_playback": true,
+      "physical_phone": false,
+      "package": "app.tonal.android.benchmark",
+      "serial": "emulator-5560"
+    },
+    "release_test_intents_ignored": true,
+    "apks": {
+      "Tonal-Android-0.12.0-local.apk": {
+        "bytes": 47027036,
+        "sha256": "94bf9b11ccc0357de44191a8721b241e17472b7d820b952d83461f47e96163e7",
+        "abis": [
+          "arm64-v8a",
+          "x86_64"
+        ],
+        "versionCode": 14,
+        "versionName": "0.12.0-local",
+        "debuggable": false,
+        "same_signer_as_0110": true,
+        "zip_crc_verified": true,
+        "native_16k_alignment": true
+      },
+      "Tonal-Android-0.12.0-arm64-v8a.apk": {
+        "bytes": 24990157,
+        "sha256": "1bc76f299a0ecd1904fc9039683f155d9aea3b4ae5e34049530812743420557e",
+        "abis": [
+          "arm64-v8a"
+        ],
+        "versionCode": 14,
+        "versionName": "0.12.0-local",
+        "debuggable": false,
+        "same_signer_as_0110": true,
+        "zip_crc_verified": true,
+        "native_16k_alignment": true
+      }
+    }
+  },
+  "live_provider_http_smoke": {
+    "http_status": 200,
+    "matched_title": true,
+    "matched_artist": true,
+    "duration": 193.0,
+    "plain_lyrics_available": true,
+    "synchronized_lyrics_available": false,
+    "response_bytes": 1837,
+    "elapsed_seconds": 0.511,
+    "lyrics_saved": false,
+    "scope": "Provider HTTP smoke only; synthetic-response cache/model tests recorded separately"
+  },
+  "scope": {
+    "spotify_writes": 0,
+    "spotify_streaming_comparison": false,
+    "new_cpu_ram_benchmark": false,
+    "physical_phone": false,
+    "physical_bluetooth": false,
+    "bpm_timbre_key_extraction": false
+  },
+  "interrupted_attempts": [
+    "Initial UI setup blocked on notification permission; harness now grants permission to the synthetic package.",
+    "An unchanged status was repeatedly assigned in the Android queue; final APK updates text only when changed.",
+    "One final cold-boot UI attempt encountered a System UI ANR in the emulator. Its dialog was closed and the complete queue UI test repeated successfully."
+  ]
+}

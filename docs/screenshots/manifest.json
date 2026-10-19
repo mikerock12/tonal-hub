@@ -1,6 +1,6 @@
 {
   "documented_on": "2026-10-19",
-  "scope": "Historical real app/test screenshots, not new captures of the 0.11.1 installed binaries. Version/capture context is specified per image.",
+  "scope": "Real app/test screenshots with version and fixture provenance per image. Historical captures preserved; two new 0.12.0 native Android queue captures.",
   "captures": [
     {
       "file": "desktop-modos.png",
@@ -193,6 +193,30 @@
       "height": 1280,
       "bytes": 108794,
       "sha256": "52de01013c950a30ebbf807e02f60e6a18c81cfebc422b1544419095225fc6ed"
+    },
+    {
+      "file": "android-fila-preservada-0120.png",
+      "source": "out/discovery-android-ui/queue-retains-discovery.png",
+      "platform": "Android",
+      "capture_context": "0.12.0: validação de interface",
+      "note": "0.12.0: APK benchmark, AVD exclusiva, fila sintética; Shake/Aleatório preservam as descobertas.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 540,
+      "height": 1200,
+      "bytes": 95350,
+      "sha256": "898e425c76fc68aa2a5c2c2e782a3c369b45dc27bd55ddbdd2304c9e51eaa71d"
+    },
+    {
+      "file": "android-descoberta-desligada-0120.png",
+      "source": "out/discovery-android-ui/queue-discovery-off.png",
+      "platform": "Android",
+      "capture_context": "0.12.0: validação de interface",
+      "note": "0.12.0: APK benchmark, prévia após desligar Descoberta; sem aplicar transporte.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 540,
+      "height": 1200,
+      "bytes": 75188,
+      "sha256": "db03a16abacc64500859be5837538accd4272fc3f92cfbf6dabb45a7e633d3d0"
     }
   ]
 }

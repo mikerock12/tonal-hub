@@ -1,6 +1,6 @@
 # Descoberta 2+1: regras do sorteio
 
-Documentação conferida no código da versão **0.11.1**, em 19/10/2026.
+Documentação conferida no código da versão **0.12.0**, em 19/10/2026.
 Disponível no Tonalify, para músicas do catálogo Spotify. O núcleo do sorteio
 é C++ compartilhado entre Windows e Android; a consulta ao catálogo tem
 diferenças entre as plataformas.
@@ -66,10 +66,11 @@ tensão e introspecção. Para esse sorteio, entram os escores locais a partir
 de **0,35**, desde que a letra já tenha sido analisada. Esse limiar é diferente
 do usado para destacar temas no card de repertório.
 
-O app **não busca e analisa automaticamente a letra de toda candidata nova**.
-Sem análise em cache nas duas faixas, esse fator vale zero. Gênero e ano são,
-portanto, os critérios mais frequentes. Não há comparação de BPM, timbre,
-tonalidade, forma musical ou waveform.
+A versão 0.12 busca letras automaticamente em segundo plano, com limites,
+cache de escores e opção de desligar na Fila. Os resultados só influenciam
+preparações futuras; a fila confirmada permanece estável. Sem análise em cache
+nas duas faixas, esse fator vale zero. Veja [limites e privacidade](DISCOVERY_ENRICHMENT_0120.md).
+Não há comparação de BPM, timbre, tonalidade, forma musical ou waveform.
 
 ## Novidade e sorteio ponderado
 
@@ -96,7 +97,9 @@ Esses são pesos relativos, sem garantia de que uma faixa seja escolhida ou
 de que uma repetição seja impossível. Não há fator de popularidade nem uso
 de um endpoint de recomendação personalizada Spotify nesse algoritmo.
 
-Cada nova preparação renova a semente. O mesmo conjunto pode produzir outra
+Cada nova preparação renova a semente. Ao reorganizar uma fila com descobertas
+aceitas, preserva as mesmas músicas externas; um novo sorteio de candidatas exige
+desligar e reativar a Descoberta ou abrir outra seleção. O mesmo conjunto pode produzir outra
 ordem e outras sugestões, mas um conjunto pequeno ainda pode se repetir.
 Sementes fixas servem para reproduzir testes.
 
@@ -109,7 +112,10 @@ Sementes fixas servem para reproduzir testes.
   preservando uma música explicitamente escolhida como primeira. O botão Play
   da coleção também pode sortear a primeira antes de chamar o planejador.
 - **Descoberta 2+1:** faz o sorteio ponderado das faixas externas e as intercala.
-  Pode funcionar junto do Aleatório. A cada duas faixas originais, tenta inserir
+  Funciona junto do Shake e do Aleatório, sem perder as externas aceitas.
+  Tocar novamente no botão desliga o modo; Aplicar confirma a remoção das
+  próximas externas na prévia. A descoberta atual não é interrompida.
+  Com poucas originais restantes, externas já aceitas podem ficar ao final. A cada duas faixas originais, tenta inserir
   uma descoberta; uma descoberta não conta como faixa original para a cadência.
 
 ## Limites que afetam o resultado
@@ -136,6 +142,7 @@ específicas para essas situações.
 - [Catálogo, histórico e prévia no Windows](../src/playback/ListeningMix.cpp).
 - [Catálogo e histórico no Android](../android/app/src/main/java/app/tonal/android/ListeningMix.java).
 - [Regressões do núcleo](../tests/mix/CoreChecks.cpp).
+- [Enriquecimento e retenção 0.12](DISCOVERY_ENRICHMENT_0120.md).
 - [Correções e validação 0.11.1](DISCOVERY_PLAYBACK_0111.md).
 - [Guia visual](GUIA_VISUAL.md).
 

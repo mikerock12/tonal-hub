@@ -8,4 +8,26 @@ int main(){using namespace tonal::mix;auto a=order(50,42);check(a==order(50,42)&
 for(uint32_t seed=1;seed<=100;++seed){auto visual=order(8,seed);auto playback=plan(s,{},0,true,false,seed);check(std::set<int>(playback.begin(),playback.end()).size()==8);visualOrders.insert(visual);playbackOrders.insert(playback);check(playback.front()==0);discoveries.insert(plan(s,p,0,false,true,seed,true));}
 check(visualOrders.size()>95&&playbackOrders.size()>90&&discoveries.size()>=3);
 check(order(8,42)!=plan(s,{},0,true,false,42));
+// A mode change must reuse the accepted discoveries, even if the network is
+// unavailable or a fresh pool contains more attractive tracks.
+std::vector<Track> mixed={s[0],s[1],p[1],s[2],s[3],p[3],s[4]};
+mixed[2].external=true;mixed[5].external=true;
+for(uint32_t seed=1;seed<100;++seed){
+ auto retained=plan(mixed,p,0,true,true,seed);
+ check(retained.front()==0&&retained.size()==mixed.size());
+ check(std::set<int>(retained.begin(),retained.end())==std::set<int>({0,1,2,3,4,5,6}));
+ check(mixed[retained[2]].external&&mixed[retained[5]].external);
+ auto disabled=plan(mixed,p,0,true,false,seed);
+ check(disabled.size()==5&&std::none_of(disabled.begin(),disabled.end(),[&](int i){return mixed[i].external;}));
+}
+check(plan(mixed,{},0,false,true,3)==std::vector<int>({0,1,2,3,4,5,6}));
+auto externalCurrent=plan(mixed,{},2,false,false,3);
+check(externalCurrent.front()==2&&externalCurrent.size()==4);
+auto shortRemainder=plan(mixed,{},4,false,true,3);
+check(shortRemainder.size()==3&&std::find(shortRemainder.begin(),shortRemainder.end(),5)!=shortRemainder.end());
+// Cached themes can add evidence beyond release year alone. Unknown genres
+// must not turn a same-year candidate into an automatic match.
+std::vector<Track> lyricReferences={{"l1","Reference","a","",1994,false,false,1},{"l2","Reference","a","",1994,false,false,1}};
+std::vector<Track> lyricCandidates={{"no-theme","Other","b","",1994},{"shared-theme","New Artist","c","",1994,false,false,1}};
+check(plan(lyricReferences,lyricCandidates,0,false,true,42)==std::vector<int>({0,1,-2}));
 std::cout<<"LISTENING_MIX_CORE_PASS order, restore identity, random selection, 2+1 cadence, novelty, exclusions, offline fallback, bounds\n";}

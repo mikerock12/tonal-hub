@@ -18,20 +18,24 @@ Dialog {
     property bool pendingShake:false
     property string queueNotice:""
     function queueRows(){return transportPlayer ? transportPlayer.queue.map(t=>({provider:"Spotify",id:t.uri,uri:t.uri,title:t.name,artist:t.artists,artistId:t.artistId||"",album:t.album||"",albumId:t.albumId||"",year:t.year||0,image:t.coverUrl,durationMs:t.durationMs})) : []}
-    function openQueue(){pendingRemix=false;queueEdited=false;queueNotice="";queueAnchor=controller.current.uri || "";songQueueSource=[controller.current].concat(queueRows());queuedRows=songQueueSource;queueDialog.open();if(transportPlayer){queueLoading=true;transportPlayer.refreshQueue()}}
+    function committedQueue(){return mixController&&typeof mixController.queueFor==="function"?mixController.queueFor(controller.current.uri||""):[]}
+    function syncQueueModes(){if(mixController&&typeof mixController.discoveryEnabled!=="undefined"){discoveryPlayback=mixController.discoveryEnabled;randomPlayback=mixController.randomEnabled}}
+    function changeSongMode(mode){if(!queueDialog.visible){syncQueueModes();queueEdited=false;songQueueSource=[];queuedRows=[]}if(mode===1)randomPlayback=!randomPlayback;if(mode===2)discoveryPlayback=!discoveryPlayback;remixSong(mode===0)}
+    function openQueue(){syncQueueModes();pendingRemix=false;queueEdited=false;queueNotice="";queueAnchor=controller.current.uri || "";let committed=committedQueue();songQueueSource=committed.length?committed:[controller.current].concat(queueRows());queuedRows=songQueueSource;queueDialog.open();if(transportPlayer&&!committed.length){queueLoading=true;transportPlayer.refreshQueue()}}
     function remixSong(shake){
         if(!mixController)return
         mixController.cancel();queueNotice="";queueDialog.open()
         if(!queueEdited||!songQueueSource.length||queueAnchor!==(controller.current.uri || "")){
             queueAnchor=controller.current.uri || "";queueEdited=true;queuedRows=[]
+            let committed=committedQueue();if(committed.length){songQueueSource=committed;prepareSongMix(shake);return}
             if(transportPlayer){pendingRemix=true;pendingShake=shake;queueLoading=true;transportPlayer.refreshQueue();return}
             songQueueSource=[controller.current]
         }
         prepareSongMix(shake)
     }
     function prepareSongMix(shake){
-        let source=songQueueSource.slice();if(shake&&mixController&&source.length>2){let rest=source.slice(1);source=[source[0]].concat(mixController.order(rest.length,Math.floor(Math.random()*2147483647)).map(i=>rest[i]))}
-        queueEdited=true;queuedRows=[];mixController.preview(source,0,randomPlayback,discoveryPlayback,false)
+        let source=(queuedRows.length?queuedRows:songQueueSource).slice();if(shake&&mixController&&source.length>2){let rest=source.slice(1);source=[source[0]].concat(mixController.order(rest.length,Math.floor(Math.random()*2147483647)).map(i=>rest[i]))}
+        queueEdited=true;mixController.preview(source,0,randomPlayback,discoveryPlayback,false)
     }
     Connections{target:panel.transportPlayer;ignoreUnknownSignals:true;function onQueueRefreshFinished(status){
         if(!panel.queueLoading)return
@@ -43,7 +47,7 @@ Dialog {
     }}
     onClosed: {pendingRemix=false;queueLoading=false}
     Connections{target:panel.controller;function onCurrentChanged(){if(panel.queueLoading&&panel.queueAnchor!==(panel.controller.current.uri||"")){panel.pendingRemix=false;panel.queueLoading=false;panel.queueNotice="A música mudou. Prepare a fila novamente."}}}
-    Connections{target:panel.mixController;ignoreUnknownSignals:true;function onChanged(){if(panel.queueEdited&&!panel.mixController.busy)panel.queuedRows=panel.mixController.previewQueue}}
+    Connections{target:panel.mixController;ignoreUnknownSignals:true;function onPreviewReady(){if(panel.queueEdited&&!panel.mixController.busy)panel.queuedRows=panel.mixController.previewQueue}}
 
     property bool listShaken:false
     property bool randomPlayback:false
@@ -95,7 +99,7 @@ Dialog {
         displayTracks=drillTracks!==null ? drillTracks : selectedPlaylist ? controller.playlistTracks(selectedPlaylist) : controller.favorites
         if(listShaken&&mixController){let original=displayTracks;displayTracks=mixController.order(original.length,mixSeed).map(i=>original[i])}
     }
-    onOpened: {refresh();controller.refreshMetadata();ensureLyrics()}
+    onOpened: {syncQueueModes();refresh();controller.refreshMetadata();ensureLyrics()}
     onPositionChanged: {
         const found=controller.lineAt(position)
         highlighted=found
@@ -230,9 +234,9 @@ Dialog {
                 }
                 RowLayout {
                     visible:!!panel.mixController&&!!panel.transportPlayer&&panel.controller.current.provider==="Spotify"
-                    ActionIcon{symbol:"shake";description:"Sortear outra ordem da fila";onClicked:panel.remixSong(true)}
-                    ActionIcon{symbol:"random";description:"Reprodução aleatória / ordem da lista";filled:panel.randomPlayback;onClicked:{panel.randomPlayback=!panel.randomPlayback;panel.remixSong(false)}}
-                    ActionIcon{symbol:"discover";description:"Descoberta 2+1 / desativar";filled:panel.discoveryPlayback;onClicked:{panel.discoveryPlayback=!panel.discoveryPlayback;panel.remixSong(false)}}
+                    ActionIcon{symbol:"shake";description:"Sortear outra ordem da fila";onClicked:panel.changeSongMode(0)}
+                    ActionIcon{symbol:"random";description:"Reprodução aleatória / ordem da lista";filled:panel.randomPlayback;onClicked:panel.changeSongMode(1)}
+                    ActionIcon{symbol:"discover";description:"Descoberta 2+1 / desativar";filled:panel.discoveryPlayback;onClicked:panel.changeSongMode(2)}
                     ActionIcon{objectName:"songQueueButton";symbol:"queue";description:"Ver fila de reprodução";onClicked:panel.openQueue()}
                 }
                 RowLayout {
@@ -283,6 +287,9 @@ Dialog {
         ColumnLayout{anchors.fill:parent
             Label{Layout.fillWidth:true;wrapMode:Text.Wrap;color:"#c4c7cc";text:panel.queueEdited?"Confira a ordem e aplique para tocar. A faixa atual será retomada na posição atual.":"Agora e próximas músicas informadas pelo Spotify. A fila do serviço pode ser parcial."}
             Label{visible:!!panel.mixController;color:"#00b3ef";text:panel.queueLoading?"Carregando a fila atual do Spotify…":panel.queueNotice|| (panel.mixController?panel.mixController.status:"");Layout.fillWidth:true;wrapMode:Text.Wrap}
+            CheckBox{text:"Analisar letras das candidatas em segundo plano";visible:panel.mixController&&typeof panel.mixController.enrichmentEnabled!=="undefined";checked:panel.mixController?panel.mixController.enrichmentEnabled:false;onToggled:if(panel.mixController)panel.mixController.enrichmentEnabled=checked}
+            Label{text:"Envia título, artista, álbum e duração ao LRCLIB; guarda apenas os temas. A fila confirmada permanece igual.";Layout.fillWidth:true;wrapMode:Text.Wrap;color:"#a5a8ad";font.pixelSize:11}
+            Label{text:panel.mixController&&typeof panel.mixController.enrichmentStatus!=="undefined"?panel.mixController.enrichmentStatus:"";Layout.fillWidth:true;wrapMode:Text.Wrap;color:"#9bcfe1"}
             ListView{Layout.fillWidth:true;Layout.fillHeight:true;clip:true;model:panel.queuedRows;spacing:8;ScrollBar.vertical:ScrollBar{}
                 delegate:Column{required property var modelData;required property int index;width:ListView.view.width;spacing:3
                     Label{width:parent.width;text:(index===0?"Agora • ":index+" • ")+(modelData.title||"");textFormat:Text.PlainText;color:modelData.mixExternal?"#00b3ef":"#f5f5f5";elide:Text.ElideRight;font.bold:true}

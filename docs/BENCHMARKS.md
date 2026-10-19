@@ -1,7 +1,7 @@
 # Benchmarks realizados: histórico e limites
 
 Consolidação documental em **19/10/2026**. Não houve nova coleta de CPU/RAM
-para a versão 0.11.1. Os resultados abaixo preservam a versão, o ambiente e
+para as versões 0.11.1 e 0.12.0. Os resultados abaixo preservam a versão, o ambiente e
 o cenário em que foram medidos. Testes funcionais recentes ficam em outra seção.
 
 ## Comparação principal — versão 0.8, 17/10/2026

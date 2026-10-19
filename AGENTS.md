@@ -1,7 +1,7 @@
 # Instruções para trabalhar neste repositório
 
 Leia [contexto.md](contexto.md), [README.md](README.md) e os documentos da área
-afetada antes de alterar o produto. Estado documental: 19/10/2026, produto 0.11.1.
+afetada antes de alterar o produto. Estado documental: 19/10/2026, produto 0.12.0.
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
@@ -49,18 +49,24 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
   não repetir artista externo na fila. Filtros textuais karaoke/tribute.
 - Melhor afinidade entre até 12 originais de referência; gênero comum
   `3+interseção/max(tamanhos)`, ano `max(0,1-diferença/20)`, +0,2/tema comum.
-  Rejeitar <1,1. Temas só em cache local com escore ≥0,35 nas análises existentes.
+  Rejeitar <1,1. Temas em cache local com escore ≥0,35; enriquecimento LRCLIB
+  assíncrono limitado, cancelável e opcional. Consultar DISCOVERY_ENRICHMENT_0120.md.
 - Peso = afinidade ×8 se artista inédito ×2 se faixa inédita; ordenar
   `log(U)/peso` decrescente. Novidade usa histórico deste aparelho, eventos >0 ms.
 - Nova semente a cada preparação; sem promessa de sempre diferir. Não é sorteio
-  uniforme do catálogo, análise acústica ou leitura de todas as letras novas.
+  uniforme do catálogo ou análise acústica. Letras são buscadas para o lote
+  limitado; resultados só valem para preparações futuras, nunca alteram fila confirmada.
 - Shake: Fisher–Yates visual; Aleatório: prioridades independentes de reprodução;
   respeitar primeira faixa explicitamente escolhida. Preservar prévia antes de aplicar.
+- Descobertas aceitas permanecem ao mudar Shake/Aleatório e reabrir controles;
+  só desligar Descoberta remove próximas externas. Atual não é interrompida.
+- Cache derivado: 2.000 entradas, sem letras completas, 1 pedido/vez, 1,25 s,
+  timeout 6 s, corpo 256 KiB, cooldown 429/503 preservado entre seleções.
 
 ## Evidências, testes e capturas
 
 - [docs/BENCHMARKS.md](docs/BENCHMARKS.md) consolida as medições. **Não há
-  benchmark de CPU/RAM 0.11.1**. Windows 0.8: 122,55 vs 540,53 MiB USS tocando;
+  benchmark de CPU/RAM 0.11.1 ou 0.12.0**. Windows 0.8: 122,55 vs 540,53 MiB USS tocando;
   Android 0.8: 16,99 vs 154,78 MiB PSS **sem login**, sem streaming comparável
   Spotify. Nunca misturar versões, USS/PSS ou cenários autenticados distintos.
 - CPU 100% significa um núcleo. Distinguir benchmark, teste funcional, emulador
@@ -69,6 +75,10 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
   QML 8/6/3, Android host 16 e emulador 21; houve timeout na suíte ampla inicial.
 - Rodar verificações proporcionais à mudança; docs não exigem rebuild de APK/EXE.
   Fluxo CI existente em `.github/workflows/ci.yml`; não desativar testes para ficar verde.
+- Validação 0.12.0 em `docs/discovery-enrichment-0120-tests.json`: 10 CTest Windows,
+  5 CTest portáteis, QML 9/6/3, 21 cenários Android e 24 verificações JNI/cache,
+  além da interface com retenção dos modos. Houve interrupção por ANR do System UI
+  da AVD antes da repetição final aprovada; não ocultar essa limitação.
 - Capturas: [guia](docs/GUIA_VISUAL.md) e `docs/screenshots/manifest.json`.
   Identificar versão e dados sintéticos; não fabricar telas ou números para marketing.
 
@@ -82,7 +92,7 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
 - AVD exclusiva Tonal_Local_20261015, porta 5560; não tocar em AVD de outro
   projeto. Evitar build pesado/compressão e emulador simultâneos em host de 16 GB.
 - Drive privado autorizado:
-  https://drive.google.com/drive/folders/1sNjL35fdHzoLY8QcqtBX2XF4YQJbeKlL.
+  https://drive.google.com/drive/folders/15bxn_XcZianWzzp9E5GdYI8deVqm1fy5.
   Reutilizar a organização e verificar tamanho, hash quando disponível e privacidade.
 - Backup de fontes via `git archive`, histórico via `git bundle --all`, ambos
   verificados. Dados PC via `packaging/backup-personal-windows.py`; telefone
