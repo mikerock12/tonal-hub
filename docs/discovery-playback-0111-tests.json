@@ -5,7 +5,7 @@
   "windows": {
     "ctest_passed": 10,
     "ctest_seconds": 42.44,
-    "mix_qt_passed": 6,
+    "mix_qt_passed": 8,
     "lyrics_qt_passed": 6,
     "playlist_qt_passed": 3,
     "fresh_queue_regression_failed_before_fix": true,
@@ -37,11 +37,12 @@
         "Tonal\\preferences.json": true,
         "Tonal\\personal\\music-library.sqlite": true
       },
-      "installer_sha256": "2b47d8fd923bc906bdff9d723a583ae82be969c3b99adb381141491e298d3d44",
-      "installer_bytes": 81534828,
       "physical_audition": false,
       "uninstall_test": "Existing installation upgraded; not uninstalled"
-    }
+    },
+    "same_track_metadata_refresh_preserves_pending_queue": true,
+    "actual_track_switch_cancels_pending_queue": true,
+    "metadata_guard_regression_failed_before_fix": true
   },
   "live_spotify": {
     "read_only": true,
