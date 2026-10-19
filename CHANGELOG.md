@@ -1,5 +1,35 @@
 # Changelog
 
+## Documentação pessoal — 19/10/2026 (produto 0.11.1)
+
+- Contexto persistente em contexto.md e AGENTS.md; especificação da Descoberta
+  2+1 com fórmula, histórico local, filtros, limites e diferenças de plataforma.
+- README atualizado para 0.11.1, índice dos benchmarks históricos, guia didático
+  com 16 capturas reais/testes e origem/versão de cada imagem.
+- Publicação pública autorizada pelo titular, com revisão do histórico e
+  adição à seção Projetos em destaque do perfil; backup pessoal continua privado.
+- Atualização documental: sem alterar binários ou executar um novo benchmark.
+
+## Tonal Hub pessoal 0.11.1 — 18–19/10/2026
+
+- Correções da fila/Descoberta no Windows, preservação de metadados e prévia
+  resistente ao refresh da mesma faixa; proteções contra retomada indevida Android.
+- Validação e limitações em [DISCOVERY_PLAYBACK_0111.md](docs/DISCOVERY_PLAYBACK_0111.md).
+
+## Entregas pessoais anteriores
+
+- [0.11: fila, novos sorteios e gestos das letras](docs/MIX_QUEUE_LYRICS_0110.md).
+- [0.10: modos de reprodução](docs/LISTENING_MIX_0100.md).
+- [0.9: Text to Tonalify nativo](docs/TEXT_TO_TONALIFY_090.md).
+- [0.8.1: integridade de PCM e recuperação](docs/AUDIO_PCM_081.md).
+- [0.8: catálogo, repertório, letras e benchmark](docs/BENCHMARK_080.md).
+- [0.7: classificador local e apresentação](docs/TONAL_MUSE_070.md).
+- [0.6: página da música](docs/SONG_PAGE_060.md).
+- [0.5: biblioteca pessoal](docs/PERSONAL_LIBRARY_050.md).
+
+As seções seguintes preservam notas históricas do desenvolvimento local e do
+upstream; declarações como “sem publicação” descrevem apenas aquela etapa.
+
 ## Local working tree — Tonal Hub (unreleased)
 
 - Android 0.4.0-local: hub and independent-source player, relevance-ranked public
