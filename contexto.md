@@ -5,14 +5,16 @@ Atualizado em **19/10/2026**. Estado do produto: **0.11.1**; esta atualização
 
 ## Projeto, autoria e objetivo
 
-Projeto pessoal privado de Maicon Nunes, derivado do **Tonal de Matheus Nunes
+Projeto pessoal de Maicon Nunes, derivado do **Tonal de Matheus Nunes
 (natheus)**, seu irmão: https://github.com/natheus/tonal-player.
 Preservar créditos e MIT original em [CREDITS.md](CREDITS.md) e [LICENSE](LICENSE).
 O trabalho busca um player leve, com navegação musical completa, efeitos de
 áudio, letras/tradução, estatísticas locais e descoberta de músicas.
 
-Repositório de trabalho: https://github.com/mikerock12/tonal-hub, privado,
-branch principal `main`. O remoto `private` é o destino autorizado de push.
+Repositório de trabalho: https://github.com/mikerock12/tonal-hub, com publicação
+pública autorizada pelo usuário em 19/10/2026. Branch principal `main`. O remoto
+chamado `private` continua sendo o destino autorizado de push, mesmo após a
+mudança de visibilidade. O backup e os dados pessoais permanecem privados.
 O remoto `origin` aponta ao projeto do irmão: **não publicar alterações nele**.
 Branches de trabalho usam `codex/`. Conferir `git status` antes de agir.
 
@@ -159,7 +161,7 @@ não equivale a downloads offline garantidos. Testar recuperação sem ignorar p
 
 Manter PC e Android coerentes em recursos; atualizar os instaláveis quando houver
 mudança de produto. Documentação não exige rebuild. Para entregas autorizadas,
-concluir commit/push privado, PR/CI/merge e backup verificado no Drive. Nunca
+concluir commit/push no fork, PR/CI/merge e backup verificado no Drive. Nunca
 declarar CI verde, upload, teste físico ou benchmark sem evidência do resultado.
 
 Guia didático com capturas e origem/versão: [GUIA_VISUAL.md](docs/GUIA_VISUAL.md).
@@ -168,3 +170,14 @@ Capturas históricas/testes não devem ser apresentadas como a sessão atual.
 Incidente Codex, distinto do app: capacidade do modelo reportada em
 https://github.com/openai/codex/issues/54283#issuecomment-6257960326.
 Não reenviar nem atribuir automaticamente à cota do usuário.
+
+## Publicação e perfil
+
+Em 19/10/2026, o usuário autorizou tornar este fork público e adicioná-lo aos
+projetos em destaque do perfil mikerock12. A revisão dos 39 commits/1.060 blobs
+locais anteriores à mudança encontrou apenas seis falsos positivos de teste/código,
+sem credenciais confirmadas. Isso é uma revisão heurística com inspeção manual,
+não uma garantia absoluta de ausência de segredos. Novos commits devem manter
+a separação entre fontes públicas e backup pessoal privado.
+O perfil tem um README no repositório mikerock12/mikerock12 com a seção
+Projetos em destaque; preservar os projetos existentes ao acrescentar o Tonal Hub.

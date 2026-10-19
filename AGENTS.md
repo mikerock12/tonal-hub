@@ -9,14 +9,16 @@ exigência de confirmação para ações já autorizadas.
 
 - Preservar **Matheus Nunes (natheus)**, autor do Tonal original:
   https://github.com/natheus/tonal-player, MIT e CREDITS.md.
-- Fork privado: https://github.com/mikerock12/tonal-hub. Push somente para
+- Fork: https://github.com/mikerock12/tonal-hub; publicação pública autorizada
+  pelo usuário em 19/10/2026. O nome do remoto continua `private`. Push somente para
   `private`, após conferir `git remote -v`. **Não fazer push para `origin`**,
   que aponta ao repositório original do irmão.
 - Branches novas: `codex/`. Conferir estado local e preservar trabalho existente.
-- O usuário autorizou commit/push, PR/CI/merge e backup no Google Drive para as
+- O usuário autorizou publicação pública do fork, destaque no perfil,
+  commit/push, PR/CI/merge e backup privado no Google Drive para as
   entregas solicitadas. Conferir CI antes de merge; não inventar aprovação.
 - Nunca versionar/uploadar tokens, senhas, códigos de login, Vault, keystores,
-  `.env`, dumps pessoais, bancos SQLite ou logs não revisados no GitHub.
+  `.env`, dumps pessoais, bancos SQLite ou logs não revisados no GitHub público.
   Dados pessoais só no backup privado autorizado, excluindo credenciais.
 - Não delegar a subagentes sem pedido explícito do usuário/instrução aplicável.
 

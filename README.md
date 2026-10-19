@@ -138,8 +138,8 @@ latência acústica ou qualidade Bluetooth no POCO X7 Pro. Animações têm cust
 
 Instale por cima da anterior para preservar dados; exporte backup antes.
 Universal tem os mesmos recursos e inclui outra arquitetura, por isso é maior.
-Windows instala Tonal Hub, Tonalify e IndieTonal. Os links exigem acesso ao Drive
-privado; não são releases públicas do upstream. Veja [instalador](docs/WINDOWS_INSTALLER_LOCAL.md)
+Windows instala Tonal Hub, Tonalify e IndieTonal. O código deste fork é público por autorização do titular. Os links de
+instaláveis exigem acesso ao Drive privado; não são releases do upstream. Veja [instalador](docs/WINDOWS_INSTALLER_LOCAL.md)
 e [Android](docs/ANDROID_LOCAL.md) para configuração/build. Streaming Spotify
 requer conta autorizada/Premium; arquivos locais e fontes independentes seguem
 suas próprias condições.
@@ -205,7 +205,7 @@ Android: JDK 17, Gradle 8.14.3, SDK 36 e NDK 27.0.12077973. O script
 `packaging/build-android-local.ps1` gera universal; `-PhoneOnly` gera ARM64.
 `-SkipNative -SkipAudio` reutiliza bibliotecas já compiladas compatíveis.
 
-O [CI privado](.github/workflows/ci.yml) reproduz o modelo, compila/testa o
+O [CI do projeto](.github/workflows/ci.yml) reproduz o modelo, compila/testa o
 núcleo C++, verifica QML, política de reprodução e variantes Java Android.
 Testes não medem automaticamente CPU/RAM ou Bluetooth real.
 

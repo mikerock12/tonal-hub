@@ -6,6 +6,8 @@
   2+1 com fórmula, histórico local, filtros, limites e diferenças de plataforma.
 - README atualizado para 0.11.1, índice dos benchmarks históricos, guia didático
   com 16 capturas reais/testes e origem/versão de cada imagem.
+- Publicação pública autorizada pelo titular, com revisão do histórico e
+  adição à seção Projetos em destaque do perfil; backup pessoal continua privado.
 - Atualização documental: sem alterar binários ou executar um novo benchmark.
 
 ## Tonal Hub pessoal 0.11.1 — 18–19/10/2026
