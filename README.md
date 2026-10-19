@@ -1,227 +1,195 @@
-# Tonal
+# Tonal Hub · Tonalify · IndieTonal
 
-Este projeto pessoal deriva do **Tonal**, criado por **Matheus Nunes (natheus)**,
-meu irmão: [natheus/tonal-player](https://github.com/natheus/tonal-player).
-O projeto original fornece a base C++/Qt e a integração inicial com Spotify.
-As extensões Tonal Hub, Tonalify, IndieTonal, Android e os recursos adicionais
-são desenvolvimentos deste projeto derivado. Consulte [CREDITS.md](CREDITS.md)
-e a licença MIT original, preservada em [LICENSE](LICENSE).
+Player pessoal para **Windows e Android**, com catálogo Spotify no Tonalify,
+fontes independentes no IndieTonal e uma biblioteca pessoal de favoritos,
+playlists, estatísticas, letras e apresentação visual.
 
-## Entrega pessoal atual: 0.11.0
+Este projeto deriva do **Tonal**, criado por **Matheus Nunes (natheus)**,
+irmão de Maicon Nunes: [natheus/tonal-player](https://github.com/natheus/tonal-player).
+A base original C++/Qt e a integração inicial Spotify são de Matheus. As
+extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
+As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
-[Guia de fila, sorteios e letras](docs/MIX_QUEUE_LYRICS_0110.md) ·
-[criação de playlists por texto em C++](docs/TEXT_TO_TONALIFY_090.md) ·
-[modos de reprodução](docs/LISTENING_MIX_0100.md).
+**Produto atual: 0.11.1. Documentação consolidada em 19/10/2026.**
 
-Instaláveis gerados localmente em `out/` (não são releases do projeto original):
+[Guia visual com 16 capturas](docs/GUIA_VISUAL.md) ·
+[Regras da Descoberta 2+1](docs/DESCOBERTA_2_MAIS_1.md) ·
+[Benchmarks realizados](docs/BENCHMARKS.md) ·
+[Contexto do projeto](contexto.md) · [Instruções de manutenção](AGENTS.md).
 
-- Windows x64: `out/release-local/Tonal-Hub-0.11.0.0-Windows-x64-Setup.exe`.
-- POCO X7 Pro/Android ARM64: `out/android/Tonal-Android-0.11.0-arm64-v8a.apk`.
-- APK universal, também com x86_64: `out/android/Tonal-Android-0.11.0-local.apk`.
+## O que cada aplicativo faz
 
-Atualize por cima da versão anterior, preservando os dados; não desinstale antes.
-Shake sorteia uma nova ordem a cada toque e restaura a original ao segurar o ícone.
-A página da música oferece os modos e a fila, com prévia antes de aplicar.
-Letras em tela cheia começam sem controles: o primeiro toque os revela; o segundo,
-numa linha, alinha a letra e oculta os controles. Recuperação limitada de falhas
-LRCLIB não interfere na reprodução de áudio.
+| Aplicativo | Função |
+|---|---|
+| **Tonal Hub** | Central para abrir e alternar os players; no Windows, mantém processos separados e não inicializa o motor de áudio no hub |
+| **Tonalify** | Busca, biblioteca, artistas, álbuns, playlists e streaming Spotify por Web API/librespot, com sessão autorizada |
+| **IndieTonal** | Busca e reprodução de conteúdo público de fontes independentes e bibliotecas próprias, com procedência identificada |
 
-O [benchmark 0.8](docs/BENCHMARK_080.md) e o [relatório interativo](docs/benchmarks/2026-10-17/report.html)
-são medições históricas daquela versão; não representam um benchmark da 0.11.
+Windows usa **C++20 e Qt Quick/QML**, sem Electron ou navegador embutido.
+Android usa interface **Java nativa**, regras/DSP **C++ por JNI** e o motor
+**Rust/librespot** existente, com saída AudioTrack. Não há React/WebView no
+Text to Tonalify, que foi portado para C++ compartilhado.
 
-Exportar/importar a biblioteca pessoal no app continua disponível. O auxiliar
-`packaging/backup-personal-windows.py --output PASTA_NOVA` também copia os bancos
-SQLite e parâmetros DSP deste PC de forma consistente, sem sessões ou senhas.
+## Veja as funções
 
-A lightweight **Spotify Premium** player for Windows, built with **C++ and Qt Quick**, with audio played by
-**[librespot](https://github.com/librespot-org/librespot)**. No Electron, no embedded Chromium.
+<table>
+<tr><th>Windows: modos de reprodução</th><th>Android: página da música</th></tr>
+<tr><td><img src="docs/screenshots/desktop-modos.png" width="650" alt="Tonalify Windows: álbum com Shake, Aleatório e Descoberta 2+1"></td><td><img src="docs/screenshots/android-musica-modos.png" width="280" alt="Tonalify Android: cabeçalho por ícones, favorito e modos abaixo do player"></td></tr>
+</table>
 
-The interface is in English or Brazilian Portuguese: it follows the Windows language, and you can switch it in
-the account menu.
+Capturas reais de validação **0.11.0, com dados sintéticos**; não são novas
+capturas dos binários 0.11.1. A capa ausente é intencional nas fixtures.
+O [guia visual](docs/GUIA_VISUAL.md) também mostra capas reais, artistas,
+letras/tradução, fila, playlists por texto, estatísticas, raridades e áudio,
+com versão e origem de cada imagem.
 
-Experimental local Android build and testing instructions: [ANDROID_LOCAL.md](docs/ANDROID_LOCAL.md).
+## Funcionalidades implementadas
 
-Local Windows hub experiment: **Tonal Hub**, **Tonalify** (Spotify), and **IndieTonal**
-(independent sources). Setup, implemented features and current limitations:
-[TONAL_HUB_LOCAL.md](docs/TONAL_HUB_LOCAL.md). This is a personal derivative with private source hosting.
+| Área | Recursos e como acessar |
+|---|---|
+| **Catálogo Spotify** | Início, busca com filtros e histórico recente, músicas, artistas, álbuns, playlists e biblioteca; páginas de artista e coleção |
+| **Player e favoritos** | Play/pausa, anterior/próxima, posição, volume e coração azul preenchido; no celular, tocar no miniplayer abre a página da música |
+| **Fila e modos** | Shake visual, Aleatório de reprodução e Descoberta 2+1; prévia na página da música, identificação de descobertas e confirmação antes de aplicar |
+| **Playlists** | Biblioteca pessoal local; criar/editar playlists Spotify e suas faixas conforme a API permite; assistente Text to Tonalify com revisão de versões, ordem, nome, descrição e capa |
+| **Setlists no Windows** | Buscar shows no setlist.fm e transformar músicas encontradas no Spotify numa playlist; exige chave própria setlist.fm |
+| **Estatísticas** | Tempo realmente ouvido, escutas qualificadas e músicas distintas por artista, faixa, álbum, estilo e dia; barras clicáveis e resumos nas listas |
+| **Clima do repertório** | Temas experimentais de letras, estilos, cobertura e sugestões editoriais; classificador local pequeno, sem diagnóstico emocional |
+| **Letras e tradução** | Busca automática enquanto a página está aberta, tradução pt-BR com detecção de idioma, original/tradução juntos, TXT/LRC, sincronia opcional e alinhamento manual |
+| **Personalização** | 11 cenários; fontes, cores e tamanhos independentes, contorno, brilho, neon, piscante, negrito, itálico, sublinhado e tela cheia |
+| **Áudio** | Streaming Spotify 96/160/320 kbps, EQ 10 bandas e presets, graves, compressor, limiter, normalização, HRTF e arquivos IAMF compatíveis; perfis de saída/buffer no Android |
+| **Continuidade** | Buffer/cache temporário, recuperação limitada de conexão/saída, preservação de posição e respeito à pausa; não equivale a downloads offline garantidos |
+| **Dados e backup** | SQLite pessoal por aparelho/player; exportar/restaurar favoritos, playlists, preferências e histórico; backup privado de fontes/instaláveis/documentos |
+| **Integração Windows** | Teclas de mídia, painel de mídia do Windows, Spotify Connect, atalhos e idiomas Português/English |
 
-New in the personal **0.5.0** build: [rare fan recordings and demos](docs/RARE_RECORDINGS_LOCAL.md),
-[favorites, playlists, listening charts, lyric backgrounds, pt-BR translation and SQLite backups](docs/PERSONAL_LIBRARY_050.md).
-Local Windows/Android deliverables are generated in `out/`; they are separate from the original project's public releases.
+### Descoberta 2+1: compatibilidade e novidade
 
-Windows installer and direct translation on the lyrics screen (0.5.0, correction 1):
-[installation and build instructions](docs/WINDOWS_INSTALLER_LOCAL.md).
+Prepara **duas faixas da seleção → uma externa**, sem alterar a playlist salva.
+Gêneros em comum têm mais peso; proximidade do ano e temas já analisados podem
+contribuir. Artista e faixa inéditos no histórico local recebem multiplicador
+16; artista conhecido/faixa inédita, 2; ambos conhecidos, 1.
 
-![Tonal playing an album](docs/tonal.png)
+É sorteio ponderado entre candidatos de páginas limitadas de busca, sem
+promessa de nunca repetir. Não analisa BPM, timbre ou a letra de toda candidata.
+Até 120 candidatos; fila até 500 entradas; se as originais ocupam todas as
+posições, extras não cabem. Preparação: 15 s Windows e 6,5 s Android.
 
-Página da música, letras e tradução automáticas e interface 0.6.0: [guia e instaláveis](docs/SONG_PAGE_060.md).
+[Leia as regras completas, fórmulas, filtros e diferenças entre plataformas](docs/DESCOBERTA_2_MAIS_1.md).
 
-## Actually lightweight
+### Playlist a partir de texto, nativa
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/memory-dark.svg">
-  <img alt="Memory chart: Tonal uses 105 MB idle and 109 MB while playing; the official Spotify app uses 745 MB and 726 MB" src="docs/memory-light.svg">
-</picture>
+**Criar playlist → Criar com Text to Tonalify:** colar → revisar gravações →
+personalizar → salvar local. Depois escolha se quer copiar para Spotify,
+privada ou pública. A sessão existente é reaproveitada; capa pode exigir
+permissão OAuth adicional. Não publica automaticamente ao colar ou salvar local.
 
-| | Idle on the home screen | Playing music | Processes |
-|---|---:|---:|---:|
-| **Tonal 0.1.0** (Tonal + librespot) | **105 MB** | **109 MB** | 2 |
-| Spotify 1.303 for Windows (Microsoft Store) | 745 MB | 726 MB | 8 |
+Porta o projeto [PlaylistSpotify](https://github.com/mikerock12/PlaylistSpotify)
+para C++ compartilhado, sem React ou servidor JavaScript.
+[Guia completo](docs/TEXT_TO_TONALIFY_090.md).
 
-How it was measured: private memory (the "Memory" column in Task Manager), summed over all of each app's
-processes; median of 10 samples, 1 minute after opening and 45 seconds after starting the same playlist.
-Windows 11, October 2026. Numbers vary between machines and with use.
+### Fontes do IndieTonal
 
-## Features
-
-- **Home:** shortcuts, recently played, top artists and tracks, your playlists and saved albums
-- **Search** with top result, tracks, artists, albums and playlists, filters, "load more" and recent searches
-- **Pages** for playlists, albums, Liked Songs (with infinite scrolling) and artists (popular tracks and
-  discography)
-- **Your Library** with filters and search, resizable and collapsible
-- **Playlists:** create, rename, edit the description, delete, add and remove tracks (from any track's menu) and
-  drag tracks to reorder them
-- **Setlists:** search a band's shows on [setlist.fm](https://www.setlist.fm), check the ones you want (marked
-  shows stay marked when you search another band, so you can mix bands) and turn them into a private playlist;
-  songs repeated across shows go in once
-- **Player:** play/pause, previous/next, shuffle, repeat, seek bar, volume and like
-- **Queue** and **Now Playing** view in the right panel
-- **Synced lyrics:** current-line highlighting, optional synchronization and local manual alignment by clicking the line being heard (0.8)
-- **Media keys** (even with Tonal minimized) and the current track with its cover in the **Windows media flyout**
-- **Spotify Connect:** Tonal shows up as a device and can also send playback to your phone or another computer
-- **Quality** 96/160/320 kbps (account menu), with volume normalization
-- **English or Portuguese** interface (account menu → Language; Tonal restarts to switch)
-- **Shortcuts:** `Space` play/pause · `Ctrl+→/←` next/previous · `Ctrl+↑/↓` volume · `Ctrl+L` search ·
-  `Alt+←/→` back/forward · mouse side buttons
-- **Self-healing audio engine:** if the connection to Spotify drops, Tonal restarts librespot and resumes the
-  song where it was
-
-## Install the original upstream release
-
-Download the latest version from **[Releases](https://github.com/natheus/tonal-player/releases)**:
-
-- `Tonal-<version>-setup.exe`: installer. It needs no administrator rights and adds a Start menu shortcut.
-- `Tonal-<version>-win64.zip`: portable version. Unzip it and run `Tonal.exe`. Without the Start menu shortcut
-  the installer creates, the Windows media flyout shows "Unknown app" instead of the name.
-
-Both include everything the app needs (Qt, the Visual C++ runtime and librespot).
-
-**Requirements:** Windows 10 (1809) or 11, 64-bit, and a **Spotify Premium** account.
-
-The executable is not code-signed: if SmartScreen warns you, click **More info → Run anyway**.
-
-## First run
-
-Tonal uses the official Spotify Web API, so each user creates a free app in the Spotify developer dashboard.
-The login screen walks you through it, with buttons to open the form and copy each field:
-
-1. Open the **Create app** form at <https://developer.spotify.com/dashboard/create>.
-2. Fill in a name and description, add exactly `http://127.0.0.1:8898/callback` under **Redirect URIs**
-   (click **Add**), check **Web API**, accept the terms and click **Save**.
-3. Copy the app's **Client ID**. When you switch back to Tonal, it is pasted automatically and checked with
-   Spotify before the browser opens. The Client Secret is not used.
-
-The first time, **two** authorizations open in the browser: Tonal's (Web API) and librespot's (the audio
-engine). After that everything is saved and the app opens straight away.
-
-Tonal's login is kept in **Windows Credential Manager** as "Tonal/Spotify", encrypted by Windows for your
-account (version 0.1.0 kept it in the registry, and Tonal moves it automatically). Signing out (**Sair** in the
-account menu) deletes the credential.
-
-The **Setlists** page needs your own free [setlist.fm API key](https://www.setlist.fm/settings/api)
-(non-commercial use). The page explains how to get one; it is checked with setlist.fm and stored in Credential
-Manager as "Tonal/setlist.fm".
-
-## Limitations
-
-These come from Spotify's rules for apps in development mode (since February 2026), not from Tonal:
-
-- **Other people's playlists** don't list their tracks through the API. Tonal says so and still lets you play
-  them.
-- **Playlists generated by Spotify** (Daily Mix and editorial playlists) can't be opened through the API.
-- **Search** returns at most 10 items per type ("load more" pages through them). An artist's **popular
-  tracks** come from a search and show up to 5 tracks.
-- There are no "New releases" or categories: Spotify removed them from the API.
-
-**Lyrics** don't come from Spotify, whose API has none, but from [LRCLIB](https://lrclib.net), an open database
-maintained by volunteers, so not every song is there. Tonal sends LRCLIB the track title, artist, album and
-duration only while the lyrics view is open.
-
-**Setlists** come from setlist.fm, and not every song in them is on Spotify (covers and unreleased songs often
-are not): Tonal shows how many it found. Each song becomes one or two Spotify searches.
-
-A playlist's **visibility** (public or private) can only be changed in the official app: the API makes a
-playlist public but ignores requests to make it private again. Playlists created by Tonal start private.
-
-Tonal has only been built and tested on Windows so far.
-
-## How it works
-
-```
-┌──────────────────────── Tonal.exe (Qt Quick) ────────────────────────┐
-│  QML (interface)  ──►  C++ (App, Player, SpotifyApi, AuthManager)    │
-│                              │ Web API (HTTPS)                       │
-│                              ▼                                       │
-│                     api.spotify.com  ◄── commands: play, pause...    │
-└──────────────────────────────┬───────────────────────────────────────┘
-                               │ starts and watches the process
-                     librespot.exe  ──►  audio (device "Tonal @ PC")
-```
-
-Tonal talks to the official Web API (library, search, playback control). librespot shows up as a Spotify
-Connect device and is what downloads and plays the music; Tonal tells Spotify to play on it.
-
-Why it uses so little memory:
-
-- Qt Quick UI drawn by the GPU, no browser engine
-- Qt Quick Controls "Basic" style and vector icons with `QtQuick.Shapes` (no PNGs or icon fonts)
-- Covers decoded at the size they are shown and cached on disk
-- Pages created and destroyed on demand; long lists reuse their rows
-- Player state is polled every 5 s and the progress bar moves on its own; librespot's log tells Tonal right
-  away when the track changes
-
-## Building from source
-
-### Local advanced-audio integration
-
-This working tree includes a local FFmpeg/OpenAL audio engine and an optional IAMF/OAR
-binaural adapter. See [local audio implementation and tests](docs/AUDIO_LOCAL.md) for
-the pinned dependency setup, `packaging/build-local.ps1 -Test`, limitations, and usage.
-Press **Ctrl+E** to open audio effects and local files. `--local-only` starts without
-loading the Spotify login. The integration uses C++20 and preserves Spotify controls.
-
-### 1. Prerequisites (once)
-
-| What | Where | Notes |
+| Fonte | Conteúdo | Condição |
 |---|---|---|
-| Visual Studio 2022 or 2026 | [visualstudio.microsoft.com](https://visualstudio.microsoft.com) | **Desktop development with C++** workload (includes CMake and Ninja) |
-| Qt 6.8 or newer | [Qt Online Installer](https://www.qt.io/download-qt-installer-oss) | select **MSVC 2022 64-bit** and, under *Additional Libraries*, **Qt Image Formats** (playlist covers are WebP) |
-| Rust | [rustup.rs](https://rustup.rs) | only to build librespot |
+| Audius | Faixas, artistas e coleções públicas | Conteúdo gated não oferece play |
+| Internet Archive / Live Music Archive / Aadam Jacobs | Shows, gravações de fãs, raridades e demos disponíveis | Acervo e formatos públicos variam; itens restritos são recusados |
+| MusicBrainz | Artistas, discografia, lançamentos e faixas | **Somente metadados**, sem áudio |
+| Jamendo | Busca e streaming oferecido pela API | Client ID próprio ativo; sem credencial emprestada |
+| OpenSubsonic | Biblioteca própria, inclusive conteúdo adquirido/importado pelo usuário | Servidor HTTPS, conta e credencial próprios |
+| Arquivos locais | Arquivos compatíveis com os decoders incluídos | Sem login Spotify |
 
-After installing Qt, create a `QTDIR` environment variable pointing to the kit, for example:
+Jamendo/OpenSubsonic configuráveis não equivalem a validação autenticada com
+uma conta real. Nenhuma fonte garante shows de toda banda. Não há agregação
+universal de áudio nem sincronização bidirecional entre serviços.
+[Fontes e raridades](docs/RARE_RECORDINGS_LOCAL.md) · [Hub](docs/TONAL_HUB_LOCAL.md).
 
-```powershell
-setx QTDIR "C:\Qt\6.8.3\msvc2022_64"
-```
+## Desempenho: números medidos, com escopo
 
-Close and reopen Visual Studio (or the terminal) after `setx`.
+**Resultados históricos da versão 0.8, em 17/10/2026. Não são benchmark da 0.11.1.**
 
-### 2. Build librespot
+| Plataforma/cenário | Tonalify: RAM mediana / CPU média | Spotify: RAM mediana / CPU média |
+|---|---:|---:|
+| Windows, mesma faixa reproduzindo | **122,55 MiB USS / 0,50%** | 540,53 MiB USS / 2,87% |
+| Windows, pausado | 122,65 MiB USS / 0,15% | 534,82 MiB USS / 0,43% |
+| Android emulado, sem login, tela inicial | **16,99 MiB PSS / 0,06%** | 154,78 MiB PSS / 1,00% |
 
-```powershell
-cargo install librespot --locked
-```
+CPU 100% = um núcleo. Processos auxiliares estão incluídos. USS e PSS são
+métricas diferentes. PC i5-6500/16 GB/Windows 10; AVD Android 16 x86_64.
+No Windows tocando, RAM foi **77,33% menor nessa amostra**. Rodadas curtas,
+configurações/visibilidade não integralmente igualadas e variação da CPU
+impedem generalizar os percentuais para toda máquina ou uso.
 
-The executable ends up in `%USERPROFILE%\.cargo\bin\librespot.exe`. Tonal looks for it in this order: next to
-`Tonal.exe`, on the `PATH` and in `.cargo\bin`. There is no need to copy it anywhere.
+**Não há streaming autenticado equivalente do Spotify Android nessa medição.**
+Tonalify autenticado, coletado separadamente, ficou em 72,59 MiB PSS/5,23%,
+sem base para declarar vantagem de reprodução. Não foram medidos bateria,
+latência acústica ou qualidade Bluetooth no POCO X7 Pro. Animações têm custo real.
 
-### 3. Build Tonal
+[Índice de todos os benchmarks 0.1/0.3/0.7/0.8](docs/BENCHMARKS.md) ·
+[Relatório completo e comparação de funcionalidades](docs/BENCHMARK_080.md) ·
+[Relatório HTML interativo: baixar/abrir](docs/benchmarks/2026-10-17/report.html) ·
+[JSON](docs/benchmarks/2026-10-17/summary.json) · [CSV](docs/benchmarks/2026-10-17/samples.csv).
 
-**In Visual Studio:** *File → Open → Folder...* and pick this folder. Choose the **Release (MSVC + Qt)** preset
-in the toolbar, then *Build → Build All* and run `Tonal.exe`. `windeployqt` runs after the build and copies the
-Qt DLLs next to the executable.
+## Instalar a entrega pessoal 0.11.1
 
-**From the command line** (Visual Studio Developer PowerShell):
+| Destino | Arquivo local | Download no Drive privado |
+|---|---|---|
+| Windows x64 | `out/release-local/Tonal-Hub-0.11.1.0-Windows-x64-Setup.exe` | [Instalador](https://drive.google.com/file/d/1gzUJxmMUepI8se8KwSyOVmIRUpUd9Q_q/view) |
+| POCO X7 Pro / ARM64 | `out/android/Tonal-Android-0.11.1-arm64-v8a.apk` | [APK ARM64](https://drive.google.com/file/d/1R-v2A1TstPsquKmq2zwnT5mr2uDtHPv1/view) |
+| ARM64 + emulador x86_64 | `out/android/Tonal-Android-0.11.1-local.apk` | [APK universal](https://drive.google.com/file/d/1riHy14ZoplEntv9HS4tSdQYKvTQmrgIG/view) |
+
+Instale por cima da anterior para preservar dados; exporte backup antes.
+Universal tem os mesmos recursos e inclui outra arquitetura, por isso é maior.
+Windows instala Tonal Hub, Tonalify e IndieTonal. Os links exigem acesso ao Drive
+privado; não são releases públicas do upstream. Veja [instalador](docs/WINDOWS_INSTALLER_LOCAL.md)
+e [Android](docs/ANDROID_LOCAL.md) para configuração/build. Streaming Spotify
+requer conta autorizada/Premium; arquivos locais e fontes independentes seguem
+suas próprias condições.
+
+No Windows, o login utiliza OAuth PKCE e Credential Manager. O guia de login
+solicita Client ID próprio, sem Client Secret. Callback desktop:
+`http://127.0.0.1:8898/callback`. Credenciais não entram no Git ou backup.
+
+### Correções 0.11.1 e evidências
+
+- **PC:** fila atual antes da prévia, recuperação de contexto álbum/playlist
+  quando disponível, metadados preservados e mensagens claras de falha.
+  Refresh da mesma música não cancela preparação; troca real invalida a prévia.
+- **Android:** protege contra PCM/retomadas sem intenção de tocar, callbacks
+  tardios e seleção iniciada em segundo plano. Pausa cancela recuperação.
+  Retomar por Bluetooth/tela bloqueada após pausa exige a opção em Áudio;
+  música já iniciada continua quando a tela é bloqueada.
+- **Validação:** dez CTest Windows; QML oito fila/seis letras/três playlist;
+  16 verificações Android host e 21 cenários dirigidos no emulador. A suíte
+  ampla inicial teve timeout de persistência; não foi toda aprovada.
+- **Instaláveis:** upgrade preservando dados e abertura sem SDK; APKs Release
+  com assinatura compatível, ABI, CRC e alinhamento de 16 KiB conferidos.
+
+[Correções](docs/DISCOVERY_PLAYBACK_0111.md) · [Registro dos testes](docs/discovery-playback-0111-tests.json).
+Nenhum novo benchmark foi executado nessa entrega. A causa exata dos dois
+inícios espontâneos relatados no telefone não foi reproduzida fisicamente.
+
+## Dados, letras e áudio: limites práticos
+
+Favoritos, estatísticas, playlists pessoais e personalizações ficam no SQLite
+local de cada player/aparelho. Não há sincronização automática PC/celular.
+Use **Backup → Exportar/Restaurar** para guardar os dados fora do app.
+Desinstalar pode apagá-los; login Spotify não restaura a biblioteca pessoal local.
+
+Letras vêm do LRCLIB/importação e tradução do Google Tradutor. Quando traduz,
+o texto é enviado ao serviço. A análise TonalMuse é local: classificador C++
+int8 de 32.832 bytes, corpus sintético PT/EN/ES, sem LLM ou precisão demonstrada
+em letras reais. Expõe cobertura e pode abster-se. Não diagnostica humor/saúde.
+[Modelo e medições](docs/TONAL_MUSE_070.md).
+
+HRTF é processamento binaural; IAMF depende de fonte IAMF compatível e não
+converte Spotify estéreo em Atmos. Bluetooth é negociado pelo Android/receptor:
+o app não força codec privilegiado. Buffer temporário não é download offline
+permanente. EQ/mais volume não comprovam fidelidade superior.
+[Áudio Android e testes](docs/ANDROID_AUDIO_LOCAL.md) · [Áudio desktop](docs/AUDIO_LOCAL.md).
+
+## Build, testes e manutenção
+
+Windows: Visual Studio C++, Qt 6.8.3 MSVC 2022, CMake/Ninja e dependências
+fixadas em `third_party/`; Rust para librespot. Em Developer PowerShell:
 
 ```powershell
 cmake --preset release
@@ -229,80 +197,33 @@ cmake --build --preset release
 .\out\build\release\Tonal.exe
 ```
 
-### 4. Make a release
+O executável de build mantém o nome Tonal.exe; o pacote pessoal usa Tonalify.exe.
+Consulte os roteiros em `packaging/` e os guias de áudio/instalador antes de
+empacotar, porque o release simples do upstream não equivale ao hub completo.
 
-With Inno Setup 6 installed (`winget install JRSoftware.InnoSetup`), in a regular PowerShell:
+Android: JDK 17, Gradle 8.14.3, SDK 36 e NDK 27.0.12077973. O script
+`packaging/build-android-local.ps1` gera universal; `-PhoneOnly` gera ARM64.
+`-SkipNative -SkipAudio` reutiliza bibliotecas já compiladas compatíveis.
 
-```powershell
-.\packaging\release.ps1             # builds the ZIP, installer and SHA256SUMS.txt in out\release\
-.\packaging\release.ps1 -Publish    # also publishes release v<version> on GitHub (needs a logged-in gh)
-```
+O [CI privado](.github/workflows/ci.yml) reproduz o modelo, compila/testa o
+núcleo C++, verifica QML, política de reprodução e variantes Java Android.
+Testes não medem automaticamente CPU/RAM ou Bluetooth real.
 
-The version comes from `project(Tonal VERSION ...)` in `CMakeLists.txt`. Before each new release, bump the
-version and write its changes in [CHANGELOG.md](CHANGELOG.md): `-Publish` copies that section to the release
-page.
+- [Contexto e estado da entrega](contexto.md).
+- [Regras para manutenção](AGENTS.md).
+- [Histórico de mudanças](CHANGELOG.md).
+- [Backup completo privado](https://drive.google.com/drive/folders/1sNjL35fdHzoLY8QcqtBX2XF4YQJbeKlL).
 
-### Layout
+O backup guarda fontes versionadas, histórico Git, instaláveis, fontes de áudio
+correspondentes, documentos e dados pessoais disponíveis do PC. Exclui tokens,
+Vault, senhas, assinatura privada, mídia externa e banco do telefone físico.
+As instruções de restauração acompanham o pacote.
 
-Code comments and the source UI strings are in Brazilian Portuguese; the English interface comes from
-`i18n/tonal_en.ts`. Commits follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
+## Licenças e origem
 
-```
-src/
-  main.cpp              sets up the app, style, font and QML engine
-  App.*                 singleton exposed to QML (App.auth, App.api, App.player, App.librespot, App.lyrics)
-  AuthManager.*         OAuth PKCE + callback server on 127.0.0.1:8898
-  TokenStore.*          Spotify tokens and the setlist.fm API key in Windows Credential Manager
-  SpotifyApi.*          Web API HTTP client (401 → refresh, 429 → Retry-After)
-  Player.*              playback state, commands, queue, devices
-  LibrespotProcess.*    starts/restarts librespot, reads its log, Job Object on Windows
-  MediaControls.*       media keys and the Windows media flyout (SMTC)
-  Lyrics.*              LRCLIB lyrics: lookup, picking the right version and parsing LRC
-  SetlistFm.*           setlist.fm API: band shows, API key check and storage
-  NetworkFactory.*      disk cache for covers
-qml/
-  Main.qml              window, layout, navigation, shortcuts, track menu, toast
-  Theme.qml             colors (blue, black and white), sizes and formatting helpers
-  Icons.qml             SVG icon paths
-  Nav.qml               navigation history and shared state
-  Playlists.qml         creating and editing playlists (and the permission it needs from Spotify)
-  Setlists.qml          setlist.fm shows to playlist: search, selection, track matching
-  components/           Icon, Cover, MediaCard, TrackRow, SeekBar, Chip...
-  panels/               TopBar, LibraryPanel, PlayerBar, RightPanel, DevicePopup
-  pages/                Login, Home, Search, Collection (playlist/album/liked), Artist, Lyrics, Setlists
-resources/
-  tonal.ico             app icon (generated by make-icon.ps1, linked to the .exe by tonal.rc)
-packaging/
-  release.ps1           builds the portable ZIP and the installer (and publishes the release with -Publish)
-  tonal.iss             installer (Inno Setup 6)
-  licenses/             Qt and librespot licenses shipped with the release
-i18n/
-  tonal_en.ts           English translation (compiled into the executable)
-docs/                   images for this README
-```
-
-### Translations
-
-UI text is written in Portuguese with `qsTr()` (QML) or `tr()` (C++). After adding or changing text, extract it
-and translate the new entries in `i18n/tonal_en.ts` (with Qt Linguist or any text editor); untranslated entries
-show the Portuguese text:
-
-```powershell
-cmake --build --preset debug --target update_translations
-```
-
-## Roadmap
-
-- Custom playlist covers and dragging tracks straight onto a playlist in Your Library
-- Code signing, and testing on Linux and macOS
-
-## License
-
-Tonal's code is under the [MIT license](LICENSE).
-
-Release packages also include [Qt 6](https://www.qt.io) (LGPLv3, as dynamic libraries) and
-[librespot](https://github.com/librespot-org/librespot) (MIT). Their licenses are in the package's `licenses`
-folder.
-
-Tonal is a personal, unofficial client. "Spotify" is a trademark of Spotify AB; this project is not affiliated
-with the company. librespot is an open, unofficial implementation of the Spotify protocol.
+Código derivado sob [MIT](LICENSE), com autoria original de **Matheus Nunes
+(natheus)** preservada. Dependências têm licenças próprias distribuídas nos
+pacotes: Qt, librespot, FFmpeg, OpenAL Soft, libiamf e outras; veja
+[avisos de áudio](third_party/AUDIO-NOTICES.md) e [créditos](CREDITS.md).
+Capas, fotos, letras e gravações pertencem aos respectivos titulares.
+Projeto pessoal não oficial, sem afiliação com Spotify AB.
