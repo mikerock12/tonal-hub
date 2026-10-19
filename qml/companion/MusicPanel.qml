@@ -42,7 +42,7 @@ Dialog {
         if(panel.pendingRemix){panel.pendingRemix=false;panel.prepareSongMix(panel.pendingShake)}else panel.queuedRows=panel.songQueueSource
     }}
     onClosed: {pendingRemix=false;queueLoading=false}
-    Connections{target:panel.controller;function onCurrentChanged(){if(panel.queueLoading){panel.pendingRemix=false;panel.queueLoading=false;panel.queueNotice="A música mudou. Prepare a fila novamente."}}}
+    Connections{target:panel.controller;function onCurrentChanged(){if(panel.queueLoading&&panel.queueAnchor!==(panel.controller.current.uri||"")){panel.pendingRemix=false;panel.queueLoading=false;panel.queueNotice="A música mudou. Prepare a fila novamente."}}}
     Connections{target:panel.mixController;ignoreUnknownSignals:true;function onChanged(){if(panel.queueEdited&&!panel.mixController.busy)panel.queuedRows=panel.mixController.previewQueue}}
 
     property bool listShaken:false

@@ -42,6 +42,13 @@ Pane {width:1000;height:800;padding:0;palette.button:"#263440";palette.buttonTex
    compare(App.listeningMix.previewQueue.length,2);compare(App.listeningMix.previewQueue[1].artistId,"artist123");compare(App.listeningMix.previewQueue[1].year,1994);
    findChild(personalPanel,"songQueueDialog").close();personalPanel.close();App.player.delayQueue=false;personalPanel.discoveryPlayback=false;
   }
+  function test_metadata_refresh_keeps_queue_request(){
+   personalPanel.songQueueSource=[];personalPanel.queueEdited=false;App.player.delayQueue=true;App.listeningMix.previewQueue=[];
+   personalPanel.showSong();personalPanel.remixSong(false);verify(personalPanel.queueLoading);
+   let original=personal.current;personal.current=Object.assign({},original,{album:"Refreshed metadata"});
+   verify(personalPanel.queueLoading);App.player.queueRefreshFinished(200);compare(App.listeningMix.previewQueue.length,2);
+   findChild(personalPanel,"songQueueDialog").close();personalPanel.close();personal.current=original;App.player.delayQueue=false;
+  }
   function test_queue_failure_finishes_without_applying(){
    personalPanel.songQueueSource=[];personalPanel.queueEdited=false;App.player.delayQueue=true;App.listeningMix.previewQueue=[];
    personalPanel.showSong();personalPanel.remixSong(false);verify(personalPanel.queueLoading);
@@ -49,6 +56,13 @@ Pane {width:1000;height:800;padding:0;palette.button:"#263440";palette.buttonTex
    findChild(personalPanel,"songQueueDialog").close();personalPanel.close();App.player.delayQueue=false;
   }
   function test_song_queue_preview(){personalPanel.showSong();tryCompare(personalPanel,"visible",true);let button=findChild(personalPanel,"songQueueButton");verify(button!==null);verify(button.visible);personalPanel.openQueue();compare(personalPanel.queuedRows.length,2);compare(personalPanel.queuedRows[0].title,"Current song");let dialog=findChild(personalPanel,"songQueueDialog");verify(dialog.visible);personalPanel.remixSong(true);compare(App.listeningMix.previewQueue.length,2);compare(App.listeningMix.appliedPosition,-1);App.listeningMix.applyPreview(personalPanel.position);compare(App.listeningMix.appliedPosition,12345);grabImage(dialog.contentItem).save("song-queue.png");dialog.close();personalPanel.close()}
+  function test_track_switch_cancels_queue_request(){
+   personalPanel.songQueueSource=[];personalPanel.queueEdited=false;App.player.delayQueue=true;App.listeningMix.previewQueue=[];
+   personalPanel.showSong();personalPanel.remixSong(false);verify(personalPanel.queueLoading);
+   let original=personal.current;personal.current=Object.assign({},original,{uri:"spotify:track:different"});
+   verify(!personalPanel.queueLoading);verify(personalPanel.queueNotice.indexOf("mudou")>=0);App.player.queueRefreshFinished(200);compare(App.listeningMix.previewQueue.length,0);
+   findChild(personalPanel,"songQueueDialog").close();personalPanel.close();personal.current=original;App.player.delayQueue=false;
+  }
   function test_visual_order_and_playback_are_independent(){
    tryCompare(page,"totalTracks",6);let original=page.mixRows();compare(original.length,6);compare(original[0].uri,"spotify:track:fixture0");compare(original[0].artist,"Test Band");compare(original[0].year,1994)
    page.shakeList();verify(page.listShaken);compare(page.mixRows()[0].uri,"spotify:track:fixture1");page.restoreOrder();verify(!page.listShaken);compare(JSON.stringify(page.mixRows()),JSON.stringify(original));compare(App.api.writes,0)
