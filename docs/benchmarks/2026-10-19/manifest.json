@@ -1,0 +1,16 @@
+{
+  "product_commit": "d4acee3ca35147d289ea9b71dc80038a99950eab",
+  "files": {
+    "summary.json": "47d3f44c10721c08397bb8724d50d8dc49cfbdac160bf00819a27bc37eedaf8b",
+    "samples.csv": "40119d9d27add9ca30961b50afc5a7a91103e57ea6f8003e9f27ee9272bfc224",
+    "RESULTADOS.md": "1de82a1bd2cb9470b24d30b4a4c0fd71fe49c1b2b5adc83de56e8765ae997ab0",
+    "comparison.png": "125a245c548f261198eadb12dea2d434de1f41f20c4a6a3c682cdc4256c624e6"
+  },
+  "collectors": {
+    "android_0120.py": "f28cfc2f1a79efcf8f80b4ac8716384c4bbe91879c6a93e277b14970c620ca09",
+    "android_streaming_0120.py": "11b47ff84f684a3586d55e15278c403882d723deb5e8db7c6213ca99e2499b03",
+    "render_0120.py": "90fb689b414c89b7f6fefa02d4db78cae6245b7495da30c48291aff04a24dac9",
+    "windows_0120.py": "542457c9114470378f00a7c25e32e92379b33ec1e87eb32d5e35df044041c628",
+    "windows_minimized_0120.py": "293f56b5d2f73ca7ad4b66f503b55fa7514da45e618c5fdd5ad2ccebb84f96d6"
+  }
+}

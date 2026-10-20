@@ -1,6 +1,6 @@
 # Contexto do Tonal Hub
 
-Atualizado em **19/10/2026**. Estado do produto: **0.12.0**; mudanças de produto em Windows e Android. Leia também [AGENTS.md](AGENTS.md).
+Atualizado em **20/10/2026**. Estado do produto: **0.12.0**; benchmark posterior sem alterar binários distribuídos. Leia também [AGENTS.md](AGENTS.md).
 
 ## Projeto, autoria e objetivo
 
@@ -130,9 +130,13 @@ dos binários pelo HEAD documental.
 | Android 0.7 | Áudio local 48,4 MiB/4,1%; com apresentação 55,6/15,0%; janelas exploratórias de oito segundos |
 | Windows 0.8, 17/10 | Mesma faixa tocando: Tonalify 122,55 MiB USS/0,50%; Spotify 540,53 MiB/2,87%; RAM 77,33% menor nessa amostra |
 | Android 0.8, 17/10 | Sem login: 16,99 vs 154,78 MiB PSS; streaming Tonalify separado 72,59 MiB/5,23%; sem streaming Spotify equivalente |
+| Windows 0.12, 19–20/10 | Minimizado, mesma faixa: 110,30 vs 496,83 MiB USS; CPU 0,77% vs 0,67%; 77,80% menos RAM nessa amostra, sem vantagem consistente de CPU |
+| Android 0.12, 19–20/10 | Sem login, com Hub: 31,49 vs 156,84 MiB PSS na tela inicial; CPU 0,11% vs 1,20%; sem streaming oficial autenticado equivalente |
+| Android 0.12, suplemento | Streaming Tonalify de teste sem Hub: 72,73 MiB PSS/4,69%, zero novos underruns; variante depurável, sem equivalente Spotify autenticado |
 
 CPU 100% corresponde a um núcleo. USS e PSS não são intercambiáveis.
-Sem novo benchmark 0.11.1; sem conclusão de vantagem em streaming Android,
+Coleta 0.12 em [docs/BENCHMARK_0120.md](docs/BENCHMARK_0120.md), com CSV/JSON e gráficos.
+Sem conclusão de vantagem em streaming Android,
 bateria, fidelidade superior ou latência/estabilidade Bluetooth física.
 
 ## Artefatos e restauração
@@ -193,7 +197,8 @@ um pedido por vez, intervalo 1,25 s, prazo 6 s, resposta 256 KiB, cache de até
 2.000 escores com expiração. Não guarda as letras nem cria escutas; não altera
 a fila confirmada. Opt-out na Fila, cancelamento e espera de serviço preservada
 entre seleções. TonalMuse usa até 12 mil caracteres. Sem extração acústica
-de BPM/timbre/tonalidade e sem novo benchmark de CPU/RAM. Detalhes e testes:
+de BPM/timbre/tonalidade. A entrega de produto não teve nova coleta CPU/RAM;
+o benchmark posterior de 19–20/10 está documentado acima. Detalhes e testes:
 [DISCOVERY_ENRICHMENT_0120.md](docs/DISCOVERY_ENRICHMENT_0120.md).
 
 Validação 0.12.0: 10 CTest Windows, 5 portáteis, QML 9/6/3, Android 21 de serviço
@@ -201,3 +206,5 @@ e 24 JNI/cache; teste da fila confirmou Shake/Aleatório/reabertura/desativaçã
 Upgrade Windows preservou dados e APKs mantêm identidade/assinatura (código 14).
 Tentativas interrompidas, limitações e hashes constam no relatório JSON.
 Backup privado 0.12: https://drive.google.com/drive/folders/15bxn_XcZianWzzp9E5GdYI8deVqm1fy5.
+Pasta privada da atualização de benchmark:
+https://drive.google.com/drive/folders/1e3ii--ACPMW4hH97EGIEVxf4pbdc6bF_.
