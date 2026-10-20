@@ -1,4 +1,24 @@
-# Benchmark local 0.8
+# Benchmarks locais
+
+## Coleta 0.12.0 — 19/10/2026
+
+`windows_0120.py` registra a série exploratória e o inventário do produto instalado.
+`windows_minimized_0120.py` exige os dois players previamente minimizados pela UI,
+verifica esse estado antes/depois e coleta duas rodadas invertidas de 60 intervalos
+por app/estado. O contexto real da faixa deve estar carregado no Spotify oficial.
+Após pausa longa, o coletor retoma esse transporte antes de transferir a reprodução;
+ausência de faixa/áudio aborta a etapa. Não publicar janela abortada como válida.
+
+`android_0120.py` usa a variante `comparison` 0.12.0 e o AVD exclusivo, abrindo o Hub
+antes do Tonalify. Inspeciona as telas sem login, preserva dados e mede dois blocos
+de seis intervalos de cinco segundos, por app e visibilidade. Não é streaming.
+
+`render_0120.py` exporta campos selecionados para `docs/benchmarks/2026-10-19`,
+gera Markdown/JSON/CSV e gráfico estático com matplotlib. Requer as coletas completas
+sob `out/benchmark-2026-10-19`; a série exploratória preservada pode ser parcial.
+Revise a saída pública e os limites em `docs/BENCHMARK_0120.md` antes do push.
+
+## Coleta histórica 0.8 — 17/10/2026
 
 Execute apenas com autorização do titular das sessões. Os coletores não exportam tokens.
 Python requer `psutil`. Os scripts de Windows usam PowerShell, contadores de processo,

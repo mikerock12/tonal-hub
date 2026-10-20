@@ -10,7 +10,7 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
-**Produto atual: 0.12.0. Documentação consolidada em 19/10/2026.**
+**Produto atual: 0.12.0. Documentação consolidada em 20/10/2026.**
 
 [Guia visual com 18 capturas](docs/GUIA_VISUAL.md) ·
 [Regras da Descoberta 2+1](docs/DESCOBERTA_2_MAIS_1.md) ·
@@ -114,29 +114,41 @@ universal de áudio nem sincronização bidirecional entre serviços.
 
 ## Desempenho: números medidos, com escopo
 
-**Resultados históricos da versão 0.8, em 17/10/2026. Não são benchmark da 0.12.0.**
+**Nova coleta 0.12.0, 19–20/10/2026**, contra os clientes oficiais instalados:
+Spotify Windows 1.3.5.3058 e Android 9.1.90.2270.
 
 | Plataforma/cenário | Tonalify: RAM mediana / CPU média | Spotify: RAM mediana / CPU média |
 |---|---:|---:|
-| Windows, mesma faixa reproduzindo | **122,55 MiB USS / 0,50%** | 540,53 MiB USS / 2,87% |
-| Windows, pausado | 122,65 MiB USS / 0,15% | 534,82 MiB USS / 0,43% |
-| Android emulado, sem login, tela inicial | **16,99 MiB PSS / 0,06%** | 154,78 MiB PSS / 1,00% |
+| Windows minimizado, mesma faixa reproduzindo | **110,30 MiB USS / 0,77%** | 496,83 MiB USS / 0,67% |
+| Windows minimizado, pausado | 110,30 MiB USS / 0,21% | 469,32 MiB USS / 0,16% |
+| Android emulado, sem login, tela inicial + Hub | **31,49 MiB PSS / 0,11%** | 156,84 MiB PSS / 1,20% |
+| Android emulado, sem login, segundo plano + Hub | 27,63 MiB PSS / 0,08% | 151,37 MiB PSS / 0,47% |
 
 CPU 100% = um núcleo. Processos auxiliares estão incluídos. USS e PSS são
 métricas diferentes. PC i5-6500/16 GB/Windows 10; AVD Android 16 x86_64.
-No Windows tocando, RAM foi **77,33% menor nessa amostra**. Rodadas curtas,
-configurações/visibilidade não integralmente igualadas e variação da CPU
-impedem generalizar os percentuais para toda máquina ou uso.
+No Windows minimizado tocando, RAM foi **77,80% menor nessa amostra**. Não houve
+vantagem consistente de CPU: a direção mudou entre as duas rodadas. DSP e
+qualidade do Spotify não foram igualados; Tonalify manteve EQ, graves e
+normalização pessoais ativos. Rodadas curtas não sustentam vantagem universal.
 
 **Não há streaming autenticado equivalente do Spotify Android nessa medição.**
-Tonalify autenticado, coletado separadamente, ficou em 72,59 MiB PSS/5,23%,
-sem base para declarar vantagem de reprodução. Não foram medidos bateria,
+O login oficial retornou “Something went wrong” mesmo com código novo
+fornecido pelo usuário e uma repetição. A tela sem login não prova economia
+durante reprodução. Não foram medidos bateria,
 latência acústica ou qualidade Bluetooth no POCO X7 Pro. Animações têm custo real.
 
-[Índice de todos os benchmarks 0.1/0.3/0.7/0.8](docs/BENCHMARKS.md) ·
-[Relatório completo e comparação de funcionalidades](docs/BENCHMARK_080.md) ·
-[Relatório HTML interativo: baixar/abrir](docs/benchmarks/2026-10-17/report.html) ·
-[JSON](docs/benchmarks/2026-10-17/summary.json) · [CSV](docs/benchmarks/2026-10-17/samples.csv).
+Suplemento Tonalify tocando no Android, medido separadamente: **72,73 MiB PSS /
+4,69% de um núcleo**, zero novos underruns nas duas janelas. Player de teste
+depurável, sem Hub; não comparar esse número ao Spotify sem login.
+
+[Resultados, gráficos e rodadas 0.12.0](docs/benchmarks/2026-10-19/RESULTADOS.md) ·
+[Método e funcionalidades](docs/BENCHMARK_0120.md) ·
+[JSON](docs/benchmarks/2026-10-19/summary.json) · [CSV](docs/benchmarks/2026-10-19/samples.csv) ·
+[Índice e medições históricas](docs/BENCHMARKS.md).
+
+![CPU e RAM medidos na versão 0.12.0, com os cenários identificados](docs/benchmarks/2026-10-19/comparison.png)
+
+![CPU e RAM medidos na versão 0.12.0, com os cenários identificados](docs/benchmarks/2026-10-19/comparison.png)
 
 ## Instalar a entrega pessoal 0.12.0
 

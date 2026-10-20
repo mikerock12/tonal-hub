@@ -1,0 +1,5 @@
+# Keep the measured collection and its SHA-256 inputs stable across checkouts.
+/docs/benchmarks/2026-10-19/*.json text eol=lf
+/docs/benchmarks/2026-10-19/*.md text eol=lf
+/docs/benchmarks/2026-10-19/*.csv text eol=lf
+/tests/benchmark/*0120.py text eol=lf

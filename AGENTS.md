@@ -1,7 +1,7 @@
 # Instruções para trabalhar neste repositório
 
 Leia [contexto.md](contexto.md), [README.md](README.md) e os documentos da área
-afetada antes de alterar o produto. Estado documental: 19/10/2026, produto 0.12.0.
+afetada antes de alterar o produto. Estado documental: 20/10/2026, produto 0.12.0.
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
@@ -65,10 +65,14 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
 
 ## Evidências, testes e capturas
 
-- [docs/BENCHMARKS.md](docs/BENCHMARKS.md) consolida as medições. **Não há
-  benchmark de CPU/RAM 0.11.1 ou 0.12.0**. Windows 0.8: 122,55 vs 540,53 MiB USS tocando;
-  Android 0.8: 16,99 vs 154,78 MiB PSS **sem login**, sem streaming comparável
-  Spotify. Nunca misturar versões, USS/PSS ou cenários autenticados distintos.
+- [docs/BENCHMARKS.md](docs/BENCHMARKS.md) consolida as medições. Nova coleta
+  0.12.0 em 19–20/10: Windows minimizado tocando 110,30 vs 496,83 MiB USS,
+  CPU 0,77% vs 0,67% de um núcleo; sem vantagem consistente de CPU entre rodadas.
+  Android com Hub: 31,49 vs 156,84 MiB PSS **sem login**; sem streaming oficial
+  autenticado equivalente. Nunca misturar versões, USS/PSS ou cenários distintos.
+  Método e dados em docs/BENCHMARK_0120.md; 0.8 permanece histórico separado.
+  Suplemento Tonalify Android de teste sem Hub: 72,73 MiB PSS/4,69%, zero novos
+  underruns; variante depurável, sem streaming oficial equivalente para dividir.
 - CPU 100% significa um núcleo. Distinguir benchmark, teste funcional, emulador
   e aparelho físico. Animações consomem recursos e não devem ser chamadas gratuitas.
 - Validação 0.11.1 em `docs/discovery-playback-0111-tests.json`: dez CTest,

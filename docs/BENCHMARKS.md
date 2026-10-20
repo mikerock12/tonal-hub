@@ -1,8 +1,43 @@
 # Benchmarks realizados: histórico e limites
 
-Consolidação documental em **19/10/2026**. Não houve nova coleta de CPU/RAM
-para as versões 0.11.1 e 0.12.0. Os resultados abaixo preservam a versão, o ambiente e
-o cenário em que foram medidos. Testes funcionais recentes ficam em outra seção.
+Consolidação documental em **20/10/2026**. Nova coleta CPU/RAM da versão
+0.12.0 em 19–20/10. Os resultados preservam versão, ambiente e cenário;
+testes funcionais ficam separados das medições.
+
+## Comparação atual — versão 0.12.0
+
+| Cenário | Tonalify RAM mediana | Spotify RAM mediana | CPU média Tonalify / Spotify |
+|---|---:|---:|---:|
+| Windows minimizado, mesma faixa tocando | 110,30 MiB USS | 496,83 MiB USS | 0,77% / 0,67% |
+| Windows minimizado, pausado | 110,30 MiB USS | 469,32 MiB USS | 0,21% / 0,16% |
+| Android emulado, sem login, tela inicial + Hub | 31,49 MiB PSS | 156,84 MiB PSS | 0,11% / 1,20% |
+| Android emulado, sem login, segundo plano + Hub | 27,63 MiB PSS | 151,37 MiB PSS | 0,08% / 0,47% |
+
+CPU 100% = um núcleo. Mesma faixa Windows: **Get Back — Veruca Salt**,
+com saída de áudio confirmada. Duas rodadas invertidas; 120 amostras por
+app/estado Windows, 12 Android. Spotify instalado: Windows 1.3.5.3058,
+Android 9.1.90.2270. Host i5-6500/16 GB; AVD Android 16/API 36 x86_64,
+duas vCPUs e 3 GB solicitados. O Android inclui os processos Hub e player.
+
+Windows tocando: **77,80% menos RAM nessa amostra**, sem vantagem consistente
+de CPU entre rodadas. EQ, graves e normalização pessoais do Tonalify foram
+mantidos; qualidade/DSP do Spotify não igualados. Há série exploratória
+separada com visibilidade desigual, sem sustentar comparação justa de CPU.
+
+**Sem streaming oficial autenticado equivalente no Android**: o app retornou
+“Something went wrong” após código novo fornecido pelo usuário e uma repetição.
+Os números sem
+login não provam economia durante reprodução. Bateria, latência física,
+Bluetooth e custo de todas as animações/novos recursos não foram medidos.
+
+Suplemento autenticado Tonalify 0.12.0: **72,73 MiB PSS / 4,69% de um núcleo**,
+duas janelas consecutivas, 12 amostras, zero novos underruns e PCM crescente.
+Variante depurável, sem Hub, polling diagnóstico 2,5 s; sem denominador oficial
+autenticado. Não confundir com o APK Release em uso normal.
+
+[Método e funcionalidades](BENCHMARK_0120.md) ·
+[Resultados, gráficos e rodadas](benchmarks/2026-10-19/RESULTADOS.md) ·
+[JSON](benchmarks/2026-10-19/summary.json) · [CSV](benchmarks/2026-10-19/samples.csv).
 
 ## Comparação principal — versão 0.8, 17/10/2026
 

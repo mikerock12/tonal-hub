@@ -1,5 +1,16 @@
 # Changelog
 
+## Benchmark 0.12.0 — 19–20/10/2026
+
+- Nova coleta Windows/Android, dois blocos invertidos por app/estado, com
+  amostras CSV, resumo JSON, gráfico e rodadas detalhadas.
+- Windows minimizado tocando: 110,30 vs 496,83 MiB USS; sem vantagem consistente
+  de CPU. Android com Hub medido sem login, sem streaming oficial equivalente.
+- Suplemento Tonalify Android autenticado: 72,73 MiB PSS/4,69% de um núcleo,
+  zero novos underruns; teste depurável sem Hub, apresentado separadamente.
+- [Método, evidências e limites](docs/BENCHMARK_0120.md). Sem alterar o produto
+  ou recompilar instaláveis distribuídos; variante de comparação Android atualizada.
+
 ## Tonal Hub pessoal 0.12.0 — 19/10/2026
 
 - Descobertas aceitas preservadas ao reorganizar a fila por Shake/Aleatório;
