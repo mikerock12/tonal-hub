@@ -1,0 +1,89 @@
+{
+  "format": "tonal-notification-icon-validation-v1",
+  "version": "0.13.2",
+  "recorded_on": "2026-10-21",
+  "android": {
+    "notification_smoke": {
+      "passed": true,
+      "checks": [
+        {
+          "name": "benchmark_apk_0132_installed",
+          "passed": true,
+          "version": "0.13.2-local"
+        },
+        {
+          "name": "tonalify_session_metadata_and_playing_clock",
+          "passed": true,
+          "title": "Ensaio de áudio Vorbis",
+          "position_ms": 0,
+          "updated": 227492
+        },
+        {
+          "name": "tonalify_notification_shows_track",
+          "passed": true
+        },
+        {
+          "name": "launcher_icon_follows_theme",
+          "passed": true,
+          "alias": "HubIconNeon"
+        },
+        {
+          "name": "launcher_icon_restored",
+          "passed": true,
+          "alias": "HubIconTonal"
+        },
+        {
+          "name": "indietonal_notification_with_cover",
+          "passed": true,
+          "title": "intro & tunings",
+          "large_icon": "Icon (Icon(typ=BITMAP size=63x63))\r"
+        },
+        {
+          "name": "no_fatal_exception",
+          "passed": true
+        }
+      ],
+      "version": "0.13.2-local"
+    },
+    "theme_catalog_checks": 183,
+    "variants_compiled": [
+      "release",
+      "benchmark",
+      "comparison",
+      "automation debug"
+    ],
+    "apks": {
+      "Tonal-Android-0.13.2-local.apk": {
+        "bytes": 47053960,
+        "sha256": "51d92a5c899b6723920a5f881ab66a35a42bf89cbb7cc2957b1ffca59c51cd79"
+      },
+      "Tonal-Android-0.13.2-arm64-v8a.apk": {
+        "bytes": 25017081,
+        "sha256": "05ffe8f3437d39c999d7bbcf6c76499aa1f991b6ebcaf8873bf18cc38bde2193"
+      },
+      "version_code": 17,
+      "signing_certificate_unchanged": true,
+      "private_seed_or_session_present": false
+    },
+    "playback_policy_checks": 40
+  },
+  "windows": {
+    "native_ctest_passed": 10,
+    "portable_qml": {
+      "mix": 15,
+      "lyrics": 6,
+      "playlist": 3
+    },
+    "startup_smoke_seconds": 10,
+    "installer": {
+      "file": "Tonal-Hub-0.13.2.0-Windows-x64-Setup.exe",
+      "bytes": 81587157,
+      "sha256": "35f60d59a84bd17a7981b16cec60540af9c9b6ee587dcb38529e0aa39efa5dfe"
+    }
+  },
+  "not_validated": [
+    "Spotify cover in the notification with the real account (same Artwork.fetch path tested with IndieTonal)",
+    "HyperOS launcher on the POCO X7 Pro",
+    "Taskbar icon checked interactively on the PC"
+  ]
+}

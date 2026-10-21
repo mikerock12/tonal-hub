@@ -313,6 +313,30 @@
       "height": 1200,
       "bytes": 39826,
       "sha256": "b61aae9c0ae18b0665e27c58e397211ab37c36d94cd14492c882157178857f9d"
+    },
+    {
+      "file": "android-notificacao-tonalify-0132.png",
+      "source": "out/android/notification-0132/notificacao-tonalify-0132.png",
+      "platform": "Android",
+      "capture_context": "0.13.2: smoke de notificação na AVD dedicada",
+      "note": "Player do sistema com o ensaio local do APK: título da música e estado; sem conta.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 540,
+      "height": 1200,
+      "bytes": 53053,
+      "sha256": "3c12b4cf3bbb3c7bc5a61712f28e0199082b765b658719454a9623e255d4b4dc"
+    },
+    {
+      "file": "android-notificacao-capa-0132.png",
+      "source": "out/android/notification-0132/notificacao-indietonal-capa-0132.png",
+      "platform": "Android",
+      "capture_context": "0.13.2: smoke de notificação na AVD dedicada",
+      "note": "Player do sistema com gravação pública Aadam Jacobs (L7) no IndieTonal: capa, música e banda.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 540,
+      "height": 1200,
+      "bytes": 117581,
+      "sha256": "e5924824e8be96b0b9c9e22a513ef9fbcb7fea06362eee5181933b8107033401"
     }
   ]
 }

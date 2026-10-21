@@ -7,7 +7,10 @@
 #include <QNetworkAccessManager>
 #include <QQmlEngine>
 #include <QColor>
+#include <QIcon>
 #include <QImage>
+#include <QPainter>
+#include <QPainterPath>
 #include <QNetworkDiskCache>
 #include <QNetworkReply>
 #include <QLocale>
@@ -33,6 +36,9 @@ App::App(QObject *parent)
     , m_listeningMix(new ListeningMix(m_api,m_music,this))
     , m_theme(new ThemeCatalog(this))
 {
+    // Ícone da janela e da barra de tarefas com as cores do tema escolhido.
+    updateWindowIcon();
+    connect(m_theme,&ThemeCatalog::changed,this,&App::updateWindowIcon);
     connect(m_player,&Player::playbackRequested,m_listeningMix,&ListeningMix::cancel);
     connect(m_listeningMix,&ListeningMix::ready,this,[this](const QVariantList& tracks){m_music->rememberTracks(tracks);QStringList uris;for(auto v:tracks){auto t=v.toMap();uris<<t["uri"].toString();}m_player->setOrderedQueue(tracks);m_player->playOrderedUris(uris);});
     connect(m_listeningMix,&ListeningMix::resumeReady,this,[this](const QVariantList& tracks,int position){
@@ -210,4 +216,37 @@ void App::dominantColor(const QString &imageUrl, const QJSValue &callback)
         m_colorCache.insert(imageUrl, name);
         cb.call({ QJSValue(name) });
     });
+}
+
+// Mesmo desenho do ícone do Tonal (círculo e barras de som), em vários
+// tamanhos: círculo na cor de destaque do tema e barras na cor de contraste.
+// O Tonal Azul mantém as barras brancas do ícone original.
+QIcon App::themedIcon(const QVariantMap &theme)
+{
+    const QColor accent(theme.value(QStringLiteral("accent"), QStringLiteral("#0d80bf")).toString());
+    const bool original = theme.value(QStringLiteral("id")).toString() == QLatin1String("tonal");
+    const QColor bars = original ? QColor(Qt::white) : QColor(theme.value(QStringLiteral("onAccent"), QStringLiteral("#000000")).toString());
+    QIcon icon;
+    for (int size : {16, 20, 24, 32, 40, 48, 64, 128, 256}) {
+        QImage image(size, size, QImage::Format_ARGB32_Premultiplied);
+        image.fill(Qt::transparent);
+        QPainter painter(&image);
+        painter.setRenderHint(QPainter::Antialiasing);
+        painter.scale(size / 48.0, size / 48.0);
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(accent);
+        painter.drawEllipse(QRectF(0, 0, 48, 48));
+        painter.setPen(QPen(bars, 3, Qt::SolidLine, Qt::RoundCap));
+        const int lines[5][3] = {{12, 20, 28}, {18, 14, 34}, {24, 10, 38}, {30, 16, 32}, {36, 21, 27}};
+        for (const auto &line : lines)
+            painter.drawLine(QPointF(line[0], line[1]), QPointF(line[0], line[2]));
+        painter.end();
+        icon.addPixmap(QPixmap::fromImage(image));
+    }
+    return icon;
+}
+
+void App::updateWindowIcon()
+{
+    QGuiApplication::setWindowIcon(themedIcon(m_theme->current()));
 }

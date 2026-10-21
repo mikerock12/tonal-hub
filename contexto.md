@@ -1,6 +1,6 @@
 # Contexto do Tonal Hub
 
-Atualizado em **21/10/2026**. Estado do produto: **0.13.1** (repetição e modos da fila funcionando). Leia também [AGENTS.md](AGENTS.md).
+Atualizado em **21/10/2026**. Estado do produto: **0.13.2** (notificação com capa e ícone no tema). Leia também [AGENTS.md](AGENTS.md).
 
 ## Projeto, autoria e objetivo
 
@@ -252,3 +252,16 @@ após cada seleção ou recuperação; botão Repetir na página da música, sal
 Sem execução com Spotify real nesta sessão (permissão negada ao teste ao vivo).
 Instaláveis 0.13.1 (versionCode 16) e backup privado:
 https://drive.google.com/drive/folders/12L0IbCaTwURRIcOoHaQMLcgVYnP3nMcV.
+
+## Entrega 0.13.2 — Notificação com capa e ícone no tema
+
+PlaybackService publica na MediaSession título, artista, álbum, duração e capa
+da música atual (MusicStore.current), com `Artwork.fetch` fora da thread
+principal e o mesmo cache de capas; posição real e `onSeekTo` (Spotify).
+IndiePlaybackService ganhou a capa. Ícone: activity-alias `HubIcon<Tema>` por
+tema (só o escolhido ativo; `AppTheme.applyLauncherIcon`, DONT_KILL_APP),
+desenhos gerados por `packaging/generate-theme-icons.py`; notificação colorida
+com o destaque; no PC, `App::themedIcon` define o ícone da janela/barra.
+Detalhes: [NOTIFICACAO_ICONE_0132.md](docs/NOTIFICACAO_ICONE_0132.md).
+Instaláveis 0.13.2 (versionCode 17) e backup privado:
+https://drive.google.com/drive/folders/1nW93Tq55vdBJcCv2pGtYjJNUgHvrSl99.

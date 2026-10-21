@@ -231,3 +231,15 @@ alterna entre desligada, repetir a fila e repetir só esta música (ícone com �
 
 *Android 0.13.1: APK benchmark na AVD dedicada, durante o áudio de ensaio
 local, sem conta. [O que mudou](REPETICAO_MODOS_0131.md).*
+
+## 11. Notificação com capa e ícone no tema — 0.13.2
+
+A notificação e o player do sistema mostram capa, música e banda, com a
+posição real. O ícone do Tonal Hub na tela inicial e o da notificação seguem
+a cor do tema; no PC, o ícone da janela e da barra de tarefas também.
+
+<img src="screenshots/android-notificacao-capa-0132.png" width="300" alt="Android: player do sistema com capa da gravação, música intro & tunings e banda L7">
+<img src="screenshots/android-notificacao-tonalify-0132.png" width="300" alt="Android: player do sistema com o título do ensaio local do Tonalify">
+
+*Android 0.13.2: APK benchmark na AVD dedicada, sem conta; à esquerda, uma
+gravação pública do acervo Aadam Jacobs no IndieTonal. [Detalhes](NOTIFICACAO_ICONE_0132.md).*

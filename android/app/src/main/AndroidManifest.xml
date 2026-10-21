@@ -6,9 +6,26 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <application android:theme="@android:style/Theme.Material.NoActionBar" android:label="Tonal Hub"
         android:icon="@drawable/ic_tonal" android:allowBackup="false" android:dataExtractionRules="@xml/data_extraction_rules" android:supportsRtl="true" android:usesCleartextTraffic="false">
-        <activity android:name=".HubActivity" android:process=":hub" android:exported="true">
+        <activity android:name=".HubActivity" android:process=":hub" android:exported="true" />
+        <!-- Launcher icon follows the theme: one alias per theme, only the chosen one enabled (AppTheme.applyLauncherIcon). -->
+        <activity-alias android:name=".HubIconTonal" android:targetActivity=".HubActivity" android:icon="@drawable/ic_tonal" android:exported="true" android:enabled="true">
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
-        </activity>
+        </activity-alias>
+        <activity-alias android:name=".HubIconAurora" android:targetActivity=".HubActivity" android:icon="@drawable/ic_tonal_aurora" android:exported="true" android:enabled="false">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".HubIconSolar" android:targetActivity=".HubActivity" android:icon="@drawable/ic_tonal_solar" android:exported="true" android:enabled="false">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".HubIconNeon" android:targetActivity=".HubActivity" android:icon="@drawable/ic_tonal_neon" android:exported="true" android:enabled="false">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".HubIconOceano" android:targetActivity=".HubActivity" android:icon="@drawable/ic_tonal_oceano" android:exported="true" android:enabled="false">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".HubIconGrafite" android:targetActivity=".HubActivity" android:icon="@drawable/ic_tonal_grafite" android:exported="true" android:enabled="false">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity-alias>
         <activity android:name=".MainActivity" android:label="Tonalify" android:exported="true" android:launchMode="singleTop" android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity android:name=".IndieActivity" android:label="IndieTonal" android:process=":indie" android:exported="false" android:launchMode="singleTop" android:configChanges="orientation|screenSize|keyboardHidden" />
         <service android:name=".PlaybackService" android:exported="false" android:foregroundServiceType="mediaPlayback" />

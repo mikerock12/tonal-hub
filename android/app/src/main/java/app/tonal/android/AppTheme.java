@@ -46,6 +46,29 @@ final class AppTheme {
     static void choose(Context context,String id){
         try{Files.write(choiceFile(context).toPath(),id.getBytes(StandardCharsets.UTF_8));}catch(Exception ignored){}
         apply(context);
+        applyLauncherIcon(context,id);
+    }
+    /** Launcher alias for a theme id ("aurora" -> app.tonal.android.HubIconAurora). */
+    static String launcherAlias(String id){return "app.tonal.android.HubIcon"+(id.isEmpty()?"Tonal":Character.toUpperCase(id.charAt(0))+id.substring(1));}
+    /**
+     * The home screen icon follows the theme: enable the chosen alias first, then
+     * disable the others, so there is always one launcher entry. DONT_KILL_APP
+     * keeps playback and the open screens running.
+     */
+    static void applyLauncherIcon(Context context,String id){
+        if(find(context,id)==null)return;
+        android.content.pm.PackageManager pm=context.getPackageManager();String wanted=launcherAlias(id);JSONArray list=themes(context);
+        try{
+            setAlias(pm,context,wanted,true);
+            for(int i=0;i<list.length();i++){JSONObject t=list.optJSONObject(i);if(t==null)continue;String alias=launcherAlias(t.optString("id"));if(!alias.equals(wanted))setAlias(pm,context,alias,false);}
+        }catch(IllegalArgumentException|SecurityException ignored){}
+    }
+    // Writes only real changes: each write makes the launcher reload the app entry.
+    private static void setAlias(android.content.pm.PackageManager pm,Context context,String alias,boolean enabled){
+        android.content.ComponentName component=new android.content.ComponentName(context.getPackageName(),alias);
+        int state=pm.getComponentEnabledSetting(component);
+        boolean current=state==android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED||state==android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DEFAULT&&alias.equals(launcherAlias("tonal"));
+        if(current!=enabled)pm.setComponentEnabledSetting(component,enabled?android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED:android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED,android.content.pm.PackageManager.DONT_KILL_APP);
     }
     private static int color(JSONObject theme,String key,int fallback){
         JSONObject android=theme.optJSONObject("android");String value=android!=null&&android.has(key)?android.optString(key):theme.optString(key,"");

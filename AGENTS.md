@@ -1,7 +1,7 @@
 # Instruções para trabalhar neste repositório
 
 Leia [contexto.md](contexto.md), [README.md](README.md) e os documentos da área
-afetada antes de alterar o produto. Estado documental: 21/10/2026, produto 0.13.1.
+afetada antes de alterar o produto. Estado documental: 21/10/2026, produto 0.13.2.
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
@@ -76,6 +76,9 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
   Novo tema: editar o JSON, copiar ao Android e rodar a verificação.
 - Trocar tema não pode recriar a Activity Android nem tocar motor/fila; o PC
   troca ao vivo via `App.theme`. Sem animação contínua ou shader para temas.
+- Ícone por tema: Android activity-alias `HubIcon<Tema>` (gerar com
+  `packaging/generate-theme-icons.py`; ativar o novo antes de desativar o antigo);
+  PC `App::themedIcon`. Notificação: metadados/capa da música atual na MediaSession.
 - Seek: PC envia um pedido ao soltar (coalescido) e só descarta o buffer no
   `command=Seek(` do librespot; ambos ignoram poll remoto antigo (3 s/1,5 s).
 
@@ -106,6 +109,8 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
 - Validação 0.13.1 em `docs/repeticao-modos-0131-tests.json`: CTest 10, QML
   15/6/3, Java 40, AVD repetição 8 + temas 9 + fila. Teste ao vivo `--verify-mix`
   pronto, não executado (permissão negada): não declarar fila/repetição com Spotify real.
+- Validação 0.13.2 em `docs/notificacao-icone-0132-tests.json`: AVD 7 (notificação,
+  capa IndieTonal, alias do ícone), temas 183, CTest 10. Sem capa Spotify real.
 - Capturas: [guia](docs/GUIA_VISUAL.md) e `docs/screenshots/manifest.json`.
   Identificar versão e dados sintéticos; não fabricar telas ou números para marketing.
 
@@ -119,7 +124,7 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
 - AVD exclusiva Tonal_Local_20261015, porta 5560; não tocar em AVD de outro
   projeto. Evitar build pesado/compressão e emulador simultâneos em host de 16 GB.
 - Drive privado autorizado (pastas 0.13.0: 1BR5bH6HQxCGUKrB0YAAMXTzp0ZQ0JBiI;
-  0.13.1: 12L0IbCaTwURRIcOoHaQMLcgVYnP3nMcV):
+  0.13.1: 12L0IbCaTwURRIcOoHaQMLcgVYnP3nMcV; 0.13.2: 1nW93Tq55vdBJcCv2pGtYjJNUgHvrSl99):
   https://drive.google.com/drive/folders/15bxn_XcZianWzzp9E5GdYI8deVqm1fy5.
   Reutilizar a organização e verificar tamanho, hash quando disponível e privacidade.
 - Backup de fontes via `git archive`, histórico via `git bundle --all`, ambos
