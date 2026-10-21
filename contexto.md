@@ -232,3 +232,6 @@ No Android, relógio ancorado no pedido e nos eventos `Seeked/PositionChanged`.
 Validação 0.13.0 em [temas-seek-fila-0130-tests.json](docs/temas-seek-fila-0130-tests.json)
 e [TEMAS_SEEK_FILA_0130.md](docs/TEMAS_SEEK_FILA_0130.md). Sem streaming real
 nem aparelho físico nesta sessão; sem novo benchmark.
+Instaláveis: `Tonal-Hub-0.13.0.0-Windows-x64-Setup.exe`,
+`Tonal-Android-0.13.0-arm64-v8a.apk` e `-local.apk` (versionCode 15).
+Backup privado 0.13: https://drive.google.com/drive/folders/1BR5bH6HQxCGUKrB0YAAMXTzp0ZQ0JBiI.
