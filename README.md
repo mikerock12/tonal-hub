@@ -10,12 +10,17 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
-**Produto atual: 0.13.2. Documentação consolidada em 21/10/2026.**
+**Produto atual: 0.13.3. Documentação consolidada em 21/10/2026.**
 
 [Guia visual com 28 capturas](docs/GUIA_VISUAL.md) ·
 [Regras da Descoberta 2+1](docs/DESCOBERTA_2_MAIS_1.md) ·
 [Benchmarks realizados](docs/BENCHMARKS.md) ·
 [Contexto do projeto](contexto.md) · [Instruções de manutenção](AGENTS.md).
+
+## Novidades 0.13.3
+
+No Android, trocar o tema muda o ícone sem fechar o Tonalify; a música e a
+tela continuam. [Detalhes](docs/NOTIFICACAO_ICONE_0132.md#0133-trocar-o-tema-sem-fechar-o-app).
 
 ## Novidades 0.13.2
 
@@ -177,7 +182,18 @@ depurável, sem Hub; não comparar esse número ao Spotify sem login.
 
 ![CPU e RAM medidos na versão 0.12.0, com os cenários identificados](docs/benchmarks/2026-10-19/comparison.png)
 
-## Instalar a entrega pessoal 0.13.2
+## Instalar a entrega pessoal 0.13.3
+
+| Plataforma | Arquivo local | Download privado |
+|---|---|---|
+| Windows x64 | `out/release-local/Tonal-Hub-0.13.3.0-Windows-x64-Setup.exe` | [Instalador](https://drive.google.com/file/d/1kVLwonfkXs54YQlwVGlC5rbLT2wT_7ZW/view) |
+| POCO X7 Pro / ARM64 | `out/android/Tonal-Android-0.13.3-arm64-v8a.apk` | [APK ARM64](https://drive.google.com/file/d/1A1dW24RqdHI6I_8GILAENqGlUtDPvT81/view) |
+| ARM64 + emulador x86_64 | `out/android/Tonal-Android-0.13.3-local.apk` | [APK universal](https://drive.google.com/file/d/1cp_VX3bz7xz6oaIdbNuFjfGp82RqU4at/view) |
+
+[Pacote e backup privado 0.13.3](https://drive.google.com/drive/folders/1QgE4Ja6iKKczifxhrirB-Dx9AJ3fTTqZ).
+Acesso restrito ao proprietário. Mesma assinatura Android: instale por cima para manter os dados.
+
+### Entrega anterior 0.13.2
 
 | Plataforma | Arquivo local | Download privado |
 |---|---|---|

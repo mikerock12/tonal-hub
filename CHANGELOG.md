@@ -1,5 +1,12 @@
 # Changelog
 
+## Tonal Hub pessoal 0.13.3 — 21/10/2026
+
+- Android: trocar o tema não fecha mais o Tonalify. O ícone continua mudando
+  na hora; Tonalify e IndieTonal passaram a ter tarefa própria, então só a
+  tarefa do Hub em segundo plano é recriada. Voltar no Tonalify ainda leva ao Hub.
+- [Detalhes](docs/NOTIFICACAO_ICONE_0132.md#0133-trocar-o-tema-sem-fechar-o-app).
+
 ## Tonal Hub pessoal 0.13.2 — 21/10/2026
 
 - Android: notificação e player do sistema com capa do álbum, música, banda,

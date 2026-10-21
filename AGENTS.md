@@ -1,7 +1,7 @@
 # Instruções para trabalhar neste repositório
 
 Leia [contexto.md](contexto.md), [README.md](README.md) e os documentos da área
-afetada antes de alterar o produto. Estado documental: 21/10/2026, produto 0.13.2.
+afetada antes de alterar o produto. Estado documental: 21/10/2026, produto 0.13.3.
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
@@ -79,6 +79,8 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
 - Ícone por tema: Android activity-alias `HubIcon<Tema>` (gerar com
   `packaging/generate-theme-icons.py`; ativar o novo antes de desativar o antigo);
   PC `App::themedIcon`. Notificação: metadados/capa da música atual na MediaSession.
+  Tonalify/IndieTonal em tarefas próprias (taskAffinity): trocar o alias do Hub não
+  pode fechar o player aberto; nunca trocar o ícone ao abrir o Hub.
 - Seek: PC envia um pedido ao soltar (coalescido) e só descarta o buffer no
   `command=Seek(` do librespot; ambos ignoram poll remoto antigo (3 s/1,5 s).
 
@@ -124,7 +126,8 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
 - AVD exclusiva Tonal_Local_20261015, porta 5560; não tocar em AVD de outro
   projeto. Evitar build pesado/compressão e emulador simultâneos em host de 16 GB.
 - Drive privado autorizado (pastas 0.13.0: 1BR5bH6HQxCGUKrB0YAAMXTzp0ZQ0JBiI;
-  0.13.1: 12L0IbCaTwURRIcOoHaQMLcgVYnP3nMcV; 0.13.2: 1nW93Tq55vdBJcCv2pGtYjJNUgHvrSl99):
+  0.13.1: 12L0IbCaTwURRIcOoHaQMLcgVYnP3nMcV; 0.13.2: 1nW93Tq55vdBJcCv2pGtYjJNUgHvrSl99;
+  0.13.3: 1QgE4Ja6iKKczifxhrirB-Dx9AJ3fTTqZ):
   https://drive.google.com/drive/folders/15bxn_XcZianWzzp9E5GdYI8deVqm1fy5.
   Reutilizar a organização e verificar tamanho, hash quando disponível e privacidade.
 - Backup de fontes via `git archive`, histórico via `git bundle --all`, ambos

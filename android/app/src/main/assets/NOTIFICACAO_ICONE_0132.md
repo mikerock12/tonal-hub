@@ -39,6 +39,27 @@ partir da gaveta de apps. Os desenhos são gerados de `resources/themes.json`
 por `packaging/generate-theme-icons.py`, e a verificação de temas confere se
 estão atualizados.
 
+## 0.13.3: trocar o tema sem fechar o app
+
+Na 0.13.2, escolher um tema fechava o Tonalify. Causa: o Tonalify abria dentro
+da mesma tarefa do atalho do Hub, e o Android remove a tarefa inteira quando o
+atalho que a iniciou é desativado (troca de ícone). O processo continuava, mas
+a tela fechava.
+
+Agora Tonalify e IndieTonal têm tarefa própria (`taskAffinity`) e o Hub os
+abre com `FLAG_ACTIVITY_NEW_TASK`. A troca de ícone só recria a tarefa do Hub,
+que fica em segundo plano; o Tonalify continua aberto e tocando. **Voltar** no
+Tonalify ainda leva ao Hub. Na tela de apps recentes, Hub, Tonalify e IndieTonal
+aparecem separados. O ícone não é mais ajustado ao abrir o Hub, só ao escolher
+o tema, para que o Hub nunca feche a si mesmo.
+
+Validação na AVD (`tests/android/theme_keep_open_smoke.py`): o mesmo teste
+reproduziu o fechamento com a 0.13.2 (a tela em primeiro plano passou a ser o
+inicializador) e, com a 0.13.3, o Tonalify continuou em primeiro plano tocando
+o ensaio local (731.520 quadros PCM a mais), o ícone mudou para Neon e voltou
+ao Tonal Azul, e o Voltar retornou ao Hub. Notificação, temas, repetição e fila
+foram repetidos sem falhas.
+
 ## Validação
 
 | Verificação | Resultado |

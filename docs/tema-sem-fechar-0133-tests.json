@@ -1,0 +1,76 @@
+{
+  "format": "tonal-theme-keep-open-validation-v1",
+  "version": "0.13.3",
+  "recorded_on": "2026-10-21",
+  "cause": "Tonalify ran in the task rooted at the Hub launcher alias; disabling that alias to change the icon removed the whole task.",
+  "fix": "taskAffinity for Tonalify and IndieTonal, NEW_TASK from the Hub, Back returns to the Hub, no icon sync on Hub start.",
+  "reproduced_on_0_13_2": {
+    "resumed_after_theme_change": "com.google.android.apps.nexuslauncher/NexusLauncherActivity"
+  },
+  "android_0_13_3": {
+    "theme_keep_open_smoke": {
+      "passed": true,
+      "checks": [
+        {
+          "name": "benchmark_apk_0133_installed",
+          "passed": true,
+          "version": "0.13.3-local"
+        },
+        {
+          "name": "tonalify_opened_from_hub_icon",
+          "passed": true
+        },
+        {
+          "name": "theme_icon_changed_tonalify_stays_open",
+          "passed": true,
+          "alias": "HubIconNeon",
+          "resumed": "app.tonal.android.MainActivity",
+          "frames_gained": 731520
+        },
+        {
+          "name": "back_returns_to_hub",
+          "passed": true
+        },
+        {
+          "name": "default_theme_restored_still_open",
+          "passed": true
+        },
+        {
+          "name": "no_fatal_exception",
+          "passed": true
+        }
+      ],
+      "version": "0.13.3-local"
+    },
+    "regressions": {
+      "notification_smoke": "passed",
+      "themes_smoke": "passed",
+      "repeat_smoke": "passed",
+      "queue_ui": "passed"
+    },
+    "apks": {
+      "Tonal-Android-0.13.3-local.apk": {
+        "bytes": 47055750,
+        "sha256": "978afa2b1aaca32a57dc5c592b7c08873bf083c435b3272c5257170f4a9c2d84"
+      },
+      "Tonal-Android-0.13.3-arm64-v8a.apk": {
+        "bytes": 25018871,
+        "sha256": "307ac7130c0609f16e5977712c6d587d479b178d7d7b411e9c08976d5558fc71"
+      },
+      "version_code": 18,
+      "signing_certificate_unchanged": true,
+      "private_seed_or_session_present": false
+    }
+  },
+  "not_validated": [
+    "HyperOS launcher on the POCO X7 Pro"
+  ],
+  "windows": {
+    "native_ctest_passed": 10,
+    "installer": {
+      "file": "Tonal-Hub-0.13.3.0-Windows-x64-Setup.exe",
+      "bytes": 81586670,
+      "sha256": "6ea1487067ba92bef3b5e9dcec70080c247e1c67583fbdea7b45aef9b941ba25"
+    }
+  }
+}

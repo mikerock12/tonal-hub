@@ -1,6 +1,6 @@
 # Contexto do Tonal Hub
 
-Atualizado em **21/10/2026**. Estado do produto: **0.13.2** (notificação com capa e ícone no tema). Leia também [AGENTS.md](AGENTS.md).
+Atualizado em **21/10/2026**. Estado do produto: **0.13.3** (trocar o tema sem fechar o app). Leia também [AGENTS.md](AGENTS.md).
 
 ## Projeto, autoria e objetivo
 
@@ -265,3 +265,12 @@ com o destaque; no PC, `App::themedIcon` define o ícone da janela/barra.
 Detalhes: [NOTIFICACAO_ICONE_0132.md](docs/NOTIFICACAO_ICONE_0132.md).
 Instaláveis 0.13.2 (versionCode 17) e backup privado:
 https://drive.google.com/drive/folders/1nW93Tq55vdBJcCv2pGtYjJNUgHvrSl99.
+
+## Entrega 0.13.3 — Tema sem fechar o app
+
+Tonalify e IndieTonal têm `taskAffinity` próprio e são abertos pelo Hub com
+`NEW_TASK`; desativar o alias de ícone só recria a tarefa do Hub. Voltar no
+Tonalify abre o Hub. O ícone é ajustado só ao escolher o tema, nunca ao abrir
+o Hub. Teste: `tests/android/theme_keep_open_smoke.py` (reproduziu na 0.13.2).
+Instaláveis 0.13.3 (versionCode 18) e backup privado:
+https://drive.google.com/drive/folders/1QgE4Ja6iKKczifxhrirB-Dx9AJ3fTTqZ.

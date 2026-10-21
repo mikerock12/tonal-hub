@@ -64,7 +64,7 @@ public final class MainActivity extends Activity {
         diagnostics=BuildConfig.DEBUG&&(getIntent().getBooleanExtra("benchmark",false)||getIntent().getBooleanExtra("selfTest",false)||getIntent().getBooleanExtra("streamingBenchmark",false)||getIntent().getBooleanExtra("catalogTest",false));
         buildShell();catalog=new CatalogScreen(this,api,artwork,body);
         setContentView(root);if(BuildConfig.DEBUG&&getIntent().getBooleanExtra("mixUiFixture",false))handler.post(this::mixUiFixture);if(BuildConfig.DEBUG&&getIntent().getBooleanExtra("openTextPlaylist",false))handler.post(()->TextPlaylistWizard.show(this,api));NativeBridge.listeners.add(statusListener);NativeBridge.commandListeners.add(commandObserver);NativeBridge.progressObserver=progressObserver;home();String literal=getIntent().getStringExtra("literalQuery");if(literal!=null)catalog.search(literal);
-        if(Build.VERSION.SDK_INT>=33)getOnBackInvokedDispatcher().registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT,()->{if(!catalog.back())finish();});
+        if(Build.VERSION.SDK_INT>=33)getOnBackInvokedDispatcher().registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT,()->{if(!catalog.back())leaveToHub();});
         if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=android.content.pm.PackageManager.PERMISSION_GRANTED)requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},10);
         loadDsp();
         if(BuildConfig.DEBUG&&getIntent().getBooleanExtra("audioSuite",false))api.worker.execute(()->AudioSelfTest.run(this));
@@ -208,7 +208,9 @@ public final class MainActivity extends Activity {
     private ScrollView playerScroll(View panel){ScrollView scroll=new ScrollView(this);scroll.addView(panel);return scroll;}
     // API 33+ uses the registered OnBackInvokedCallback; this fallback is for API 28–32.
     @android.annotation.SuppressLint("GestureBackNavigation")
-    @Override public void onBackPressed(){if(Build.VERSION.SDK_INT<33&&(catalog==null||!catalog.back()))super.onBackPressed();}
+    @Override public void onBackPressed(){if(Build.VERSION.SDK_INT<33&&(catalog==null||!catalog.back()))leaveToHub();}
+    // Tonalify has its own task now; leaving it returns to the Hub as before.
+    private void leaveToHub(){HubActivity.open(this,HubActivity.class,"");finish();}
     private void openFile(){Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("*/*").putExtra(Intent.EXTRA_MIME_TYPES,new String[]{"audio/*","application/octet-stream"}).addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(intent,20);}
     @Override protected void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);TextPlaylistWizard.photoResult(this,request,result,data);MusicPanel.photoResult(this,request,result,data);MusicPanel.backupResult(this,request,result,data);if(request==20&&result==RESULT_OK&&data!=null&&data.getData()!=null){Uri uri=data.getData();api.worker.execute(()->{try{
         File file=new File(getCacheDir(),"audio-open-"+System.nanoTime());try(InputStream input=getContentResolver().openInputStream(uri);OutputStream output=new FileOutputStream(file)){if(input==null)throw new IOException("Arquivo inacessível");byte[] bytes=new byte[65536];int n;long total=0;while((n=input.read(bytes))!=-1){total+=n;if(total>512L*1024*1024)throw new IOException("Limite desta prévia: 512 MB por arquivo");output.write(bytes,0,n);}}
