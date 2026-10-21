@@ -170,7 +170,19 @@ depurável, sem Hub; não comparar esse número ao Spotify sem login.
 
 ![CPU e RAM medidos na versão 0.12.0, com os cenários identificados](docs/benchmarks/2026-10-19/comparison.png)
 
-## Instalar a entrega pessoal 0.13.0
+## Instalar a entrega pessoal 0.13.1
+
+| Plataforma | Arquivo local | Download privado |
+|---|---|---|
+| Windows x64 | `out/release-local/Tonal-Hub-0.13.1.0-Windows-x64-Setup.exe` | [Instalador](https://drive.google.com/file/d/1ARscw7fzIt3SlviGOzJ9LwHq1MqGGjum/view) |
+| POCO X7 Pro / ARM64 | `out/android/Tonal-Android-0.13.1-arm64-v8a.apk` | [APK ARM64](https://drive.google.com/file/d/1G3BigRKzdVl4_4aiEvINH0RjVtVtdCy6/view) |
+| ARM64 + emulador x86_64 | `out/android/Tonal-Android-0.13.1-local.apk` | [APK universal](https://drive.google.com/file/d/1ZFc4wvYQTXSyrU_7pO1dRDiA5fxA_SCb/view) |
+
+[Pacote e backup privado 0.13.1](https://drive.google.com/drive/folders/12L0IbCaTwURRIcOoHaQMLcgVYnP3nMcV).
+Acesso restrito ao proprietário. [Mudanças e testes](docs/REPETICAO_MODOS_0131.md).
+Mesma assinatura Android: instale por cima para manter os dados.
+
+### Entrega anterior 0.13.0
 
 | Plataforma | Arquivo local | Download privado |
 |---|---|---|

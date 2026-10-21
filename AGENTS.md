@@ -118,7 +118,8 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
   `packaging/build-android-local.ps1`; ARM64 para POCO, universal inclui x86_64.
 - AVD exclusiva Tonal_Local_20261015, porta 5560; não tocar em AVD de outro
   projeto. Evitar build pesado/compressão e emulador simultâneos em host de 16 GB.
-- Drive privado autorizado (pasta 0.13: 1BR5bH6HQxCGUKrB0YAAMXTzp0ZQ0JBiI):
+- Drive privado autorizado (pastas 0.13.0: 1BR5bH6HQxCGUKrB0YAAMXTzp0ZQ0JBiI;
+  0.13.1: 12L0IbCaTwURRIcOoHaQMLcgVYnP3nMcV):
   https://drive.google.com/drive/folders/15bxn_XcZianWzzp9E5GdYI8deVqm1fy5.
   Reutilizar a organização e verificar tamanho, hash quando disponível e privacidade.
 - Backup de fontes via `git archive`, histórico via `git bundle --all`, ambos

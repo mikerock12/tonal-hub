@@ -250,3 +250,5 @@ Android: `RepeatMode` + `NativeBridge` reaplicam `repeat:*`/`repeat-track:*`
 após cada seleção ou recuperação; botão Repetir na página da música, salvo em
 `settings/repeatMode`. Detalhes: [REPETICAO_MODOS_0131.md](docs/REPETICAO_MODOS_0131.md).
 Sem execução com Spotify real nesta sessão (permissão negada ao teste ao vivo).
+Instaláveis 0.13.1 (versionCode 16) e backup privado:
+https://drive.google.com/drive/folders/12L0IbCaTwURRIcOoHaQMLcgVYnP3nMcV.
