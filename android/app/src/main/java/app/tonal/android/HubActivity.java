@@ -9,7 +9,7 @@ import android.widget.*;
 /** A launcher only: this process never loads the audio libraries or Spotify credentials. */
 public final class HubActivity extends Activity {
     @Override public void onCreate(Bundle saved){
-        super.onCreate(saved);Ui ui=new Ui(this);getWindow().setStatusBarColor(Ui.BG);getWindow().setNavigationBarColor(Ui.BG);
+        super.onCreate(saved);Ui ui=new Ui(this);AppTheme.apply(this);getWindow().setStatusBarColor(Ui.BG);getWindow().setNavigationBarColor(Ui.BG);
         LinearLayout page=ui.column();page.setBackgroundColor(Ui.BG);page.setGravity(Gravity.CENTER_VERTICAL);ui.pad(page,24,24);
         Ui.insets(page);
         page.addView(ui.title("Tonal Hub",32));ui.space(page,12);page.addView(ui.text("Sua música, em espaços próprios.",16,Ui.MUTED));ui.space(page,28);

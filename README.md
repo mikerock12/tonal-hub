@@ -10,12 +10,24 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
-**Produto atual: 0.12.0. Documentação consolidada em 20/10/2026.**
+**Produto atual: 0.13.0. Documentação consolidada em 21/10/2026.**
 
-[Guia visual com 18 capturas](docs/GUIA_VISUAL.md) ·
+[Guia visual com 22 capturas](docs/GUIA_VISUAL.md) ·
 [Regras da Descoberta 2+1](docs/DESCOBERTA_2_MAIS_1.md) ·
 [Benchmarks realizados](docs/BENCHMARKS.md) ·
 [Contexto do projeto](contexto.md) · [Instruções de manutenção](AGENTS.md).
+
+## Novidades 0.13.0
+
+Seis **temas** no PC e no celular, com os mesmos nomes: Tonal Azul, Aurora,
+Pôr do sol, Neon, Oceano e Grafite suave. Cada um muda as cores e também a
+barra de progresso e o marcador dela (anel, pílula, losango, halo, barra maior
+para o toque). Escolha em **Conta → Temas**; vale na hora, sem parar a música.
+
+**Aplicar e reproduzir fila** com Descoberta 2+1, Shake ou Aleatório não
+recarrega mais a música atual no Android; no PC, o ajuste acontece na posição
+em que o áudio já está. **Seek** fluido: a barra não volta sozinha e o PC envia
+um único pedido ao soltar. [Causas, correções e limites](docs/TEMAS_SEEK_FILA_0130.md).
 
 ## Novidades 0.12.0
 
@@ -63,6 +75,7 @@ com versão e origem de cada imagem.
 | **Estatísticas** | Tempo realmente ouvido, escutas qualificadas e músicas distintas por artista, faixa, álbum, estilo e dia; barras clicáveis e resumos nas listas |
 | **Clima do repertório** | Temas experimentais de letras, estilos, cobertura e sugestões editoriais; classificador local pequeno, sem diagnóstico emocional |
 | **Letras e tradução** | Busca automática enquanto a página está aberta, tradução pt-BR com detecção de idioma, original/tradução juntos, TXT/LRC, sincronia opcional e alinhamento manual |
+| **Temas** | Seis temas no PC e no Android, com barra de progresso e marcador próprios; Conta → Temas |
 | **Personalização** | 11 cenários; fontes, cores e tamanhos independentes, contorno, brilho, neon, piscante, negrito, itálico, sublinhado e tela cheia |
 | **Áudio** | Streaming Spotify 96/160/320 kbps, EQ 10 bandas e presets, graves, compressor, limiter, normalização, HRTF e arquivos IAMF compatíveis; perfis de saída/buffer no Android |
 | **Continuidade** | Buffer/cache temporário, recuperação limitada de conexão/saída, preservação de posição e respeito à pausa; não equivale a downloads offline garantidos |
@@ -148,9 +161,19 @@ depurável, sem Hub; não comparar esse número ao Spotify sem login.
 
 ![CPU e RAM medidos na versão 0.12.0, com os cenários identificados](docs/benchmarks/2026-10-19/comparison.png)
 
-![CPU e RAM medidos na versão 0.12.0, com os cenários identificados](docs/benchmarks/2026-10-19/comparison.png)
+## Instalar a entrega pessoal 0.13.0
 
-## Instalar a entrega pessoal 0.12.0
+| Plataforma | Arquivo local | Download privado |
+|---|---|---|
+| Windows x64 | `out/release-local/Tonal-Hub-0.13.0.0-Windows-x64-Setup.exe` | [Instalador](https://drive.google.com/file/d/1XxI7mDI73Q_0Qh-zycogL_HnSvoRmJz8/view) |
+| POCO X7 Pro / ARM64 | `out/android/Tonal-Android-0.13.0-arm64-v8a.apk` | [APK ARM64](https://drive.google.com/file/d/1gUuEMQc60heZAtPVFXibnSXFcarCoY10/view) |
+| ARM64 + emulador x86_64 | `out/android/Tonal-Android-0.13.0-local.apk` | [APK universal](https://drive.google.com/file/d/1DgLz3vVf_vTQhCsRz-Xd_W9pk86XxxZX/view) |
+
+[Pacote e backup privado 0.13.0](https://drive.google.com/drive/folders/1BR5bH6HQxCGUKrB0YAAMXTzp0ZQ0JBiI).
+Acesso restrito ao proprietário. [Mudanças e testes](docs/TEMAS_SEEK_FILA_0130.md).
+Mesma assinatura Android da 0.12.0: instale por cima para manter os dados.
+
+### Entrega anterior 0.12.0
 
 | Plataforma | Arquivo local | Download privado |
 |---|---|---|

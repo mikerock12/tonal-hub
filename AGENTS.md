@@ -1,7 +1,7 @@
 # Instruções para trabalhar neste repositório
 
 Leia [contexto.md](contexto.md), [README.md](README.md) e os documentos da área
-afetada antes de alterar o produto. Estado documental: 20/10/2026, produto 0.12.0.
+afetada antes de alterar o produto. Estado documental: 21/10/2026, produto 0.13.0.
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
@@ -62,6 +62,19 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
   só desligar Descoberta remove próximas externas. Atual não é interrompida.
 - Cache derivado: 2.000 entradas, sem letras completas, 1 pedido/vez, 1,25 s,
   timeout 6 s, corpo 256 KiB, cooldown 429/503 preservado entre seleções.
+- Aplicar fila não recarrega a faixa audível: Android `requeue|…` com
+  `keep_playing_track` no librespot embarcado; recuperação segue com `restore`.
+  PC reenvia pela Web API com posição atual + latência medida, sem flush.
+
+## Temas e seek (0.13.0)
+
+- Catálogo único `resources/themes.json` = `android/.../assets/themes.json`;
+  `tests/themes/check_themes.py` exige cópia idêntica, tokens e contraste AA.
+  Novo tema: editar o JSON, copiar ao Android e rodar a verificação.
+- Trocar tema não pode recriar a Activity Android nem tocar motor/fila; o PC
+  troca ao vivo via `App.theme`. Sem animação contínua ou shader para temas.
+- Seek: PC envia um pedido ao soltar (coalescido) e só descarta o buffer no
+  `command=Seek(` do librespot; ambos ignoram poll remoto antigo (3 s/1,5 s).
 
 ## Evidências, testes e capturas
 
@@ -83,6 +96,10 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
   5 CTest portáteis, QML 9/6/3, 21 cenários Android e 24 verificações JNI/cache,
   além da interface com retenção dos modos. Houve interrupção por ANR do System UI
   da AVD antes da repetição final aprovada; não ocultar essa limitação.
+- Validação 0.13.0 em `docs/temas-seek-fila-0130-tests.json`: CTest 10/6,
+  QML 12/6/3, temas 172+86 checagens, política Java 21, smoke de temas Android
+  com áudio local (0 underruns) e regressão da fila. Sem streaming real Spotify
+  nem aparelho físico: não declarar fila/seek medidos com áudio real.
 - Capturas: [guia](docs/GUIA_VISUAL.md) e `docs/screenshots/manifest.json`.
   Identificar versão e dados sintéticos; não fabricar telas ou números para marketing.
 
@@ -95,7 +112,7 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
   `packaging/build-android-local.ps1`; ARM64 para POCO, universal inclui x86_64.
 - AVD exclusiva Tonal_Local_20261015, porta 5560; não tocar em AVD de outro
   projeto. Evitar build pesado/compressão e emulador simultâneos em host de 16 GB.
-- Drive privado autorizado:
+- Drive privado autorizado (pasta 0.13: 1BR5bH6HQxCGUKrB0YAAMXTzp0ZQ0JBiI):
   https://drive.google.com/drive/folders/15bxn_XcZianWzzp9E5GdYI8deVqm1fy5.
   Reutilizar a organização e verificar tamanho, hash quando disponível e privacidade.
 - Backup de fontes via `git archive`, histórico via `git bundle --all`, ambos

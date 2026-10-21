@@ -1,0 +1,92 @@
+{
+  "format": "tonal-themes-seek-queue-validation-v1",
+  "version": "0.13.0",
+  "recorded_on": "2026-10-21",
+  "windows": {
+    "native_ctest_passed": 10,
+    "portable_companion_ctest_passed": 6,
+    "qml_mix_and_themes_passed": 12,
+    "qml_lyrics_passed": 6,
+    "qml_playlist_passed": 3,
+    "theme_catalog_checks": {
+      "json_checks": 172,
+      "cpp_catalog_checks": 86,
+      "themes": ["tonal", "aurora", "solar", "neon", "oceano", "grafite"],
+      "android_copy_identical": true,
+      "contrast": "text/panel >= 7:1; text/card, secondary, accent text and label on accent >= 4.5:1"
+    },
+    "seek_and_queue_tests": [
+      "drag seeks coalesced into one request with the last position",
+      "song page slider seeks once on release; player position does not pull the handle while dragging",
+      "stale GET within 3 s cannot pull the bar back; confirmed position accepted",
+      "pending seek never reaches the next track",
+      "requeue at the current track sends current position plus measured latency",
+      "no early buffer flush before librespot applies the seek"
+    ],
+    "theme_ui_tests": [
+      "theme switch restyles the seek bar live (shape, height, thumb visibility)",
+      "theme dialog applies the clicked theme and marks it in use",
+      "song panel seek uses the active theme tokens"
+    ],
+    "defect_found_and_fixed_by_tests": "ThemeCatalog wrote m_defaultId before its construction (member initialisation order); caught by the new catalog test before release",
+    "real_app_startup_smoke": {"seconds": 12, "crashed": false, "playback_started": false},
+    "installed_upgrade": "not run in this session; the user's installed copy was not modified",
+    "installer": {
+      "file": "Tonal-Hub-0.13.0.0-Windows-x64-Setup.exe",
+      "bytes": 81565164,
+      "sha256": "c42bf19f8e0fd8295510250939deb08e78d6bb0e35893de0de1ecf317a0ac14d"
+    }
+  },
+  "android": {
+    "variants_compiled": ["release", "benchmark", "comparison", "automation debug"],
+    "native_rust": {
+      "targets": ["aarch64-linux-android", "x86_64-linux-android"],
+      "librespot_change": "LoadRequestOptions.keep_playing_track; requeue keeps the audible decoder, restore still reloads"
+    },
+    "playback_policy_checks": 21,
+    "themes_smoke": {
+      "passed": true,
+      "checks": 9,
+      "package": "app.tonal.android.benchmark",
+      "serial": "emulator-5560",
+      "avd": "Tonal_Local_20261015",
+      "audio_source": "bundled local Vorbis rehearsal, no account",
+      "themes_applied_while_playing": 6,
+      "new_underruns": 0,
+      "pcm_kept_advancing": true,
+      "mini_player_title_preserved": true,
+      "fatal_exceptions": 0,
+      "note": "One earlier attempt was interrupted by the AVD's own Messages ANR dialog; another counted the end-of-file drain of the 60 s rehearsal. The script now restarts the rehearsal; the final runs passed."
+    },
+    "queue_ui_regression": {
+      "passed": true,
+      "native_cpp_jni_checks": 24,
+      "shake_keeps_discoveries": true,
+      "random_keeps_discoveries": true,
+      "reopen_keeps_discoveries": true,
+      "preview_did_not_apply_playback": true
+    },
+    "apks": {
+      "Tonal-Android-0.13.0-local.apk": {
+        "bytes": 47031584,
+        "sha256": "063b0b00264c18b944c542792e044de31d5f5ef6f0d451f3e5746c1a42db884d",
+        "abis": ["arm64-v8a", "x86_64"]
+      },
+      "Tonal-Android-0.13.0-arm64-v8a.apk": {
+        "bytes": 24994705,
+        "sha256": "021486c16fbc85cab2c6a6ebd734d381da20c2f866994249b2621df6e166bce7",
+        "abis": ["arm64-v8a"]
+      },
+      "version_code": 15,
+      "signing_certificate_matches_0_12_0": true,
+      "native_alignment_16_kib": true,
+      "private_seed_or_session_present": false
+    }
+  },
+  "not_validated": [
+    "Applying a queue and seeking with real Spotify streaming (would take over playback of the user's account on another device without authorization)",
+    "Physical POCO X7 Pro and Bluetooth",
+    "Installer upgrade over the user's installed 0.12.0",
+    "New CPU/RAM benchmark"
+  ]
+}

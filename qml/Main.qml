@@ -14,6 +14,7 @@ ApplicationWindow {
     Loader { id: musicLoader; onLoaded: item.open() }
     Binding { target: musicLoader.item; property: "position"; value: App.player.positionMs; when: !!musicLoader.item }
     Binding { target: musicLoader.item; property: "playing"; value: App.player.isPlaying && App.player.playingHere; when: !!musicLoader.item }
+    Binding { target: musicLoader.item; property: "themeTokens"; value: Theme.palette; when: !!musicLoader.item }
     Connections { target: musicLoader.item; function onTextPlaylistRequested(){musicLoader.item.close();window.openTextPlaylist("")} function onTextPlaylistResume(id){musicLoader.item.close();window.openTextPlaylist(id)} function onDiscover(artist){Nav.go("search",{query:artist})} function onTogglePlayback(){App.player.togglePlay()} function onPreviousRequested(){App.player.previous()} function onNextRequested(){App.player.next()} }
 
     width: 1280
@@ -26,9 +27,9 @@ ApplicationWindow {
            ? App.player.trackName + " • " + App.player.artistsText
            : "Tonalify"
 
-    palette.toolTipBase: "#282828"
+    palette.toolTipBase: Theme.elevatedHover
     palette.toolTipText: Theme.textPrimary
-    palette.dark: "#282828"
+    palette.dark: Theme.elevatedHover
     palette.window: Theme.panel
     palette.windowText: Theme.textPrimary
     palette.text: Theme.textPrimary

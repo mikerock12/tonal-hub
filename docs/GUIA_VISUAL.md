@@ -1,7 +1,7 @@
 # Guia visual: Tonalify e IndieTonal
 
 Este guia mostra **telas reais dos aplicativos e das suítes de interface**,
-registradas em diferentes versões, incluindo os testes de fila Android 0.12.0. Não são
+registradas em diferentes versões, incluindo os temas 0.13.0. Não são
 mockups; capturas de teste não representam sessões reais Spotify. Os rótulos distinguem versões e dados
 sintéticos. Algumas telas históricas ainda usam botões de texto; as capturas
 0.11 mostram o cabeçalho com ícones. Fontes e dimensões variam com o aparelho.
@@ -190,3 +190,25 @@ resultados refinam preparações futuras, sem alterar a fila já confirmada.
 
 *Android 0.12.0: APK benchmark em AVD, nomes sintéticos. Prévia sem iniciar
 reprodução ou escrever em playlists reais. [Relatório dos testes](discovery-enrichment-0120-tests.json).*
+
+## 9. Temas, barra de progresso e marcador — 0.13.0
+
+No PC, abra o menu da conta (avatar) e escolha **Temas**; no Android,
+**Conta → Temas**. Cada cartão mostra as cores e a barra com o marcador
+daquele tema. O clique aplica na hora e a música continua tocando.
+
+<img src="screenshots/desktop-temas-0130.png" width="650" alt="Windows: seletor com seis temas e prévia da barra de cada um, Neon em uso">
+
+*Windows 0.13.0: suíte QML com álbum sintético; o Neon está em uso e já
+tinge a página ao fundo.*
+
+<img src="screenshots/desktop-tema-solar-0130.png" width="650" alt="Windows: página de álbum no tema Pôr do sol, barra coral com marcador em pílula">
+
+*Windows 0.13.0: mesma página sintética no tema Pôr do sol; capa ausente intencional.*
+
+<img src="screenshots/android-temas-0130.png" width="300" alt="Android: lista de temas com Oceano em uso e prévias da barra">
+<img src="screenshots/android-musica-neon-0130.png" width="300" alt="Android: página da música no tema Neon, barra rosa e marcador com halo">
+
+*Android 0.13.0: APK benchmark na AVD dedicada, durante o áudio de ensaio
+local do próprio APK, sem conta. O PCM seguiu avançando, sem underruns, em
+cada troca. [Mudanças e testes](TEMAS_SEEK_FILA_0130.md).*

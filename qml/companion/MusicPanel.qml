@@ -8,6 +8,9 @@ Dialog {
     required property var controller
     required property var audioEngine
     property var mixController:null
+    // Tema do player (App.theme.current no Tonalify). Sem tema, usa as cores originais.
+    property var themeTokens:null
+    readonly property var tone:themeTokens&&themeTokens.seek?themeTokens:({panel:"#141517",card:"#20252d",text:"#f5f5f5",textSecondary:"#a5a8ad",accent:"#009bd6",accentText:"#00b3ef",accentDeep:"#263440",divider:"#303237",seek:{height:4,activeHeight:6,track:"#404040",fill:["#009bd6","#009bd6"],activeFill:["#00b3ef","#00b3ef"],thumb:"#f5f5f5",thumbBorder:"#f5f5f5",thumbSize:14,thumbShape:"circle",thumbAlways:true,glow:false}})
     property var transportPlayer:null
     property var songQueueSource:[]
     property var queuedRows:[]
@@ -89,9 +92,9 @@ Dialog {
     y:72
     modal: false
     title: "Sua música"
-    palette.window:"#141517";palette.windowText:"#f5f5f5";palette.text:"#f5f5f5";palette.base:"#20252d";palette.button:"#263440";palette.buttonText:"#f5f5f5"
+    palette.window:tone.panel;palette.windowText:tone.text;palette.text:tone.text;palette.base:tone.card;palette.button:tone.accentDeep;palette.buttonText:tone.text;palette.highlight:tone.accent
     standardButtons: Dialog.NoButton
-    background: Rectangle { color: "#141517"; radius: 18; border.color: "#303237" }
+    background: Rectangle { color: panel.tone.panel; radius: 18; border.color: panel.tone.divider }
     function playSelection(index){if(mixController)mixController.play(displayTracks,index,randomPlayback,discoveryPlayback,false);else controller.play(displayTracks,index)}
     function refresh() {
         revision++
@@ -118,10 +121,10 @@ Dialog {
         RowLayout {
             Layout.fillWidth: true
             Label { text: panel.controller.current.title || "Escolha uma música no player"; textFormat: Text.PlainText; font.pixelSize: 20; font.bold: true; elide: Text.ElideRight; Layout.fillWidth: true }
-            ActionIcon { symbol:"heart";filled:{panel.revision;return panel.controller.liked(panel.controller.current)} description:filled?"Remover das favoritas":"Favoritar música"; enabled: !!panel.controller.current.title; onClicked: panel.controller.favorite(panel.controller.current) }
-            ActionIcon { symbol:"plus";description:"Adicionar à playlist"; enabled: !!panel.controller.current.title; onClicked: addMenu.open() }
-            ActionIcon {symbol:"save";description:"Backup da biblioteca";onClicked:backupMenu.open()}
-            ActionIcon {symbol:"close";description:"Fechar página da música";onClicked:panel.close()}
+            ActionIcon { accentInk:panel.tone.accent;symbol:"heart";filled:{panel.revision;return panel.controller.liked(panel.controller.current)} description:filled?"Remover das favoritas":"Favoritar música"; enabled: !!panel.controller.current.title; onClicked: panel.controller.favorite(panel.controller.current) }
+            ActionIcon { accentInk:panel.tone.accent;symbol:"plus";description:"Adicionar à playlist"; enabled: !!panel.controller.current.title; onClicked: addMenu.open() }
+            ActionIcon {accentInk:panel.tone.accent;symbol:"save";description:"Backup da biblioteca";onClicked:backupMenu.open()}
+            ActionIcon {accentInk:panel.tone.accent;symbol:"close";description:"Fechar página da música";onClicked:panel.close()}
             Menu { id: backupMenu; MenuItem { text:"Exportar backup…"; onTriggered: backupSave.open() } MenuItem { text:"Restaurar backup…"; onTriggered: restoreConfirm.open() } }
             Menu { id: addMenu; Repeater { model: panel.controller.playlists; MenuItem { required property var modelData; text: modelData.name; onTriggered: panel.controller.addToPlaylist(modelData.id,panel.controller.current) } } MenuItem { text: "Criar playlist…"; onTriggered: createDialog.open() } MenuItem {text:"Criar com Text to Tonalify…";visible:panel.textPlaylistAvailable;onTriggered:panel.textPlaylistRequested()} }
         }
@@ -129,17 +132,17 @@ Dialog {
         TabBar {
             id: tabs; Layout.fillWidth: true
             onCurrentIndexChanged: {if(panel.audioEngine)panel.audioEngine.visualizerActive=panel.visible && currentIndex===2 && (panel.controller.background==="Ondas" || panel.controller.background==="Espectro");Qt.callLater(panel.ensureLyrics)}
-            TabButton { Accessible.name:"Biblioteca";contentItem:ActionIcon{symbol:"library";description:"Biblioteca";filled:tabs.currentIndex===0;onClicked:tabs.currentIndex=0} }
-            TabButton { Accessible.name:"Estatísticas";contentItem:ActionIcon{symbol:"chart";description:"Estatísticas";filled:tabs.currentIndex===1;onClicked:tabs.currentIndex=1} }
-            TabButton { Accessible.name:"Letras";contentItem:ActionIcon{symbol:"lyrics";description:"Letras";filled:tabs.currentIndex===2;onClicked:tabs.currentIndex=2} }
+            TabButton { Accessible.name:"Biblioteca";contentItem:ActionIcon{accentInk:panel.tone.accent;symbol:"library";description:"Biblioteca";filled:tabs.currentIndex===0;onClicked:tabs.currentIndex=0} }
+            TabButton { Accessible.name:"Estatísticas";contentItem:ActionIcon{accentInk:panel.tone.accent;symbol:"chart";description:"Estatísticas";filled:tabs.currentIndex===1;onClicked:tabs.currentIndex=1} }
+            TabButton { Accessible.name:"Letras";contentItem:ActionIcon{accentInk:panel.tone.accent;symbol:"lyrics";description:"Letras";filled:tabs.currentIndex===2;onClicked:tabs.currentIndex=2} }
         }
         StackLayout {
             Layout.fillWidth: true; Layout.fillHeight: true; currentIndex: tabs.currentIndex
             ColumnLayout {
                 RowLayout {visible:!!panel.mixController
-                    ActionIcon{symbol:"shake";description:"Shake: sortear ordem; segure para restaurar";filled:panel.listShaken;onClicked:{panel.mixController.cancel();panel.listShaken=true;panel.mixSeed=Math.floor(Math.random()*2147483647);panel.refresh()}onPressAndHold:{panel.listShaken=false;panel.refresh()}}
-                    ActionIcon{symbol:"random";description:"Reprodução aleatória";filled:panel.randomPlayback;onClicked:{panel.mixController.cancel();panel.randomPlayback=!panel.randomPlayback}}
-                    ActionIcon{symbol:"discover";description:"Descoberta 2+1";filled:panel.discoveryPlayback;onClicked:{panel.mixController.cancel();panel.discoveryPlayback=!panel.discoveryPlayback}}
+                    ActionIcon{accentInk:panel.tone.accent;symbol:"shake";description:"Shake: sortear ordem; segure para restaurar";filled:panel.listShaken;onClicked:{panel.mixController.cancel();panel.listShaken=true;panel.mixSeed=Math.floor(Math.random()*2147483647);panel.refresh()}onPressAndHold:{panel.listShaken=false;panel.refresh()}}
+                    ActionIcon{accentInk:panel.tone.accent;symbol:"random";description:"Reprodução aleatória";filled:panel.randomPlayback;onClicked:{panel.mixController.cancel();panel.randomPlayback=!panel.randomPlayback}}
+                    ActionIcon{accentInk:panel.tone.accent;symbol:"discover";description:"Descoberta 2+1";filled:panel.discoveryPlayback;onClicked:{panel.mixController.cancel();panel.discoveryPlayback=!panel.discoveryPlayback}}
                     Label{text:panel.mixController?panel.mixController.status:"";wrapMode:Text.WordWrap;Layout.fillWidth:true;color:"#9bcfe1"}
                 }
                 RowLayout {
@@ -227,24 +230,36 @@ Dialog {
                     }
                 }
                 RowLayout {
-                    ActionIcon { symbol:"prev";description:"Anterior"; enabled:!!panel.controller.current.title; onClicked:panel.previousRequested() }
-                    ActionIcon { symbol:panel.playing?"pause":"play";description:panel.playing?"Pausar":"Reproduzir"; enabled:!!panel.controller.current.title; onClicked:panel.togglePlayback() }
-                    ActionIcon { symbol:"next";description:"Próxima"; enabled:!!panel.controller.current.title; onClicked:panel.nextRequested() }
-                    Slider { Layout.fillWidth:true; from:0; to:Math.max(1,panel.controller.current.durationMs || 0); value:panel.position; enabled:(panel.controller.current.durationMs || 0)>0; onMoved:panel.controller.seek(Math.round(value)) }
+                    ActionIcon { accentInk:panel.tone.accent;symbol:"prev";description:"Anterior"; enabled:!!panel.controller.current.title; onClicked:panel.previousRequested() }
+                    ActionIcon { accentInk:panel.tone.accent;symbol:panel.playing?"pause":"play";description:panel.playing?"Pausar":"Reproduzir"; enabled:!!panel.controller.current.title; onClicked:panel.togglePlayback() }
+                    ActionIcon { accentInk:panel.tone.accent;symbol:"next";description:"Próxima"; enabled:!!panel.controller.current.title; onClicked:panel.nextRequested() }
+                    Slider { id:songSeek; objectName:"songSeek"; Layout.fillWidth:true; from:0; to:Math.max(1,panel.controller.current.durationMs || 0); enabled:(panel.controller.current.durationMs || 0)>0
+                        property real dragTarget:-1
+                        readonly property var look:panel.tone.seek
+                        readonly property bool active:hovered||pressed
+                        Binding on value { value:panel.position; when:!songSeek.pressed&&songSeek.dragTarget<0; restoreMode:Binding.RestoreNone }
+                        onMoved:{if(pressed)dragTarget=value;else panel.controller.seek(Math.round(value))}
+                        onPressedChanged:if(!pressed&&dragTarget>=0){panel.controller.seek(Math.round(dragTarget));dragTarget=-1}
+                        background:Rectangle{x:songSeek.leftPadding;y:songSeek.topPadding+songSeek.availableHeight/2-height/2;width:songSeek.availableWidth;height:songSeek.active?songSeek.look.activeHeight:songSeek.look.height;radius:height/2;color:songSeek.look.track
+                            Rectangle{width:Math.max(parent.height,songSeek.visualPosition*parent.width);height:parent.height;radius:height/2;gradient:Gradient{orientation:Gradient.Horizontal;GradientStop{position:0;color:(songSeek.active?songSeek.look.activeFill:songSeek.look.fill)[0]}GradientStop{position:1;color:(songSeek.active?songSeek.look.activeFill:songSeek.look.fill)[1]}}}}
+                        handle:Item{x:songSeek.leftPadding+songSeek.visualPosition*songSeek.availableWidth-width/2;y:songSeek.topPadding+songSeek.availableHeight/2-height/2;readonly property int size:songSeek.look.thumbSize+(songSeek.pressed?2:0);width:songSeek.look.thumbShape==="pill"?Math.round(size*1.6):size;height:songSeek.look.thumbShape==="pill"?Math.round(size*0.8):size;visible:songSeek.enabled&&(songSeek.look.thumbAlways||songSeek.active)
+                            Rectangle{visible:songSeek.look.glow;anchors.centerIn:parent;width:parent.width+10;height:parent.height+10;radius:height/2;color:songSeek.look.thumbBorder;opacity:songSeek.pressed?0.45:0.28}
+                            Rectangle{anchors.centerIn:parent;width:songSeek.look.thumbShape==="diamond"?Math.round(parent.width*0.75):parent.width;height:songSeek.look.thumbShape==="diamond"?Math.round(parent.height*0.75):parent.height;rotation:songSeek.look.thumbShape==="diamond"?45:0;radius:songSeek.look.thumbShape==="diamond"?2:height/2;color:songSeek.look.thumb;border.width:songSeek.look.thumbShape==="ring"?3:(songSeek.look.thumbBorder!==songSeek.look.thumb?2:0);border.color:songSeek.look.thumbBorder}}
+                    }
                 }
                 RowLayout {
                     visible:!!panel.mixController&&!!panel.transportPlayer&&panel.controller.current.provider==="Spotify"
-                    ActionIcon{symbol:"shake";description:"Sortear outra ordem da fila";onClicked:panel.changeSongMode(0)}
-                    ActionIcon{symbol:"random";description:"Reprodução aleatória / ordem da lista";filled:panel.randomPlayback;onClicked:panel.changeSongMode(1)}
-                    ActionIcon{symbol:"discover";description:"Descoberta 2+1 / desativar";filled:panel.discoveryPlayback;onClicked:panel.changeSongMode(2)}
-                    ActionIcon{objectName:"songQueueButton";symbol:"queue";description:"Ver fila de reprodução";onClicked:panel.openQueue()}
+                    ActionIcon{accentInk:panel.tone.accent;symbol:"shake";description:"Sortear outra ordem da fila";onClicked:panel.changeSongMode(0)}
+                    ActionIcon{accentInk:panel.tone.accent;symbol:"random";description:"Reprodução aleatória / ordem da lista";filled:panel.randomPlayback;onClicked:panel.changeSongMode(1)}
+                    ActionIcon{accentInk:panel.tone.accent;symbol:"discover";description:"Descoberta 2+1 / desativar";filled:panel.discoveryPlayback;onClicked:panel.changeSongMode(2)}
+                    ActionIcon{accentInk:panel.tone.accent;objectName:"songQueueButton";symbol:"queue";description:"Ver fila de reprodução";onClicked:panel.openQueue()}
                 }
                 RowLayout {
-                    ActionIcon { symbol:"refresh";description:"Atualizar letra"; enabled: !panel.controller.busy; onClicked: panel.controller.fetchLyrics() }
+                    ActionIcon { accentInk:panel.tone.accent;symbol:"refresh";description:"Atualizar letra"; enabled: !panel.controller.busy; onClicked: panel.controller.fetchLyrics() }
                     Label { text:"Idioma automático"; color:"#a5a8ad" }
-                    ActionIcon { symbol:"translate";description:"Traduzir pt-BR"; enabled: !panel.controller.busy && panel.controller.lines.length>0; onClicked:{panel.translatedTrack="";panel.autoTranslation=true;panel.ensureLyrics()} }
-                    ActionIcon { symbol:"font";description:"Fontes e cores";onClicked:appearance.open() }
-                    ActionIcon { symbol:"expand";description:"Expandir letras em tela cheia";onClicked:fullscreen.present() }
+                    ActionIcon { accentInk:panel.tone.accent;symbol:"translate";description:"Traduzir pt-BR"; enabled: !panel.controller.busy && panel.controller.lines.length>0; onClicked:{panel.translatedTrack="";panel.autoTranslation=true;panel.ensureLyrics()} }
+                    ActionIcon { accentInk:panel.tone.accent;symbol:"font";description:"Fontes e cores";onClicked:appearance.open() }
+                    ActionIcon { accentInk:panel.tone.accent;symbol:"expand";description:"Expandir letras em tela cheia";onClicked:fullscreen.present() }
                     Button { text: "Importar / editar"; onClicked: editDialog.open() }
                     CheckBox { text: "Sincronia"; checked:panel.controller.syncEnabled;onToggled:panel.controller.syncEnabled=checked }
                     Label{text:"Toque na linha que está ouvindo para alinhar";color:"#a5a8ad";font.pixelSize:12}
@@ -281,22 +296,22 @@ Dialog {
     }
     Dialog{id:queueDialog;objectName:"songQueueDialog";title:panel.queueEdited?"Prévia da nova fila":"Fila de reprodução";modal:true;parent:Overlay.overlay;anchors.centerIn:parent;width:Math.min(640,parent.width-32);height:Math.min(620,parent.height-48);standardButtons:Dialog.Close
         onClosed:{panel.pendingRemix=false;panel.queueLoading=false;panel.queueEdited=false;panel.songQueueSource=[]}
-        palette.window:"#141517";palette.windowText:"#f5f5f5";palette.text:"#f5f5f5";palette.button:"#263440";palette.buttonText:"#f5f5f5"
-        background:Rectangle{color:"#171b24";radius:18;border.color:"#354052"}
+        palette.window:panel.tone.panel;palette.windowText:panel.tone.text;palette.text:panel.tone.text;palette.button:panel.tone.accentDeep;palette.buttonText:panel.tone.text
+        background:Rectangle{color:panel.tone.panel;radius:18;border.color:panel.tone.divider}
         header:Label{text:queueDialog.title;color:"#f5f5f5";font.pixelSize:22;font.bold:true;padding:18}
         ColumnLayout{anchors.fill:parent
             Label{Layout.fillWidth:true;wrapMode:Text.Wrap;color:"#c4c7cc";text:panel.queueEdited?"Confira a ordem e aplique para tocar. A faixa atual será retomada na posição atual.":"Agora e próximas músicas informadas pelo Spotify. A fila do serviço pode ser parcial."}
-            Label{visible:!!panel.mixController;color:"#00b3ef";text:panel.queueLoading?"Carregando a fila atual do Spotify…":panel.queueNotice|| (panel.mixController?panel.mixController.status:"");Layout.fillWidth:true;wrapMode:Text.Wrap}
+            Label{visible:!!panel.mixController;color:panel.tone.accentText;text:panel.queueLoading?"Carregando a fila atual do Spotify…":panel.queueNotice|| (panel.mixController?panel.mixController.status:"");Layout.fillWidth:true;wrapMode:Text.Wrap}
             CheckBox{text:"Analisar letras das candidatas em segundo plano";visible:panel.mixController&&typeof panel.mixController.enrichmentEnabled!=="undefined";checked:panel.mixController?panel.mixController.enrichmentEnabled:false;onToggled:if(panel.mixController)panel.mixController.enrichmentEnabled=checked}
             Label{text:"Envia título, artista, álbum e duração ao LRCLIB; guarda apenas os temas. A fila confirmada permanece igual.";Layout.fillWidth:true;wrapMode:Text.Wrap;color:"#a5a8ad";font.pixelSize:11}
             Label{text:panel.mixController&&typeof panel.mixController.enrichmentStatus!=="undefined"?panel.mixController.enrichmentStatus:"";Layout.fillWidth:true;wrapMode:Text.Wrap;color:"#9bcfe1"}
             ListView{Layout.fillWidth:true;Layout.fillHeight:true;clip:true;model:panel.queuedRows;spacing:8;ScrollBar.vertical:ScrollBar{}
                 delegate:Column{required property var modelData;required property int index;width:ListView.view.width;spacing:3
-                    Label{width:parent.width;text:(index===0?"Agora • ":index+" • ")+(modelData.title||"");textFormat:Text.PlainText;color:modelData.mixExternal?"#00b3ef":"#f5f5f5";elide:Text.ElideRight;font.bold:true}
+                    Label{width:parent.width;text:(index===0?"Agora • ":index+" • ")+(modelData.title||"");textFormat:Text.PlainText;color:modelData.mixExternal?panel.tone.accentText:panel.tone.text;elide:Text.ElideRight;font.bold:true}
                     Label{width:parent.width;text:(modelData.artist||"")+(modelData.mixExternal?" • Descoberta":"");textFormat:Text.PlainText;color:"#a5a8ad";elide:Text.ElideRight}
                 }
             }
-            Button{text:"Aplicar e reproduzir fila";visible:panel.queueEdited;enabled:!panel.queueLoading&&!panel.pendingRemix&&!panel.queueNotice&&panel.mixController&&!panel.mixController.busy&&panel.queuedRows.length>0;onClicked:{if(panel.queueAnchor!==(panel.controller.current.uri||"")){panel.notice="A música mudou. Prepare a fila novamente.";queueDialog.close();return}panel.mixController.applyPreview(panel.position);queueDialog.close()}}
+            Button{text:"Aplicar e reproduzir fila";visible:panel.queueEdited;enabled:!panel.queueLoading&&!panel.pendingRemix&&!panel.queueNotice&&panel.mixController&&!panel.mixController.busy&&panel.queuedRows.length>0;onClicked:{if(panel.queueAnchor!==(panel.controller.current.uri||"")){panel.notice="A música mudou. Prepare a fila novamente.";queueDialog.close();return}panel.mixController.applyPreview(panel.transportPlayer&&typeof panel.transportPlayer.positionMs==="number"?panel.transportPlayer.positionMs:panel.position);queueDialog.close()}}
         }
     }
     FileDialog{id:syncExport;fileMode:FileDialog.SaveFile;nameFilters:["Ajuste Tonal (*.json)"];onAccepted:panel.controller.exportSyncFeedback(selectedFile)}

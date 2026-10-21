@@ -23,7 +23,7 @@ public final class IndieActivity extends Activity {
     private final Consumer<String> statusListener=text->updateTransport();
     private final Handler handler=new Handler(Looper.getMainLooper());
     private final Runnable ticker=new Runnable(){public void run(){updateTransport();handler.postDelayed(this,1000);}};
-    @Override public void onCreate(Bundle saved){super.onCreate(saved);getWindow().setStatusBarColor(Ui.BG);getWindow().setNavigationBarColor(Ui.BG);ui=new Ui(this);Diagnostics.initialize(this,"indie");NativeBridge.audio.initialize(this,"indie-audio");catalog=new IndieCatalog(this);artwork=new Artwork(this);build();IndiePlaybackService.listeners.add(statusListener);
+    @Override public void onCreate(Bundle saved){super.onCreate(saved);AppTheme.apply(this);getWindow().setStatusBarColor(Ui.BG);getWindow().setNavigationBarColor(Ui.BG);ui=new Ui(this);Diagnostics.initialize(this,"indie");NativeBridge.audio.initialize(this,"indie-audio");catalog=new IndieCatalog(this);artwork=new Artwork(this);build();IndiePlaybackService.listeners.add(statusListener);
         if(Build.VERSION.SDK_INT>=33)getOnBackInvokedDispatcher().registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT,this::back);
         if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)!=android.content.pm.PackageManager.PERMISSION_GRANTED)requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS},10);
         acceptIntent(getIntent());

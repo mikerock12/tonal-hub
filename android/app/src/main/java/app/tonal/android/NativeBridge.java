@@ -10,6 +10,8 @@ public final class NativeBridge {
     private static native void nativeStart(String token, String cache, int bitrate, boolean normalize);
     static native void sendCommand(String command);
     static volatile Consumer<String> commandListener;
+    /** Engine position events (Seeked/PositionChanged), delivered on the main thread. */
+    static volatile java.util.function.BiConsumer<String,Integer> progressObserver;
     static final CopyOnWriteArrayList<Consumer<String>> commandListeners=new CopyOnWriteArrayList<>();
     static final PlaybackIntent intent=new PlaybackIntent();
     static volatile long generation,lastPcm;
@@ -26,7 +28,7 @@ public final class NativeBridge {
     public static void onNativeStatus(long epoch,String value){if(epoch==generation)onStatus(value);}
     public static void onProgress(long epoch,String uri,int position,boolean active){
         if(epoch!=generation)return;
-        main.post(()->{if(epoch!=generation)return;synchronized(intent){intent.progress(uri,position,active);}});
+        main.post(()->{if(epoch!=generation)return;synchronized(intent){intent.progress(uri,position,active);}java.util.function.BiConsumer<String,Integer> observer=progressObserver;if(observer!=null)observer.accept(uri,position);});
     }
     public static native void playFile(String path);
     static final AudioOutput audio = new AudioOutput();

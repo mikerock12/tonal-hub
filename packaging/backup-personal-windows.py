@@ -25,7 +25,7 @@ def main():
             finally:output.close();source.close()
             entries.append(str(target.relative_to(destination)))
         preferences={}
-        for group,names in {'player':['volume'],'librespot':['bitrate'],'ui':['language']}.items():
+        for group,names in {'player':['volume'],'librespot':['bitrate'],'ui':['language'],'appearance':['theme']}.items():
             try:
                 with winreg.OpenKey(winreg.HKEY_CURRENT_USER,'Software\\Tonal\\'+app+'\\'+group) as key:
                     for name in names:

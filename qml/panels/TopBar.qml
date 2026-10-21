@@ -264,7 +264,7 @@ Item {
     Menu {
         id: accountMenu
         width: 280
-        background: Rectangle { color: "#282828"; radius: 4 }
+        background: Rectangle { color: Theme.elevatedHover; radius: 4 }
 
         MenuLabel { text: Nav.me ? qsTr("Conectado como %1").arg(Nav.me.display_name || Nav.me.id) : "" }
         MenuLabel {
@@ -274,6 +274,7 @@ Item {
         MenuSeparator { contentItem: Rectangle { implicitHeight: 1; color: Theme.divider } }
         AccountItem { text: qsTr("Áudio e efeitos…"); onTriggered: root.audioSettingsRequested() }
         AccountItem { text: qsTr("Biblioteca pessoal, estatísticas e letras…"); onTriggered: root.musicRequested() }
+        AccountItem { text: qsTr("Temas: %1…").arg(Theme.palette.name); onTriggered: themeDialog.open() }
         AccountItem {
             text: qsTr("Qualidade: 320 kbps (muito alta)")
             checked: App.librespot.bitrate === 320
@@ -318,6 +319,8 @@ Item {
         App.setLanguage(language)
         languageDialog.open()
     }
+
+    ThemeDialog { id: themeDialog }
 
     ModalDialog {
         id: languageDialog

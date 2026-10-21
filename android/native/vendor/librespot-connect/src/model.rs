@@ -44,6 +44,9 @@ pub struct LoadRequestOptions {
     ///
     /// If `None` is provided and `shuffle` is `true`, a random track is played, otherwise the first
     pub playing_track: Option<PlayingTrack>,
+    /// Tonal: when the resolved current track is the one already loaded, replace
+    /// only the upcoming order and keep the audible decoder untouched.
+    pub keep_playing_track: bool,
 }
 
 /// The options which decide how the playback is started

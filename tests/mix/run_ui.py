@@ -6,10 +6,12 @@ module=OUT/'MixHarness';module.mkdir(exist_ok=True)
 for n in ['Theme','Icons']:shutil.copyfile(ROOT/f'qml/{n}.qml',module/f'{n}.qml')
 (module/'Nav.qml').write_text('pragma Singleton\nimport QtQuick\nQtObject{property var me:({id:"user"});function toast(t){}function go(a,b){}function likedSongsUri(){return ""}}')
 (module/'Playlists.qml').write_text('pragma Singleton\nimport QtQuick\nQtObject{property var editable:[];function createWithTracks(a){}}')
+themes_json=(ROOT/'resources/themes.json').read_text(encoding='utf-8')
 (module/'App.qml').write_text('''pragma Singleton
 import QtQuick
 QtObject {
  property string version:"test"
+ property QtObject theme:QtObject{property string themeId:"tonal";property var themes:('''+themes_json+''').themes;property var current:themes.filter(t=>t.id===themeId)[0]}
  function dominantColor(url,callback){callback("#344455")}
  property QtObject auth:QtObject{property bool authenticated:true;property string userId:"user"}
  property QtObject music:QtObject{signal changed();function summary(k,v){return {ms:0,plays:0,tracks:[]}}}
@@ -30,8 +32,10 @@ import QtQuick.Controls
 import QtTest
 import MixHarness 1.0
 Pane {width:1000;height:800;padding:0;palette.button:"#263440";palette.buttonText:"#f5f5f5";background:Rectangle{color:"#121212"}
- QtObject{id:personal;property var current:({provider:"Spotify",id:"current",uri:"spotify:track:current",title:"Current song",artist:"Current artist",durationMs:180000});property var favorites:[];property var playlists:[];property var lines:[];property bool busy:false;property string background:"Sem animação";property string photo:"";property var lyricStyle:({});property bool syncEnabled:true;property string lyricStatus:"";property int syncOffset:0;property bool historyEnabled:true;signal lyricsChanged();signal changed();function refreshMetadata(){}function statistics(d,k){return {rows:[],recommendations:[]}}function lineAt(p){return -1}function fetchLyrics(){}function translate(a){}function summary(k,v){return {}}function playlistTracks(k){return []}function liked(t){return false}}
- MusicPanel{id:personalPanel;controller:personal;audioEngine:null;mixController:App.listeningMix;transportPlayer:App.player;position:12345}
+ QtObject{id:personal;property var current:({provider:"Spotify",id:"current",uri:"spotify:track:current",title:"Current song",artist:"Current artist",durationMs:180000});property var favorites:[];property var playlists:[];property var lines:[];property bool busy:false;property string background:"Sem animação";property string photo:"";property var lyricStyle:({});property bool syncEnabled:true;property string lyricStatus:"";property int syncOffset:0;property bool historyEnabled:true;signal lyricsChanged();signal changed();function refreshMetadata(){}function statistics(d,k){return {rows:[],recommendations:[]}}function lineAt(p){return -1}function fetchLyrics(){}function translate(a){}function summary(k,v){return {}}function playlistTracks(k){return []}function liked(t){return false}property var seeks:[];function seek(ms){seeks=seeks.concat([ms])}}
+ MusicPanel{id:personalPanel;controller:personal;audioEngine:null;mixController:App.listeningMix;transportPlayer:App.player;position:12345;themeTokens:Theme.palette}
+ SeekBar{id:themedSeek;x:20;y:760;width:300;value:0.5}
+ ThemeDialog{id:themeDialog}
  CollectionPage{id:page;anchors.fill:parent;route:({page:"album",params:{id:"album"}})}
  TestCase{name:"CollectionMix";when:windowShown
   function test_discovery_waits_for_fresh_queue(){
@@ -79,6 +83,25 @@ Pane {width:1000;height:800;padding:0;palette.button:"#263440";palette.buttonTex
    page.shakeList();verify(page.listShaken);compare(page.mixRows()[0].uri,"spotify:track:fixture1");page.restoreOrder();verify(!page.listShaken);compare(JSON.stringify(page.mixRows()),JSON.stringify(original));compare(App.api.writes,0)
    page.randomPlayback=true;page.discoveryPlayback=true;page.playFrom(2);compare(App.listeningMix.received.index,2);verify(App.listeningMix.received.random);verify(App.listeningMix.received.discover);compare(App.listeningMix.received.rows.length,6);compare(App.api.writes,0)
    wait(100);grabImage(page).save("collection-modes.png")
+  }
+  function test_song_seek_waits_for_release(){
+   personalPanel.showSong();tryCompare(personalPanel,"visible",true);let s=findChild(personalPanel,"songSeek");verify(s!==null);tryCompare(s,"visible",true);
+   personal.seeks=[];let y=s.height/2;mousePress(s,s.width*0.25,y);mouseMove(s,s.width*0.5,y);mouseMove(s,s.width*0.75,y);
+   personalPanel.position=1000;compare(personal.seeks.length,0);verify(s.value>s.to*0.6);
+   mouseRelease(s,s.width*0.75,y);compare(personal.seeks.length,1);verify(Math.abs(personal.seeks[0]-s.to*0.75)<s.to*0.06);
+   personalPanel.position=personal.seeks[0];compare(s.value,personal.seeks[0]);personalPanel.position=12345;tryCompare(s,"value",12345);personalPanel.close()
+  }
+  function test_theme_switch_restyles_seekbar(){
+   compare(Theme.themes.length,6);compare(themedSeek.style.thumbShape,"circle");verify(!themedSeek.thumbVisible);
+   App.theme.themeId="solar";compare(Theme.themeId,"solar");verify(Qt.colorEqual(Theme.accent,"#ff8a4c"));compare(themedSeek.style.thumbShape,"pill");verify(themedSeek.thumbVisible);compare(themedSeek.barHeight,5);
+   App.theme.themeId="tonal";verify(Qt.colorEqual(Theme.accent,"#0d80bf"));compare(themedSeek.style.thumbShape,"circle")
+  }
+  function test_theme_dialog_applies_choice(){
+   themeDialog.open();tryCompare(themeDialog,"opened",true);let card=findChild(themeDialog.contentItem,"theme_neon");verify(card!==null);
+   mouseClick(card);compare(App.theme.themeId,"neon");verify(Theme.seek.glow);verify(card.chosen);
+   wait(80);let scene=themedSeek.Window.window.contentItem;grabImage(scene).save("theme-dialog-neon.png");themeDialog.close();App.theme.themeId="solar";wait(80);grabImage(scene).save("collection-solar.png");App.theme.themeId="neon";
+   personalPanel.showSong();tryCompare(personalPanel,"visible",true);let s=findChild(personalPanel,"songSeek");compare(s.look.thumbShape,"circle");verify(s.look.glow);wait(80);grabImage(themedSeek.Window.window.contentItem).save("song-neon.png");personalPanel.close();
+   themeDialog.close();App.theme.themeId="tonal"
   }
  }
 }''',encoding='utf-8')

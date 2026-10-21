@@ -12,8 +12,8 @@ Rectangle {
     readonly property bool canLogin: formatOk && status !== "invalid" && status !== "checking" && !App.auth.busy
 
     gradient: Gradient {
-        GradientStop { position: 0; color: "#1f1f1f" }
-        GradientStop { position: 1; color: "#000000" }
+        GradientStop { position: 0; color: Theme.elevated }
+        GradientStop { position: 1; color: Theme.windowBg }
     }
 
     function login() {

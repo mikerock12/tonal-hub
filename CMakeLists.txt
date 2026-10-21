@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(Tonal VERSION 0.12.0 LANGUAGES C CXX)
+project(Tonal VERSION 0.13.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -40,6 +40,7 @@ set(TONAL_SOURCES
     src/Lyrics.h            src/Lyrics.cpp
     src/SetlistFm.h         src/SetlistFm.cpp
     src/NetworkFactory.h    src/NetworkFactory.cpp
+    src/ThemeCatalog.h      src/ThemeCatalog.cpp
 )
 
 qt_add_executable(Tonal ${TONAL_SOURCES})
@@ -83,6 +84,7 @@ qt_add_qml_module(Tonal
         qml/components/ShortcutTile.qml
         qml/components/TrackRow.qml
         qml/components/SeekBar.qml
+        qml/components/ThemeDialog.qml
         qml/components/Chip.qml
         qml/components/SectionHeader.qml
         qml/components/Logo.qml
@@ -129,6 +131,7 @@ endif()
 target_link_libraries(Tonal PRIVATE tonal_indie_catalog tonal_hub_launcher)
 target_link_libraries(Tonal PRIVATE tonal_companion)
 target_link_libraries(Tonal PRIVATE tonal_text_playlist)
+qt_add_resources(Tonal "themes" PREFIX "/themes" BASE "${CMAKE_CURRENT_SOURCE_DIR}" FILES resources/themes.json)
 qt_add_resources(Tonal "companion_ui" PREFIX "/companion" BASE "${CMAKE_CURRENT_SOURCE_DIR}" FILES qml/companion/MusicPanel.qml qml/companion/ActionIcon.qml qml/companion/LyricBackdrop.qml qml/companion/StyledVerse.qml qml/companion/LyricStyleDialog.qml qml/companion/LyricsFullscreen.qml qml/companion/StatisticsDetail.qml qml/companion/ClimateDetail.qml resources/music-rules.json)
 foreach(program TonalHub IndieTonal)
     if(program STREQUAL "TonalHub")

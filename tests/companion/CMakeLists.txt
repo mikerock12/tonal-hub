@@ -57,3 +57,13 @@ if(MSVC)
  target_compile_options(TonalDiscoveryEnrichmentChecks PRIVATE /utf-8)
 endif()
 add_test(NAME discovery_lyrics_enrichment COMMAND TonalDiscoveryEnrichmentChecks)
+
+qt_add_executable(TonalThemeCatalogChecks ../themes/ThemeCatalogChecks.cpp
+    "${ROOT}/src/ThemeCatalog.h" "${ROOT}/src/ThemeCatalog.cpp")
+target_include_directories(TonalThemeCatalogChecks PRIVATE "${ROOT}/src")
+target_link_libraries(TonalThemeCatalogChecks PRIVATE Qt6::Core Qt6::Qml)
+if(MSVC)
+ target_compile_options(TonalThemeCatalogChecks PRIVATE /utf-8)
+endif()
+qt_add_resources(TonalThemeCatalogChecks "themes" PREFIX "/themes" BASE "${ROOT}" FILES "${ROOT}/resources/themes.json")
+add_test(NAME theme_catalog COMMAND TonalThemeCatalogChecks)

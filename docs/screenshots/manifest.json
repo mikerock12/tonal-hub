@@ -1,6 +1,6 @@
 {
-  "documented_on": "2026-10-19",
-  "scope": "Real app/test screenshots with version and fixture provenance per image. Historical captures preserved; two new 0.12.0 native Android queue captures.",
+  "documented_on": "2026-10-21",
+  "scope": "Real app/test screenshots with version and fixture provenance per image. Historical captures preserved; two new 0.12.0 native Android queue captures; four 0.13.0 theme captures without personal data.",
   "captures": [
     {
       "file": "desktop-modos.png",
@@ -217,6 +217,54 @@
       "height": 1200,
       "bytes": 75188,
       "sha256": "db03a16abacc64500859be5837538accd4272fc3f92cfbf6dabb45a7e633d3d0"
+    },
+    {
+      "file": "desktop-temas-0130.png",
+      "source": "out/mix-ui/theme-dialog-neon.png",
+      "platform": "Windows",
+      "capture_context": "0.13.0: suíte QML de temas",
+      "note": "Seletor de temas com o Neon em uso, sobre a página de álbum sintética; prévia da barra e do marcador de cada tema.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 1000,
+      "height": 800,
+      "bytes": 69464,
+      "sha256": "442c2826a842853a51da4c3536c3a1829be4b09d081977ab5eb4e62a43b377b8"
+    },
+    {
+      "file": "desktop-tema-solar-0130.png",
+      "source": "out/mix-ui/collection-solar.png",
+      "platform": "Windows",
+      "capture_context": "0.13.0: suíte QML de temas",
+      "note": "Página de álbum sintética no tema Pôr do sol; barra com marcador em pílula. Placeholder de capa intencional.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 1000,
+      "height": 800,
+      "bytes": 46004,
+      "sha256": "c953ddbd3b3280f3c5b234c3eaffb1301181cc9f4a2ddc82bed14a09a97277c5"
+    },
+    {
+      "file": "android-temas-0130.png",
+      "source": "out/android/themes-0130/android-temas-0130.png",
+      "platform": "Android",
+      "capture_context": "0.13.0: smoke de temas na AVD dedicada",
+      "note": "APK benchmark 0.13.0 em emulador; seletor com Oceano em uso, aberto durante o áudio de ensaio local. Sem conta.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 540,
+      "height": 1200,
+      "bytes": 70153,
+      "sha256": "20af9cc97e7d113d25af14853a2c764a30c597c038d99336950690a8a06e11c0"
+    },
+    {
+      "file": "android-musica-neon-0130.png",
+      "source": "out/android/themes-0130/android-musica-neon-0130.png",
+      "platform": "Android",
+      "capture_context": "0.13.0: smoke de temas na AVD dedicada",
+      "note": "Página da música no tema Neon com o ensaio Vorbis local do APK; barra e marcador com halo. Sem conta.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 540,
+      "height": 1200,
+      "bytes": 40381,
+      "sha256": "36b819a54de011b122d7117629a7a3593dbc408bf0e6535e79e7cfd609652990"
     }
   ]
 }

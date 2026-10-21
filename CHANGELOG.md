@@ -1,5 +1,18 @@
 # Changelog
 
+## Tonal Hub pessoal 0.13.0 — 21/10/2026
+
+- Seis temas (Tonal Azul, Aurora, Pôr do sol, Neon, Oceano, Grafite suave) no
+  PC e no Android, com barra de progresso e marcador próprios; troca ao vivo,
+  sem reiniciar nem interromper a música. Catálogo único `resources/themes.json`.
+- Aplicar fila (Descoberta 2+1, Shake, Aleatório) sem recarregar a faixa atual
+  no Android (`requeue` com `keep_playing_track` no librespot embarcado); no PC,
+  posição atual mais latência medida, sem voltar trecho.
+- Seek fluido: no PC, um pedido ao soltar, coalescido, sem esvaziar o buffer
+  antes da hora e sem GET atrasado puxando a barra; no Android, relógio ancorado
+  na posição pedida e nos eventos do motor.
+- [Detalhes, causas e validação](docs/TEMAS_SEEK_FILA_0130.md).
+
 ## Benchmark 0.12.0 — 19–20/10/2026
 
 - Nova coleta Windows/Android, dois blocos invertidos por app/estado, com

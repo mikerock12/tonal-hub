@@ -1,7 +1,8 @@
 import QtQuick
 
-// Barra fina estilo Spotify (progresso e volume): fica na cor de destaque e
-// mostra o "pino" ao passar o mouse. Mais leve que um Slider completo.
+// Barra fina de progresso e volume. Trilho, preenchimento (degradê) e marcador
+// seguem o tema escolhido (Theme.seek). Enquanto arrasta, mostra só a posição
+// arrastada: o valor vindo do player não puxa o marcador de volta.
 Item {
     id: root
 
@@ -9,38 +10,72 @@ Item {
     property bool wheelEnabled: false     // roda do mouse ajusta (volume)
     readonly property bool dragging: mouse.pressed
     readonly property bool hovered: mouse.containsMouse
+    readonly property bool active: hovered || dragging
     property real dragValue: 0
     readonly property real shownValue: dragging ? dragValue : Math.max(0, Math.min(1, value))
+
+    property var styleOverride: null      // pré-visualização de outro tema
+    readonly property var style: styleOverride || Theme.seek
+    readonly property int barHeight: active ? style.activeHeight : style.height
+    readonly property var fillStops: active ? style.activeFill : style.fill
+    property bool showThumb: false        // força o marcador (pré-visualização)
+    readonly property bool thumbVisible: enabled && (style.thumbAlways || active || showThumb)
+    readonly property int thumbSize: style.thumbSize + (dragging ? 2 : 0)
 
     signal moving(real v)   // enquanto arrasta
     signal moved(real v)    // ao soltar
 
-    implicitHeight: 16
+    implicitHeight: Math.max(16, style.thumbSize + 6)
 
     Rectangle {
         id: track
         anchors.verticalCenter: parent.verticalCenter
         width: parent.width
-        height: 4
-        radius: 2
-        color: Theme.trackBg
+        height: root.barHeight
+        radius: height / 2
+        color: root.style.track
 
         Rectangle {
-            width: parent.width * root.shownValue
+            width: Math.max(height, parent.width * root.shownValue)
+            visible: root.shownValue > 0
             height: parent.height
-            radius: 2
-            color: root.hovered || root.dragging ? Theme.accent : Theme.textPrimary
+            radius: height / 2
+            gradient: Gradient {
+                orientation: Gradient.Horizontal
+                GradientStop { position: 0; color: root.fillStops[0] }
+                GradientStop { position: 1; color: root.fillStops[root.fillStops.length - 1] }
+            }
         }
     }
 
-    Rectangle {
-        visible: root.hovered || root.dragging
-        width: 12
-        height: 12
-        radius: 6
-        color: Theme.textPrimary
+    Item {
+        id: thumb
+        visible: root.thumbVisible
+        width: root.style.thumbShape === "pill" ? Math.round(root.thumbSize * 1.6) : root.thumbSize
+        height: root.style.thumbShape === "pill" ? Math.round(root.thumbSize * 0.8) : root.thumbSize
         anchors.verticalCenter: parent.verticalCenter
-        x: track.width * root.shownValue - width / 2
+        x: Math.max(-width / 2, Math.min(track.width - width / 2, track.width * root.shownValue - width / 2))
+
+        // Halo do tema Neon: um retângulo translúcido, sem efeito de shader.
+        Rectangle {
+            visible: root.style.glow
+            anchors.centerIn: parent
+            width: parent.width + 10
+            height: parent.height + 10
+            radius: height / 2
+            color: root.style.thumbBorder
+            opacity: root.dragging ? 0.45 : 0.28
+        }
+        Rectangle {
+            anchors.centerIn: parent
+            width: root.style.thumbShape === "diamond" ? Math.round(parent.width * 0.75) : parent.width
+            height: root.style.thumbShape === "diamond" ? Math.round(parent.height * 0.75) : parent.height
+            rotation: root.style.thumbShape === "diamond" ? 45 : 0
+            radius: root.style.thumbShape === "diamond" ? 2 : height / 2
+            color: root.style.thumb
+            border.width: root.style.thumbShape === "ring" ? 3 : (root.style.thumbBorder !== root.style.thumb ? 2 : 0)
+            border.color: root.style.thumbBorder
+        }
     }
 
     MouseArea {

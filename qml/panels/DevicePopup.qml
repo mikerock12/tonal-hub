@@ -13,7 +13,7 @@ Popup {
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
     background: Rectangle {
-        color: "#282828"
+        color: Theme.elevatedHover
         radius: 8
         border.color: Qt.rgba(1, 1, 1, 0.06)
     }
