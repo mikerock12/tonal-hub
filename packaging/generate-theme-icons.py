@@ -28,7 +28,7 @@ def main():
     files = expected()
     if '--check' in sys.argv:
         stale = [name for name, text in files.items()
-                 if not (DRAWABLES / name).exists() or (DRAWABLES / name).read_text(encoding='utf-8') != text]
+                 if not (DRAWABLES / name).exists() or (DRAWABLES / name).read_bytes().decode('utf-8').replace('\r\n', '\n') != text]
         print('THEME_ICONS_STALE ' + ' '.join(stale) if stale else f'THEME_ICONS_PASS {len(files)} icons')
         return 1 if stale else 0
     for name, text in files.items():

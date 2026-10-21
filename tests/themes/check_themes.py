@@ -73,7 +73,7 @@ def main():
     manifest = (ROOT / 'android/app/src/main/AndroidManifest.xml').read_text(encoding='utf-8')
     for name, text in icons.expected().items():
         drawable = ROOT / 'android/app/src/main/res/drawable' / name
-        check(drawable.exists() and drawable.read_text(encoding='utf-8') == text, f'{name} out of date: run packaging/generate-theme-icons.py')
+        check(drawable.exists() and drawable.read_bytes().decode('utf-8').replace('\r\n', '\n') == text, f'{name} out of date: run packaging/generate-theme-icons.py')
     for theme in themes:
         alias = 'HubIcon' + theme['id'][0].upper() + theme['id'][1:]
         check(f'android:name=".{alias}"' in manifest, f'{alias} launcher alias missing')
