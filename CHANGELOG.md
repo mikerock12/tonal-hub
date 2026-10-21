@@ -1,5 +1,14 @@
 # Changelog
 
+## Tonal Hub pessoal 0.13.2 — 21/10/2026
+
+- Android: notificação e player do sistema com capa do álbum, música, banda,
+  álbum, duração e posição real (seek pela barra no Spotify); capa também no
+  IndieTonal.
+- Ícone seguindo o tema: inicializador Android (um atalho por tema), ícone da
+  notificação e ícone da janela/barra de tarefas no PC.
+- [Detalhes e validação](docs/NOTIFICACAO_ICONE_0132.md).
+
 ## Tonal Hub pessoal 0.13.1 — 21/10/2026
 
 - PC: todos os controles junto da barra de progresso (Shake, Aleatório,

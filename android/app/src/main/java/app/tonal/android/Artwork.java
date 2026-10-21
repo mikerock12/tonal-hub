@@ -36,4 +36,26 @@ final class Artwork implements AutoCloseable {
         }catch(Exception ignored){}});
     }
     public void close(){closed=true;worker.shutdownNow();}
+
+    /**
+     * Cover for the media notification and lock screen, off the main thread:
+     * memory cache, then the same disk cache the screens fill, then a bounded
+     * download (3 MiB, 20 s). Returns null when unavailable; never throws.
+     */
+    static Bitmap fetch(android.content.Context context,String address){
+        if(address==null||address.isEmpty()||!address.startsWith("https://"))return null;
+        Bitmap hit=cache.get(address);if(hit!=null)return hit;
+        try{
+            byte[] digest=java.security.MessageDigest.getInstance("SHA-256").digest(address.getBytes(java.nio.charset.StandardCharsets.UTF_8));StringBuilder name=new StringBuilder();for(byte b:digest)name.append(String.format(java.util.Locale.ROOT,"%02x",b&255));
+            File dir=new File(context.getCacheDir(),"artwork-v2");dir.mkdirs();File file=new File(dir,name.toString());byte[] data=null;
+            if(file.isFile()&&file.length()<=3*1024*1024)data=java.nio.file.Files.readAllBytes(file.toPath());
+            if(data==null){HttpURLConnection c=WebRequest.open(address,null);ScheduledFuture<?> deadline=WebRequest.deadlines.schedule(c::disconnect,20,TimeUnit.SECONDS);
+                try{ByteArrayOutputStream bytes=new ByteArrayOutputStream();try(InputStream in=c.getInputStream()){byte[] block=new byte[8192];int n;while((n=in.read(block))!=-1){if(bytes.size()+n>3*1024*1024)return null;bytes.write(block,0,n);}}data=bytes.toByteArray();
+                    File temp=new File(file.getPath()+".notification.tmp");try(FileOutputStream out=new FileOutputStream(temp)){out.write(data);}java.nio.file.Files.move(temp.toPath(),file.toPath(),java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                }finally{deadline.cancel(false);c.disconnect();}}
+            BitmapFactory.Options options=new BitmapFactory.Options();options.inJustDecodeBounds=true;BitmapFactory.decodeByteArray(data,0,data.length,options);if(options.outWidth<=0||options.outHeight<=0)return null;
+            options.inSampleSize=1;while(options.outWidth/options.inSampleSize>512||options.outHeight/options.inSampleSize>512)options.inSampleSize*=2;options.inJustDecodeBounds=false;
+            Bitmap image=BitmapFactory.decodeByteArray(data,0,data.length,options);if(image!=null)cache.put(address,image);return image;
+        }catch(Exception e){return null;}
+    }
 }

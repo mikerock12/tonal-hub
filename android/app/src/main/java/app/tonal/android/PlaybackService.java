@@ -26,13 +26,20 @@ public final class PlaybackService extends Service {
         @Override public void onReceive(Context context,Intent intent){NativeBridge.command("pause");}
     };
     private final Consumer<String> statusListener=this::update;
+    // Media notification and lock screen: the playing track's title, artist,
+    // album, duration and cover, read from the personal store once a second.
+    private final java.util.concurrent.ExecutorService coverWorker=java.util.concurrent.Executors.newSingleThreadExecutor();
+    private String status="Preparando áudio…",metadataKey="",coverUrl="";
+    private android.graphics.Bitmap cover;
+    private org.json.JSONObject shown=new org.json.JSONObject();
+    private boolean statePlaying,stateLocal;private long statePosition=-1,stateAt;
     static void start(Context context,String action,String value){
         Intent intent=new Intent(context,PlaybackService.class).setAction(action);
         if(value!=null)intent.putExtra("value",value);
         context.startForegroundService(intent);
     }
     @Override public void onCreate(){
-        super.onCreate();NativeBridge.audio.initialize(this);Diagnostics.initialize(this,"tonalify");
+        super.onCreate();NativeBridge.audio.initialize(this);Diagnostics.initialize(this,"tonalify");AppTheme.apply(this);
         connectivity=getSystemService(android.net.ConnectivityManager.class);connectivity.registerDefaultNetworkCallback(network);
         NativeBridge.commandListener=command->{if(command.equals("stop")){spotify=false;cancelRecovery();}else if(command.equals("pause")||command.equals("toggle")&&!NativeBridge.intent.desired){cancelRecovery();}};
         IntentFilter switching=new IntentFilter("app.tonal.android.PAUSE_TONALIFY");
@@ -51,6 +58,7 @@ public final class PlaybackService extends Service {
             @Override public void onPause(){NativeBridge.command("pause");}
             @Override public void onSkipToNext(){NativeBridge.command("next");}
             @Override public void onSkipToPrevious(){NativeBridge.command("prev");}
+            @Override public void onSeekTo(long position){if(!NativeBridge.intent.local)NativeBridge.command("seek|"+Math.max(0,position));}
             @Override public void onStop(){stopSelf();}
         });
         media.setActive(true);
@@ -65,20 +73,63 @@ public final class PlaybackService extends Service {
         else registerReceiver(noisy,unplugged);
     }
     private Notification notification(String text){
+        status=text;
         PendingIntent open=PendingIntent.getActivity(this,0,new Intent(this,MainActivity.class),PendingIntent.FLAG_IMMUTABLE);
-        return new Notification.Builder(this,"playback").setSmallIcon(app.tonal.android.R.drawable.ic_tonal).setContentTitle("Tonalify")
-            .setContentText(text).setContentIntent(open).setOngoing(true).setStyle(new Notification.MediaStyle().setMediaSession(media.getSessionToken())).build();
+        Notification.Builder builder=new Notification.Builder(this,"playback").setSmallIcon(app.tonal.android.R.drawable.ic_tonal).setColor(Ui.BLUE)
+            .setContentIntent(open).setOngoing(true).setStyle(new Notification.MediaStyle().setMediaSession(media.getSessionToken()));
+        String title=shown.optString("title"),artist=shown.optString("artist");
+        if(title.isEmpty())return builder.setContentTitle("Tonalify").setContentText(text).build();
+        // Song and band first; engine messages (reconnecting, errors) stay visible below.
+        boolean routine=text.equals("Reproduzindo")||text.equals("Pausado")||text.startsWith("Pronto");
+        builder.setContentTitle(title).setContentText(artist.isEmpty()?text:artist).setSubText(routine?shown.optString("album"):text);
+        if(cover!=null)builder.setLargeIcon(cover);
+        return builder.build();
+    }
+    private void refreshMetadata(){
+        org.json.JSONObject current=MusicStore.get(this).current;
+        String key=current.optString("title")+"|"+current.optString("artist")+"|"+current.optString("album")+"|"+current.optString("image")+"|"+current.optInt("durationMs");
+        if(key.equals(metadataKey))return;
+        metadataKey=key;try{shown=new org.json.JSONObject(current.toString());}catch(org.json.JSONException e){shown=new org.json.JSONObject();}
+        String image=shown.optString("image");
+        if(!image.equals(coverUrl)){
+            coverUrl=image;cover=null;
+            if(!image.isEmpty())coverWorker.execute(()->{android.graphics.Bitmap art=Artwork.fetch(this,image);if(art!=null)control.post(()->{if(!destroyed&&image.equals(coverUrl)){cover=art;publishMetadata();}});});
+        }
+        publishMetadata();
+    }
+    private void publishMetadata(){
+        MediaMetadata.Builder metadata=new MediaMetadata.Builder()
+            .putString(MediaMetadata.METADATA_KEY_TITLE,shown.optString("title","Tonalify"))
+            .putString(MediaMetadata.METADATA_KEY_ARTIST,shown.optString("artist"))
+            .putString(MediaMetadata.METADATA_KEY_ALBUM,shown.optString("album"))
+            .putLong(MediaMetadata.METADATA_KEY_DURATION,Math.max(0,shown.optInt("durationMs")));
+        if(cover!=null)metadata.putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART,cover);
+        media.setMetadata(metadata.build());
+        getSystemService(NotificationManager.class).notify(1,notification(status));
+        statePosition=-1;
+    }
+    // Position for the notification bar: republished only when play state,
+    // track or a jump (seek) changes it; the system extrapolates in between.
+    private void publishState(long position,boolean local){
+        boolean playing=NativeBridge.playing;long now=SystemClock.elapsedRealtime();
+        long expected=statePosition+(statePlaying?now-stateAt:0);
+        if(statePosition>=0&&playing==statePlaying&&local==stateLocal&&Math.abs(position-expected)<2000)return;
+        statePlaying=playing;stateLocal=local;statePosition=Math.max(0,position);stateAt=now;
+        long actions=PlaybackState.ACTION_PLAY_PAUSE|PlaybackState.ACTION_PLAY|PlaybackState.ACTION_PAUSE|PlaybackState.ACTION_SKIP_TO_NEXT|PlaybackState.ACTION_SKIP_TO_PREVIOUS|PlaybackState.ACTION_STOP;
+        if(!local)actions|=PlaybackState.ACTION_SEEK_TO;
+        media.setPlaybackState(new PlaybackState.Builder().setActions(actions)
+            .setState(playing?PlaybackState.STATE_PLAYING:PlaybackState.STATE_PAUSED,statePosition,playing?1f:0f,now).build());
     }
     private void update(String text){
         if(spotify&&(text.startsWith("Falha")||text.startsWith("Tempo")||text.startsWith("Sessão")))scheduleRecovery(text);
         if(text.startsWith("Pronto •")&&recovering){recovering=false;control.post(resume);}
         getSystemService(NotificationManager.class).notify(1,notification(text));
-        media.setPlaybackState(new PlaybackState.Builder().setActions(PlaybackState.ACTION_PLAY_PAUSE|PlaybackState.ACTION_PLAY|PlaybackState.ACTION_PAUSE|PlaybackState.ACTION_SKIP_TO_NEXT|PlaybackState.ACTION_SKIP_TO_PREVIOUS|PlaybackState.ACTION_STOP)
-            .setState(NativeBridge.playing?PlaybackState.STATE_PLAYING:PlaybackState.STATE_PAUSED,PlaybackState.PLAYBACK_POSITION_UNKNOWN,1).build());
+        long position;boolean local;synchronized(NativeBridge.intent){position=NativeBridge.intent.position;local=NativeBridge.intent.local;}
+        statePosition=-1;publishState(local?statePosition:position,local);
     }
     private long historyFrames;private final Runnable historyTick=new Runnable(){public void run(){if(destroyed)return;MusicStore store=MusicStore.get(PlaybackService.this);long frames=NativeBridge.audio.frames.get();String uri;int position;boolean local;synchronized(NativeBridge.intent){uri=NativeBridge.intent.track;position=NativeBridge.intent.position;local=NativeBridge.intent.local;}
         if(!local&&!uri.isEmpty()&&!uri.equals(store.current.optString("uri"))){org.json.JSONObject known=MusicStore.object(MusicStore.object(store.data,"tracks"),"Spotify|||"+uri);if(known.length()==0){MusicStore.put(known,"provider","Spotify");MusicStore.put(known,"id",uri);MusicStore.put(known,"uri",uri);MusicStore.put(known,"title","Faixa Spotify • "+uri.substring(Math.max(0,uri.length()-8)));MusicStore.put(known,"playable",true);}store.select(known);}
-        if(local)position=(int)(frames*1000/Math.max(1,NativeBridge.audio.sampleRate()));store.pulse(NativeBridge.playing&&frames!=historyFrames,position);historyFrames=frames;control.postDelayed(this,1000);}};
+        if(local)position=(int)(frames*1000/Math.max(1,NativeBridge.audio.sampleRate()));store.pulse(NativeBridge.playing&&frames!=historyFrames,position);historyFrames=frames;refreshMetadata();publishState(position,local);control.postDelayed(this,1000);}};
     private long resumeRevision;
     private final Runnable resume=()->{
         if(destroyed||!spotify||!NativeBridge.ready)return;
@@ -123,7 +174,7 @@ public final class PlaybackService extends Service {
     @Override public void onDestroy(){
         destroyed=true;MusicStore.get(this).pulse(false,NativeBridge.intent.position);MusicStore.get(this).flush();control.removeCallbacksAndMessages(null);connectivity.unregisterNetworkCallback(network);NativeBridge.commandListener=null;unregisterReceiver(switchPlayer);
         NativeBridge.command("stop");NativeBridge.audio.release();NativeBridge.ready=false;NativeBridge.playing=false;
-        NativeBridge.listeners.remove(statusListener);media.release();audioManager.abandonAudioFocusRequest(focus);
+        NativeBridge.listeners.remove(statusListener);coverWorker.shutdownNow();media.release();audioManager.abandonAudioFocusRequest(focus);
         unregisterReceiver(noisy);
         super.onDestroy();
     }

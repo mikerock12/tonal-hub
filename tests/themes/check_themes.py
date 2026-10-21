@@ -66,6 +66,17 @@ def main():
             check(contrast(theme['accentText'], theme['panel']) >= 4.5, f'{name}: accent text contrast')
             check(contrast(theme['onAccent'], theme['accent']) >= 4.5, f'{name}: label on accent contrast')
             check(contrast(seek.get('fill', ['#000000'])[0], seek.get('track', '#000000')) >= 1.5, f'{name}: fill visible on track')
+    # Launcher icon per theme (packaging/generate-theme-icons.py) and its alias.
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('theme_icons', ROOT / 'packaging/generate-theme-icons.py')
+    icons = importlib.util.module_from_spec(spec); spec.loader.exec_module(icons)
+    manifest = (ROOT / 'android/app/src/main/AndroidManifest.xml').read_text(encoding='utf-8')
+    for name, text in icons.expected().items():
+        drawable = ROOT / 'android/app/src/main/res/drawable' / name
+        check(drawable.exists() and drawable.read_text(encoding='utf-8') == text, f'{name} out of date: run packaging/generate-theme-icons.py')
+    for theme in themes:
+        alias = 'HubIcon' + theme['id'][0].upper() + theme['id'][1:]
+        check(f'android:name=".{alias}"' in manifest, f'{alias} launcher alias missing')
     if failures:
         print('\n'.join(failures))
         print(f'THEMES_FAIL {len(failures)} of {checks}')

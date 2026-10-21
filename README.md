@@ -10,12 +10,19 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
-**Produto atual: 0.13.1. Documentação consolidada em 21/10/2026.**
+**Produto atual: 0.13.2. Documentação consolidada em 21/10/2026.**
 
-[Guia visual com 26 capturas](docs/GUIA_VISUAL.md) ·
+[Guia visual com 28 capturas](docs/GUIA_VISUAL.md) ·
 [Regras da Descoberta 2+1](docs/DESCOBERTA_2_MAIS_1.md) ·
 [Benchmarks realizados](docs/BENCHMARKS.md) ·
 [Contexto do projeto](contexto.md) · [Instruções de manutenção](AGENTS.md).
+
+## Novidades 0.13.2
+
+A notificação do Android mostra a **capa do álbum, a música e a banda**, com a
+barra de posição real. O **ícone** do app acompanha o tema: na tela inicial e
+na notificação do Android e na janela/barra de tarefas do PC.
+[Detalhes](docs/NOTIFICACAO_ICONE_0132.md).
 
 ## Novidades 0.13.1
 

@@ -2,6 +2,7 @@
 
 #include <QHash>
 #include <QJSValue>
+#include <QIcon>
 #include <QObject>
 #include <QtQml/qqmlregistration.h>
 
@@ -130,8 +131,11 @@ public:
     // Cor predominante de uma capa (para o degradê do cabeçalho, igual ao app oficial).
     // callback(colorString)
     Q_INVOKABLE void dominantColor(const QString &imageUrl, const QJSValue &callback);
+    // Ícone do app desenhado com as cores de um tema (janela, barra de tarefas).
+    static QIcon themedIcon(const QVariantMap &theme);
 
 private:
+    void updateWindowIcon();
     static inline App *s_instance = nullptr;
     static inline bool s_restartRequested = false;
 
