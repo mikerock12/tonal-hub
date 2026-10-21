@@ -9,7 +9,7 @@ import android.widget.*;
 /** A launcher only: this process never loads the audio libraries or Spotify credentials. */
 public final class HubActivity extends Activity {
     @Override public void onCreate(Bundle saved){
-        super.onCreate(saved);Ui ui=new Ui(this);AppTheme.apply(this);AppTheme.applyLauncherIcon(this,AppTheme.chosen(this));getWindow().setStatusBarColor(Ui.BG);getWindow().setNavigationBarColor(Ui.BG);
+        super.onCreate(saved);Ui ui=new Ui(this);AppTheme.apply(this);getWindow().setStatusBarColor(Ui.BG);getWindow().setNavigationBarColor(Ui.BG);
         LinearLayout page=ui.column();page.setBackgroundColor(Ui.BG);page.setGravity(Gravity.CENTER_VERTICAL);ui.pad(page,24,24);
         Ui.insets(page);
         page.addView(ui.title("Tonal Hub",32));ui.space(page,12);page.addView(ui.text("Sua música, em espaços próprios.",16,Ui.MUTED));ui.space(page,28);
@@ -21,7 +21,9 @@ public final class HubActivity extends Activity {
     static void open(Activity from,Class<?> target,String query){
         if(target==MainActivity.class)from.sendBroadcast(new Intent("app.tonal.android.PAUSE_INDIE").setPackage(from.getPackageName()));
         if(target==IndieActivity.class)from.sendBroadcast(new Intent("app.tonal.android.PAUSE_TONALIFY").setPackage(from.getPackageName()));
-        Intent intent=new Intent(from,target).addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT|Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        // Each player has its own task (manifest taskAffinity), so a theme icon change
+        // that removes the Hub task never closes the open player.
+        Intent intent=new Intent(from,target).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_REORDER_TO_FRONT|Intent.FLAG_ACTIVITY_SINGLE_TOP);
         if(query!=null&&!query.isBlank())intent.putExtra("literalQuery",query.substring(0,Math.min(200,query.length())));
         from.startActivity(intent);
     }
