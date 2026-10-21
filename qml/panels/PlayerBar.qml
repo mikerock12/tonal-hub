@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import "qrc:/companion/qml/companion" as Personal
 
 // Barra do player: faixa atual (esquerda), controles (centro), fila/dispositivo/volume (direita).
 Item {
@@ -10,6 +11,53 @@ Item {
     property int libraryRevision: 0
     readonly property bool trackLiked: {libraryRevision;return player.localPlayback ? App.music.liked(App.music.current) : player.liked}
     Connections { target: App.music; function onChanged(){root.libraryRevision++} }
+
+    // Shake, Aleatório e Descoberta 2+1 aplicados direto à fila atual, a partir
+    // da música que toca (ela continua). A janela Fila mantém prévia e Aplicar.
+    readonly property var mix: App.listeningMix
+    readonly property bool mixAvailable: player.hasTrack && !player.localPlayback && player.trackUri.startsWith("spotify:track:")
+    property var pendingMode: null
+    property bool mixRequested: false
+    function currentRow() {
+        const c = App.music.current
+        if (c && c.uri === player.trackUri) return c
+        const a = player.artists
+        return {provider:"Spotify", id:player.trackUri, uri:player.trackUri, title:player.trackName, artist:player.artistsText,
+                artistId:a.length ? (a[0].id || "") : "", album:player.albumName, image:player.coverUrl, durationMs:player.durationMs}
+    }
+    function queueRow(t) {
+        return {provider:"Spotify", id:t.uri, uri:t.uri, title:t.name, artist:t.artists, artistId:t.artistId || "", album:t.album || "",
+                albumId:t.albumId || "", year:t.year || 0, image:t.coverUrl, durationMs:t.durationMs, mixExternal:!!t.mixExternal}
+    }
+    function applyMode(mode) {
+        if (!mixAvailable) return
+        let random = mix.randomEnabled, discovery = mix.discoveryEnabled
+        if (mode === "random") random = !random
+        if (mode === "discovery") discovery = !discovery
+        const request = {shake: mode === "shake", random: random, discovery: discovery, anchor: player.trackUri}
+        const committed = mix.queueFor(player.trackUri)
+        mixRequested = true
+        if (committed.length > 1) { mix.applyModes(committed, request.shake, random, discovery); return }
+        pendingMode = request
+        player.refreshQueue()
+    }
+    Connections {
+        target: root.player
+        function onQueueRefreshFinished(status) {
+            if (!root.pendingMode) return
+            const m = root.pendingMode
+            root.pendingMode = null
+            if (m.anchor !== root.player.trackUri) { root.mixRequested = false; return }
+            if (status !== 200) { root.mixRequested = false; Nav.toast(qsTr("Não foi possível carregar a fila (Spotify HTTP %1).").arg(status)); return }
+            const rows = [root.currentRow()].concat(root.player.queue.map(root.queueRow))
+            if (rows.length < 2) { root.mixRequested = false; Nav.toast(qsTr("A fila só tem a música atual. Abra um álbum ou playlist e toque a seleção.")); return }
+            root.mix.applyModes(rows, m.shake, m.random, m.discovery)
+        }
+    }
+    Connections {
+        target: root.mix
+        function onPreviewReady() { if (root.mixRequested) { root.mixRequested = false; Nav.toast(root.mix.status) } }
+    }
 
     // ---------------------------------------------------- esquerda: faixa atual
     Item {
@@ -101,17 +149,30 @@ Item {
         spacing: 4
 
         Row {
+            objectName: "transportControls"
             anchors.horizontalCenter: parent.horizontalCenter
-            spacing: 8
+            spacing: 6
 
-            IconButton {
+            Personal.ActionIcon {
+                objectName: "shakeButton"
                 anchors.verticalCenter: parent.verticalCenter
-                iconSize: 18
-                strokePath: Icons.shuffleS
-                active: root.player.shuffle
-                showActiveDot: true
-                tooltip: root.player.shuffle ? qsTr("Desativar aleatório") : qsTr("Ativar aleatório")
-                onClicked: root.player.toggleShuffle()
+                width: 36; height: 36
+                symbol: "shake"
+                accentInk: Theme.accent
+                enabled: root.mixAvailable && !root.mix.busy
+                description: qsTr("Shake: sortear outra ordem da fila agora")
+                onClicked: root.applyMode("shake")
+            }
+            Personal.ActionIcon {
+                objectName: "randomButton"
+                anchors.verticalCenter: parent.verticalCenter
+                width: 36; height: 36
+                symbol: "random"
+                accentInk: Theme.accent
+                filled: root.mix.randomEnabled
+                enabled: root.mixAvailable && !root.mix.busy
+                description: root.mix.randomEnabled ? qsTr("Aleatório ligado: voltar à ordem") : qsTr("Aleatório: tocar a fila em ordem aleatória")
+                onClicked: root.applyMode("random")
             }
             IconButton {
                 anchors.verticalCenter: parent.verticalCenter
@@ -136,16 +197,32 @@ Item {
                 tooltip: qsTr("Avançar")
                 onClicked: root.player.next()
             }
-            IconButton {
+            Personal.ActionIcon {
+                objectName: "repeatButton"
                 anchors.verticalCenter: parent.verticalCenter
-                iconSize: 18
-                strokePath: root.player.repeatMode === "track" ? Icons.repeatOneS : Icons.repeatS
-                active: root.player.repeatMode !== "off"
-                showActiveDot: true
-                tooltip: root.player.repeatMode === "off" ? qsTr("Ativar repetição")
-                       : root.player.repeatMode === "context" ? qsTr("Ativar repetição de uma faixa")
-                       : qsTr("Desativar repetição")
+                width: 36; height: 36
+                symbol: root.player.repeatMode === "track" ? "repeat1" : "repeat"
+                accentInk: Theme.accent
+                filled: root.player.repeatMode !== "off"
+                enabled: root.player.hasTrack && !root.player.localPlayback
+                description: root.player.repeatMode === "off" ? qsTr("Repetir a fila")
+                       : root.player.repeatMode === "context" ? qsTr("Repetindo a fila: repetir só esta música")
+                       : qsTr("Repetindo esta música: desligar repetição")
                 onClicked: root.player.cycleRepeat()
+            }
+            Personal.ActionIcon {
+                objectName: "discoveryButton"
+                anchors.verticalCenter: parent.verticalCenter
+                width: 36; height: 36
+                symbol: "discover"
+                accentInk: Theme.accent
+                filled: root.mix.discoveryEnabled
+                enabled: root.mixAvailable && !root.mix.busy
+                opacity: root.mix.busy ? 0.55 : 1
+                description: root.mix.busy ? root.mix.status
+                       : root.mix.discoveryEnabled ? qsTr("Descoberta 2+1 ligada: tirar as próximas externas")
+                       : qsTr("Descoberta 2+1: duas da fila, uma descoberta")
+                onClicked: root.applyMode("discovery")
             }
         }
 

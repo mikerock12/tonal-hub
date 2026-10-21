@@ -34,8 +34,13 @@ App::App(QObject *parent)
     , m_theme(new ThemeCatalog(this))
 {
     connect(m_player,&Player::playbackRequested,m_listeningMix,&ListeningMix::cancel);
-    connect(m_listeningMix,&ListeningMix::ready,this,[this](const QVariantList& tracks){m_music->rememberTracks(tracks);QStringList uris;for(auto v:tracks){auto t=v.toMap();uris<<t["uri"].toString();}m_player->playOrderedUris(uris);});
-    connect(m_listeningMix,&ListeningMix::resumeReady,this,[this](const QVariantList& tracks,int position){m_music->rememberTracks(tracks);QStringList uris;for(auto v:tracks)uris<<v.toMap()["uri"].toString();m_player->playOrderedUrisAt(uris,position);});
+    connect(m_listeningMix,&ListeningMix::ready,this,[this](const QVariantList& tracks){m_music->rememberTracks(tracks);QStringList uris;for(auto v:tracks){auto t=v.toMap();uris<<t["uri"].toString();}m_player->setOrderedQueue(tracks);m_player->playOrderedUris(uris);});
+    connect(m_listeningMix,&ListeningMix::resumeReady,this,[this](const QVariantList& tracks,int position){
+        // Shake/Aleatório/Descoberta reaplicam a fila a partir da música atual;
+        // se ela mudou durante a preparação, não sobrepõe a nova reprodução.
+        if(tracks.isEmpty()||tracks.first().toMap()["uri"].toString()!=m_player->trackUri()){emit m_player->message("A música mudou durante a preparação. Use o modo de novo.");return;}
+        m_music->rememberTracks(tracks);QStringList uris;for(auto v:tracks)uris<<v.toMap()["uri"].toString();m_player->setOrderedQueue(tracks);m_player->playOrderedUrisAt(uris,position);});
+    connect(m_player,&Player::selectionReplaced,m_listeningMix,&ListeningMix::forgetApplied);
     m_librespot->setAudioEngine(m_audio);
     m_player->setAudioEngine(m_audio);
     connect(m_music,&MusicCompanion::metadataRequested,this,[this](const QVariantMap &t){

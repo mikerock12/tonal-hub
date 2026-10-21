@@ -1,4 +1,4 @@
-param([switch]$Zip,[ValidatePattern('^[A-Za-z0-9._-]+$')][string]$PackageName='Tonal-Hub-0.13.0-local')
+param([switch]$Zip,[ValidatePattern('^[A-Za-z0-9._-]+$')][string]$PackageName='Tonal-Hub-0.13.1-local')
 $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot -Parent
 $build=Join-Path $root 'out\build\release'
@@ -37,6 +37,7 @@ Copy-Item -LiteralPath (Join-Path $root 'docs\AUDIO_PCM_081.md') -Destination $s
 Copy-Item -LiteralPath (Join-Path $root 'docs\TEXT_TO_TONALIFY_090.md') -Destination $stage -Force
 Copy-Item -LiteralPath (Join-Path $root 'docs/LISTENING_MIX_0100.md') -Destination $stage -Force
 Copy-Item -LiteralPath (Join-Path $root 'docs/TEMAS_SEEK_FILA_0130.md') -Destination $stage -Force
+Copy-Item -LiteralPath (Join-Path $root 'docs/REPETICAO_MODOS_0131.md') -Destination $stage -Force
 Copy-Item -LiteralPath (Join-Path $root 'docs/DISCOVERY_ENRICHMENT_0120.md') -Destination $stage -Force
 Copy-Item -LiteralPath (Join-Path $root 'docs/DISCOVERY_PLAYBACK_0111.md') -Destination $stage -Force
 Copy-Item -LiteralPath (Join-Path $root 'docs/MIX_QUEUE_LYRICS_0110.md') -Destination $stage -Force

@@ -9,6 +9,7 @@ AbstractButton {
     property color accentInk: "#009bd6"    // o MusicPanel passa o destaque do tema
     property color ink: filled ? accentInk : "#f5f5f5"
     implicitWidth: 44; implicitHeight: 44
+    opacity: enabled ? 1 : 0.4
     Accessible.name: description
     ToolTip.visible: hovered
     ToolTip.text: description
@@ -44,6 +45,11 @@ AbstractButton {
             case "palette":c.arc(12,12,9,0,Math.PI*2);for(let i=0;i<3;i++){c.moveTo(8+i*5,9+i%2*5);c.arc(7+i*5,9+i%2*5,1,0,Math.PI*2)}break
             case "font":line(4,5,20,5);line(12,5,12,21);line(8,21,16,21);break
             case "plus":line(12,4,12,20);line(4,12,20,12);break
+            case "repeat":case "repeat1":
+                // Repetir esta música: setas menores à esquerda e um "1" legível.
+                if(button.symbol==="repeat1"){c.translate(2,12);c.scale(.72,.72);c.translate(-2,-12)}
+                line(5,10,5,8);c.moveTo(5,8);c.lineTo(17,8);line(14,5,17,8);line(17,8,14,11);line(19,14,19,16);c.moveTo(19,16);c.lineTo(7,16);line(10,19,7,16);line(7,16,10,13)
+                if(button.symbol==="repeat1"){c.stroke();c.beginPath();c.setTransform(1,0,0,1,(width-24)/2,(height-24)/2);c.font="bold 11px sans-serif";c.textAlign="center";c.fillText("1",20,16.5)}break
             }c.stroke();c.restore()
         }
     }

@@ -1,6 +1,6 @@
 # Contexto do Tonal Hub
 
-Atualizado em **21/10/2026**. Estado do produto: **0.13.0** (temas, seek e fila sem recarregar). Leia também [AGENTS.md](AGENTS.md).
+Atualizado em **21/10/2026**. Estado do produto: **0.13.1** (repetição e modos da fila funcionando). Leia também [AGENTS.md](AGENTS.md).
 
 ## Projeto, autoria e objetivo
 
@@ -235,3 +235,18 @@ nem aparelho físico nesta sessão; sem novo benchmark.
 Instaláveis: `Tonal-Hub-0.13.0.0-Windows-x64-Setup.exe`,
 `Tonal-Android-0.13.0-arm64-v8a.apk` e `-local.apk` (versionCode 15).
 Backup privado 0.13: https://drive.google.com/drive/folders/1BR5bH6HQxCGUKrB0YAAMXTzp0ZQ0JBiI.
+
+## Entrega 0.13.1 — Repetição e modos da fila
+
+PC: Shake/Aleatório/Descoberta junto da barra (inferior e página da música)
+aplicam direto pela `ListeningMix::applyModes`, a partir da faixa que toca; a
+janela Fila mantém prévia + Aplicar. O Player guarda a fila do mix
+(`setOrderedQueue`) para o painel Fila e a encerra numa seleção comum
+(`selectionReplaced`). Na coleção que toca, os modos também valem na hora.
+Repetição: o librespot a zera a cada carga; o Player guarda a escolha e a
+reaplica (`reapplyRepeat`), ignora GET antigo por 3 s e reverte com aviso se
+o Spotify recusar. Pular desliga só a repetição de uma faixa.
+Android: `RepeatMode` + `NativeBridge` reaplicam `repeat:*`/`repeat-track:*`
+após cada seleção ou recuperação; botão Repetir na página da música, salvo em
+`settings/repeatMode`. Detalhes: [REPETICAO_MODOS_0131.md](docs/REPETICAO_MODOS_0131.md).
+Sem execução com Spotify real nesta sessão (permissão negada ao teste ao vivo).

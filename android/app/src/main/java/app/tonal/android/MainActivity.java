@@ -28,7 +28,7 @@ public final class MainActivity extends Activity {
     private final ArrayList<TextView> tabs=new ArrayList<>();
     private JSONObject currentTrack;
     private Runnable pendingPlayback;
-    private final Consumer<String> commandObserver=command->{if(command.equals("pause")){pendingPlayback=null;}if(command.equals("pause")||command.equals("toggle")||command.equals("next")||command.equals("prev")||command.startsWith("seek|"))cancelMix();if(command.startsWith("seek|"))anchorSeek(command.substring(5));};
+    private final Consumer<String> commandObserver=command->{if(command.equals("next"))saveRepeat();if(command.equals("pause")){pendingPlayback=null;}if(command.equals("pause")||command.equals("toggle")||command.equals("next")||command.equals("prev")||command.startsWith("seek|"))cancelMix();if(command.startsWith("seek|"))anchorSeek(command.substring(5));};
     // The engine seeks locally. Keep the shown clock on the requested position until
     // its Seeked event arrives; a late Web API poll must not pull the bar back.
     private final java.util.function.BiConsumer<String,Integer> progressObserver=(uri,position)->{if(this.local||!uri.equals(this.currentUri))return;long now=SystemClock.elapsedRealtime();if(now<this.seekGuardUntil&&Math.abs(position-this.seekTarget)>SEEK_TOLERANCE_MS)return;this.positionMs=position;this.positionAt=now;};
@@ -58,7 +58,7 @@ public final class MainActivity extends Activity {
     private int dp(int n){return Math.round(n*getResources().getDisplayMetrics().density);}
     private TextView label(String text,int size,int color){TextView v=new TextView(this);v.setText(text);v.setTextSize(size);v.setTextColor(color);v.setPadding(0,dp(4),0,dp(4));return v;}
     @Override public void onCreate(Bundle savedInstanceState){
-        super.onCreate(savedInstanceState);AppTheme.apply(this);getWindow().setStatusBarColor(Ui.BG);getWindow().setNavigationBarColor(Ui.BG);
+        super.onCreate(savedInstanceState);AppTheme.apply(this);NativeBridge.repeatMode=RepeatMode.sanitize(getSharedPreferences("settings",MODE_PRIVATE).getInt("repeatMode",0));getWindow().setStatusBarColor(Ui.BG);getWindow().setNavigationBarColor(Ui.BG);
         importTestSession();
         api=new SpotifyClient(this);engineApi=new SpotifyClient(this,true);ui=new Ui(this);artwork=new Artwork(this);
         diagnostics=BuildConfig.DEBUG&&(getIntent().getBooleanExtra("benchmark",false)||getIntent().getBooleanExtra("selfTest",false)||getIntent().getBooleanExtra("streamingBenchmark",false)||getIntent().getBooleanExtra("catalogTest",false));
@@ -97,6 +97,10 @@ public final class MainActivity extends Activity {
     private void home(){catalog.home();}
     private void search(){catalog.search();}
     private void library(){catalog.library();}
+    // Repeat applies now when the engine is ready; NativeBridge reapplies it after
+    // every new selection, which librespot would otherwise reset.
+    void cycleRepeat(){NativeBridge.repeatMode=RepeatMode.next(NativeBridge.repeatMode);saveRepeat();if(NativeBridge.ready&&!local)NativeBridge.applyRepeat();notice(RepeatMode.notice(NativeBridge.repeatMode));}
+    private void saveRepeat(){getSharedPreferences("settings",MODE_PRIVATE).edit().putInt("repeatMode",NativeBridge.repeatMode).apply();}
     void notice(String message){status.setText(message);}
     void login(){
         LinearLayout content=new LinearLayout(this);content.setOrientation(LinearLayout.VERTICAL);content.setPadding(dp(20),dp(8),dp(20),0);

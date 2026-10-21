@@ -98,6 +98,10 @@ final class Ui {
                 case "history":canvas.drawArc(4,4,21,21,220,320,false,p);canvas.drawLine(12,7,12,13,p);canvas.drawLine(12,13,16,15,p);canvas.drawLine(3,3,3,9,p);canvas.drawLine(3,9,9,9,p);break;
                 case "trash":canvas.drawLine(4,6,20,6,p);canvas.drawLine(9,3,15,3,p);canvas.drawLine(6,6,7,21,p);canvas.drawLine(7,21,17,21,p);canvas.drawLine(17,21,18,6,p);break;
                 case "plus":canvas.drawLine(12,4,12,20,p);canvas.drawLine(4,12,20,12,p);break;
+                case "repeat":case "repeat_one":{boolean one=name.equals("repeat_one");if(one){canvas.save();canvas.scale(.72f,.72f,2,12);}
+                    canvas.drawLine(5,10,5,8,p);canvas.drawLine(5,8,17,8,p);canvas.drawLine(14,5,17,8,p);canvas.drawLine(17,8,14,11,p);canvas.drawLine(19,14,19,16,p);canvas.drawLine(19,16,7,16,p);canvas.drawLine(10,19,7,16,p);canvas.drawLine(7,16,10,13,p);
+                    // Repeat this track: smaller arrows on the left and a readable "1".
+                    if(one){canvas.restore();Paint label=new Paint(p);label.setStyle(Paint.Style.FILL);label.setTextSize(11f);label.setTextAlign(Paint.Align.CENTER);label.setFakeBoldText(true);canvas.drawText("1",20f,16.5f,label);}break;}
                 case "logo":p.setStyle(Paint.Style.FILL);canvas.drawCircle(12,12,12,p);p.setColor(BG);for(int i=0;i<4;i++){float y=7-Math.abs(i-1.5f)*2;canvas.drawRoundRect(5+i*4,y,7+i*4,24-y,1,1,p);}p.setColor(BLUE);break;
                 default:canvas.drawRect(4,4,20,20,p);canvas.drawLine(4,16,10,10,p);canvas.drawLine(10,10,20,19,p);
             }canvas.restore();

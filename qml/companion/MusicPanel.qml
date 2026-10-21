@@ -36,11 +36,35 @@ Dialog {
         }
         prepareSongMix(shake)
     }
+    readonly property bool quickModes:!!mixController&&!!transportPlayer&&controller.current.provider==="Spotify"
+    function formatClock(ms){const s=Math.max(0,Math.floor((ms||0)/1000));return Math.floor(s/60)+":"+(s%60<10?"0":"")+(s%60)}
+    // Botões ao lado da barra: aplicam o modo direto na fila atual, a partir da
+    // música que toca. A fila vem do mix aplicado ou do Spotify.
+    property var pendingQuick:null
+    function applySongMode(mode){
+        if(!quickModes)return
+        let random=mixController.randomEnabled,discovery=mixController.discoveryEnabled
+        if(mode===1)random=!random
+        if(mode===2)discovery=!discovery
+        notice=""
+        const committed=committedQueue()
+        if(committed.length>1){mixController.applyModes(committed,mode===0,random,discovery);return}
+        pendingQuick={shake:mode===0,random:random,discovery:discovery,anchor:controller.current.uri||""}
+        transportPlayer.refreshQueue()
+    }
     function prepareSongMix(shake){
         let source=(queuedRows.length?queuedRows:songQueueSource).slice();if(shake&&mixController&&source.length>2){let rest=source.slice(1);source=[source[0]].concat(mixController.order(rest.length,Math.floor(Math.random()*2147483647)).map(i=>rest[i]))}
         queueEdited=true;mixController.preview(source,0,randomPlayback,discoveryPlayback,false)
     }
     Connections{target:panel.transportPlayer;ignoreUnknownSignals:true;function onQueueRefreshFinished(status){
+        if(panel.pendingQuick){
+            const m=panel.pendingQuick;panel.pendingQuick=null
+            if(m.anchor!==(panel.controller.current.uri||"")){panel.notice="A música mudou. Use o modo de novo.";return}
+            if(status!==200){panel.notice="Não foi possível carregar a fila (Spotify HTTP "+status+").";return}
+            const rows=[panel.controller.current].concat(panel.queueRows())
+            if(rows.length<2){panel.notice="A fila só tem a música atual. Abra um álbum ou playlist e toque a seleção.";return}
+            panel.mixController.applyModes(rows,m.shake,m.random,m.discovery);return
+        }
         if(!panel.queueLoading)return
         panel.queueLoading=false
         if(!queueDialog.visible||panel.queueAnchor!==(panel.controller.current.uri||"")){panel.pendingRemix=false;panel.queueNotice="A música mudou. Prepare a fila novamente.";return}
@@ -229,10 +253,24 @@ Dialog {
                         Label { text:(panel.controller.current.album || "")+" • "+(panel.controller.current.provider || ""); textFormat:Text.PlainText; color:"#a5a8ad"; Layout.fillWidth:true; elide:Text.ElideRight }
                     }
                 }
+                // Todos os controles juntos, perto da barra: Shake, Aleatório, anterior,
+                // tocar, próxima, Repetir, Descoberta 2+1 e Fila. Os modos aplicam direto;
+                // a janela Fila guarda a prévia com Aplicar.
                 RowLayout {
+                    objectName:"songControls"
+                    Layout.alignment:Qt.AlignHCenter
+                    spacing:4
+                    ActionIcon{accentInk:panel.tone.accent;objectName:"songShake";visible:panel.quickModes;enabled:!panel.mixController||!panel.mixController.busy;symbol:"shake";description:"Shake: sortear outra ordem da fila agora";onClicked:panel.applySongMode(0)}
+                    ActionIcon{accentInk:panel.tone.accent;objectName:"songRandom";visible:panel.quickModes;enabled:!panel.mixController||!panel.mixController.busy;symbol:"random";description:"Aleatório: tocar a fila em ordem aleatória / voltar à ordem";filled:!!panel.mixController&&panel.mixController.randomEnabled;onClicked:panel.applySongMode(1)}
                     ActionIcon { accentInk:panel.tone.accent;symbol:"prev";description:"Anterior"; enabled:!!panel.controller.current.title; onClicked:panel.previousRequested() }
                     ActionIcon { accentInk:panel.tone.accent;symbol:panel.playing?"pause":"play";description:panel.playing?"Pausar":"Reproduzir"; enabled:!!panel.controller.current.title; onClicked:panel.togglePlayback() }
                     ActionIcon { accentInk:panel.tone.accent;symbol:"next";description:"Próxima"; enabled:!!panel.controller.current.title; onClicked:panel.nextRequested() }
+                    ActionIcon{accentInk:panel.tone.accent;objectName:"songRepeat";visible:!!panel.transportPlayer&&typeof panel.transportPlayer.cycleRepeat==="function";symbol:panel.transportPlayer&&panel.transportPlayer.repeatMode==="track"?"repeat1":"repeat";filled:!!panel.transportPlayer&&panel.transportPlayer.repeatMode!=="off";description:!panel.transportPlayer||panel.transportPlayer.repeatMode==="off"?"Repetir a fila":panel.transportPlayer.repeatMode==="context"?"Repetindo a fila: repetir só esta música":"Repetindo esta música: desligar repetição";onClicked:panel.transportPlayer.cycleRepeat()}
+                    ActionIcon{accentInk:panel.tone.accent;objectName:"songDiscovery";visible:panel.quickModes;enabled:!panel.mixController||!panel.mixController.busy;symbol:"discover";description:panel.mixController&&panel.mixController.busy?panel.mixController.status:"Descoberta 2+1: duas da fila, uma descoberta / desligar";filled:!!panel.mixController&&panel.mixController.discoveryEnabled;onClicked:panel.applySongMode(2)}
+                    ActionIcon{accentInk:panel.tone.accent;objectName:"songQueueButton";visible:panel.quickModes;symbol:"queue";description:"Fila: ver, preparar com prévia e aplicar";onClicked:panel.openQueue()}
+                }
+                RowLayout {
+                    Label { text:panel.formatClock(songSeek.pressed?songSeek.value:panel.position); color:panel.tone.textSecondary; font.pixelSize:12; font.features:({"tnum":1}) }
                     Slider { id:songSeek; objectName:"songSeek"; Layout.fillWidth:true; from:0; to:Math.max(1,panel.controller.current.durationMs || 0); enabled:(panel.controller.current.durationMs || 0)>0
                         property real dragTarget:-1
                         readonly property var look:panel.tone.seek
@@ -246,13 +284,7 @@ Dialog {
                             Rectangle{visible:songSeek.look.glow;anchors.centerIn:parent;width:parent.width+10;height:parent.height+10;radius:height/2;color:songSeek.look.thumbBorder;opacity:songSeek.pressed?0.45:0.28}
                             Rectangle{anchors.centerIn:parent;width:songSeek.look.thumbShape==="diamond"?Math.round(parent.width*0.75):parent.width;height:songSeek.look.thumbShape==="diamond"?Math.round(parent.height*0.75):parent.height;rotation:songSeek.look.thumbShape==="diamond"?45:0;radius:songSeek.look.thumbShape==="diamond"?2:height/2;color:songSeek.look.thumb;border.width:songSeek.look.thumbShape==="ring"?3:(songSeek.look.thumbBorder!==songSeek.look.thumb?2:0);border.color:songSeek.look.thumbBorder}}
                     }
-                }
-                RowLayout {
-                    visible:!!panel.mixController&&!!panel.transportPlayer&&panel.controller.current.provider==="Spotify"
-                    ActionIcon{accentInk:panel.tone.accent;symbol:"shake";description:"Sortear outra ordem da fila";onClicked:panel.changeSongMode(0)}
-                    ActionIcon{accentInk:panel.tone.accent;symbol:"random";description:"Reprodução aleatória / ordem da lista";filled:panel.randomPlayback;onClicked:panel.changeSongMode(1)}
-                    ActionIcon{accentInk:panel.tone.accent;symbol:"discover";description:"Descoberta 2+1 / desativar";filled:panel.discoveryPlayback;onClicked:panel.changeSongMode(2)}
-                    ActionIcon{accentInk:panel.tone.accent;objectName:"songQueueButton";symbol:"queue";description:"Ver fila de reprodução";onClicked:panel.openQueue()}
+                    Label { text:panel.formatClock(panel.controller.current.durationMs||0); color:panel.tone.textSecondary; font.pixelSize:12; font.features:({"tnum":1}) }
                 }
                 RowLayout {
                     ActionIcon { accentInk:panel.tone.accent;symbol:"refresh";description:"Atualizar letra"; enabled: !panel.controller.busy; onClicked: panel.controller.fetchLyrics() }
@@ -300,6 +332,12 @@ Dialog {
         background:Rectangle{color:panel.tone.panel;radius:18;border.color:panel.tone.divider}
         header:Label{text:queueDialog.title;color:"#f5f5f5";font.pixelSize:22;font.bold:true;padding:18}
         ColumnLayout{anchors.fill:parent
+            RowLayout{visible:panel.quickModes
+                Label{text:"Prévia:";color:panel.tone.textSecondary}
+                ActionIcon{accentInk:panel.tone.accent;objectName:"previewShake";symbol:"shake";description:"Prévia com outra ordem";onClicked:panel.changeSongMode(0)}
+                ActionIcon{accentInk:panel.tone.accent;objectName:"previewRandom";symbol:"random";description:"Prévia com reprodução aleatória / ordem da lista";filled:panel.randomPlayback;onClicked:panel.changeSongMode(1)}
+                ActionIcon{accentInk:panel.tone.accent;objectName:"previewDiscovery";symbol:"discover";description:"Prévia com Descoberta 2+1 / desativar";filled:panel.discoveryPlayback;onClicked:panel.changeSongMode(2)}
+            }
             Label{Layout.fillWidth:true;wrapMode:Text.Wrap;color:"#c4c7cc";text:panel.queueEdited?"Confira a ordem e aplique para tocar. A faixa atual será retomada na posição atual.":"Agora e próximas músicas informadas pelo Spotify. A fila do serviço pode ser parcial."}
             Label{visible:!!panel.mixController;color:panel.tone.accentText;text:panel.queueLoading?"Carregando a fila atual do Spotify…":panel.queueNotice|| (panel.mixController?panel.mixController.status:"");Layout.fillWidth:true;wrapMode:Text.Wrap}
             CheckBox{text:"Analisar letras das candidatas em segundo plano";visible:panel.mixController&&typeof panel.mixController.enrichmentEnabled!=="undefined";checked:panel.mixController?panel.mixController.enrichmentEnabled:false;onToggled:if(panel.mixController)panel.mixController.enrichmentEnabled=checked}

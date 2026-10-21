@@ -47,6 +47,7 @@ Copy-Item -LiteralPath (Join-Path $root 'docs/TEXT_TO_TONALIFY_090.md') -Destina
 Copy-Item -LiteralPath (Join-Path $root 'docs/LISTENING_MIX_0100.md') -Destination (Join-Path $assets 'LISTENING_MIX_0100.md') -Force
 Copy-Item -LiteralPath (Join-Path $root 'resources/themes.json') -Destination (Join-Path $assets 'themes.json') -Force
 Copy-Item -LiteralPath (Join-Path $root 'docs/TEMAS_SEEK_FILA_0130.md') -Destination (Join-Path $assets 'TEMAS_SEEK_FILA_0130.md') -Force
+Copy-Item -LiteralPath (Join-Path $root 'docs/REPETICAO_MODOS_0131.md') -Destination (Join-Path $assets 'REPETICAO_MODOS_0131.md') -Force
 Copy-Item -LiteralPath (Join-Path $root 'docs/DISCOVERY_ENRICHMENT_0120.md') -Destination (Join-Path $assets 'DISCOVERY_ENRICHMENT_0120.md') -Force
 Copy-Item -LiteralPath (Join-Path $root 'docs/DISCOVERY_PLAYBACK_0111.md') -Destination (Join-Path $assets 'DISCOVERY_PLAYBACK_0111.md') -Force
 Copy-Item -LiteralPath (Join-Path $root 'docs/MIX_QUEUE_LYRICS_0110.md') -Destination (Join-Path $assets 'MIX_QUEUE_LYRICS_0110.md') -Force
@@ -56,6 +57,6 @@ if($PhoneOnly){$gradleArgs+='-PtonalAbi=arm64-v8a'}
 if($LASTEXITCODE -ne 0){throw 'Build APK falhou'}
 $outputPath=Join-Path $root 'out\android'
 New-Item -ItemType Directory -Force $outputPath | Out-Null
-$apkName=if($PhoneOnly){'Tonal-Android-0.13.0-arm64-v8a.apk'}else{'Tonal-Android-0.13.0-local.apk'}
+$apkName=if($PhoneOnly){'Tonal-Android-0.13.1-arm64-v8a.apk'}else{'Tonal-Android-0.13.1-local.apk'}
 Copy-Item -LiteralPath (Join-Path $root 'android\app\build\outputs\apk\release\app-release.apk') -Destination (Join-Path $outputPath $apkName) -Force
 Write-Host "APK local: $outputPath\$apkName"

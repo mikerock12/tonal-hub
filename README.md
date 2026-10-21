@@ -10,12 +10,20 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
-**Produto atual: 0.13.0. Documentação consolidada em 21/10/2026.**
+**Produto atual: 0.13.1. Documentação consolidada em 21/10/2026.**
 
-[Guia visual com 22 capturas](docs/GUIA_VISUAL.md) ·
+[Guia visual com 26 capturas](docs/GUIA_VISUAL.md) ·
 [Regras da Descoberta 2+1](docs/DESCOBERTA_2_MAIS_1.md) ·
 [Benchmarks realizados](docs/BENCHMARKS.md) ·
 [Contexto do projeto](contexto.md) · [Instruções de manutenção](AGENTS.md).
+
+## Novidades 0.13.1
+
+Todos os controles ficam juntos da barra de progresso: **Shake, Aleatório,
+anterior, tocar, próxima, Repetir e Descoberta 2+1**. No PC, os modos passam
+a valer na hora para a fila atual, sem recomeçar a música, e o painel Fila
+mostra a nova ordem. A **repetição** (fila ou uma faixa) agora funciona no PC
+e chegou ao Android. [O que mudou e por quê](docs/REPETICAO_MODOS_0131.md).
 
 ## Novidades 0.13.0
 
@@ -69,7 +77,8 @@ com versão e origem de cada imagem.
 |---|---|
 | **Catálogo Spotify** | Início, busca com filtros e histórico recente, músicas, artistas, álbuns, playlists e biblioteca; páginas de artista e coleção |
 | **Player e favoritos** | Play/pausa, anterior/próxima, posição, volume e coração azul preenchido; no celular, tocar no miniplayer abre a página da música |
-| **Fila e modos** | Shake visual, Aleatório de reprodução e Descoberta 2+1; prévia na página da música, identificação de descobertas e confirmação antes de aplicar |
+| **Fila e modos** | Shake, Aleatório e Descoberta 2+1 junto da barra de progresso, aplicados direto à fila atual; janela Fila com prévia e Aplicar; descobertas identificadas |
+| **Repetição** | Repetir a fila ou uma faixa no PC e no Android, mantida ao trocar de seleção |
 | **Playlists** | Biblioteca pessoal local; criar/editar playlists Spotify e suas faixas conforme a API permite; assistente Text to Tonalify com revisão de versões, ordem, nome, descrição e capa |
 | **Setlists no Windows** | Buscar shows no setlist.fm e transformar músicas encontradas no Spotify numa playlist; exige chave própria setlist.fm |
 | **Estatísticas** | Tempo realmente ouvido, escutas qualificadas e músicas distintas por artista, faixa, álbum, estilo e dia; barras clicáveis e resumos nas listas |

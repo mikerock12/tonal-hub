@@ -20,10 +20,16 @@ public final class NativeBridge {
     public static void command(String command){
         synchronized(intent){intent.command(command,playing);}
         if(command.equals("pause")||command.equals("stop")){audio.pause();playing=false;}
+        repeatMode=RepeatMode.afterCommand(repeatMode,command);
         Consumer<String> listener=commandListener;if(listener!=null)listener.accept(command);
         main.post(()->{for(Consumer<String> observer:commandListeners)observer.accept(command);});
         sendCommand(command);
+        // A new selection (including a recovery restore) resets repeat in librespot.
+        if(RepeatMode.loadsSelection(command)&&repeatMode!=RepeatMode.OFF)applyRepeat();
     }
+    /** RepeatMode.OFF/QUEUE/TRACK; MainActivity loads and saves the choice. */
+    static volatile int repeatMode;
+    static void applyRepeat(){for(String c:RepeatMode.engineCommands(repeatMode))sendCommand(c);}
     public static void onGeneration(long value){generation=value;}
     public static void onNativeStatus(long epoch,String value){if(epoch==generation)onStatus(value);}
     public static void onProgress(long epoch,String uri,int position,boolean active){

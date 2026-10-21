@@ -41,6 +41,19 @@ public final class PlaybackSafetyChecks {
         check(mix.position==90000&&mix.desired,"seek updates the recovery position without changing intent");
         mix.command("pause",true);mix.command("requeue|1000|spotify:track:a|queue|0|spotify:track:a",false);
         check(mix.desired,"applying a queue with play is an explicit play request");
+        // Repeat: off -> queue -> track -> off; reapplied after every selection
+        // load; skipping ahead leaves track repeat, the end of a track does not.
+        check(RepeatMode.next(RepeatMode.OFF)==RepeatMode.QUEUE&&RepeatMode.next(RepeatMode.QUEUE)==RepeatMode.TRACK&&RepeatMode.next(RepeatMode.TRACK)==RepeatMode.OFF,"repeat cycles through three modes");
+        check(String.join(",",RepeatMode.engineCommands(RepeatMode.TRACK)).equals("repeat:on,repeat-track:on"),"track repeat enables both engine flags");
+        check(String.join(",",RepeatMode.engineCommands(RepeatMode.QUEUE)).equals("repeat:on,repeat-track:off"),"queue repeat clears track repeat");
+        check(String.join(",",RepeatMode.engineCommands(RepeatMode.OFF)).equals("repeat:off,repeat-track:off"),"off clears both flags");
+        for(String load:new String[]{"queue|0|spotify:track:a","context|0|spotify:album:x","restore|1|spotify:track:a|queue|0|spotify:track:a","requeue|1|spotify:track:a|queue|0|spotify:track:a","spotify:track:a"})
+            check(RepeatMode.loadsSelection(load),"selection load reapplies repeat: "+load);
+        for(String other:new String[]{"next","prev","pause","toggle","seek|1000","repeat:on","shuffle:off"})
+            check(!RepeatMode.loadsSelection(other),"transport command keeps engine repeat: "+other);
+        check(RepeatMode.afterCommand(RepeatMode.TRACK,"next")==RepeatMode.QUEUE,"skipping ahead leaves track repeat like the official app");
+        check(RepeatMode.afterCommand(RepeatMode.TRACK,"prev")==RepeatMode.TRACK&&RepeatMode.afterCommand(RepeatMode.QUEUE,"next")==RepeatMode.QUEUE,"other commands keep the chosen repeat");
+        check(RepeatMode.sanitize(7)==RepeatMode.OFF&&RepeatMode.icon(RepeatMode.TRACK).equals("repeat_one"),"saved values are sanitized and track repeat has its own icon");
         System.out.println("PLAYBACK_SAFETY_PASS "+checks+" checks");
     }
 }

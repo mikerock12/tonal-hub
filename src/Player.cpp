@@ -290,8 +290,14 @@ void Player::applyState(const QJsonObject &obj) {
   const QJsonObject context = obj.value(QStringLiteral("context")).toObject();
   m_isPlaying = obj.value(QStringLiteral("is_playing")).toBool();
   m_shuffle = obj.value(QStringLiteral("shuffle_state")).toBool();
-  m_repeatMode =
+  // Repetição: logo depois de uma troca do usuário ou de uma nova seleção (que
+  // o librespot zera até reapplyRepeat chegar), um GET antigo não manda.
+  const QString remoteRepeat =
       obj.value(QStringLiteral("repeat_state")).toString(QStringLiteral("off"));
+  const bool repeatSettling = m_repeatClock.isValid() && m_repeatClock.elapsed() < 3000;
+  const bool selectionLoading = m_selectionClock.isValid() && m_selectionClock.elapsed() < 4000;
+  if (!repeatSettling && !(selectionLoading && m_repeatWanted != QLatin1String("off")))
+    m_repeatMode = m_repeatWanted = remoteRepeat;
   m_contextUri = context.value(QStringLiteral("uri")).toString();
   m_activeDeviceId = device.value(QStringLiteral("id")).toString();
   m_activeDeviceName = device.value(QStringLiteral("name")).toString();
@@ -364,6 +370,8 @@ void Player::checkLiked() {
 }
 
 void Player::refreshQueue() {
+  if (queueFromOrderedRows())
+    return;
   const auto generation = m_transportGeneration;
   const auto current = m_trackUri;
   m_api->get(QStringLiteral("/me/player/queue"), {},
@@ -607,8 +615,15 @@ void Player::sendPlay(const QJsonObject &body, const QString &deviceId,
   QVariantMap q;
   if (!deviceId.isEmpty())
     q.insert(QStringLiteral("device_id"), deviceId);
-  if (!body.isEmpty())
+  if (!body.isEmpty()) {
     cancelSeek();
+    m_selectionClock.restart();
+    if (!ordered) {
+      // Seleção comum (álbum, playlist, busca): a fila do mix deixa de valer.
+      m_orderedRows.clear();
+      emit selectionReplaced();
+    }
+  }
   const auto intent=++m_transportGeneration;
   m_transportIntentClock.restart();
   m_api->put(
@@ -616,6 +631,12 @@ void Player::sendPlay(const QJsonObject &body, const QString &deviceId,
       body.isEmpty() ? QJsonDocument() : QJsonDocument(body),
       [this, body, retried, ordered, intent, deviceId](int status, const QJsonDocument &) {
         if(ordered&&intent!=m_transportGeneration)return;
+        if(!body.isEmpty()&&status>=200&&status<300){
+          reapplyRepeat(deviceId);
+          // A faixa pode continuar a mesma ao reaplicar um mix: sem troca de
+          // faixa, a fila mostrada também precisa ser atualizada.
+          if(ordered)QTimer::singleShot(0,this,&Player::refreshQueue);
+        }
         if(ordered&&status>=200&&status<300){QVariantMap query{{"state",false}};if(!deviceId.isEmpty())query["device_id"]=deviceId;m_api->put("/me/player/shuffle",query,{},[this,intent](int s,const QJsonDocument&){if(intent!=m_transportGeneration)return;if(s>=200&&s<300){m_shuffle=false;emit stateChanged();}else emit message(tr("Não foi possível confirmar a ordem do mix no dispositivo."));});}
         if (status == 404 && !retried && !m_localDeviceId.isEmpty()) {
           // NO_ACTIVE_DEVICE: o dispositivo ativo sumiu, toca aqui.
@@ -697,6 +718,7 @@ void Player::next() {
   }
   cancelResume();
   cancelSeek();
+  skipLeavesTrackRepeat();
   if (m_audio)
     m_audio->flushSpotify();
   m_api->post(QStringLiteral("/me/player/next"), {}, {},
@@ -716,6 +738,7 @@ void Player::previous() {
     return;
   }
   cancelSeek();
+  skipLeavesTrackRepeat();
   m_api->post(QStringLiteral("/me/player/previous"), {}, {},
               [this](int, const QJsonDocument &) { refreshSoon(400); });
 }
@@ -781,18 +804,99 @@ void Player::toggleShuffle() {
 }
 
 void Player::cycleRepeat() {
-  if (localPlayback())
+  if (localPlayback()) {
+    emit message(tr("A repetição vale para músicas do Spotify."));
     return;
+  }
+  const QString previous = m_repeatMode;
   if (m_repeatMode == QLatin1String("off"))
     m_repeatMode = QStringLiteral("context");
   else if (m_repeatMode == QLatin1String("context"))
     m_repeatMode = QStringLiteral("track");
   else
     m_repeatMode = QStringLiteral("off");
+  m_repeatWanted = m_repeatMode;
+  m_repeatClock.restart();
   emit stateChanged();
-  m_api->put(QStringLiteral("/me/player/repeat"),
-             {{QStringLiteral("state"), m_repeatMode}}, {},
-             [this](int, const QJsonDocument &) { refreshSoon(600); });
+  QVariantMap query{{QStringLiteral("state"), m_repeatMode}};
+  if (!m_activeDeviceId.isEmpty())
+    query.insert(QStringLiteral("device_id"), m_activeDeviceId);
+  const QString wanted = m_repeatMode;
+  m_api->put(QStringLiteral("/me/player/repeat"), query, {},
+             [this, previous, wanted](int status, const QJsonDocument &) {
+               if ((status < 200 || status >= 300) && m_repeatWanted == wanted) {
+                 // Antes, a falha era silenciosa e o próximo GET só desfazia o ícone.
+                 m_repeatMode = m_repeatWanted = previous;
+                 emit stateChanged();
+                 emit message(status == 403
+                     ? tr("O Spotify não permite mudar a repetição nesta faixa (reprodução automática).")
+                     : tr("Não foi possível mudar a repetição (HTTP %1).").arg(status));
+               }
+               refreshSoon(800);
+             });
+}
+
+// O librespot zera repetição e aleatório a cada nova seleção (tocar álbum,
+// Shake, Descoberta 2+1). Reaplica a escolha do usuário logo depois da carga.
+void Player::reapplyRepeat(const QString &deviceId) {
+  if (m_repeatWanted == QLatin1String("off"))
+    return;
+  QVariantMap query{{QStringLiteral("state"), m_repeatWanted}};
+  if (!deviceId.isEmpty())
+    query.insert(QStringLiteral("device_id"), deviceId);
+  m_repeatClock.restart();
+  m_api->put(QStringLiteral("/me/player/repeat"), query, {},
+             [this](int, const QJsonDocument &) { refreshSoon(800); });
+}
+
+// Pular faixa desliga a repetição de uma faixa no librespot, como no app
+// oficial; a repetição da fila continua.
+void Player::skipLeavesTrackRepeat() {
+  if (m_repeatWanted != QLatin1String("track"))
+    return;
+  m_repeatMode = m_repeatWanted = QStringLiteral("context");
+  m_repeatClock.restart();
+  emit stateChanged();
+}
+
+void Player::setOrderedQueue(const QVariantList &rows) {
+  m_orderedRows = rows.mid(0, 500);
+}
+
+// Fila conhecida pelo próprio app (mix aplicado): mostra as próximas na hora,
+// inclusive quando a faixa atual não muda e o Spotify ainda não atualizou.
+bool Player::queueFromOrderedRows() {
+  if (m_orderedRows.isEmpty())
+    return false;
+  int index = -1;
+  for (int i = 0; i < m_orderedRows.size(); ++i)
+    if (m_orderedRows[i].toMap().value(QStringLiteral("uri")).toString() == m_trackUri) {
+      index = i;
+      break;
+    }
+  // Logo após a carga a faixa ainda pode ser a anterior; quem invalida a fila
+  // ordenada é uma seleção comum (selectionReplaced), não esta consulta.
+  if (index < 0)
+    return false;
+  m_queue.clear();
+  for (int i = index + 1; i < m_orderedRows.size(); ++i) {
+    const QVariantMap row = m_orderedRows[i].toMap();
+    QVariantMap item;
+    item.insert(QStringLiteral("uri"), row.value(QStringLiteral("uri")));
+    item.insert(QStringLiteral("name"), row.value(QStringLiteral("title"), row.value(QStringLiteral("name"))));
+    item.insert(QStringLiteral("artists"), row.value(QStringLiteral("artist"), row.value(QStringLiteral("artists"))));
+    item.insert(QStringLiteral("artistId"), row.value(QStringLiteral("artistId")));
+    item.insert(QStringLiteral("album"), row.value(QStringLiteral("album")));
+    item.insert(QStringLiteral("albumId"), row.value(QStringLiteral("albumId")));
+    item.insert(QStringLiteral("year"), row.value(QStringLiteral("year")));
+    item.insert(QStringLiteral("coverUrl"), row.value(QStringLiteral("image"), row.value(QStringLiteral("coverUrl"))));
+    item.insert(QStringLiteral("durationMs"), row.value(QStringLiteral("durationMs")));
+    item.insert(QStringLiteral("mixExternal"), row.value(QStringLiteral("mixExternal")).toBool());
+    m_queue << item;
+  }
+  emit queueChanged();
+  emit queueRefreshFinished(200);
+  return true;
 }
 
 void Player::toggleLike() {
@@ -860,12 +964,15 @@ void Player::playUris(const QStringList &uris, int offsetIndex) {
   sendPlay(body, targetDeviceForPlay());
 }
 
-void Player::playOrderedUris(const QStringList& uris){playOrderedUrisAt(uris,0);}
-void Player::playOrderedUrisAt(const QStringList& uris,int position){if(uris.isEmpty())return;emit playbackRequested();cancelResume();
+void Player::playOrderedUris(const QStringList& uris){playOrdered(uris,0,false);}
+void Player::playOrderedUrisAt(const QStringList& uris,int position){playOrdered(uris,position,true);}
+// keepCurrent: reaplicar a fila a partir da faixa que já toca (Fila, Shake,
+// Aleatório, Descoberta). Uma seleção nova começa do início pedido.
+void Player::playOrdered(const QStringList& uris,int position,bool keepCurrent){if(uris.isEmpty())return;emit playbackRequested();cancelResume();
   // Reaplicar a fila começando pela faixa que já toca: o librespot reaproveita o
   // decoder e só ajusta a posição. Usa a posição de agora mais a latência medida
   // do comando, para o ajuste cair onde o áudio estará, sem voltar um trecho.
-  if(uris.first()==m_trackUri&&m_isPlaying&&playingHere()&&!localPlayback()){const int ahead=positionMs()+m_commandLatencyMs;position=m_durationMs>0?qMin(m_durationMs-1,ahead):ahead;}if(localPlayback())m_audio->returnToSpotify();m_lastUris=uris.mid(0,500);m_shuffle=false;emit stateChanged();QJsonObject body{{"uris",QJsonArray::fromStringList(m_lastUris)},{"position_ms",std::max(0,position)},{"offset",QJsonObject{{"position",0}}}};sendPlay(body,targetDeviceForPlay(),false,true);}
+  if(keepCurrent&&uris.first()==m_trackUri&&m_isPlaying&&playingHere()&&!localPlayback()){const int ahead=positionMs()+m_commandLatencyMs;position=m_durationMs>0?qMin(m_durationMs-1,ahead):ahead;}if(localPlayback())m_audio->returnToSpotify();m_lastUris=uris.mid(0,500);m_shuffle=false;emit stateChanged();QJsonObject body{{"uris",QJsonArray::fromStringList(m_lastUris)},{"position_ms",std::max(0,position)},{"offset",QJsonObject{{"position",0}}}};sendPlay(body,targetDeviceForPlay(),false,true);}
 
 void Player::addToQueue(const QString &uri) {
   m_api->post(

@@ -1,5 +1,17 @@
 # Changelog
 
+## Tonal Hub pessoal 0.13.1 — 21/10/2026
+
+- PC: todos os controles junto da barra de progresso (Shake, Aleatório,
+  anterior, tocar, próxima, Repetir, Descoberta 2+1); os modos aplicam direto
+  na fila atual e o painel Fila mostra a ordem aplicada. A janela Fila mantém
+  prévia e Aplicar.
+- Repetição consertada no PC: reaplicada após cada nova seleção (o librespot
+  a zerava), sem ser desfeita por consulta atrasada e com aviso em recusa.
+- Android: Repetir a fila e repetir uma faixa na página da música, salvo no
+  aparelho e reaplicado após cada seleção ou recuperação.
+- [Detalhes e validação](docs/REPETICAO_MODOS_0131.md).
+
 ## Tonal Hub pessoal 0.13.0 — 21/10/2026
 
 - Seis temas (Tonal Azul, Aurora, Pôr do sol, Neon, Oceano, Grafite suave) no

@@ -109,6 +109,8 @@ public:
   Q_INVOKABLE void playUris(const QStringList &uris, int offsetIndex = 0);
   Q_INVOKABLE void playOrderedUris(const QStringList &uris);
   void playOrderedUrisAt(const QStringList &uris,int position);
+  // Linhas do mix aplicado (título, artista, capa, Descoberta) para a Fila.
+  Q_INVOKABLE void setOrderedQueue(const QVariantList &rows);
   Q_INVOKABLE void addToQueue(const QString &uri);
   Q_INVOKABLE void transferTo(const QString &deviceId);
   Q_INVOKABLE void refresh();
@@ -125,6 +127,8 @@ signals:
   void localDeviceChanged();
   void queueChanged();
   void queueRefreshFinished(int status);
+  // Uma seleção comum (não um mix) substituiu a reprodução.
+  void selectionReplaced();
   void devicesChanged();
   void message(const QString &text);
 
@@ -166,6 +170,15 @@ private:
   int m_commandLatencyMs = 250;
   bool seekSettling(int remoteMs) const;
   void cancelSeek();
+  // Repetição escolhida pelo usuário; o librespot a zera a cada nova seleção.
+  QString m_repeatWanted = QStringLiteral("off");
+  QElapsedTimer m_repeatClock;
+  QElapsedTimer m_selectionClock;
+  QVariantList m_orderedRows;
+  void reapplyRepeat(const QString &deviceId);
+  void skipLeavesTrackRepeat();
+  bool queueFromOrderedRows();
+  void playOrdered(const QStringList &uris, int position, bool keepCurrent);
   QElapsedTimer m_positionClock;
   QElapsedTimer m_transportIntentClock;
   uint64_t m_transportGeneration = 0;

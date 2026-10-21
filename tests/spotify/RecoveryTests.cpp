@@ -230,6 +230,86 @@ public:
     } catch (const std::exception &e) { report["error"] = QString::fromUtf8(e.what()); }
     return report;
   }
+  // Real Connect session on the isolated diagnostic device (null audio
+  // driver): the ordered mix, a reapplied order and the repeat modes must be
+  // what Spotify reports back, not only what the UI shows.
+  static QStringList liveQueue(SpotifyApi &api) {
+    bool received = false;
+    QStringList uris;
+    api.get("/me/player/queue", {}, [&](int code, const QJsonDocument &doc) {
+      if (code == 200)
+        for (const auto value : doc.object()["queue"].toArray())
+          uris << value.toObject()["uri"].toString();
+      received = true;
+    });
+    spin([&] { return received; }, 15000);
+    return uris;
+  }
+  static QJsonObject liveState(SpotifyApi &api) {
+    bool received = false;
+    QJsonObject state;
+    api.get("/me/player", {}, [&](int, const QJsonDocument &doc) {
+      state = doc.object();
+      received = true;
+    });
+    spin([&] { return received; }, 15000);
+    return state;
+  }
+  static QJsonArray toJson(const QStringList &list) {
+    QJsonArray out;
+    for (const auto &s : list)
+      out.append(s);
+    return out;
+  }
+  static void verifyMixLive(SpotifyApi &api, Player &player,
+                            tonal::audio::AudioEngine &audio,
+                            const QStringList &tracks, QJsonObject &report) {
+    require(tracks.size() >= 4, "Need four recent tracks for the mix check");
+    const QStringList order = tracks.mid(0, 4);
+    player.playOrderedUris(order);
+    require(spin([&] { return player.trackUri() == order[0] && player.isPlaying(); }, 20000),
+            "Ordered mix did not start on its first track");
+    wait(2500);
+    const auto first = liveQueue(api);
+    report["ordered_queue"] = toJson(first.mid(0, 3));
+    report["ordered_queue_expected"] = toJson(order.mid(1, 3));
+    report["ordered_shuffle_state"] = liveState(api)["shuffle_state"].toBool();
+    require(first.mid(0, 3) == order.mid(1, 3), "Ordered mix not reflected in the Spotify queue");
+    const QStringList shaken{order[0], order[3], order[1], order[2]};
+    auto frames = audio.spotifyFramesRead();
+    player.playOrderedUrisAt(shaken, player.positionMs());
+    wait(3000);
+    const auto second = liveQueue(api);
+    report["requeue_queue"] = toJson(second.mid(0, 3));
+    report["requeue_expected"] = toJson(shaken.mid(1, 3));
+    report["requeue_kept_track"] = player.trackUri() == order[0];
+    report["requeue_pcm_frames_3s"] = qint64(audio.spotifyFramesRead() - frames);
+    require(second.mid(0, 3) == shaken.mid(1, 3), "Reapplied order not reflected in the Spotify queue");
+    QJsonArray repeats;
+    for (const char *expected : {"context", "track", "off"}) {
+      player.cycleRepeat();
+      wait(2500);
+      const auto state = liveState(api);
+      repeats.append(QJsonObject{{"expected", expected},
+                                 {"spotify", state["repeat_state"].toString()},
+                                 {"ui", player.repeatMode()}});
+      require(state["repeat_state"].toString() == QLatin1String(expected) &&
+                  player.repeatMode() == QLatin1String(expected),
+              "Repeat mode not applied by the real session");
+      if (QLatin1String(expected) == QLatin1String("track")) {
+        // Track repeat: after the end, the same track starts again.
+        const int duration = player.durationMs();
+        player.seek(qMax(0, duration - 4000));
+        wait(9000);
+        const auto after = liveState(api);
+        const bool same = after["item"].toObject()["uri"].toString() == order[0];
+        report["repeat_track_restarted_same"] = same;
+        report["repeat_track_progress_after_end"] = after["progress_ms"].toInt();
+        require(same && after["progress_ms"].toInt() < 9000, "Repeat track did not restart the same track");
+      }
+    }
+    report["repeat_cycle"] = repeats;
+  }
   static QJsonObject liveSession(bool readyOnly = false) {
     QJsonObject report{{"passed", false},
                        {"real_spotify_session", true},
@@ -381,6 +461,18 @@ public:
                   },
                   20000),
               "Initial real Spotify PCM did not advance");
+      if (QCoreApplication::arguments().contains("--verify-mix")) {
+        verifyMixLive(api, player, audio, tracks, report);
+        player.cancelResume();
+        player.m_isPlaying = false;
+        received = false;
+        api.put("/me/player/pause", {{"device_id", player.localDeviceId()}}, {},
+                [&](int code, const QJsonDocument &) { status = code; received = true; });
+        spin([&] { return received; }, 15000);
+        engine.stop();
+        report["passed"] = true;
+        return report;
+      }
       const auto firstPid = engine.m_process.processId();
       engine.m_process.kill();
       require(spin(
@@ -674,6 +766,84 @@ public:
     require(sent>=before+300&&sent<before+300+400,"requeue did not use current position plus latency");
     std::cout<<"PASS seek coalescing, stale poll guard and requeue position\n";
   }
+  // 0.13.1: repeat survives new selections and stale polls, a failed change
+  // is reverted and explained, skipping leaves track repeat, the applied mix
+  // is the queue shown, and the player buttons apply modes directly.
+  static void repeatAndMixQueue() {
+    QTemporaryDir storage;
+    FakeNetwork network;
+    AuthManager auth(&network);
+    SpotifyApi api(&network, &auth);
+    tonal::audio::AudioEngine audio(nullptr, storage.path()+"/audio");
+    LibrespotProcess engine(nullptr, storage.path());
+    Player player(&api, &engine, &auth);
+    player.setAudioEngine(&audio);
+    fakeAuth(auth);
+    player.m_localDeviceId="local-device";
+    QJsonObject state{{"is_playing",true},{"progress_ms",30000},{"repeat_state","off"},
+      {"device",QJsonObject{{"id","local-device"}}},
+      {"item",QJsonObject{{"uri","spotify:track:a"},{"duration_ms",200000}}}};
+    player.applyState(state);
+    QStringList repeats;int plays=0,queueGets=0,repeatStatus=204;
+    network.respond=[&](const QNetworkRequest &req,const QByteArray &){
+      const auto path=req.url().path();
+      if(path.endsWith("/repeat")){repeats<<QUrlQuery(req.url()).queryItemValue("state");return Response{repeatStatus};}
+      if(path.endsWith("/play"))++plays;
+      if(path.endsWith("/queue"))++queueGets;
+      return Response{};
+    };
+    player.cycleRepeat();
+    require(player.repeatMode()=="context"&&spin([&]{return repeats.size()==1;},800)&&repeats[0]=="context","repeat change not sent");
+    player.applyState(state);
+    require(player.repeatMode()=="context","stale GET undid the repeat change");
+    player.m_repeatClock.invalidate();
+    player.playUris({"spotify:track:b"});
+    require(spin([&]{return plays==1&&repeats.size()==2;},800)&&repeats[1]=="context","repeat not reapplied after a new selection");
+    player.applyState(state);
+    require(player.repeatMode()=="context","selection reset shown as repeat off");
+    player.m_repeatClock.invalidate();player.m_selectionClock.invalidate();
+    state["repeat_state"]="context";player.applyState(state);
+    player.cycleRepeat();
+    require(player.repeatMode()=="track"&&spin([&]{return repeats.size()==3;},800)&&repeats[2]=="track","track repeat not sent");
+    player.next();
+    require(player.repeatMode()=="context","skipping ahead must leave track repeat");
+    QString notice;QObject::connect(&player,&Player::message,&player,[&](const QString &m){notice=m;});
+    repeatStatus=403;player.cycleRepeat();
+    require(spin([&]{return !notice.isEmpty();},800)&&player.repeatMode()=="context","failed repeat change not reverted and explained");
+    repeatStatus=204;
+    player.m_trackUri="spotify:track:a";
+    auto row=[](const QString &id,bool external){return QVariant(QVariantMap{{"provider","Spotify"},{"uri","spotify:track:"+id},{"title","Title "+id},{"artist","Artist "+id},{"image","https://i/"+id},{"durationMs",180000},{"mixExternal",external}});};
+    player.setOrderedQueue({row("a",false),row("x",true),row("c",false)});
+    int finished=-1;QObject::connect(&player,&Player::queueRefreshFinished,&player,[&](int s){finished=s;});
+    queueGets=0;player.refreshQueue();
+    require(finished==200&&queueGets==0&&player.queue().size()==2&&player.queue()[0].toMap()["mixExternal"].toBool()&&player.queue()[0].toMap()["name"]=="Title x","applied mix not shown as the queue");
+    bool replaced=false;QObject::connect(&player,&Player::selectionReplaced,&player,[&]{replaced=true;});
+    player.playOrderedUrisAt({"spotify:track:a","spotify:track:c"},1000);
+    require(!replaced&&!player.m_orderedRows.isEmpty(),"an applied mix was treated as a plain selection");
+    player.playUris({"spotify:track:z"});
+    require(replaced&&player.m_orderedRows.isEmpty(),"a plain selection kept the old mix queue");
+
+    MusicCompanion music(nullptr, storage.path()+"/companion");
+    ListeningMix mix(&api,&music);
+    QVariantList source;for(int i=0;i<6;++i)source<<QVariantMap{{"provider","Spotify"},{"id",QString("spotify:track:s%1").arg(i)},{"uri",QString("spotify:track:s%1").arg(i)},{"title",QString("Song %1").arg(i)},{"artist","Hole"},{"albumId","album"},{"year",1994}};
+    int resumed=0;QVariantList applied;QObject::connect(&mix,&ListeningMix::resumeReady,&mix,[&](const QVariantList &rows,int){++resumed;applied=rows;});
+    bool reordered=false;
+    for(int attempt=0;attempt<6&&!reordered;++attempt){
+      mix.applyModes(source,true,false,false);
+      require(resumed==attempt+1&&applied.size()==6&&applied[0]==source[0],"shake must apply now and keep the current song first");
+      reordered=applied!=source;
+    }
+    require(reordered&&mix.queueFor("spotify:track:s0").size()==6,"shake did not change the applied queue");
+    mix.applyModes(source,false,true,false);
+    require(mix.randomEnabled()&&applied[0]==source[0],"random mode not applied from the current song");
+    mix.forgetApplied();
+    require(!mix.randomEnabled()&&mix.queueFor("spotify:track:s0").isEmpty(),"a plain selection kept the mix modes");
+    network.respond=[](const QNetworkRequest &,const QByteArray &){return Response{200,{},true};};
+    const int before=resumed;
+    mix.applyModes(source,false,false,true);mix.cancel();spin([]{return false;},150);
+    require(resumed==before&&!mix.busy(),"cancelled discovery still replaced the queue");
+    std::cout<<"PASS repeat persistence, ordered mix queue and direct mode buttons\n";
+  }
   static void deadlines() {
     QTemporaryDir storage;
     FakeNetwork network;
@@ -931,6 +1101,7 @@ int main(int argc, char **argv) {
       SpotifyRecoveryTests::networkAndResume();
       SpotifyRecoveryTests::remoteTransport();
       SpotifyRecoveryTests::seekAndRequeue();
+      SpotifyRecoveryTests::repeatAndMixQueue();
       SpotifyRecoveryTests::deadlines();
       SpotifyRecoveryTests::playlistTransport();
       SpotifyRecoveryTests::listeningMix();
