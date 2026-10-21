@@ -9,7 +9,11 @@ import android.widget.*;
 
 /** Small native view vocabulary shared by the catalog and transport. */
 final class Ui {
-    static final int BG=0xff101112,CARD=0xff202224,PANEL=0xff18191b,TEXT=0xfff5f5f5,MUTED=0xffa5a8ad,BLUE=0xff009bd6;
+    // Active theme colors (AppTheme.apply). Defaults are the original Tonal Azul.
+    static int BG=0xff101112,CARD=0xff202224,PANEL=0xff18191b,TEXT=0xfff5f5f5,MUTED=0xffa5a8ad,BLUE=0xff009bd6,ACCENT_SOFT=0xff7ddbff,TINT=0xff263748,ON_ACCENT=0xff000000;
+    // Progress bar and thumb of the active theme.
+    static int SEEK_TRACK=0xff404040,SEEK_START=0xff009bd6,SEEK_END=0xff009bd6,THUMB=0xfff5f5f5,THUMB_BORDER=0xfff5f5f5,SEEK_HEIGHT=4,THUMB_SIZE=14;
+    static String THUMB_SHAPE="circle";static boolean THUMB_GLOW;
     final Context context;
     Ui(Context context){this.context=context;}
     int dp(int n){return Math.round(n*context.getResources().getDisplayMetrics().density);}
@@ -28,6 +32,35 @@ final class Ui {
     TextView pill(String text,boolean active,Runnable click){TextView v=text(text,13,active?BG:TEXT);v.setGravity(Gravity.CENTER);pad(v,16,11);rounded(v,active?TEXT:CARD,24);clickable(v,click);return v;}
     TextView action(String text,Runnable click){TextView v=text(text,14,TEXT);v.setGravity(Gravity.CENTER);pad(v,16,13);rounded(v,CARD,8);clickable(v,click);return v;}
     ImageButton icon(String name,String description,Runnable click){ImageButton b=new ImageButton(context);b.setImageDrawable(new Symbol(name,TEXT));b.setScaleType(ImageView.ScaleType.CENTER_INSIDE);b.setContentDescription(description);b.setTooltipText(description);b.setBackground(background(0x00000000,24));b.setPadding(dp(12),dp(12),dp(12),dp(12));b.setMinimumWidth(dp(48));b.setMinimumHeight(dp(48));clickable(b,click);return b;}
+    /** Themed track, gradient fill and thumb shape; the touch target stays 40 dp tall. */
+    void seek(SeekBar bar){
+        int height=dp(SEEK_HEIGHT);
+        GradientDrawable track=new GradientDrawable();track.setColor(SEEK_TRACK);track.setCornerRadius(height);
+        GradientDrawable fill=new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,new int[]{SEEK_START,SEEK_END});fill.setCornerRadius(height);
+        LayerDrawable layers=new LayerDrawable(new Drawable[]{track,new ClipDrawable(fill,Gravity.START,ClipDrawable.HORIZONTAL)});
+        layers.setId(0,android.R.id.background);layers.setId(1,android.R.id.progress);
+        for(int i=0;i<2;i++){layers.setLayerHeight(i,height);layers.setLayerGravity(i,Gravity.CENTER_VERTICAL|Gravity.FILL_HORIZONTAL);}
+        bar.setProgressDrawable(layers);bar.setThumb(thumb());bar.setSplitTrack(false);bar.setBackground(null);
+    }
+    Drawable thumb(){
+        int size=dp(THUMB_SIZE);boolean pill=THUMB_SHAPE.equals("pill");
+        GradientDrawable core=new GradientDrawable();core.setColor(THUMB);
+        if(THUMB_SHAPE.equals("ring"))core.setStroke(dp(3),THUMB_BORDER);else if(THUMB_BORDER!=THUMB)core.setStroke(dp(2),THUMB_BORDER);
+        if(THUMB_SHAPE.equals("diamond")){core.setCornerRadius(dp(2));int side=Math.round(size*0.75f);core.setSize(side,side);
+            RotateDrawable turned=new RotateDrawable();turned.setDrawable(core);turned.setFromDegrees(45);turned.setToDegrees(45);turned.setLevel(1);
+            LayerDrawable box=new LayerDrawable(new Drawable[]{turned});box.setLayerSize(0,size,size);return box;}
+        core.setCornerRadius(size);core.setSize(pill?Math.round(size*1.6f):size,pill?Math.round(size*0.8f):size);
+        if(!THUMB_GLOW)return core;
+        GradientDrawable halo=new GradientDrawable();halo.setShape(GradientDrawable.OVAL);halo.setColor((THUMB_BORDER&0x00ffffff)|0x48000000);
+        LayerDrawable glow=new LayerDrawable(new Drawable[]{halo,core});int outer=size+dp(10);glow.setLayerSize(0,outer,outer);glow.setLayerSize(1,size,size);glow.setLayerGravity(1,Gravity.CENTER);return glow;
+    }
+    /** Mini-player progress: same fill as the theme's seek bar, without a thumb. */
+    void progress(ProgressBar bar){
+        GradientDrawable track=new GradientDrawable();track.setColor(SEEK_TRACK);track.setCornerRadius(dp(2));
+        GradientDrawable fill=new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,new int[]{SEEK_START,SEEK_END});fill.setCornerRadius(dp(2));
+        LayerDrawable layers=new LayerDrawable(new Drawable[]{track,new ClipDrawable(fill,Gravity.START,ClipDrawable.HORIZONTAL)});
+        layers.setId(0,android.R.id.background);layers.setId(1,android.R.id.progress);bar.setProgressDrawable(layers);bar.setProgressTintList(null);
+    }
     ImageButton favorite(boolean liked,Runnable click){ImageButton b=icon(liked?"heart_filled":"heart",liked?"Remover das favoritas":"Favoritar música",click);b.setImageDrawable(new Symbol(liked?"heart_filled":"heart",liked?BLUE:TEXT));return b;}
     static final class Symbol extends Drawable {
         private final String name;private final Paint p=new Paint(3);

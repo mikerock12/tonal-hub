@@ -33,7 +33,7 @@ final class AudioPanel {
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){int previous=selected;public void onItemSelected(AdapterView<?> p,View v,int i,long id){if(previous==i)return;previous=i;if(!building){change.accept(i);save();}}public void onNothingSelected(AdapterView<?> p){}});
     }
     private void slider(String name,float value,float min,float max,float step,Consumer<Float> change){
-        TextView label=ui.text(valueLabel(name,value),13,Ui.MUTED);content.addView(label);SeekBar bar=new SeekBar(activity);bar.setContentDescription(name);bar.setMax(Math.round((max-min)/step));bar.setProgress(Math.round((value-min)/step));content.addView(bar,new LinearLayout.LayoutParams(-1,ui.dp(40)));
+        TextView label=ui.text(valueLabel(name,value),13,Ui.MUTED);content.addView(label);SeekBar bar=new SeekBar(activity);ui.seek(bar);bar.setContentDescription(name);bar.setMax(Math.round((max-min)/step));bar.setProgress(Math.round((value-min)/step));content.addView(bar,new LinearLayout.LayoutParams(-1,ui.dp(40)));
         bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar v,int n,boolean user){if(user){float gain=min+n*step;label.setText(valueLabel(name,gain));change.accept(gain);save();}}public void onStartTrackingTouch(SeekBar v){}public void onStopTrackingTouch(SeekBar v){}});
     }
     private static String valueLabel(String name,float value){return name+String.format(Locale.ROOT," · %.1f %s",value,name.contains("LUFS")?"LUFS":"dB");}

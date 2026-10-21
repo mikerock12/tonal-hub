@@ -12,8 +12,11 @@ diferenças entre as plataformas.
 3. Use Reproduzir para aplicar os modos à seleção. Na página da música, abra
    **Fila** para preparar e conferir uma nova sequência antes de aplicá-la.
 4. Confira as entradas marcadas como **Descoberta** e confirme **Aplicar e
-   reproduzir fila**, quando estiver na prévia. A faixa atual é retomada na
-   posição atual; aplicar pode recarregá-la brevemente.
+   reproduzir fila**, quando estiver na prévia. A faixa atual continua
+   tocando: desde a 0.13.0, o Android troca só a ordem seguinte, sem
+   recarregá-la; no PC, a Web API reenvia a faixa na posição atual mais a
+   latência medida, sem esvaziar o buffer. Detalhes em
+   [TEMAS_SEEK_FILA_0130.md](TEMAS_SEEK_FILA_0130.md).
 
 Exemplo: **original A → original B → descoberta X → original C → original D →
 descoberta Y**. A playlist salva não é alterada. Depois de preparada, a fila

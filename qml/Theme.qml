@@ -1,33 +1,52 @@
 pragma Singleton
 import QtQuick
 
-// Todas as cores e medidas do app num lugar só.
+// Todas as cores e medidas do app num lugar só. As cores vêm do tema escolhido
+// (App.theme, lido de resources/themes.json, o mesmo catálogo do Android);
+// trocar o tema atualiza todas as telas na hora, sem reiniciar.
 QtObject {
-    // Cor de destaque do Tonal. Troque aqui para mudar a identidade do app inteiro.
-    // Paleta: azul, preto e branco (o preto e o branco já são o fundo e o texto).
-    readonly property color accent: "#0d80bf"        // azul de destaque: botões, barras, pontos, ícones ativos
-    readonly property color accentHover: "#3193c9"
-    // Texto em destaque sobre o fundo escuro: o #0d80bf dá só 4,3:1 no #121212 (abaixo de 4,5 para texto
-    // pequeno), então o texto usa um azul mais claro do mesmo tom (6,4:1).
-    readonly property color accentText: "#4aa0cf"
-    readonly property color accentDeep: "#0a3d5c"    // fundos tingidos (degradê da Home, Músicas Curtidas)
-    readonly property color textOnAccent: "#000000"  // preto sobre o azul: 4,9:1 (branco daria 4,3:1)
+    // Tema "Tonal Azul" embutido: vale se o catálogo não carregar (e nos testes de QML).
+    readonly property var fallback: ({
+        id: "tonal", name: "Tonal Azul",
+        bg: "#000000", panel: "#121212", card: "#1f1f1f", cardHover: "#2a2a2a",
+        text: "#ffffff", textSecondary: "#b3b3b3", textMuted: "#8a8a8a",
+        accent: "#0d80bf", accentHover: "#3193c9", accentText: "#4aa0cf",
+        accentDeep: "#0a3d5c", onAccent: "#000000", divider: "#2a2a2a",
+        seek: { height: 4, activeHeight: 6, track: "#4d4d4d", fill: ["#ffffff", "#ffffff"],
+                activeFill: ["#0d80bf", "#3193c9"], thumb: "#ffffff", thumbBorder: "#ffffff",
+                thumbSize: 12, thumbShape: "circle", thumbAlways: false, glow: false }
+    })
+    readonly property var palette: App.theme && App.theme.current && App.theme.current.id ? App.theme.current : fallback
+    readonly property var themes: App.theme && App.theme.themes && App.theme.themes.length ? App.theme.themes : [fallback]
+    readonly property string themeId: palette.id
+    function setTheme(id) { if (App.theme) App.theme.themeId = id }
 
-    readonly property color windowBg: "#000000"
-    readonly property color panel: "#121212"
-    readonly property color elevated: "#1f1f1f"
-    readonly property color elevatedHover: "#2a2a2a"
+    // Destaque do tema: botões, barras, pontos, ícones ativos. No Tonal Azul, o texto em destaque usa
+    // um azul mais claro (6,4:1 no painel) e o texto sobre o destaque é preto (4,9:1).
+    readonly property color accent: palette.accent
+    readonly property color accentHover: palette.accentHover
+    readonly property color accentText: palette.accentText
+    readonly property color accentDeep: palette.accentDeep    // fundos tingidos (degradê da Home, Músicas Curtidas)
+    readonly property color textOnAccent: palette.onAccent
+
+    readonly property color windowBg: palette.bg
+    readonly property color panel: palette.panel
+    readonly property color elevated: palette.card
+    readonly property color elevatedHover: palette.cardHover
     readonly property color rowHover: Qt.rgba(1, 1, 1, 0.1)
     readonly property color cardHover: Qt.rgba(1, 1, 1, 0.07)
     readonly property color tile: Qt.rgba(1, 1, 1, 0.07)
     readonly property color tileHover: Qt.rgba(1, 1, 1, 0.16)
     readonly property color divider: Qt.rgba(1, 1, 1, 0.1)
-    readonly property color trackBg: "#4d4d4d"
+    readonly property color trackBg: palette.seek.track
 
-    readonly property color textPrimary: "#ffffff"
-    readonly property color textSecondary: "#b3b3b3"
-    readonly property color textMuted: "#8a8a8a"
+    readonly property color textPrimary: palette.text
+    readonly property color textSecondary: palette.textSecondary
+    readonly property color textMuted: palette.textMuted
     readonly property color danger: "#f15e6c"
+
+    // Barra de progresso/volume e o marcador (thumb) de cada tema.
+    readonly property var seek: palette.seek
 
     readonly property int radiusPanel: 8
     readonly property int radiusCard: 6

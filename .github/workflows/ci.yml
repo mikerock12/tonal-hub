@@ -48,6 +48,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python tests/playlist/run_ui.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tests/themes/check_themes.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python tests/mix/run_ui.py
   android-java:
     runs-on: ubuntu-latest

@@ -1185,6 +1185,7 @@ impl SpircTask {
                             seek_to: play.options.seek_to.unwrap_or_default(),
                             playing_track: play.options.skip_to.and_then(|s| s.try_into().ok()),
                             context_options,
+                            keep_playing_track: false,
                         },
                     },
                     play.context.pages.pop(),
@@ -1417,7 +1418,8 @@ impl SpircTask {
         page: Option<ContextPage>,
         fallback_index: Option<usize>,
     ) -> Result<(), Error> {
-        self.buffer_recovery=None;
+        let pending_recovery=self.buffer_recovery.take();
+        let audible_uri=self.connect_state.current_track(|t|t.uri.clone());
         self.connect_state
             .reset_context(if let PlayContext::Uri(ref uri) = cmd.context {
                 ResetContext::WhenDifferent(uri)
@@ -1506,7 +1508,31 @@ impl SpircTask {
             self.add_autoplay_resolving_when_required();
         }
 
-        if self.connect_state.current_track(MessageField::is_some) {
+        let keep_audible = cmd_options.keep_playing_track
+            && !audible_uri.is_empty()
+            && self.connect_state.current_track(|t| t.uri == audible_uri)
+            && matches!(self.play_status, SpircPlayStatus::Playing { .. } | SpircPlayStatus::Paused { .. });
+        if keep_audible {
+            // Tonal: a reordered queue must not stop, refetch or seek the
+            // track that is already audible. Only the following order changes.
+            self.buffer_recovery = pending_recovery;
+            let position = self.position();
+            self.connect_state.update_position(position, self.now_ms());
+            let preloaded = match self.play_status {
+                SpircPlayStatus::Playing { ref mut preloading_of_next_track_triggered, .. }
+                | SpircPlayStatus::Paused { ref mut preloading_of_next_track_triggered, .. } => {
+                    std::mem::replace(preloading_of_next_track_triggered, false)
+                }
+                _ => false,
+            };
+            if preloaded {
+                self.handle_preload_next_track();
+            }
+            if cmd_options.start_playing {
+                self.handle_play();
+            }
+            self.connect_state.set_status(&self.play_status);
+        } else if self.connect_state.current_track(MessageField::is_some) {
             self.load_track(cmd_options.start_playing, cmd_options.seek_to)?;
         } else {
             info!("No active track, stopping");

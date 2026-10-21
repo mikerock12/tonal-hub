@@ -21,6 +21,7 @@ class QQmlEngine;
 #include "companion/MusicCompanion.h"
 #include "playlist/TextPlaylistImport.hpp"
 #include "playback/ListeningMix.hpp"
+#include "ThemeCatalog.h"
 
 // Registro dos tipos C++ que o QML enxerga (sem criação pelo QML).
 struct AuthManagerForeign {
@@ -85,6 +86,7 @@ class App : public QObject
     Q_PROPERTY(MusicCompanion *music READ music CONSTANT)
     Q_PROPERTY(ListeningMix *listeningMix READ listeningMix CONSTANT)
     Q_PROPERTY(TextPlaylistImport *textPlaylist READ textPlaylist CONSTANT)
+    Q_PROPERTY(ThemeCatalog *theme READ theme CONSTANT)
     // Idioma em uso nesta execução: "pt" ou "en".
     Q_PROPERTY(QString language READ language CONSTANT)
 
@@ -111,6 +113,7 @@ public:
     MusicCompanion *music() const { return m_music; }
     ListeningMix *listeningMix() const{return m_listeningMix;}
     TextPlaylistImport *textPlaylist() const { return m_textPlaylist; }
+    ThemeCatalog *theme() const { return m_theme; }
     QString language() const;
 
     // Idioma do próximo início: o salvo no menu ou, sem escolha, o do Windows (português ou, senão, inglês).
@@ -147,4 +150,5 @@ private:
     MusicCompanion *m_music;
     TextPlaylistImport *m_textPlaylist;
     ListeningMix *m_listeningMix;
+    ThemeCatalog *m_theme;
 };

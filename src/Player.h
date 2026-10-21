@@ -155,6 +155,17 @@ private:
   QTimer m_pollTimer;
   QTimer m_tickTimer;
   QTimer m_volumeTimer;
+  // Seek: a posição aparece na hora; o pedido à Web API sai uma vez, com a
+  // última posição pedida, e um GET atrasado não puxa a barra de volta.
+  QTimer m_seekTimer;
+  QElapsedTimer m_seekClock;
+  int m_seekTarget = -1;
+  uint64_t m_seekGeneration = 0;
+  // Ida e volta de um comando à Web API (média móvel), para reaplicar a
+  // fila na posição em que a faixa atual vai estar quando o comando chegar.
+  int m_commandLatencyMs = 250;
+  bool seekSettling(int remoteMs) const;
+  void cancelSeek();
   QElapsedTimer m_positionClock;
   QElapsedTimer m_transportIntentClock;
   uint64_t m_transportGeneration = 0;

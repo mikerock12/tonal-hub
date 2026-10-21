@@ -11,6 +11,9 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QUrlQuery>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
@@ -628,6 +631,49 @@ public:
     plays=0;player.playOrderedUris({"spotify:track:old-mix"});player.playUris({"spotify:track:new-selection"});spin([]{return false;},120);require(plays==2&&shuffles==0&&played.contains("new-selection"),"late ordered response changed new selection");
     std::cout<<"PASS remote Connect pause/resume, foreign device and stale poll guards\n";
   }
+  // 0.13.0: drag seeks become one request, a late GET cannot pull the bar
+  // back, a pending seek never reaches the next track, and reapplying the
+  // queue at the current track uses "now + measured latency".
+  static void seekAndRequeue() {
+    QTemporaryDir storage;
+    FakeNetwork network;
+    AuthManager auth(&network);
+    SpotifyApi api(&network, &auth);
+    tonal::audio::AudioEngine audio(nullptr, storage.path()+"/audio");
+    LibrespotProcess engine(nullptr, storage.path());
+    Player player(&api, &engine, &auth);
+    player.setAudioEngine(&audio);
+    fakeAuth(auth);
+    player.m_localDeviceId="local-device";
+    QJsonObject state{{"is_playing",true},{"progress_ms",30000},
+      {"device",QJsonObject{{"id","local-device"}}},
+      {"item",QJsonObject{{"uri","spotify:track:fixture"},{"duration_ms",200000}}}};
+    player.applyState(state);
+    QList<int> seeks;QByteArray playBody;
+    network.respond=[&](const QNetworkRequest &req,const QByteArray &body){
+      if(req.url().path().endsWith("/seek"))seeks<<QUrlQuery(req.url()).queryItemValue("position_ms").toInt();
+      if(req.url().path().endsWith("/play"))playBody=body;
+      return Response{};
+    };
+    player.seek(60000);player.seek(90000);player.seek(120000);
+    require(qAbs(player.positionMs()-120000)<250,"seek target not shown immediately");
+    require(spin([&]{return seeks.size()==1;},800)&&seeks.first()==120000,"drag seeks were not coalesced into the last position");
+    spin([]{return false;},150);
+    require(seeks.size()==1,"extra seek request after release");
+    player.applyState(state);
+    require(qAbs(player.positionMs()-120000)<1000,"stale GET pulled the bar back after seek");
+    state["progress_ms"]=120400;player.applyState(state);
+    require(qAbs(player.positionMs()-120400)<250,"confirmed remote position ignored");
+    player.seek(150000);player.next();spin([]{return false;},150);
+    require(seeks.size()==1,"pending seek leaked into the next track");
+    player.applyState(state);player.m_commandLatencyMs=300;
+    const int before=player.positionMs();
+    player.playOrderedUrisAt({"spotify:track:fixture","spotify:track:next"},1000);
+    require(spin([&]{return !playBody.isEmpty();},800),"requeue request not sent");
+    const int sent=QJsonDocument::fromJson(playBody).object()["position_ms"].toInt();
+    require(sent>=before+300&&sent<before+300+400,"requeue did not use current position plus latency");
+    std::cout<<"PASS seek coalescing, stale poll guard and requeue position\n";
+  }
   static void deadlines() {
     QTemporaryDir storage;
     FakeNetwork network;
@@ -884,6 +930,7 @@ int main(int argc, char **argv) {
     try {
       SpotifyRecoveryTests::networkAndResume();
       SpotifyRecoveryTests::remoteTransport();
+      SpotifyRecoveryTests::seekAndRequeue();
       SpotifyRecoveryTests::deadlines();
       SpotifyRecoveryTests::playlistTransport();
       SpotifyRecoveryTests::listeningMix();

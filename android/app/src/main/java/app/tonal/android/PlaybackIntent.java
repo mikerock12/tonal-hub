@@ -11,8 +11,8 @@ final class PlaybackIntent {
     long revision;
     void command(String command, boolean playing) {
         revision++;
-        if(command.equals("pause")||command.equals("stop")||command.equals("play")||command.equals("toggle")||command.startsWith("restore|")||command.startsWith("queue|")||command.startsWith("context|")||command.startsWith("spotify:"))recoveryStartedAt=-1;
-        if(command.startsWith("restore|")){String[] parts=command.split("\\|",4);if(parts.length==4){try{position=Math.max(0,Integer.parseInt(parts[1]));track=parts[2];selection=parts[3];desired=true;local=false;}catch(NumberFormatException ignored){}}return;}
+        if(command.equals("pause")||command.equals("stop")||command.equals("play")||command.equals("toggle")||command.startsWith("restore|")||command.startsWith("requeue|")||command.startsWith("queue|")||command.startsWith("context|")||command.startsWith("spotify:"))recoveryStartedAt=-1;
+        if(command.startsWith("restore|")||command.startsWith("requeue|")){String[] parts=command.split("\\|",4);if(parts.length==4){try{position=Math.max(0,Integer.parseInt(parts[1]));track=parts[2];selection=parts[3];desired=true;local=false;}catch(NumberFormatException ignored){}}return;}
         if(command.equals("stop")){selection="";track="";position=0;desired=false;return;}
         if(command.equals("pause")){desired=false;return;}
         if(command.equals("toggle")){desired=!playing;return;}

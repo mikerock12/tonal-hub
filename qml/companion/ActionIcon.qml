@@ -6,7 +6,8 @@ AbstractButton {
     property string symbol: "play"
     property string description: ""
     property bool filled: false
-    property color ink: filled ? "#009bd6" : "#f5f5f5"
+    property color accentInk: "#009bd6"    // o MusicPanel passa o destaque do tema
+    property color ink: filled ? accentInk : "#f5f5f5"
     implicitWidth: 44; implicitHeight: 44
     Accessible.name: description
     ToolTip.visible: hovered

@@ -171,11 +171,12 @@ pub extern "system" fn Java_app_tonal_android_NativeBridge_nativeStart(mut env: 
                             "next"=>spirc.next(), "prev"=>spirc.prev(),
                             "shuffle:on"=>spirc.shuffle(true), "shuffle:off"=>spirc.shuffle(false),
                             "repeat:on"=>spirc.repeat(true), "repeat:off"=>spirc.repeat(false),
-                            _ if cmd.starts_with("restore|") => {
-                                let mut parts=cmd.splitn(4,'|');parts.next();
+                            // requeue keeps the audible decoder; restore reloads it.
+                            _ if cmd.starts_with("restore|") || cmd.starts_with("requeue|") => {
+                                let mut parts=cmd.splitn(4,'|');let keep_playing_track=parts.next()==Some("requeue");
                                 let Some(position)=parts.next().and_then(|s|s.parse::<u32>().ok()) else {continue;};
                                 let track=parts.next().unwrap_or_default();let selection=parts.next().unwrap_or_default();
-                                let mut options=LoadRequestOptions{start_playing:true,seek_to:position,..Default::default()};
+                                let mut options=LoadRequestOptions{start_playing:true,seek_to:position,keep_playing_track,..Default::default()};
                                 if !track.is_empty(){options.playing_track=Some(PlayingTrack::Uri(track.to_owned()));}
                                 if selection.starts_with("queue|")||selection.starts_with("context|") {
                                     let mut selection_parts=selection.splitn(3,'|');let kind=selection_parts.next().unwrap_or_default();

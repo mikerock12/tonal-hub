@@ -19,7 +19,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: root.round ? width / 2 : root.radius
-        color: "#282828"
+        color: Theme.elevatedHover
         visible: !root.ready
 
         Icon {

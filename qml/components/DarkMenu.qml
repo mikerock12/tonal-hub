@@ -8,7 +8,7 @@ Menu {
     delegate: DarkMenuItem { }
     background: Rectangle {
         implicitWidth: 240
-        color: "#282828"
+        color: Theme.elevatedHover
         radius: 4
         border.color: Qt.rgba(1, 1, 1, 0.06)
     }

@@ -1,6 +1,6 @@
 # Contexto do Tonal Hub
 
-Atualizado em **20/10/2026**. Estado do produto: **0.12.0**; benchmark posterior sem alterar binários distribuídos. Leia também [AGENTS.md](AGENTS.md).
+Atualizado em **21/10/2026**. Estado do produto: **0.13.0** (temas, seek e fila sem recarregar). Leia também [AGENTS.md](AGENTS.md).
 
 ## Projeto, autoria e objetivo
 
@@ -208,3 +208,27 @@ Tentativas interrompidas, limitações e hashes constam no relatório JSON.
 Backup privado 0.12: https://drive.google.com/drive/folders/15bxn_XcZianWzzp9E5GdYI8deVqm1fy5.
 Pasta privada da atualização de benchmark:
 https://drive.google.com/drive/folders/1e3ii--ACPMW4hH97EGIEVxf4pbdc6bF_.
+
+## Entrega 0.13.0 — Temas, seek e fila sem recarregar
+
+Seis temas (Tonal Azul, Aurora, Pôr do sol, Neon, Oceano, Grafite suave) com
+os mesmos nomes no PC e no Android, incluindo barra de progresso e marcador.
+Catálogo único `resources/themes.json`, copiado para os assets Android e
+verificado por `tests/themes/check_themes.py` (cópia idêntica, tokens,
+contraste AA). PC: `ThemeCatalog` (C++) exposto como `App.theme`; `Theme.qml`
+lê o tema ativo; escolha em `appearance/theme`. Android: `AppTheme` aplica as
+cores em `Ui` e reconstrói as views no lugar, sem recriar a Activity nem tocar
+no motor/fila; escolha em `files/theme.txt`. Tonal Hub e IndieTonal no PC
+mantêm o visual atual; cenários de letras são independentes.
+
+Aplicar fila: o Android usa `requeue|…`; o librespot embarcado ganhou
+`keep_playing_track`, que troca só a ordem seguinte quando a faixa atual
+continua a mesma. Recuperação continua usando `restore`. O PC (librespot
+oficial via Web API) reenvia a faixa com a posição atual mais a latência medida.
+Seek no PC: um pedido ao soltar, coalescido em 60 ms, sem flush antecipado;
+respostas remotas a mais de 1,5 s da posição pedida são ignoradas por 3 s.
+No Android, relógio ancorado no pedido e nos eventos `Seeked/PositionChanged`.
+
+Validação 0.13.0 em [temas-seek-fila-0130-tests.json](docs/temas-seek-fila-0130-tests.json)
+e [TEMAS_SEEK_FILA_0130.md](docs/TEMAS_SEEK_FILA_0130.md). Sem streaming real
+nem aparelho físico nesta sessão; sem novo benchmark.

@@ -101,6 +101,22 @@ Player::Player(SpotifyApi *api, LibrespotProcess *librespot, AuthManager *auth,
     m_pendingVolume = -1;
   });
 
+  m_seekTimer.setSingleShot(true);
+  m_seekTimer.setInterval(60);
+  connect(&m_seekTimer, &QTimer::timeout, this, [this] {
+    if (m_seekTarget < 0 || localPlayback())
+      return;
+    QElapsedTimer sent;
+    sent.start();
+    m_api->put(QStringLiteral("/me/player/seek"),
+               {{QStringLiteral("position_ms"), m_seekTarget}}, {},
+               [this, sent](int status, const QJsonDocument &) {
+                 if (status >= 200 && status < 300)
+                   m_commandLatencyMs = qBound(80, int(m_commandLatencyMs * 0.7 + sent.elapsed() * 0.3), 1500);
+                 refreshSoon(900);
+               });
+  });
+
   connect(m_librespot, &LibrespotProcess::playbackEvent, this,
           [this] { refreshSoon(250); });
   connect(m_librespot, &LibrespotProcess::sessionLost, this,
@@ -192,11 +208,13 @@ void Player::refresh() {
     return;
   m_requestInFlight = true;
   const auto transportGeneration = m_transportGeneration;
+  const auto seekGeneration = m_seekGeneration;
   m_api->get(QStringLiteral("/me/player"),
              {{QStringLiteral("additional_types"), QStringLiteral("episode")}},
-             [this, transportGeneration](int status, const QJsonDocument &doc) {
+             [this, transportGeneration, seekGeneration](int status, const QJsonDocument &doc) {
                m_requestInFlight = false;
-               if (transportGeneration != m_transportGeneration) {
+               if (transportGeneration != m_transportGeneration ||
+                   seekGeneration != m_seekGeneration) {
                  refreshSoon(250);
                  return;
                }
@@ -230,6 +248,7 @@ void Player::applyState(const QJsonObject &obj) {
   const QString uri = item.value(QStringLiteral("uri")).toString();
 
   if (uri != m_trackUri) {
+    cancelSeek();
     m_trackUri = uri;
     m_trackName = item.value(QStringLiteral("name")).toString();
     m_durationMs = item.value(QStringLiteral("duration_ms")).toInt();
@@ -295,7 +314,9 @@ void Player::applyState(const QJsonObject &obj) {
     }
   }
 
-  setPositionBase(obj.value(QStringLiteral("progress_ms")).toInt());
+  const int remote = obj.value(QStringLiteral("progress_ms")).toInt();
+  if (!seekSettling(remote))
+    setPositionBase(remote);
   if (m_isPlaying)
     m_tickTimer.start();
   else
@@ -586,6 +607,8 @@ void Player::sendPlay(const QJsonObject &body, const QString &deviceId,
   QVariantMap q;
   if (!deviceId.isEmpty())
     q.insert(QStringLiteral("device_id"), deviceId);
+  if (!body.isEmpty())
+    cancelSeek();
   const auto intent=++m_transportGeneration;
   m_transportIntentClock.restart();
   m_api->put(
@@ -673,6 +696,7 @@ void Player::next() {
     return;
   }
   cancelResume();
+  cancelSeek();
   if (m_audio)
     m_audio->flushSpotify();
   m_api->post(QStringLiteral("/me/player/next"), {}, {},
@@ -691,6 +715,7 @@ void Player::previous() {
     seek(0);
     return;
   }
+  cancelSeek();
   m_api->post(QStringLiteral("/me/player/previous"), {}, {},
               [this](int, const QJsonDocument &) { refreshSoon(400); });
 }
@@ -700,13 +725,30 @@ void Player::seek(int ms) {
     m_audio->seekLocal(ms);
     return;
   }
-  if (m_audio)
-    m_audio->flushSpotify();
+  // Sem flush aqui: o áudio atual continua até o librespot aplicar o seek, e
+  // o próprio "command=Seek(" descarta o buffer antigo nesse instante. Limpar
+  // antes só abria um silêncio e depois tocava de novo o trecho antigo.
   ms = qBound(0, ms, qMax(0, m_durationMs));
+  ++m_seekGeneration;
+  m_seekTarget = ms;
+  m_seekClock.restart();
   setPositionBase(ms);
-  m_api->put(QStringLiteral("/me/player/seek"),
-             {{QStringLiteral("position_ms"), ms}}, {},
-             [this](int, const QJsonDocument &) { refreshSoon(800); });
+  m_seekTimer.start();
+}
+
+// Outra faixa ou seleção: um seek pendente ou recente não vale para ela.
+void Player::cancelSeek() {
+  m_seekTimer.stop();
+  m_seekTarget = -1;
+}
+
+// Logo depois de um seek, o Spotify ainda pode responder a posição antiga.
+// Nesses 3 s, só aceita a posição remota se ela já estiver perto da pedida.
+bool Player::seekSettling(int remoteMs) const {
+  if (m_seekTarget < 0 || !m_seekClock.isValid() || m_seekClock.elapsed() >= 3000)
+    return false;
+  const qint64 expected = m_seekTarget + (m_isPlaying ? m_seekClock.elapsed() : 0);
+  return qAbs(remoteMs - expected) > 1500;
 }
 
 void Player::setVolume(int percent) {
@@ -819,7 +861,11 @@ void Player::playUris(const QStringList &uris, int offsetIndex) {
 }
 
 void Player::playOrderedUris(const QStringList& uris){playOrderedUrisAt(uris,0);}
-void Player::playOrderedUrisAt(const QStringList& uris,int position){if(uris.isEmpty())return;emit playbackRequested();cancelResume();if(localPlayback())m_audio->returnToSpotify();m_lastUris=uris.mid(0,500);m_shuffle=false;emit stateChanged();QJsonObject body{{"uris",QJsonArray::fromStringList(m_lastUris)},{"position_ms",std::max(0,position)},{"offset",QJsonObject{{"position",0}}}};sendPlay(body,targetDeviceForPlay(),false,true);}
+void Player::playOrderedUrisAt(const QStringList& uris,int position){if(uris.isEmpty())return;emit playbackRequested();cancelResume();
+  // Reaplicar a fila começando pela faixa que já toca: o librespot reaproveita o
+  // decoder e só ajusta a posição. Usa a posição de agora mais a latência medida
+  // do comando, para o ajuste cair onde o áudio estará, sem voltar um trecho.
+  if(uris.first()==m_trackUri&&m_isPlaying&&playingHere()&&!localPlayback()){const int ahead=positionMs()+m_commandLatencyMs;position=m_durationMs>0?qMin(m_durationMs-1,ahead):ahead;}if(localPlayback())m_audio->returnToSpotify();m_lastUris=uris.mid(0,500);m_shuffle=false;emit stateChanged();QJsonObject body{{"uris",QJsonArray::fromStringList(m_lastUris)},{"position_ms",std::max(0,position)},{"offset",QJsonObject{{"position",0}}}};sendPlay(body,targetDeviceForPlay(),false,true);}
 
 void Player::addToQueue(const QString &uri) {
   m_api->post(
