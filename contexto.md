@@ -263,3 +263,5 @@ tema (só o escolhido ativo; `AppTheme.applyLauncherIcon`, DONT_KILL_APP),
 desenhos gerados por `packaging/generate-theme-icons.py`; notificação colorida
 com o destaque; no PC, `App::themedIcon` define o ícone da janela/barra.
 Detalhes: [NOTIFICACAO_ICONE_0132.md](docs/NOTIFICACAO_ICONE_0132.md).
+Instaláveis 0.13.2 (versionCode 17) e backup privado:
+https://drive.google.com/drive/folders/1nW93Tq55vdBJcCv2pGtYjJNUgHvrSl99.

@@ -124,7 +124,7 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
 - AVD exclusiva Tonal_Local_20261015, porta 5560; não tocar em AVD de outro
   projeto. Evitar build pesado/compressão e emulador simultâneos em host de 16 GB.
 - Drive privado autorizado (pastas 0.13.0: 1BR5bH6HQxCGUKrB0YAAMXTzp0ZQ0JBiI;
-  0.13.1: 12L0IbCaTwURRIcOoHaQMLcgVYnP3nMcV):
+  0.13.1: 12L0IbCaTwURRIcOoHaQMLcgVYnP3nMcV; 0.13.2: 1nW93Tq55vdBJcCv2pGtYjJNUgHvrSl99):
   https://drive.google.com/drive/folders/15bxn_XcZianWzzp9E5GdYI8deVqm1fy5.
   Reutilizar a organização e verificar tamanho, hash quando disponível e privacidade.
 - Backup de fontes via `git archive`, histórico via `git bundle --all`, ambos
