@@ -20,6 +20,10 @@ public:
  Q_INVOKABLE void play(const QVariantList&,int selected,bool random,bool discovery,bool album=false);
  Q_INVOKABLE void preview(const QVariantList&,int selected,bool random,bool discovery,bool album=false);
  Q_INVOKABLE void applyPreview(int position=0);
+ // Botões do player: aplica direto à fila atual (a primeira linha é a faixa
+ // que toca). A janela Fila continua com prévia e Aplicar.
+ Q_INVOKABLE void applyModes(const QVariantList &queue,bool shake,bool random,bool discovery);
+ void forgetApplied();
  QVariantList previewQueue()const{return m_previewQueue;}
  bool discoveryEnabled()const{return m_activeDiscovery;}
  bool randomEnabled()const{return m_activeRandom;}
@@ -30,7 +34,8 @@ public:
  Q_INVOKABLE void cancel();
 signals:void changed();void previewReady();void ready(const QVariantList&);void resumeReady(const QVariantList&,int);
 private:
- void prepare(const QVariantList&,int,bool,bool,bool,bool);
+ void prepare(const QVariantList&,int,bool,bool,bool,bool,bool autoApply=false);
+ bool m_autoApply=false;
  QVariantList m_previewQueue,m_appliedQueue;bool m_preview=false,m_activeDiscovery=false,m_activeRandom=false;
  QStringList m_retainedSource;QVariantList m_retainedExternal;
  QVariantMap known(const QVariantMap&)const;QString genres(const QVariantMap&)const;void search(int serial,int index);void finish(int serial);

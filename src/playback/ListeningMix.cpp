@@ -17,7 +17,14 @@ bool ListeningMix::enrichmentEnabled()const{return m_enrichment->enabled();}
 void ListeningMix::setEnrichmentEnabled(bool enabled){m_enrichment->setEnabled(enabled);}
 QString ListeningMix::enrichmentStatus()const{return m_enrichment->status();}
 QVariantList ListeningMix::order(int count,quint32 seed)const{QVariantList out;for(int i:tonal::mix::order(count,seed))out<<i;return out;}
-void ListeningMix::cancel(){++m_generation;m_busy=false;emit changed();}
+void ListeningMix::cancel(){++m_generation;m_busy=false;m_autoApply=false;emit changed();}
+void ListeningMix::forgetApplied(){if(m_appliedQueue.isEmpty()&&!m_activeDiscovery&&!m_activeRandom)return;m_appliedQueue.clear();m_activeDiscovery=m_activeRandom=false;emit changed();}
+void ListeningMix::applyModes(const QVariantList &queue,bool shake,bool random,bool discovery){
+ if(queue.isEmpty())return;
+ QVariantList rows=queue;
+ if(shake&&rows.size()>2){const auto rest=rows.mid(1);rows=QVariantList{queue.first()};for(int i:tonal::mix::order(int(rest.size()),QRandomGenerator::global()->generate()))rows<<rest[i];}
+ prepare(rows,0,random,discovery,false,true,true);
+}
 QVariantMap ListeningMix::known(const QVariantMap&t)const{return m_music->m_data["tracks"].toObject()[MusicCompanion::key(t)].toObject().toVariantMap();}
 QString ListeningMix::genres(const QVariantMap&t)const{auto g=known(t)["genre"].toString();if(g.isEmpty())g=t["genre"].toString();if(!g.isEmpty())return g;auto name=tonal::playlist::normalize(t["artist"].toString().toStdString());for(auto v:m_rules["recommendations"].toArray()){auto r=v.toObject();for(auto a:r["artists"].toArray())if(name==tonal::playlist::normalize(a.toString().toStdString())){QStringList tags;for(auto tag:r["genres"].toArray())tags<<tag.toString();return tags.join(',');}}return {};}
 void ListeningMix::play(const QVariantList&t,int n,bool r,bool d,bool a){prepare(t,n,r,d,a,false);}
@@ -25,8 +32,9 @@ void ListeningMix::preview(const QVariantList&t,int n,bool r,bool d,bool a){prep
 QVariantList ListeningMix::queueFor(const QString &uri)const{for(int i=0;i<m_appliedQueue.size();++i)if(m_appliedQueue[i].toMap()["uri"].toString()==uri)return m_appliedQueue.mid(i);return {};}
 void ListeningMix::applyPreview(int position){if(!m_busy&&!m_previewQueue.isEmpty()){m_appliedQueue=m_previewQueue;m_activeDiscovery=m_discovery;m_activeRandom=m_random;emit changed();emit resumeReady(m_previewQueue,std::max(0,position));}}
 void ListeningMix::prepare(const QVariantList &tracks, int selected, bool random,
-                           bool discovery, bool album, bool preview) {
+                           bool discovery, bool album, bool preview, bool autoApply) {
  cancel();
+ m_autoApply=autoApply;
  m_preview=preview;m_previewQueue.clear();m_failure.clear();
  if(selected<0||selected>=tracks.size())return;
  const int start=selected>=500?selected:0;
@@ -153,6 +161,10 @@ void ListeningMix::finish(int serial){
    m_random?"Reprodução aleatória":"Ordem da lista";
  if(m_discovery){m_retainedSource.clear();m_retainedExternal.clear();for(const auto &v:m_source){auto row=v.toMap();if(!row["mixExternal"].toBool())m_retainedSource<<row["uri"].toString();}std::sort(m_retainedSource.begin(),m_retainedSource.end());for(const auto &v:result)if(v.toMap()["mixExternal"].toBool())m_retainedExternal<<v;}
  m_pool.clear();m_source.clear();m_previewQueue=result;
- if(!m_preview){m_appliedQueue=result;m_activeDiscovery=m_discovery;m_activeRandom=m_random;}
- emit changed();emit previewReady();if(!m_preview)emit ready(result);
+ // Ligar a Descoberta sem achar nenhuma externa não muda a fila nem o estado.
+ bool apply=!m_preview||m_autoApply;
+ if(m_autoApply&&m_discovery&&!outside&&!m_activeDiscovery)apply=false;
+ const bool resume=m_preview&&m_autoApply&&apply;m_autoApply=false;
+ if(apply){m_appliedQueue=result;m_activeDiscovery=m_discovery;m_activeRandom=m_random;}
+ emit changed();emit previewReady();if(!m_preview)emit ready(result);else if(resume)emit resumeReady(result,0);
 }

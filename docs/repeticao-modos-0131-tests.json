@@ -1,0 +1,105 @@
+{
+  "format": "tonal-repeat-modes-validation-v1",
+  "version": "0.13.1",
+  "recorded_on": "2026-10-21",
+  "causes_found": [
+    "librespot 0.8 reset_options() clears repeat on every new selection; the app never reapplied it",
+    "a stale GET after a repeat change restored the old icon; Spotify refusals were ignored",
+    "reapplying a mix from the same track never refreshed the Queue panel (no track change)",
+    "song page Shake/Random/Discovery only opened a preview that required Apply",
+    "Android had no repeat control; librespot also drops track repeat on skip"
+  ],
+  "windows": {
+    "native_ctest_passed": 10,
+    "portable_companion_ctest_passed": 6,
+    "qml_mix_and_controls_passed": 15,
+    "qml_lyrics_passed": 6,
+    "qml_playlist_passed": 3,
+    "theme_catalog_checks": 172,
+    "repeat_and_mix_tests": [
+      "repeat change sent with the active device and kept through a stale GET",
+      "repeat reapplied after a new selection; selection reset not shown as off",
+      "track repeat sent; skipping ahead leaves queue repeat",
+      "refused repeat change reverted with a message",
+      "applied mix shown as the queue without a Spotify request, discoveries marked",
+      "an applied mix is not a plain selection; a plain selection clears it",
+      "Shake applies now with the current song first and a new order",
+      "Random applies from the current song; forgetting clears the modes",
+      "cancelled discovery never replaces the queue"
+    ],
+    "ui_tests": [
+      "player bar order: Shake, Random, previous, play, next, Repeat, Discovery",
+      "song page controls visible together and applying directly",
+      "repeat cycles off -> queue -> track -> off with its icon",
+      "collection that is playing applies modes to the current queue; another collection does not"
+    ],
+    "installer": {
+      "file": "Tonal-Hub-0.13.1.0-Windows-x64-Setup.exe",
+      "bytes": 81588488,
+      "sha256": "f4627be154edad736042ce85c53b7846efce21c007e319a586cb1e902d13eeb5"
+    }
+  },
+  "android": {
+    "playback_policy_checks": 40,
+    "repeat_rules": [
+      "three modes",
+      "reapplied after queue/context/restore/requeue/track loads",
+      "skip ahead leaves track repeat",
+      "saved value sanitized"
+    ],
+    "native_commands_added": [
+      "repeat-track:on",
+      "repeat-track:off"
+    ],
+    "emulator_smokes": {
+      "repeat_smoke": {
+        "passed": true,
+        "checks": 8,
+        "serial": "emulator-5560",
+        "package": "app.tonal.android.benchmark",
+        "controls_order": [
+          "random",
+          "prev",
+          "play",
+          "next",
+          "repeat",
+          "| shake",
+          "discover",
+          "queue"
+        ],
+        "states_cycled": 3,
+        "restored_after_restart": true,
+        "audio_kept_playing": true,
+        "account_used": false
+      },
+      "themes_smoke_regression": {
+        "passed": true,
+        "checks": 9
+      },
+      "queue_ui_regression": {
+        "passed": true,
+        "native_cpp_jni_checks": 24
+      }
+    },
+    "apks": {
+      "Tonal-Android-0.13.1-local.apk": {
+        "bytes": 47034060,
+        "sha256": "18f04be5c37c599328755f8da18cdf06839cb73d0debea43228fe2ee64d869fc"
+      },
+      "Tonal-Android-0.13.1-arm64-v8a.apk": {
+        "bytes": 24997181,
+        "sha256": "86567329a4b7d0cbee47c78588ea6e1fddd4519d8932278aea2f89d86a2c404c"
+      },
+      "version_code": 16,
+      "signing_certificate_matches_0_13_0": true,
+      "private_seed_or_session_present": false
+    }
+  },
+  "not_validated": [
+    "Real Spotify session: TonalSpotifyRecoveryTests --live-session --verify-mix was prepared but its execution was denied by the permission policy",
+    "Physical POCO X7 Pro and Bluetooth",
+    "New CPU/RAM benchmark"
+  ],
+  "interruption": "A power outage stopped an in-progress desktop build. git fsck found no errors, sources had no truncation or NUL bytes, cargo confirmed the Android native libraries were complete, and the desktop was rebuilt from a clean build directory before tests and packaging.",
+  "icon_review": "Track repeat first drew a small 1 inside the arrows that was illegible at 24 px; it now draws smaller arrows with a readable 1 beside them on both platforms."
+}

@@ -1,6 +1,6 @@
 {
   "documented_on": "2026-10-21",
-  "scope": "Real app/test screenshots with version and fixture provenance per image. Historical captures preserved; two new 0.12.0 native Android queue captures; four 0.13.0 theme captures without personal data.",
+  "scope": "Real app/test screenshots with version and fixture provenance per image. Historical captures preserved; two new 0.12.0 native Android queue captures; four 0.13.0 theme captures without personal data; four 0.13.1 control/repeat captures without personal data.",
   "captures": [
     {
       "file": "desktop-modos.png",
@@ -265,6 +265,54 @@
       "height": 1200,
       "bytes": 40381,
       "sha256": "36b819a54de011b122d7117629a7a3593dbc408bf0e6535e79e7cfd609652990"
+    },
+    {
+      "file": "desktop-barra-controles-0131.png",
+      "source": "out/mix-ui/player-bar-controls.png",
+      "platform": "Windows",
+      "capture_context": "0.13.1: suíte QML de controles",
+      "note": "Barra inferior com Shake, Aleatório, anterior, tocar, próxima, Repetir ativo e Descoberta 2+1; faixa e dispositivo do mock.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 1000,
+      "height": 80,
+      "bytes": 9711,
+      "sha256": "25add8d28a14d0b227e1c935aeaa48812f0550a822838749595abf95e77c0438"
+    },
+    {
+      "file": "desktop-musica-controles-0131.png",
+      "source": "out/mix-ui/song-controls.png",
+      "platform": "Windows",
+      "capture_context": "0.13.1: suíte QML de controles",
+      "note": "Página da música sintética com todos os controles numa linha acima da barra de progresso.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 1000,
+      "height": 800,
+      "bytes": 35795,
+      "sha256": "100c3040e20b8d57e64a30c4e141fec335210cc0b485b73184d360740d1d160e"
+    },
+    {
+      "file": "android-controles-repeticao-0131.png",
+      "source": "out/android/repeat-0131/android-controles-repeticao-0131.png",
+      "platform": "Android",
+      "capture_context": "0.13.1: smoke de repetição na AVD dedicada",
+      "note": "APK benchmark 0.13.1; ensaio Vorbis local do APK, sem conta.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 540,
+      "height": 1200,
+      "bytes": 40499,
+      "sha256": "db5cfc8f1e2f2a9b9c8e7d604b43599d220515583dc904979ac7e984a2c3135d"
+    },
+    {
+      "file": "android-repetir-faixa-0131.png",
+      "source": "out/android/repeat-0131/android-repetir-faixa-0131.png",
+      "platform": "Android",
+      "capture_context": "0.13.1: smoke de repetição na AVD dedicada",
+      "note": "Repetir esta música ativo (ícone com 1); ensaio local, sem conta.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 540,
+      "height": 1200,
+      "bytes": 39826,
+      "sha256": "b61aae9c0ae18b0665e27c58e397211ab37c36d94cd14492c882157178857f9d"
     }
   ]
 }

@@ -171,6 +171,7 @@ pub extern "system" fn Java_app_tonal_android_NativeBridge_nativeStart(mut env: 
                             "next"=>spirc.next(), "prev"=>spirc.prev(),
                             "shuffle:on"=>spirc.shuffle(true), "shuffle:off"=>spirc.shuffle(false),
                             "repeat:on"=>spirc.repeat(true), "repeat:off"=>spirc.repeat(false),
+                            "repeat-track:on"=>spirc.repeat_track(true), "repeat-track:off"=>spirc.repeat_track(false),
                             // requeue keeps the audible decoder; restore reloads it.
                             _ if cmd.starts_with("restore|") || cmd.starts_with("requeue|") => {
                                 let mut parts=cmd.splitn(4,'|');let keep_playing_track=parts.next()==Some("requeue");

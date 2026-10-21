@@ -9,8 +9,10 @@ diferenças entre as plataformas.
 
 1. Abra um álbum ou playlist com pelo menos duas músicas.
 2. Ative a **Descoberta 2+1**, identificada pela lupa com play, sinal de mais e setas.
-3. Use Reproduzir para aplicar os modos à seleção. Na página da música, abra
-   **Fila** para preparar e conferir uma nova sequência antes de aplicá-la.
+3. Use Reproduzir para aplicar os modos à seleção. Desde a 0.13.1, os botões
+   junto da barra de progresso (e os da coleção que está tocando) aplicam o
+   modo direto na fila atual, sem recomeçar a música. Para conferir antes,
+   abra **Fila**, prepare a prévia e aplique.
 4. Confira as entradas marcadas como **Descoberta** e confirme **Aplicar e
    reproduzir fila**, quando estiver na prévia. A faixa atual continua
    tocando: desde a 0.13.0, o Android troca só a ordem seguinte, sem

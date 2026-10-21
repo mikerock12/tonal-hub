@@ -1,7 +1,7 @@
 # Instruções para trabalhar neste repositório
 
 Leia [contexto.md](contexto.md), [README.md](README.md) e os documentos da área
-afetada antes de alterar o produto. Estado documental: 21/10/2026, produto 0.13.0.
+afetada antes de alterar o produto. Estado documental: 21/10/2026, produto 0.13.1.
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
@@ -57,11 +57,14 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
   uniforme do catálogo ou análise acústica. Letras são buscadas para o lote
   limitado; resultados só valem para preparações futuras, nunca alteram fila confirmada.
 - Shake: Fisher–Yates visual; Aleatório: prioridades independentes de reprodução;
-  respeitar primeira faixa explicitamente escolhida. Preservar prévia antes de aplicar.
+  respeitar primeira faixa explicitamente escolhida. A janela Fila preserva prévia
+  antes de aplicar; os botões do player aplicam direto (pedido do usuário, 0.13.1).
 - Descobertas aceitas permanecem ao mudar Shake/Aleatório e reabrir controles;
   só desligar Descoberta remove próximas externas. Atual não é interrompida.
 - Cache derivado: 2.000 entradas, sem letras completas, 1 pedido/vez, 1,25 s,
   timeout 6 s, corpo 256 KiB, cooldown 429/503 preservado entre seleções.
+- Repetição é do app: reaplicar após cada nova seleção (librespot zera); pular
+  desliga só a de uma faixa. PC `Player::reapplyRepeat`; Android `RepeatMode`.
 - Aplicar fila não recarrega a faixa audível: Android `requeue|…` com
   `keep_playing_track` no librespot embarcado; recuperação segue com `restore`.
   PC reenvia pela Web API com posição atual + latência medida, sem flush.
@@ -100,6 +103,9 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
   QML 12/6/3, temas 172+86 checagens, política Java 21, smoke de temas Android
   com áudio local (0 underruns) e regressão da fila. Sem streaming real Spotify
   nem aparelho físico: não declarar fila/seek medidos com áudio real.
+- Validação 0.13.1 em `docs/repeticao-modos-0131-tests.json`: CTest 10, QML
+  15/6/3, Java 40, AVD repetição 8 + temas 9 + fila. Teste ao vivo `--verify-mix`
+  pronto, não executado (permissão negada): não declarar fila/repetição com Spotify real.
 - Capturas: [guia](docs/GUIA_VISUAL.md) e `docs/screenshots/manifest.json`.
   Identificar versão e dados sintéticos; não fabricar telas ou números para marketing.
 
@@ -112,7 +118,8 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
   `packaging/build-android-local.ps1`; ARM64 para POCO, universal inclui x86_64.
 - AVD exclusiva Tonal_Local_20261015, porta 5560; não tocar em AVD de outro
   projeto. Evitar build pesado/compressão e emulador simultâneos em host de 16 GB.
-- Drive privado autorizado (pasta 0.13: 1BR5bH6HQxCGUKrB0YAAMXTzp0ZQ0JBiI):
+- Drive privado autorizado (pastas 0.13.0: 1BR5bH6HQxCGUKrB0YAAMXTzp0ZQ0JBiI;
+  0.13.1: 12L0IbCaTwURRIcOoHaQMLcgVYnP3nMcV):
   https://drive.google.com/drive/folders/15bxn_XcZianWzzp9E5GdYI8deVqm1fy5.
   Reutilizar a organização e verificar tamanho, hash quando disponível e privacidade.
 - Backup de fontes via `git archive`, histórico via `git bundle --all`, ambos

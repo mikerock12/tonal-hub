@@ -78,7 +78,7 @@ jobs:
       - name: Reject unsolicited playback and late recovery
         run: |
           mkdir -p out/ci-playback
-          javac -d out/ci-playback android/app/src/main/java/app/tonal/android/PlaybackIntent.java tests/android/PlaybackSafetyChecks.java
+          javac -d out/ci-playback android/app/src/main/java/app/tonal/android/PlaybackIntent.java android/app/src/main/java/app/tonal/android/RepeatMode.java tests/android/PlaybackSafetyChecks.java
           java -cp out/ci-playback app.tonal.android.PlaybackSafetyChecks
       - name: Compile both Android variants without account credentials
         run: gradle -p android compileReleaseJavaWithJavac compileBenchmarkJavaWithJavac compileComparisonJavaWithJavac :automation:compileDebugJavaWithJavac --console=plain

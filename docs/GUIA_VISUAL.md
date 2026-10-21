@@ -212,3 +212,22 @@ tinge a página ao fundo.*
 *Android 0.13.0: APK benchmark na AVD dedicada, durante o áudio de ensaio
 local do próprio APK, sem conta. O PCM seguiu avançando, sem underruns, em
 cada troca. [Mudanças e testes](TEMAS_SEEK_FILA_0130.md).*
+
+## 10. Controles junto da barra e repetição — 0.13.1
+
+No PC, a barra inferior e a página da música reúnem **Shake, Aleatório,
+anterior, tocar, próxima, Repetir e Descoberta 2+1** (e Fila na página da
+música). Os modos aplicam direto na fila atual; a música continua. Repetir
+alterna entre desligada, repetir a fila e repetir só esta música (ícone com “1”).
+
+<img src="screenshots/desktop-barra-controles-0131.png" width="760" alt="Windows: barra inferior com Shake, Aleatório, anterior, tocar, próxima, Repetir ativo e Descoberta 2+1">
+
+<img src="screenshots/desktop-musica-controles-0131.png" width="650" alt="Windows: página da música com todos os controles numa linha acima da barra de progresso">
+
+*Windows 0.13.1: suíte QML com dados sintéticos.*
+
+<img src="screenshots/android-controles-repeticao-0131.png" width="300" alt="Android: Aleatório, anterior, tocar, próxima e Repetir numa linha; Shake, Descoberta e Fila abaixo">
+<img src="screenshots/android-repetir-faixa-0131.png" width="300" alt="Android: Repetir esta música ativo, com o número 1 no ícone">
+
+*Android 0.13.1: APK benchmark na AVD dedicada, durante o áudio de ensaio
+local, sem conta. [O que mudou](REPETICAO_MODOS_0131.md).*

@@ -15,8 +15,8 @@ QtObject {
  function dominantColor(url,callback){callback("#344455")}
  property QtObject auth:QtObject{property bool authenticated:true;property string userId:"user"}
  property QtObject music:QtObject{signal changed();function summary(k,v){return {ms:0,plays:0,tracks:[]}}}
- property QtObject player:QtObject{property string contextUri:"";property bool isPlaying:false;property bool shuffle:false;property var queue:[{uri:"spotify:track:next",name:"Next song",artists:"Next artist",durationMs:180000}];property bool delayQueue:false;property int refreshes:0;signal queueRefreshFinished(int status);function refreshQueue(){refreshes++;if(!delayQueue){queueChanged();queueRefreshFinished(200)}}signal playbackRequested();function togglePlay(){}function playContext(a,b,c){}function playUris(a,b){}}
- property QtObject listeningMix:QtObject{property bool busy:false;property string status:"";property var received:({});property var previewQueue:[];property var committedRows:[];property bool discoveryEnabled:false;property bool randomEnabled:false;property bool enrichmentEnabled:false;property string enrichmentStatus:"";function queueFor(uri){return committedRows}property int appliedPosition:-1;signal changed();signal previewReady();function preview(rows,index,random,discovery,album){received={rows:rows,index:index,random:random,discover:discovery,album:album};previewQueue=rows.slice();previewReady();changed()}function applyPreview(position){appliedPosition=position}function cancel(){}function order(n,seed){let a=[];for(let i=1;i<n;i++)a.push(i);a.push(0);return a}function play(rows,index,random,discover,album){received={rows:rows,index:index,random:random,discover:discover,album:album}}}
+ property QtObject player:QtObject{property string contextUri:"";property string trackUri:"";property bool hasTrack:false;property string repeatMode:"off";property int repeatCycles:0;function cycleRepeat(){repeatCycles++;repeatMode=repeatMode==="off"?"context":repeatMode==="context"?"track":"off"}property bool isPlaying:false;property bool shuffle:false;property var queue:[{uri:"spotify:track:next",name:"Next song",artists:"Next artist",durationMs:180000}];property bool delayQueue:false;property int refreshes:0;signal queueRefreshFinished(int status);function refreshQueue(){refreshes++;if(!delayQueue){queueChanged();queueRefreshFinished(200)}}signal playbackRequested();function togglePlay(){}function playContext(a,b,c){}function playUris(a,b){}}
+ property QtObject listeningMix:QtObject{property bool busy:false;property string status:"";property var received:({});property var previewQueue:[];property var committedRows:[];property bool discoveryEnabled:false;property bool randomEnabled:false;property bool enrichmentEnabled:false;property string enrichmentStatus:"";function queueFor(uri){return committedRows}property var applied:null;function applyModes(rows,shake,random,discovery){applied={rows:rows,shake:shake,random:random,discovery:discovery}}property int appliedPosition:-1;signal changed();signal previewReady();function preview(rows,index,random,discovery,album){received={rows:rows,index:index,random:random,discover:discovery,album:album};previewQueue=rows.slice();previewReady();changed()}function applyPreview(position){appliedPosition=position}function cancel(){}function order(n,seed){let a=[];for(let i=1;i<n;i++)a.push(i);a.push(0);return a}function play(rows,index,random,discover,album){received={rows:rows,index:index,random:random,discover:discover,album:album}}}
  property QtObject api:QtObject{
   property int writes:0
   function call(method,path,query,body,callback){if(method!=="GET")writes++;let items=[];for(let i=0;i<6;i++)items.push({uri:"spotify:track:fixture"+i,id:"fixture"+i,name:"Fixture song "+i,duration_ms:180000,artists:[{id:"artist",name:"Test Band"}],album:{id:"album",name:"Test Album",images:[]}});if(path.indexOf("/albums/")===0)callback(200,{id:"album",uri:"spotify:album:album",name:"Test Album",release_date:"1994-01-01",artists:[{id:"artist",name:"Test Band"}],images:[],total_tracks:6,tracks:{items:items,next:null}});else callback(200,{items:[],next:null});}
@@ -26,6 +26,8 @@ QtObject {
 for folder in ['qml/components','qml/companion']:
  for p in (ROOT/folder).glob('*.qml'):
   text=p.read_text(encoding='utf-8');text=text.replace('import QtQuick','import MixHarness 1.0\nimport QtQuick',1);(OUT/p.name).write_text(text,encoding='utf-8')
+(OUT/'DevicePopup.qml').write_text('import MixHarness 1.0'+chr(10)+(ROOT/'qml/panels/DevicePopup.qml').read_text(encoding='utf-8'),encoding='utf-8')
+bar=(ROOT/'qml/panels/PlayerBar.qml').read_text(encoding='utf-8').replace('import "qrc:/companion/qml/companion" as Personal','import "." as Personal');(OUT/'PlayerBar.qml').write_text('import MixHarness 1.0'+chr(10)+bar,encoding='utf-8')
 text=(ROOT/'qml/pages/CollectionPage.qml').read_text(encoding='utf-8').replace('import "qrc:/companion/qml/companion" as Personal','import "." as Personal');(OUT/'CollectionPage.qml').write_text('import MixHarness 1.0\n'+text,encoding='utf-8')
 (OUT/'tst_mix.qml').write_text('''import QtQuick
 import QtQuick.Controls
@@ -36,6 +38,7 @@ Pane {width:1000;height:800;padding:0;palette.button:"#263440";palette.buttonTex
  MusicPanel{id:personalPanel;controller:personal;audioEngine:null;mixController:App.listeningMix;transportPlayer:App.player;position:12345;themeTokens:Theme.palette}
  SeekBar{id:themedSeek;x:20;y:760;width:300;value:0.5}
  ThemeDialog{id:themeDialog}
+ PlayerBar{id:playerBar;x:0;y:700;z:10;width:1000;height:80}
  CollectionPage{id:page;anchors.fill:parent;route:({page:"album",params:{id:"album"}})}
  TestCase{name:"CollectionMix";when:windowShown
   function test_discovery_waits_for_fresh_queue(){
@@ -102,6 +105,37 @@ Pane {width:1000;height:800;padding:0;palette.button:"#263440";palette.buttonTex
    wait(80);let scene=themedSeek.Window.window.contentItem;grabImage(scene).save("theme-dialog-neon.png");themeDialog.close();App.theme.themeId="solar";wait(80);grabImage(scene).save("collection-solar.png");App.theme.themeId="neon";
    personalPanel.showSong();tryCompare(personalPanel,"visible",true);let s=findChild(personalPanel,"songSeek");compare(s.look.thumbShape,"circle");verify(s.look.glow);wait(80);grabImage(themedSeek.Window.window.contentItem).save("song-neon.png");personalPanel.close();
    themeDialog.close();App.theme.themeId="tonal"
+  }
+  function test_song_controls_apply_directly(){
+   let mix=App.listeningMix;personalPanel.showSong();tryCompare(personalPanel,"visible",true);
+   let row=findChild(personalPanel,"songControls");verify(row!==null);
+   for(let name of ["songShake","songRandom","songRepeat","songDiscovery","songQueueButton"])verify(findChild(personalPanel,name).visible,name);
+   mix.applied=null;mix.committedRows=[personal.current,{uri:"spotify:track:x",title:"X"},{uri:"spotify:track:y",title:"Y"}];
+   mouseClick(findChild(personalPanel,"songShake"));verify(mix.applied!==null);verify(mix.applied.shake);compare(mix.applied.rows.length,3);compare(mix.applied.rows[0].uri,"spotify:track:current");verify(!mix.applied.discovery);
+   mix.applied=null;mix.committedRows=[];let refreshes=App.player.refreshes;
+   mouseClick(findChild(personalPanel,"songDiscovery"));compare(App.player.refreshes,refreshes+1);verify(mix.applied!==null);verify(mix.applied.discovery);verify(!mix.applied.shake);compare(mix.applied.rows[0].uri,"spotify:track:current");compare(mix.applied.rows[1].uri,"spotify:track:next");
+   mix.applied=null;mouseClick(findChild(personalPanel,"songRandom"));verify(mix.applied.random);
+   let repeat=findChild(personalPanel,"songRepeat");App.player.repeatMode="off";let cycles=App.player.repeatCycles;mouseClick(repeat);compare(App.player.repeatCycles,cycles+1);compare(App.player.repeatMode,"context");verify(repeat.filled);
+   mouseClick(repeat);compare(repeat.symbol,"repeat1");wait(300);let rp=repeat.mapToItem(null,0,0);console.log("REPEAT_AT "+Math.round(rp.x)+" "+Math.round(rp.y)+" "+Math.round(repeat.width)+" "+Math.round(repeat.height));grabImage(themedSeek.Window.window.contentItem).save("repeat-one-window.png");mouseClick(repeat);verify(!repeat.filled);
+   wait(80);grabImage(themedSeek.Window.window.contentItem).save("song-controls.png");personalPanel.close()
+  }
+  function test_collection_modes_apply_to_playing_queue(){
+   let mix=App.listeningMix;mix.applied=null;tryCompare(page,"totalTracks",6);
+   App.player.hasTrack=true;App.player.trackUri="spotify:track:fixture2";
+   page.randomPlayback=true;verify(page.applyToPlaying());verify(mix.applied!==null);compare(mix.applied.rows[0].uri,"spotify:track:fixture2");compare(mix.applied.rows.length,6);verify(mix.applied.random);
+   App.player.trackUri="spotify:track:elsewhere";mix.applied=null;verify(!page.applyToPlaying());compare(mix.applied,null);
+   App.player.hasTrack=false;App.player.trackUri="";page.randomPlayback=false
+  }
+  function test_player_bar_has_all_controls(){
+   let mix=App.listeningMix;let row=findChild(playerBar,"transportControls");verify(row!==null);
+   let names=[];for(let i=0;i<row.children.length;i++)names.push(row.children[i].objectName||row.children[i].toString().split("_")[0]);
+   compare(names[0],"shakeButton");compare(names[1],"randomButton");compare(names[5],"repeatButton");compare(names[6],"discoveryButton");
+   App.player.hasTrack=true;App.player.trackUri="spotify:track:current";mix.committedRows=[personal.current,{uri:"spotify:track:x"},{uri:"spotify:track:y"}];mix.applied=null;
+   mouseClick(findChild(playerBar,"shakeButton"));verify(mix.applied!==null&&mix.applied.shake);compare(mix.applied.rows.length,3);
+   mix.applied=null;mouseClick(findChild(playerBar,"discoveryButton"));verify(mix.applied.discovery&&!mix.applied.shake);
+   let cycles=App.player.repeatCycles;mouseClick(findChild(playerBar,"repeatButton"));compare(App.player.repeatCycles,cycles+1);
+   wait(80);grabImage(playerBar).save("player-bar-controls.png");
+   App.player.hasTrack=false;App.player.trackUri="";App.player.repeatMode="off";mix.committedRows=[]
   }
  }
 }''',encoding='utf-8')
