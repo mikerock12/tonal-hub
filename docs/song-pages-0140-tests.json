@@ -21,6 +21,7 @@
       "setlist_preserves_encore_order_and_reprises",
       "setlist_cover_keeps_show_performer",
       "setlist_empty_result",
+      "setlist_cap_applies_across_all_sets",
       "artist_sourced_formation",
       "artist_missing_values_not_invented",
       "ambiguous_artist_not_attributed",
@@ -79,5 +80,69 @@
   ],
   "original_author": "Matheus Nunes (natheus)",
   "source": "https://github.com/natheus/tonal-player",
-  "playback_safety_java_checks": 40
+  "playback_safety_java_checks": 40,
+  "android_release_startup": {
+    "passed": true,
+    "version": "0.14.0-local",
+    "version_code": 19,
+    "production_package": "app.tonal.android",
+    "upgrade_installed": true,
+    "startup_process_alive": true,
+    "streaming_tested": false
+  },
+  "windows_package": {
+    "passed": true,
+    "checks": [
+      {
+        "program": "TonalHub.exe",
+        "passed": true,
+        "own_deployed_runtime": true,
+        "offscreen": true
+      },
+      {
+        "program": "IndieTonal.exe",
+        "passed": true,
+        "own_deployed_runtime": true,
+        "offscreen": true
+      },
+      {
+        "program": "Tonalify.exe",
+        "passed": true,
+        "own_deployed_runtime": true,
+        "offscreen": true
+      }
+    ],
+    "installer_generated": true,
+    "installer_interactive_install_tested": false
+  },
+  "binaries": {
+    "version": "0.14.0",
+    "binary_code_commit": "8e2ce30d432b45dc6cb308b56906cddafc18e3bd",
+    "artifacts": {
+      "Tonal-Android-0.14.0-local.apk": {
+        "bytes": 47092760,
+        "sha256": "8bf0fe9565c44387769a09de03481bda515546cbeaeca922b61ad1878cd502a5",
+        "certificate_sha256": "464ae7cf34f4f145541569db215f8fcdef5deda1be31921d8e366eed20aa22c2",
+        "same_signature_as_0133": true,
+        "native_libraries_unchanged_from_0133": 20,
+        "application_id": "app.tonal.android",
+        "version_code": 19
+      },
+      "Tonal-Android-0.14.0-arm64-v8a.apk": {
+        "bytes": 25055881,
+        "sha256": "9add320ff5c558f38258f276ed2e3fa8ac6bc317b1084db8af8f7f7bae9ca202",
+        "certificate_sha256": "464ae7cf34f4f145541569db215f8fcdef5deda1be31921d8e366eed20aa22c2",
+        "same_signature_as_0133": true,
+        "native_libraries_unchanged_from_0133": 10,
+        "application_id": "app.tonal.android",
+        "version_code": 19
+      },
+      "Tonal-Hub-0.14.0.0-Windows-x64-Setup.exe": {
+        "bytes": 81613497,
+        "sha256": "fb3d8a492c0554811c244eee0bd983a552bedd05a4795548914e2c51cc531b55",
+        "inno_setup_compilation_succeeded": true
+      }
+    }
+  },
+  "validation_completed_on": "2026-10-23"
 }

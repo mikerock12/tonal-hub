@@ -192,6 +192,20 @@ depurável, sem Hub; não comparar esse número ao Spotify sem login.
 
 ![CPU e RAM medidos na versão 0.12.0, com os cenários identificados](docs/benchmarks/2026-10-19/comparison.png)
 
+## Instalar a entrega pessoal 0.14.0
+
+| Plataforma | Arquivo local | Download privado |
+|---|---|---|
+| Windows x64 | `out/release-local/Tonal-Hub-0.14.0.0-Windows-x64-Setup.exe` | [Instalador](https://drive.google.com/file/d/18R2dKi_sQrA9WKpw26ZPq-MC15f9uMw7/view) |
+| POCO X7 Pro / ARM64 | `out/android/Tonal-Android-0.14.0-arm64-v8a.apk` | [APK ARM64](https://drive.google.com/file/d/1WhvDGgmFMvLfrtoXKNTm-zynFJI_xrBD/view) |
+| ARM64 + emulador x86_64 | `out/android/Tonal-Android-0.14.0-local.apk` | [APK universal](https://drive.google.com/file/d/1ih2ptr1HcbkUedtH1ymwOQfE0a-4UM1q/view) |
+
+Atualize por cima da versão anterior. Android versionCode 19 e mesma assinatura
+0.13.3; bibliotecas de áudio nativas idênticas. Os três programas Windows foram
+abertos com o runtime do pacote em smoke offscreen; não houve teste de instalação
+interativa. [Guia da versão](docs/SONG_PAGES_SHARE_SETLISTS_0140.md) e
+[backup privado 0.14](https://drive.google.com/drive/folders/1iztlSwSWiDcCk5A6Wd1XIBHlJRGzEae4).
+
 ## Instalar a entrega pessoal 0.13.3
 
 | Plataforma | Arquivo local | Download privado |

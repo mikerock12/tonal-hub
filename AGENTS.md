@@ -158,5 +158,5 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
   busca autenticada setlist.fm ou envio para terceiros sem evidência.
 
 - Validação 0.14: docs/song-pages-0140-tests.json (CTest 10, QML 17/6/3,
-  temas 183, Java 40, Android 17 nativas + 10 UI, MusicBrainz ao vivo no C++).
+  temas 183, Java 40, Android 18 nativas + 10 UI, MusicBrainz ao vivo no C++).
   Drive privado 0.14: 1iztlSwSWiDcCk5A6Wd1XIBHlJRGzEae4.

@@ -298,6 +298,13 @@ conferência por componentes Qt renderizados e AVD dedicada, sem chamar isso
 validação manual da janela nativa. APKs versionCode 19, mesma identidade.
 
 Validação 0.14: CTest Windows 10; QML 17/6/3; temas 183; política Java 40;
-Android 17 verificações nativas e 10 cenários de interface na AVD. MusicBrainz
+Android 18 verificações nativas e 10 cenários de interface na AVD. MusicBrainz
 consultado ao vivo no C++ para Veruca Salt e Nirvana. Backups privados desta
 entrega: https://drive.google.com/drive/folders/1iztlSwSWiDcCk5A6Wd1XIBHlJRGzEae4.
+
+Instaláveis finais 0.14.0 verificados: Windows Setup com os três programas
+abertos em smoke offscreen usando o runtime do pacote; APKs de produção com
+mesma assinatura 0.13.3, versionCode 19, bibliotecas de áudio nativas idênticas.
+Upgrade e abertura do APK universal conferidos na AVD. Código dos binários:
+`8e2ce30d432b45dc6cb308b56906cddafc18e3bd`; atualizações documentais posteriores
+não representam nova compilação. A instalação interativa Windows não foi testada.
