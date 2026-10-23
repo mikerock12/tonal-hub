@@ -24,6 +24,7 @@ AbstractButton {
             c.strokeStyle=button.ink;c.fillStyle=button.ink;c.lineWidth=1.8;c.lineCap="round";c.lineJoin="round";c.beginPath()
             const line=(a,b,x,y)=>{c.moveTo(a,b);c.lineTo(x,y)}
             switch(button.symbol){
+            case "share":c.arc(18,5,3,0,Math.PI*2);c.moveTo(8,12);c.arc(5,12,3,0,Math.PI*2);c.moveTo(21,19);c.arc(18,19,3,0,Math.PI*2);line(8,10.5,15,6.5);line(8,13.5,15,17.5);break
             case "now":c.arc(12,12,9,0,Math.PI*2);c.moveTo(15,12);c.arc(12,12,3,0,Math.PI*2);break
             case "library":line(4,4,4,21);line(10,4,10,21);line(16,4,21,21);break
             case "chart":line(3,21,21,21);line(6,17,6,11);line(12,17,12,6);line(18,17,18,3);break

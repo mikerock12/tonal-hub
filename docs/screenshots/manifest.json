@@ -1,5 +1,5 @@
 {
-  "documented_on": "2026-10-21",
+  "documented_on": "2026-10-23",
   "scope": "Real app/test screenshots with version and fixture provenance per image. Historical captures preserved; two new 0.12.0 native Android queue captures; four 0.13.0 theme captures without personal data; four 0.13.1 control/repeat captures without personal data.",
   "captures": [
     {
@@ -337,6 +337,90 @@
       "height": 1200,
       "bytes": 117581,
       "sha256": "e5924824e8be96b0b9c9e22a513ef9fbcb7fea06362eee5181933b8107033401"
+    },
+    {
+      "file": "desktop-musica-0140.png",
+      "source": "out/mix-ui/song-page-music-0140.png",
+      "platform": "Windows",
+      "capture_context": "0.14.0: validação de páginas e compartilhar",
+      "note": "Componente Qt/QML de produção, harness isolado; faixa sintética e capa ausente intencional.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 944,
+      "height": 646,
+      "bytes": 27871,
+      "sha256": "8acbda818279a832d71f21c3c8eb1df0e8c9dd0118c20fac88a3084f712c6493"
+    },
+    {
+      "file": "desktop-letra-0140.png",
+      "source": "out/mix-ui/song-page-lyrics-0140.png",
+      "platform": "Windows",
+      "capture_context": "0.14.0: validação de páginas e compartilhar",
+      "note": "Componente Qt/QML de produção, harness isolado; sem letra real ou conta.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 944,
+      "height": 646,
+      "bytes": 22269,
+      "sha256": "edf1dca988f1261d601ad26846c650256184a6ca2b5ad51d537aba41e25a6308"
+    },
+    {
+      "file": "desktop-compartilhar-0140.png",
+      "source": "out/mix-ui/share-style-1-0140.png",
+      "platform": "Windows",
+      "capture_context": "0.14.0: validação de páginas e compartilhar",
+      "note": "Cartão do componente de produção, harness Qt/QML, dados sintéticos.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 183,
+      "height": 326,
+      "bytes": 6939,
+      "sha256": "b52447f4a2fda773aff19c56e7cc13832ccea38796064b2aeb0f80368379581c"
+    },
+    {
+      "file": "android-musica-0140.png",
+      "source": "out/android/song-0140/music.png",
+      "platform": "Android",
+      "capture_context": "0.14.0: validação de páginas e compartilhar",
+      "note": "APK benchmark 0.14.0, AVD Tonal_Local_20261015; dados sintéticos e capa ausente intencional.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 540,
+      "height": 1200,
+      "bytes": 54300,
+      "sha256": "290427d863cad7fe954b93d2ea487cb5be9e6be46fb60621f98202ef0b83019d"
+    },
+    {
+      "file": "android-letra-0140.png",
+      "source": "out/android/song-0140/lyrics.png",
+      "platform": "Android",
+      "capture_context": "0.14.0: validação de páginas e compartilhar",
+      "note": "APK benchmark 0.14.0, AVD dedicada; versos/traduções sintéticos.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 540,
+      "height": 1200,
+      "bytes": 85791,
+      "sha256": "72496245b6862de3a38dec95c02b9d471533774999d8c053d674712c049f071c"
+    },
+    {
+      "file": "android-compartilhar-0140.png",
+      "source": "out/android/song-0140/share.png",
+      "platform": "Android",
+      "capture_context": "0.14.0: validação de páginas e compartilhar",
+      "note": "APK benchmark 0.14.0, AVD dedicada; cartão de faixa sintética, nenhum envio.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 540,
+      "height": 1200,
+      "bytes": 43719,
+      "sha256": "caeee483f1bf8ec6dc153e9104a2660344c68300c08f97d40c7fa5607b640184"
+    },
+    {
+      "file": "android-setlists-0140.png",
+      "source": "out/android/song-0140/setlists.png",
+      "platform": "Android",
+      "capture_context": "0.14.0: validação de páginas e compartilhar",
+      "note": "APK benchmark 0.14.0, AVD dedicada; campo de chave vazio e nenhuma busca autenticada.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 540,
+      "height": 1200,
+      "bytes": 50447,
+      "sha256": "22fb7e8e1d9936826e196cc7fd0deae3cb30548b8cbc9e83a36d18dc58073a39"
     }
   ]
 }

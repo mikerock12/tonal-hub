@@ -41,6 +41,22 @@ Pane {width:1000;height:800;padding:0;palette.button:"#263440";palette.buttonTex
  PlayerBar{id:playerBar;x:0;y:700;z:10;width:1000;height:80}
  CollectionPage{id:page;anchors.fill:parent;route:({page:"album",params:{id:"album"}})}
  TestCase{name:"CollectionMix";when:windowShown
+  function captureSong(item,file){let done=false;item.grabToImage(function(image){image.saveToFile(file);done=true});tryVerify(function(){return done},3000)}
+  function test_song_pages_fill_viewport_and_snap(){
+   personalPanel.showSong();let pages=findChild(personalPanel,"songPages");verify(pages!==null);compare(pages.count,3);pages.currentIndex=0;wait(300);
+   compare(Math.round(pages.contentY),0);for(let i=0;i<3;i++)compare(Math.round(pages.model.get(i).height),Math.round(pages.height));
+   mouseWheel(pages,pages.width/2,pages.height/2,0,-600);wait(800);compare(pages.currentIndex,1);compare(Math.round(pages.contentY),Math.round(pages.height));
+   captureSong(findChild(personalPanel,"songPanelBody"),"song-page-lyrics-0140.png");
+   pages.currentIndex=2;wait(300);compare(Math.round(pages.contentY),Math.round(2*pages.height));
+   pages.currentIndex=0;wait(300);console.log("SONG_GEOMETRY",personalPanel.height,personalPanel.contentItem.height,pages.height,pages.model.get(0).height,findChild(personalPanel,"songControls").y,findChild(personalPanel,"songControls").height);captureSong(findChild(personalPanel,"songPanelBody"),"song-page-music-0140.png");personalPanel.close();
+  }
+  function test_share_freezes_identity_and_validates_link(){
+   personalPanel.showSong();let share=findChild(personalPanel,"songShareDialog");verify(share!==null);
+   share.present({uri:"spotify:track:0123456789ABCDEFGHIJKL",title:"Música de teste · dados sintéticos",artist:"Artista de teste"});
+   compare(share.link,"https://open.spotify.com/track/0123456789ABCDEFGHIJKL");let old=personal.current;personal.current=Object.assign({},old,{title:"Outra música"});compare(share.track.title,"Música de teste · dados sintéticos");
+   for(let i=0;i<3;i++){share.style=i;wait(120);captureSong(findChild(share,"sharePreview"),"share-style-"+i+"-0140.png")}
+   share.track={uri:"spotify:artist:0123456789ABCDEFGHIJKL"};compare(share.link,"");share.close();personal.current=old;personalPanel.close();
+  }
   function test_discovery_waits_for_fresh_queue(){
    personalPanel.songQueueSource=[];personalPanel.queueAnchor="";App.player.queue=[];App.player.delayQueue=true;App.listeningMix.previewQueue=[];
    personalPanel.showSong();personalPanel.discoveryPlayback=true;let before=App.player.refreshes;personalPanel.remixSong(false);

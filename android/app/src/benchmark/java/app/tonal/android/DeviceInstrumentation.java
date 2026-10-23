@@ -13,6 +13,7 @@ public final class DeviceInstrumentation extends Instrumentation {
         try{
             if(args.getString("action","").equals("companionImport")){final String[] text={""};runOnMainSync(()->{try{MusicStore store=new MusicStore(getTargetContext(),"interop-library.json");store.restoreBackup(new String(java.nio.file.Files.readAllBytes(new java.io.File(getTargetContext().getFilesDir(),"companion-cpp-backup.json").toPath()),java.nio.charset.StandardCharsets.UTF_8));if(store.favorites().length()==0)throw new AssertionError("Missing imported favorite");text[0]="CPP_BACKUP_IMPORT_PASS";}catch(Exception e){throw new RuntimeException(e);}});result.putString("result",text[0]);finish(0,result);return;}
             if(args.getString("action","").equals("lyricPipelineTests")){result.putString("result",LyricPipelineTests.run(this));finish(0,result);return;}
+            if(args.getString("action","").equals("songFeatureTests")){result.putString("result",SongFeatureTests.run(this));finish(0,result);return;}
             if(args.getString("action","").equals("coreTests")){result.putString("result",new CoreTests().run(this).toString());finish(0,result);return;}
             if(args.getString("action","").equals("playbackSafetyTests")){result.putString("result",new CoreTests().run(this,true).toString());finish(0,result);return;}
             android.app.UiAutomation automation=getUiAutomation();

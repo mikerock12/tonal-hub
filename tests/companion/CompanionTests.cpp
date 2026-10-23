@@ -75,6 +75,9 @@ public:
     auto backup=QUrl::fromLocalFile(dir.path()+"/portable.tonal-backup.json");require(restored.exportBackup(backup),"backup export failed");
     restored.deletePlaylist(restored.playlists()[0].toMap()["id"].toString());require(restored.restoreBackup(backup)&&restored.playlists().size()==1,"backup restore failed");
     require(restored.lyricStyle()["lyricFont"]=="Mono"&&restored.searches().size()==1,"preferences absent from restored backup");
+    auto facts=MusicCompanion::artistFacts(QJsonObject{{"id","12345678-1234-1234-1234-123456789012"},{"type","Group"},{"begin-area",QJsonObject{{"name","Cidade de teste"}}},{"life-span",QJsonObject{{"begin","1994"}}}});
+    require(facts["facts"].toList().contains("Formação: 1994")&&facts["facts"].toList().contains("Origem: Cidade de teste"),"artist facts lost sourced fields");
+    require(!MusicCompanion::artistFacts({}).value("facts").toList().size()&&MusicCompanion::artistFacts({})["url"].toString().isEmpty(),"missing artist fields fabricated facts or source");
     auto args=QCoreApplication::arguments();int exportAt=args.indexOf("--export");if(exportAt>=0)require(restored.exportBackup(QUrl::fromLocalFile(args.value(exportAt+1))),"interop export failed");
     int importAt=args.indexOf("--import");if(importAt>=0)require(restored.restoreBackup(QUrl::fromLocalFile(args.value(importAt+1)))&&!restored.favorites().isEmpty(),"Android backup import failed");
     restored.clearHistory();require(restored.statistics(7,"artists")["plays"].toInt()==0&&restored.favorites().size()==1,"clear history removed library or kept counts");
@@ -83,6 +86,15 @@ public:
       restored.selectTrack(song);restored.importLyrics("[00:00.00]Hello world");restored.translate("auto");QElapsedTimer deadline;deadline.start();
       while(restored.busy()&&deadline.elapsed()<30000){QCoreApplication::processEvents();QThread::msleep(20);}
       auto translated=restored.lines().value(0).toMap()["translation"].toString();if(!translated.contains("Olá",Qt::CaseInsensitive))std::cerr<<"Translation status: "<<restored.lyricStatus().toStdString()<<"\n";require(translated.contains("Olá",Qt::CaseInsensitive),"live pt-BR translation failed");std::cout<<"LIVE_TRANSLATION_PASS: synthetic phrase translated to Portuguese\n";
+    }
+    if(args.contains("--live-artist")){
+      MusicCompanion notes(nullptr,dir.path()+"/artist-notes");
+      for(const auto &band:QList<QPair<QString,QString>>{{"Veruca Salt","American Thighs"},{"Nirvana","In Utero"}}){
+        notes.selectTrack({{"provider","Fixture"},{"id",band.first},{"title","Metadata check"},{"artist",band.first},{"album",band.second}});notes.loadArtistNotes();QElapsedTimer timeout;timeout.start();
+        while((notes.artistNotes().isEmpty()||notes.artistNotes().value("busy").toBool())&&timeout.elapsed()<90000){QCoreApplication::processEvents();QThread::msleep(20);}
+        auto result=notes.artistNotes();std::cout<<"LIVE_ARTIST "<<band.first.toStdString()<<" "<<QJsonDocument(QJsonObject::fromVariantMap(result)).toJson(QJsonDocument::Compact).toStdString()<<"\n";
+        require(!result.value("url").toString().isEmpty()&&!result.value("facts").toList().isEmpty(),"live artist lookup did not return sourced facts");
+      }
     }
     std::cout<<"COMPANION_PASS: persistence, deduplication, privacy, actual progress, pause, seek, periods, evidence, chart drilldown, LRC\n";
   }

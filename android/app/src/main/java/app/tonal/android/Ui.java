@@ -67,6 +67,7 @@ final class Ui {
         Symbol(String name,int color){this.name=name;p.setColor(color);p.setStrokeWidth(1.8f);p.setStrokeCap(Paint.Cap.ROUND);p.setStrokeJoin(Paint.Join.ROUND);}
         public void draw(Canvas canvas){canvas.save();Rect b=getBounds();float side=Math.min(b.width(),b.height());canvas.translate(b.left+(b.width()-side)/2f,b.top+(b.height()-side)/2f);canvas.scale(side/24f,side/24f);p.setStyle(Paint.Style.STROKE);
             switch(name){
+                case "share":canvas.drawCircle(18,5,3,p);canvas.drawCircle(5,12,3,p);canvas.drawCircle(18,19,3,p);canvas.drawLine(8,10.5f,15,6.5f,p);canvas.drawLine(8,13.5f,15,17.5f,p);break;
                 case "now":canvas.drawCircle(12,12,9,p);canvas.drawCircle(12,12,3,p);canvas.drawArc(6,6,18,18,210,60,false,p);break;
                 case "lyrics":canvas.drawLine(4,5,20,5,p);canvas.drawLine(4,10,17,10,p);canvas.drawLine(4,15,20,15,p);canvas.drawLine(4,20,14,20,p);break;
                 case "shake":canvas.save();canvas.rotate(-14,12,12);canvas.drawRoundRect(8,6,16,18,1,1,p);canvas.drawLine(10,9,14,9,p);canvas.drawLine(10,12,14,12,p);canvas.drawLine(10,15,13,15,p);canvas.restore();canvas.drawLine(2,7,1,11,p);canvas.drawLine(1,11,3,15,p);canvas.drawLine(21,7,23,11,p);canvas.drawLine(23,11,22,15,p);break;

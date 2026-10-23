@@ -30,6 +30,7 @@
         </activity-alias>
         <activity android:name=".MainActivity" android:label="Tonalify" android:exported="true" android:launchMode="singleTop" android:taskAffinity="${applicationId}.tonalify" android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity android:name=".IndieActivity" android:label="IndieTonal" android:process=":indie" android:exported="false" android:launchMode="singleTop" android:taskAffinity="${applicationId}.indie" android:configChanges="orientation|screenSize|keyboardHidden" />
+        <provider android:name=".ShareCardProvider" android:authorities="${applicationId}.sharecard" android:exported="false" android:grantUriPermissions="true" />
         <service android:name=".PlaybackService" android:exported="false" android:foregroundServiceType="mediaPlayback" />
         <service android:name=".IndiePlaybackService" android:process=":indie" android:exported="false" android:foregroundServiceType="mediaPlayback" />
     </application>

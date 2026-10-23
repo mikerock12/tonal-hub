@@ -27,11 +27,17 @@ final class WebRequest {
     static JSONObject json(String address)throws Exception{
         return (JSONObject)value(address);
     }
-    static Object value(String address)throws Exception{
+    static Object value(String address)throws Exception{return value(address,6*1024*1024);}
+    private static Object value(String address,int limit)throws Exception{
         HttpURLConnection c=open(address,null);ScheduledFuture<?> timeout=deadlines.schedule(c::disconnect,30000,TimeUnit.MILLISECONDS);
         try(InputStream in=c.getInputStream();ByteArrayOutputStream out=new ByteArrayOutputStream()){
-            byte[] bytes=new byte[16384];for(int n;(n=in.read(bytes))!=-1;){if(Thread.currentThread().isInterrupted())throw new InterruptedIOException();if(out.size()+n>6*1024*1024)throw new IOException("Resposta maior que 6 MiB");out.write(bytes,0,n);}return new JSONTokener(new String(out.toByteArray(),StandardCharsets.UTF_8)).nextValue();
+            byte[] bytes=new byte[16384];for(int n;(n=in.read(bytes))!=-1;){if(Thread.currentThread().isInterrupted())throw new InterruptedIOException();if(out.size()+n>limit)throw new IOException("Resposta acima do limite");out.write(bytes,0,n);}return new JSONTokener(new String(out.toByteArray(),StandardCharsets.UTF_8)).nextValue();
         }finally{timeout.cancel(false);c.disconnect();}
+    }
+    private static long nextMusicBrainz;
+    static JSONObject musicBrainz(String path)throws Exception{
+        while(true){long delay;synchronized(WebRequest.class){long now=android.os.SystemClock.elapsedRealtime();delay=nextMusicBrainz-now;if(delay<=0){nextMusicBrainz=now+1250;break;}}Thread.sleep(Math.min(delay,1000));}
+        try{return (JSONObject)value("https://musicbrainz.org/ws/2/"+path,512*1024);}catch(Failure e){if(e.code==429||e.code==503)synchronized(WebRequest.class){nextMusicBrainz=Math.max(nextMusicBrainz,android.os.SystemClock.elapsedRealtime()+30000);}throw e;}
     }
     private WebRequest(){}
 }
