@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.14.0 — 23/10/2026
+
+- Música, letra e artista em seções verticais completas no PC e no Android.
+- Compartilhamento de link Spotify com cartões personalizados; seletor nativo
+  Android e exportação PNG/cópia do link no Windows.
+- Fatos do MusicBrainz com identificação por nome/álbum, cache limitado,
+  fonte explícita e sugestões editoriais relacionadas ao repertório.
+- Criar com setlist.fm no Android, com chave criptografada e revisão pelo
+  Text to Tonalify antes de salvar ou publicar opcionalmente.
+- Créditos do Tonal original de Matheus Nunes (natheus) preservados.
+
+
 ## Tonal Hub pessoal 0.13.3 — 21/10/2026
 
 - Android: trocar o tema não fecha mais o Tonalify. O ícone continua mudando

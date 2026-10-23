@@ -63,7 +63,7 @@ public final class MainActivity extends Activity {
         api=new SpotifyClient(this);engineApi=new SpotifyClient(this,true);ui=new Ui(this);artwork=new Artwork(this);
         diagnostics=BuildConfig.DEBUG&&(getIntent().getBooleanExtra("benchmark",false)||getIntent().getBooleanExtra("selfTest",false)||getIntent().getBooleanExtra("streamingBenchmark",false)||getIntent().getBooleanExtra("catalogTest",false));
         buildShell();catalog=new CatalogScreen(this,api,artwork,body);
-        setContentView(root);if(BuildConfig.DEBUG&&getIntent().getBooleanExtra("mixUiFixture",false))handler.post(this::mixUiFixture);if(BuildConfig.DEBUG&&getIntent().getBooleanExtra("openTextPlaylist",false))handler.post(()->TextPlaylistWizard.show(this,api));NativeBridge.listeners.add(statusListener);NativeBridge.commandListeners.add(commandObserver);NativeBridge.progressObserver=progressObserver;home();String literal=getIntent().getStringExtra("literalQuery");if(literal!=null)catalog.search(literal);
+        setContentView(root);if(BuildConfig.DEBUG&&getIntent().getBooleanExtra("songPageFixture",false))handler.post(()->DebugSongPage.show(this,api));if(BuildConfig.DEBUG&&getIntent().getBooleanExtra("openSetlists",false))handler.post(()->DebugSongPage.setlists(this,api));if(BuildConfig.DEBUG&&getIntent().getBooleanExtra("mixUiFixture",false))handler.post(this::mixUiFixture);if(BuildConfig.DEBUG&&getIntent().getBooleanExtra("openTextPlaylist",false))handler.post(()->TextPlaylistWizard.show(this,api));NativeBridge.listeners.add(statusListener);NativeBridge.commandListeners.add(commandObserver);NativeBridge.progressObserver=progressObserver;home();String literal=getIntent().getStringExtra("literalQuery");if(literal!=null)catalog.search(literal);
         if(Build.VERSION.SDK_INT>=33)getOnBackInvokedDispatcher().registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT,()->{if(!catalog.back())leaveToHub();});
         if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=android.content.pm.PackageManager.PERMISSION_GRANTED)requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},10);
         loadDsp();
@@ -112,7 +112,7 @@ public final class MainActivity extends Activity {
         }).show();
     }
     void authorizeTextPlaylist(){String id=getSharedPreferences("settings",0).getString("clientId","");if(id.isEmpty()){login();return;}api.login(id,this::notice);}
-    void createPlaylist(){new AlertDialog.Builder(this).setTitle("Criar playlist").setItems(new String[]{"Playlist pessoal","Criar com Text to Tonalify…"},(d,n)->{if(n==1)TextPlaylistWizard.show(this,api);else MusicPanel.show(this,api);}).show();}
+    void createPlaylist(){new AlertDialog.Builder(this).setTitle("Criar playlist").setItems(new String[]{"Playlist pessoal","Criar com Text to Tonalify…","Criar com setlist.fm…"},(d,n)->{if(n==2)SetlistWizard.show(this,api);else if(n==1)TextPlaylistWizard.show(this,api);else MusicPanel.show(this,api);}).show();}
     private void connectSpotify(){
         AudioFiles.cancel();
         if(authorizingEngine){status.setText("Conclua a autorização de reprodução no navegador…");return;}

@@ -1,0 +1,83 @@
+{
+  "version": "0.14.0",
+  "documented_on": "2026-10-23",
+  "windows_ctest": {
+    "passed": 10,
+    "failed": 0
+  },
+  "qml": {
+    "song_and_queue": 17,
+    "lyrics": 6,
+    "text_playlist": 3
+  },
+  "themes": {
+    "passed": 183
+  },
+  "android_native": {
+    "passed": true,
+    "checks": [
+      "share_canonical_track_link",
+      "share_rejects_nontrack_and_missing_id",
+      "setlist_preserves_encore_order_and_reprises",
+      "setlist_cover_keeps_show_performer",
+      "setlist_empty_result",
+      "artist_sourced_formation",
+      "artist_missing_values_not_invented",
+      "ambiguous_artist_not_attributed",
+      "artist_album_disambiguates_homonyms",
+      "ambiguous_album_still_abstains",
+      "provider_not_exported",
+      "share_renderer_style_0",
+      "share_renderer_style_1",
+      "share_renderer_style_2",
+      "provider_reads_generated_card",
+      "provider_refuses_write",
+      "provider_refuses_path_traversal"
+    ]
+  },
+  "android_ui": {
+    "passed": true,
+    "version": "0.14.0",
+    "checks": [
+      "hero_contains_controls_without_adjacent_lyrics",
+      "hero_bottom_action_inside_viewport",
+      "swipe_snaps_to_lyrics",
+      "lyrics_inner_scroll_then_swipe_to_artist",
+      "share_customization_has_copy_and_card",
+      "native_sharesheet_opened_without_sending",
+      "share_created_only_restricted_png",
+      "setlist_wizard_available_on_android",
+      "setlist_requires_artist_and_key",
+      "no_android_fatal_exception"
+    ],
+    "synthetic": true,
+    "remote_playlist_written": false,
+    "message_sent": false,
+    "physical_phone_tested": false
+  },
+  "musicbrainz_live": {
+    "platform": "Windows C++ MusicCompanion",
+    "passed": true,
+    "artists": [
+      {
+        "name": "Veruca Salt",
+        "mbid": "86e8e21a-d29f-47d2-bbf0-e079f7044e71"
+      },
+      {
+        "name": "Nirvana",
+        "mbid": "5b11f4ce-a62d-471e-81fc-a69a8278c7da"
+      }
+    ]
+  },
+  "limitations": [
+    "Windows Computer Use: two launch attempts returned GetCursorPos failed: acesso negado (0x80070005); no manual native-window verification claimed.",
+    "Qt component screens rendered in the isolated production-component harness; Android captures in the dedicated AVD with synthetic track and lyric data.",
+    "Initial Android sharesheet probe ran before an active chooser UI was available; bounded wait and isolated activity task fixed test setup.",
+    "The longer lyric-scroll scenario initially failed to hand its gesture to the pager. SongPager interception was corrected and the same scenario passed.",
+    "An initial QML capture requested a native style content item with no QML engine. Captures now target the explicitly defined production item.",
+    "No authenticated setlist.fm search or real Spotify playlist write, no message sent, no physical phone/Bluetooth test and no new performance benchmark."
+  ],
+  "original_author": "Matheus Nunes (natheus)",
+  "source": "https://github.com/natheus/tonal-player",
+  "playback_safety_java_checks": 40
+}

@@ -15,6 +15,7 @@ class MusicCompanion : public QObject {
   friend class ListeningMix;
   Q_OBJECT
   Q_PROPERTY(QVariantMap current READ current NOTIFY currentChanged)
+  Q_PROPERTY(QVariantMap artistNotes READ artistNotes NOTIFY artistNotesChanged)
   Q_PROPERTY(QVariantList favorites READ favorites NOTIFY changed)
   Q_PROPERTY(QVariantList playlists READ playlists NOTIFY changed)
   Q_PROPERTY(QVariantList lines READ lines NOTIFY lyricsChanged)
@@ -31,6 +32,11 @@ public:
   explicit MusicCompanion(QObject *parent=nullptr,const QString &root={});
   ~MusicCompanion() override;
   QVariantMap current() const {return m_current;}
+  QVariantMap artistNotes() const {return m_artistNotes;}
+  Q_INVOKABLE void loadArtistNotes();
+  Q_INVOKABLE void cancelArtistNotes(){++m_artistGeneration;m_artistName.clear();}
+  static QVariantMap artistFacts(const QJsonObject &);
+  static QString artistFromRelease(const QJsonObject &,const QString &name,const QString &album);
   QVariantList favorites() const;
   QVariantList playlists() const;
   QVariantList lines() const{return m_lines;}
@@ -90,6 +96,7 @@ public:
   static QVariantMap tone(const QString &,const QString &genre);
 signals:
   void metadataRequested(const QVariantMap &track);
+  void artistNotesChanged();
   void changed();void currentChanged();void lyricsChanged();
   void message(const QString &);
   void queueRequested(const QVariantList &,int);
@@ -99,7 +106,8 @@ private:
   friend class CompanionTests;
   QString syncKey() const;void metadataNext();
   void save();void flush();void checkpoint();
-  void get(const QUrl &,std::function<void(int,const QJsonDocument &)>);
+  void get(const QUrl &,std::function<void(int,const QJsonDocument &)>,std::function<bool()> active={});
+  void getArtistNote(const QUrl &,std::function<void(int,const QJsonDocument &)>);
   void acceptLyrics(const QJsonObject &);
   bool retryLyrics(int status,int generation);
   void fetchLyricsAttempt();
@@ -107,6 +115,8 @@ private:
   void updateTone();
   QJsonObject m_data;
   QVariantMap m_current;
+  QVariantMap m_artistNotes;QString m_artistName;int m_artistGeneration=0;
+  QHash<QString,QVariantMap> m_artistCache;
   QVariantList m_lines;
   QString m_path,m_lyricStatus="Abra uma música e busque sua letra.",m_session;
   int m_generation=0,m_position=0,m_translationIndex=0;

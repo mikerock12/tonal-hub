@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
+import QtQml.Models
 
 Dialog {
     id: panel
@@ -72,7 +73,7 @@ Dialog {
         panel.songQueueSource=[panel.controller.current].concat(panel.queueRows())
         if(panel.pendingRemix){panel.pendingRemix=false;panel.prepareSongMix(panel.pendingShake)}else panel.queuedRows=panel.songQueueSource
     }}
-    onClosed: {pendingRemix=false;queueLoading=false}
+    onClosed: {pendingRemix=false;queueLoading=false;if(typeof controller.cancelArtistNotes==="function")controller.cancelArtistNotes()}
     Connections{target:panel.controller;function onCurrentChanged(){if(panel.queueLoading&&panel.queueAnchor!==(panel.controller.current.uri||"")){panel.pendingRemix=false;panel.queueLoading=false;panel.queueNotice="A música mudou. Prepare a fila novamente."}}}
     Connections{target:panel.mixController;ignoreUnknownSignals:true;function onPreviewReady(){if(panel.queueEdited&&!panel.mixController.busy)panel.queuedRows=panel.mixController.previewQueue}}
 
@@ -101,7 +102,7 @@ Dialog {
         if(lyricTrack!==track){lyricTrack=track;translatedTrack="";if(!controller.lines.length&&!controller.busy)controller.fetchLyrics()}
         if(autoTranslation&&!controller.busy&&controller.lines.length&&translatedTrack!==track){translatedTrack=track;controller.translate("auto")}
     }
-    function showSong(){tabs.currentIndex=2;open();ensureLyrics()}
+    function showSong(){tabs.currentIndex=2;songPages.positionViewAtIndex(0,ListView.Beginning);open();ensureLyrics()}
     property bool followLyrics: true
     property int highlighted: -1
     property real phase: 0
@@ -134,12 +135,14 @@ Dialog {
     }
     Connections {
         target: panel.controller
-        function onChanged(){if(panel.visible){panel.refresh();if(panel.audioEngine)panel.audioEngine.visualizerActive=tabs.currentIndex===2&&(panel.controller.background==="Ondas"||panel.controller.background==="Espectro")}}
+        function onChanged(){if(panel.visible){panel.refresh();if(panel.audioEngine)panel.audioEngine.visualizerActive=tabs.currentIndex===2&&songPages.currentIndex===1&&(panel.controller.background==="Ondas"||panel.controller.background==="Espectro")}}
         function onLyricsChanged(){lyrics.model=panel.controller.lines;Qt.callLater(panel.ensureLyrics)}
-        function onCurrentChanged(){Qt.callLater(panel.ensureLyrics)}
+        function onCurrentChanged(){Qt.callLater(panel.ensureLyrics);if(panel.visible&&songPages.currentIndex===2&&typeof panel.controller.loadArtistNotes==="function")panel.controller.loadArtistNotes()}
         function onMessage(text){panel.notice=text}
     }
-    onVisibleChanged: if(audioEngine) audioEngine.visualizerActive=visible && tabs.currentIndex===2 && (controller.background==="Ondas" || controller.background==="Espectro")
+    onVisibleChanged: if(audioEngine) audioEngine.visualizerActive=visible && tabs.currentIndex===2 && songPages.currentIndex===1 && (controller.background==="Ondas" || controller.background==="Espectro")
+    Rectangle {
+        objectName:"songPanelBody";anchors.fill:parent;color:panel.tone.panel
     ColumnLayout {
         anchors.fill: parent; spacing: 10
         RowLayout {
@@ -147,6 +150,7 @@ Dialog {
             Label { text: panel.controller.current.title || "Escolha uma música no player"; textFormat: Text.PlainText; font.pixelSize: 20; font.bold: true; elide: Text.ElideRight; Layout.fillWidth: true }
             ActionIcon { accentInk:panel.tone.accent;symbol:"heart";filled:{panel.revision;return panel.controller.liked(panel.controller.current)} description:filled?"Remover das favoritas":"Favoritar música"; enabled: !!panel.controller.current.title; onClicked: panel.controller.favorite(panel.controller.current) }
             ActionIcon { accentInk:panel.tone.accent;symbol:"plus";description:"Adicionar à playlist"; enabled: !!panel.controller.current.title; onClicked: addMenu.open() }
+            ActionIcon {accentInk:panel.tone.accent;symbol:"share";description:"Compartilhar música";visible:panel.controller.current.provider==="Spotify";onClicked:shareSong.present(panel.controller.current)}
             ActionIcon {accentInk:panel.tone.accent;symbol:"save";description:"Backup da biblioteca";onClicked:backupMenu.open()}
             ActionIcon {accentInk:panel.tone.accent;symbol:"close";description:"Fechar página da música";onClicked:panel.close()}
             Menu { id: backupMenu; MenuItem { text:"Exportar backup…"; onTriggered: backupSave.open() } MenuItem { text:"Restaurar backup…"; onTriggered: restoreConfirm.open() } }
@@ -155,10 +159,10 @@ Dialog {
         Label { visible: panel.notice.length>0; text: panel.notice; textFormat: Text.PlainText; wrapMode: Text.WordWrap; color: "#ffcc8d"; Layout.fillWidth: true }
         TabBar {
             id: tabs; Layout.fillWidth: true
-            onCurrentIndexChanged: {if(panel.audioEngine)panel.audioEngine.visualizerActive=panel.visible && currentIndex===2 && (panel.controller.background==="Ondas" || panel.controller.background==="Espectro");Qt.callLater(panel.ensureLyrics)}
+            onCurrentIndexChanged: {if(panel.audioEngine)panel.audioEngine.visualizerActive=panel.visible && currentIndex===2 && songPages.currentIndex===1 && (panel.controller.background==="Ondas" || panel.controller.background==="Espectro");Qt.callLater(panel.ensureLyrics)}
             TabButton { Accessible.name:"Biblioteca";contentItem:ActionIcon{accentInk:panel.tone.accent;symbol:"library";description:"Biblioteca";filled:tabs.currentIndex===0;onClicked:tabs.currentIndex=0} }
             TabButton { Accessible.name:"Estatísticas";contentItem:ActionIcon{accentInk:panel.tone.accent;symbol:"chart";description:"Estatísticas";filled:tabs.currentIndex===1;onClicked:tabs.currentIndex=1} }
-            TabButton { Accessible.name:"Letras";contentItem:ActionIcon{accentInk:panel.tone.accent;symbol:"lyrics";description:"Letras";filled:tabs.currentIndex===2;onClicked:tabs.currentIndex=2} }
+            TabButton { Accessible.name:"Letras";contentItem:ActionIcon{accentInk:panel.tone.accent;symbol:"lyrics";description:"Letras";filled:tabs.currentIndex===2;onClicked:{tabs.currentIndex=2;songPages.positionViewAtIndex(1,ListView.Beginning)}} }
         }
         StackLayout {
             Layout.fillWidth: true; Layout.fillHeight: true; currentIndex: tabs.currentIndex
@@ -244,15 +248,27 @@ Dialog {
                 Flow { Layout.fillWidth: true; spacing: 5; Repeater { model: panel.stats.recommendations || []; Button { required property string modelData; text: modelData; onClicked: {panel.discover(modelData);panel.close()} } } }
             }
             ColumnLayout {
-                RowLayout {
-                    Image { Layout.preferredWidth:110; Layout.preferredHeight:110; source:panel.controller.current.image || ""; fillMode:Image.PreserveAspectFit; asynchronous:true; sourceSize.width:220; sourceSize.height:220 }
-                    ColumnLayout { Layout.fillWidth:true
-                        Label { text:"TOCANDO AGORA"; color:"#a5a8ad"; font.pixelSize:11 }
-                        Label { text:panel.controller.current.title || "Escolha uma música"; textFormat:Text.PlainText; font.pixelSize:26; font.bold:true; wrapMode:Text.Wrap; Layout.fillWidth:true }
-                        Label { text:panel.controller.current.artist || ""; textFormat:Text.PlainText; color:"#c4c7cc" }
-                        Label { text:(panel.controller.current.album || "")+" • "+(panel.controller.current.provider || ""); textFormat:Text.PlainText; color:"#a5a8ad"; Layout.fillWidth:true; elide:Text.ElideRight }
-                    }
+                RowLayout {Layout.alignment:Qt.AlignHCenter
+                    Repeater{model:["Música","Letra","Artista"];delegate:Button{required property string modelData;required property int index;text:modelData;highlighted:songPages.currentIndex===index;background:Rectangle{radius:18;color:parent.highlighted?panel.tone.accent:panel.tone.accentDeep}contentItem:Label{text:parent.text;color:parent.highlighted?"#000000":panel.tone.text;horizontalAlignment:Text.AlignHCenter;verticalAlignment:Text.AlignVCenter}onClicked:songPages.currentIndex=index}}
                 }
+                ListView {
+                    id:songPages;objectName:"songPages";Layout.fillWidth:true;Layout.fillHeight:true;orientation:ListView.Vertical
+                    clip:true;snapMode:ListView.SnapOneItem;boundsBehavior:Flickable.StopAtBounds;highlightRangeMode:ListView.StrictlyEnforceRange
+                    preferredHighlightBegin:0;preferredHighlightEnd:0;highlightMoveDuration:260;maximumFlickVelocity:1500
+                    onCurrentIndexChanged:{if(currentIndex===2&&typeof panel.controller.loadArtistNotes==="function")panel.controller.loadArtistNotes();if(panel.audioEngine)panel.audioEngine.visualizerActive=panel.visible&&currentIndex===1&&(panel.controller.background==="Ondas"||panel.controller.background==="Espectro")}
+                    model:ObjectModel{
+                        ColumnLayout {width:songPages.width;height:songPages.height;spacing:8
+                Item { Layout.fillWidth:true;Layout.fillHeight:true;Layout.minimumHeight:60
+                    Rectangle{anchors.centerIn:parent;width:Math.min(parent.width,parent.height);height:width;radius:16;color:panel.tone.card
+                        Rectangle{anchors.centerIn:parent;width:parent.width*.56;height:width;radius:width/2;color:panel.tone.accentDeep;border.color:panel.tone.accent
+                            Rectangle{anchors.centerIn:parent;width:parent.width*.18;height:width;radius:width/2;color:panel.tone.panel}}
+                        Label{anchors.bottom:parent.bottom;anchors.bottomMargin:18;anchors.horizontalCenter:parent.horizontalCenter;text:"Capa indisponível";color:panel.tone.textSecondary}
+                        visible:songArt.status!==Image.Ready
+                    }
+                    Image {id:songArt;anchors.fill:parent;source:panel.controller.current.image||"";fillMode:Image.PreserveAspectFit;asynchronous:true;sourceSize.width:800;sourceSize.height:800}
+                }
+                Label {text:panel.controller.current.title||"Escolha uma música";textFormat:Text.PlainText;font.pixelSize:28;font.bold:true;Layout.fillWidth:true;wrapMode:Text.Wrap;maximumLineCount:2;elide:Text.ElideRight}
+                Label {text:(panel.controller.current.artist||"")+" · "+(panel.controller.current.album||"");textFormat:Text.PlainText;color:panel.tone.textSecondary;Layout.fillWidth:true;elide:Text.ElideRight}
                 // Todos os controles juntos, perto da barra: Shake, Aleatório, anterior,
                 // tocar, próxima, Repetir, Descoberta 2+1 e Fila. Os modos aplicam direto;
                 // a janela Fila guarda a prévia com Aplicar.
@@ -263,7 +279,7 @@ Dialog {
                     ActionIcon{accentInk:panel.tone.accent;objectName:"songShake";visible:panel.quickModes;enabled:!panel.mixController||!panel.mixController.busy;symbol:"shake";description:"Shake: sortear outra ordem da fila agora";onClicked:panel.applySongMode(0)}
                     ActionIcon{accentInk:panel.tone.accent;objectName:"songRandom";visible:panel.quickModes;enabled:!panel.mixController||!panel.mixController.busy;symbol:"random";description:"Aleatório: tocar a fila em ordem aleatória / voltar à ordem";filled:!!panel.mixController&&panel.mixController.randomEnabled;onClicked:panel.applySongMode(1)}
                     ActionIcon { accentInk:panel.tone.accent;symbol:"prev";description:"Anterior"; enabled:!!panel.controller.current.title; onClicked:panel.previousRequested() }
-                    ActionIcon { accentInk:panel.tone.accent;symbol:panel.playing?"pause":"play";description:panel.playing?"Pausar":"Reproduzir"; enabled:!!panel.controller.current.title; onClicked:panel.togglePlayback() }
+                    ActionIcon { implicitWidth:64;implicitHeight:64;background:Rectangle{radius:32;color:panel.tone.accent}accentInk:panel.tone.accent;symbol:panel.playing?"pause":"play";description:panel.playing?"Pausar":"Reproduzir"; enabled:!!panel.controller.current.title; onClicked:panel.togglePlayback() }
                     ActionIcon { accentInk:panel.tone.accent;symbol:"next";description:"Próxima"; enabled:!!panel.controller.current.title; onClicked:panel.nextRequested() }
                     ActionIcon{accentInk:panel.tone.accent;objectName:"songRepeat";visible:!!panel.transportPlayer&&typeof panel.transportPlayer.cycleRepeat==="function";symbol:panel.transportPlayer&&panel.transportPlayer.repeatMode==="track"?"repeat1":"repeat";filled:!!panel.transportPlayer&&panel.transportPlayer.repeatMode!=="off";description:!panel.transportPlayer||panel.transportPlayer.repeatMode==="off"?"Repetir a fila":panel.transportPlayer.repeatMode==="context"?"Repetindo a fila: repetir só esta música":"Repetindo esta música: desligar repetição";onClicked:panel.transportPlayer.cycleRepeat()}
                     ActionIcon{accentInk:panel.tone.accent;objectName:"songDiscovery";visible:panel.quickModes;enabled:!panel.mixController||!panel.mixController.busy;symbol:"discover";description:panel.mixController&&panel.mixController.busy?panel.mixController.status:"Descoberta 2+1: duas da fila, uma descoberta / desligar";filled:!!panel.mixController&&panel.mixController.discoveryEnabled;onClicked:panel.applySongMode(2)}
@@ -286,28 +302,31 @@ Dialog {
                     }
                     Label { text:panel.formatClock(panel.controller.current.durationMs||0); color:panel.tone.textSecondary; font.pixelSize:12; font.features:({"tnum":1}) }
                 }
+
+                        }
+                        ColumnLayout {width:songPages.width;height:songPages.height;spacing:8
                 RowLayout {
                     ActionIcon { accentInk:panel.tone.accent;symbol:"refresh";description:"Atualizar letra"; enabled: !panel.controller.busy; onClicked: panel.controller.fetchLyrics() }
                     Label { text:"Idioma automático"; color:"#a5a8ad" }
                     ActionIcon { accentInk:panel.tone.accent;symbol:"translate";description:"Traduzir pt-BR"; enabled: !panel.controller.busy && panel.controller.lines.length>0; onClicked:{panel.translatedTrack="";panel.autoTranslation=true;panel.ensureLyrics()} }
                     ActionIcon { accentInk:panel.tone.accent;symbol:"font";description:"Fontes e cores";onClicked:appearance.open() }
                     ActionIcon { accentInk:panel.tone.accent;symbol:"expand";description:"Expandir letras em tela cheia";onClicked:fullscreen.present() }
-                    Button { text: "Importar / editar"; onClicked: editDialog.open() }
+                    ActionIcon {symbol:"plus";description:"Importar / editar letra";onClicked:editDialog.open()}
                     CheckBox { text: "Sincronia"; checked:panel.controller.syncEnabled;onToggled:panel.controller.syncEnabled=checked }
-                    Label{text:"Toque na linha que está ouvindo para alinhar";color:"#a5a8ad";font.pixelSize:12}
-                    Button{text:"Exportar ajuste";onClicked:syncExport.open()}
+
+                    ActionIcon{symbol:"save";description:"Exportar ajuste de sincronia";onClicked:syncExport.open()}
                 }
                 Label { text: panel.controller.lyricStatus; textFormat: Text.PlainText; wrapMode: Text.WordWrap; Layout.fillWidth: true; color: "#b5c9d6" }
                 Label { text: "Buscar envia título/artista ao LRCLIB; traduzir envia a letra ao Google Tradutor. Letra/versão e tradução podem não estar disponíveis."; wrapMode: Text.WordWrap; Layout.fillWidth: true; font.pixelSize: 11; color: "#a3b8c8" }
                 RowLayout {
-                    ComboBox { model:stage.modes; Component.onCompleted: currentIndex=Math.max(0,model.indexOf(panel.controller.background)); onActivated: {panel.controller.background=currentText;panel.audioEngine.visualizerActive=panel.visible && tabs.currentIndex===2 && (currentText==="Ondas"||currentText==="Espectro");stage.requestPaint()} }
+                    ComboBox { model:stage.modes; Component.onCompleted: currentIndex=Math.max(0,model.indexOf(panel.controller.background)); onActivated: {panel.controller.background=currentText;panel.audioEngine.visualizerActive=panel.visible && tabs.currentIndex===2 && songPages.currentIndex===1 && (currentText==="Ondas"||currentText==="Espectro");stage.requestPaint()} }
                     Button { text: "Escolher foto da banda"; onClicked: photoPicker.open() }
-                    Label { text: "Ondas / espectro: PCM real antes do volume"; font.pixelSize: 11; color: "#a3b8c8" }
+                    Label { visible:songPages.width>800;text: "Ondas / espectro: PCM real antes do volume"; font.pixelSize: 11; color: "#a3b8c8" }
                 }
                 Rectangle {
                     Layout.fillWidth: true; Layout.fillHeight: true; color: "#070f18"; radius: 10; clip: true
                     Image { anchors.fill: parent; source: panel.controller.background==="Foto"?panel.controller.photo:panel.controller.background==="Capa"?(panel.controller.current.image || ""):""; fillMode: Image.PreserveAspectCrop; asynchronous: true; sourceSize.width: 1400; sourceSize.height: 1000 }
-                    LyricBackdrop {id:stage;anchors.fill:parent;mode:panel.controller.background;playing:panel.playing;active:panel.visible&&tabs.currentIndex===2&&!fullscreen.visible;metrics:panel.audioEngine ? panel.audioEngine.metrics : ({})}
+                    LyricBackdrop {id:stage;anchors.fill:parent;mode:panel.controller.background;playing:panel.playing;active:panel.visible&&tabs.currentIndex===2&&songPages.currentIndex===1&&!fullscreen.visible;metrics:panel.audioEngine ? panel.audioEngine.metrics : ({})}
                     Rectangle { anchors.fill: parent; color: "#99040a12" }
                     ListView {
                         id: lyrics; anchors.fill: parent; anchors.margins: 18; model: panel.controller.lines; clip: true; spacing: 20; ScrollBar.vertical: ScrollBar {}
@@ -323,8 +342,26 @@ Dialog {
                         }
                     }
                 }
+                        }
+                        ScrollView {width:songPages.width;height:songPages.height;clip:true;contentWidth:availableWidth
+                            ColumnLayout {width:songPages.width-24;spacing:20
+                                Label {text:panel.controller.current.artist||"Sobre o artista";textFormat:Text.PlainText;font.pixelSize:32;font.bold:true;wrapMode:Text.Wrap;Layout.fillWidth:true}
+                                Label {text:"Bastidores do artista";font.pixelSize:22}
+                                Label {text:(panel.controller.artistNotes||{}).message||"Curiosidades e trajetória · MusicBrainz";Layout.fillWidth:true;wrapMode:Text.Wrap;color:panel.tone.textSecondary}
+                                Repeater{model:(panel.controller.artistNotes||{}).facts||[];Label{required property string modelData;text:modelData;textFormat:Text.PlainText;Layout.fillWidth:true;wrapMode:Text.Wrap;font.pixelSize:18}}
+                                Button{visible:!!(panel.controller.artistNotes||{}).url;text:"Fonte: MusicBrainz · dados colaborativos";onClicked:Qt.openUrlExternally(panel.controller.artistNotes.url)}
+                                Label{text:"Continue a descoberta";font.pixelSize:22;font.bold:true}
+                                Label{text:"Sugestões editoriais por estilo; não são uma lista oficial de artistas relacionados.";Layout.fillWidth:true;wrapMode:Text.Wrap;color:panel.tone.textSecondary}
+                                Flow{Layout.fillWidth:true;spacing:8;Repeater{model:(panel.controller.artistNotes||{}).related||[];Button{required property string modelData;text:modelData;onClicked:{panel.discover(modelData);panel.close()}}}}
+                                Button{text:"Mais deste artista";onClicked:{panel.discover(panel.controller.current.artist||"");panel.close()}}
+                            }
+                        }
+                    }
+                }
+
             }
         }
+    }
     }
     Dialog{id:queueDialog;objectName:"songQueueDialog";title:panel.queueEdited?"Prévia da nova fila":"Fila de reprodução";modal:true;parent:Overlay.overlay;anchors.centerIn:parent;width:Math.min(640,parent.width-32);height:Math.min(620,parent.height-48);standardButtons:Dialog.Close
         onClosed:{panel.pendingRemix=false;panel.queueLoading=false;panel.queueEdited=false;panel.songQueueSource=[]}
@@ -357,6 +394,7 @@ Dialog {
     ClimateDetail{id:climate;controller:panel.controller;days:period.currentValue || 7}
     LyricStyleDialog{id:appearance;controller:panel.controller}
     LyricsFullscreen{id:fullscreen;controller:panel.controller;playing:panel.playing;position:panel.position;metrics:panel.audioEngine ? panel.audioEngine.metrics : ({})}
+    SongShareDialog{id:shareSong;objectName:"songShareDialog"}
     Dialog { id: createDialog; anchors.centerIn: parent; title:"Criar playlist pessoal"; standardButtons: Dialog.Ok|Dialog.Cancel; TextField { id: newName; placeholderText:"Nome da playlist"; maximumLength:100 } onAccepted: {let id=panel.controller.createPlaylist(newName.text);if(id&&panel.controller.current.title)panel.controller.addToPlaylist(id,panel.controller.current);newName.clear()} }
     Dialog { id: renameDialog; anchors.centerIn: parent; title:"Renomear playlist"; standardButtons: Dialog.Ok|Dialog.Cancel; TextField { id: renameField; placeholderText:"Novo nome"; maximumLength:100 } onAccepted: panel.controller.renamePlaylist(panel.selectedPlaylist,renameField.text) }
     Dialog { id: deleteDialog; anchors.centerIn: parent; title:"Excluir esta playlist pessoal?"; standardButtons: Dialog.Yes|Dialog.No; onAccepted: {panel.controller.deletePlaylist(panel.selectedPlaylist);panel.selectedPlaylist="";panel.refresh()} }

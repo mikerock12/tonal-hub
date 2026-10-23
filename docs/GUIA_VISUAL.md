@@ -243,3 +243,35 @@ a cor do tema; no PC, o ícone da janela e da barra de tarefas também.
 
 *Android 0.13.2: APK benchmark na AVD dedicada, sem conta; à esquerda, uma
 gravação pública do acervo Aadam Jacobs no IndieTonal. [Detalhes](NOTIFICACAO_ICONE_0132.md).*
+
+## 12. Música, letra e compartilhar — 0.14.0
+
+Toque no miniplayer para abrir **Música**. Deslize para baixo para **Letra**;
+ao terminar a leitura, outro gesto no limite da rolagem abre **Artista**.
+Os três atalhos abaixo do cabeçalho fazem o mesmo percurso diretamente.
+Cada seção ocupa a área disponível, sem recortes das seções vizinhas.
+
+<img src="screenshots/android-musica-0140.png" width="280" alt="Android 0.14: música e controles inteiros numa seção, com ícone compartilhar junto ao coração">
+<img src="screenshots/android-letra-0140.png" width="280" alt="Android 0.14: seção Letra com sua própria área de leitura e tradução">
+
+O ícone **Compartilhar** abre a personalização: cor, estilo sólido/degradê/papel
+e capa opcional. No Android, Enviar link e Compartilhar cartão + link abrem o
+seletor do sistema; você escolhe o destinatário. No PC, copie o link e salve PNG.
+
+<img src="screenshots/android-compartilhar-0140.png" width="280" alt="Android: prévia do cartão com opções de cor, estilo, capa, copiar e compartilhar">
+<img src="screenshots/desktop-compartilhar-0140.png" width="210" alt="Cartão de compartilhamento no componente Windows, com degradê e dados sintéticos">
+
+No Android, **Biblioteca → Criar playlist → Criar com setlist.fm…** abre a busca
+de shows. Informe artista e chave própria; marque shows, confira as músicas e
+avance para a revisão Text to Tonalify antes de salvar. Covers continuam sendo
+buscados como versões da banda do show. A cópia no Spotify é uma escolha posterior.
+
+<img src="screenshots/android-setlists-0140.png" width="280" alt="Android: criar playlist de shows com chave própria do setlist.fm e revisão posterior">
+<img src="screenshots/desktop-musica-0140.png" width="650" alt="Windows: seção Música completa, com compartilhar, capa e controles">
+
+*Capturas 0.14.0: componentes Qt/QML de produção num harness isolado e APK
+benchmark na AVD dedicada. Dados de músicas, letras e traduções são sintéticos;
+a capa ausente é intencional. Não demonstram reprodução Spotify real, busca
+autenticada setlist.fm ou teste no telefone físico. Não houve envio a terceiros.
+Procedência e hashes no [manifesto](screenshots/manifest.json).
+[Funcionamento e limites](SONG_PAGES_SHARE_SETLISTS_0140.md).*

@@ -1,7 +1,7 @@
 # Instruções para trabalhar neste repositório
 
 Leia [contexto.md](contexto.md), [README.md](README.md) e os documentos da área
-afetada antes de alterar o produto. Estado documental: 21/10/2026, produto 0.13.3.
+afetada antes de alterar o produto. Estado documental: 23/10/2026, produto 0.14.0.
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
@@ -136,3 +136,27 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
 - Manter evidência dos binários 0.11.1 associada ao merge de produto
   `54babcf4adcda7ceb8a25dd9648527cdbe1f13fd`; commits documentais posteriores
   não tornam esses binários recompilados ou novamente benchmarkados.
+
+## Página da música e compartilhamento (0.14.0)
+
+- Referência: docs/SONG_PAGES_SHARE_SETLISTS_0140.md. Três seções completas
+  abaixo do cabeçalho; respeitar rolagem interna da letra e encaixe de página.
+  Não reiniciar áudio nem a seleção ao navegar, compartilhar ou abrir fatos.
+- Compartilhar congela a faixa: URI Spotify de track com 22 caracteres,
+  link canônico, PNG 600×1066. Android usa seletor nativo; Windows copia/salva.
+  Não selecionar contatos nem enviar mensagens automaticamente.
+- Provider Android não exportado, grants só de leitura para PNGs gerados em
+  share-cards; nunca expor files/, banco, credenciais ou paths arbitrários.
+- Artista: MusicBrainz identificado de forma única ou pelos créditos do álbum,
+  cache por artista+álbum até 32 entradas; abster em homônimos. Sugestões por
+  regras editoriais identificadas. Throttle MusicBrainz comum de 1,25 s e
+  backoff 429/503, cancelamento de entregas e limites de resposta/timeout.
+- Setlist.fm Android usa Secrets(namespace setlistfm), sem copiar token/chave
+  para parser, playlist ou backup. Buscar/selecionar não escreve no Spotify;
+  revisão e salvamento local pelo Text to Tonalify precedem cópia remota opcional.
+- Capturas 0.14 usam dados sintéticos; não declarar teste físico, benchmark novo,
+  busca autenticada setlist.fm ou envio para terceiros sem evidência.
+
+- Validação 0.14: docs/song-pages-0140-tests.json (CTest 10, QML 17/6/3,
+  temas 183, Java 40, Android 17 nativas + 10 UI, MusicBrainz ao vivo no C++).
+  Drive privado 0.14: 1iztlSwSWiDcCk5A6Wd1XIBHlJRGzEae4.

@@ -10,12 +10,22 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
-**Produto atual: 0.13.3. Documentação consolidada em 21/10/2026.**
+**Produto atual: 0.14.0. Documentação consolidada em 23/10/2026.**
 
-[Guia visual com 28 capturas](docs/GUIA_VISUAL.md) ·
+[Guia visual com capturas](docs/GUIA_VISUAL.md) ·
 [Regras da Descoberta 2+1](docs/DESCOBERTA_2_MAIS_1.md) ·
 [Benchmarks realizados](docs/BENCHMARKS.md) ·
 [Contexto do projeto](contexto.md) · [Instruções de manutenção](AGENTS.md).
+
+## Novidades 0.14.0
+
+A página da música tem três seções que ocupam a área disponível: **Música,
+Letra e Artista**, com navegação vertical e atalhos. Compartilhe o link Spotify
+com um cartão de capa, cores e estilos personalizados. Fatos do MusicBrainz
+com fonte identificada e sugestões editoriais por estilo completam a seção Artista.
+No Android, **Criar playlist → Criar com setlist.fm** importa shows para a revisão
+nativa do Text to Tonalify, com chave própria guardada no Android Keystore.
+[Guia e limites](docs/SONG_PAGES_SHARE_SETLISTS_0140.md).
 
 ## Novidades 0.13.3
 
@@ -92,7 +102,7 @@ com versão e origem de cada imagem.
 | **Fila e modos** | Shake, Aleatório e Descoberta 2+1 junto da barra de progresso, aplicados direto à fila atual; janela Fila com prévia e Aplicar; descobertas identificadas |
 | **Repetição** | Repetir a fila ou uma faixa no PC e no Android, mantida ao trocar de seleção |
 | **Playlists** | Biblioteca pessoal local; criar/editar playlists Spotify e suas faixas conforme a API permite; assistente Text to Tonalify com revisão de versões, ordem, nome, descrição e capa |
-| **Setlists no Windows** | Buscar shows no setlist.fm e transformar músicas encontradas no Spotify numa playlist; exige chave própria setlist.fm |
+| **Setlists no Windows e Android** | Buscar shows no setlist.fm e transformar músicas encontradas no Spotify numa playlist; exige chave própria setlist.fm |
 | **Estatísticas** | Tempo realmente ouvido, escutas qualificadas e músicas distintas por artista, faixa, álbum, estilo e dia; barras clicáveis e resumos nas listas |
 | **Clima do repertório** | Temas experimentais de letras, estilos, cobertura e sugestões editoriais; classificador local pequeno, sem diagnóstico emocional |
 | **Letras e tradução** | Busca automática enquanto a página está aberta, tradução pt-BR com detecção de idioma, original/tradução juntos, TXT/LRC, sincronia opcional e alinhamento manual |

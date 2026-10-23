@@ -1,6 +1,6 @@
 # Contexto do Tonal Hub
 
-Atualizado em **21/10/2026**. Estado do produto: **0.13.3** (trocar o tema sem fechar o app). Leia também [AGENTS.md](AGENTS.md).
+Atualizado em **23/10/2026**. Estado do produto: **0.14.0** (páginas da música, compartilhar e setlist.fm no Android). Leia também [AGENTS.md](AGENTS.md).
 
 ## Projeto, autoria e objetivo
 
@@ -274,3 +274,30 @@ Tonalify abre o Hub. O ícone é ajustado só ao escolher o tema, nunca ao abrir
 o Hub. Teste: `tests/android/theme_keep_open_smoke.py` (reproduziu na 0.13.2).
 Instaláveis 0.13.3 (versionCode 18) e backup privado:
 https://drive.google.com/drive/folders/1QgE4Ja6iKKczifxhrirB-Dx9AJ3fTTqZ.
+
+## Entrega 0.14.0 — Música, letra, artista e compartilhar
+
+Página com três seções ajustadas à área disponível e navegação vertical com
+encaixe; rolagem interna da letra preservada. Compartilhamento congela a faixa
+escolhida, usa link Spotify canônico e cartão 600×1066, cores e três estilos.
+Android abre seletor nativo, provider privado/read-only para cache PNG;
+Windows copia link e salva PNG. Sem envio automático ou acesso a contatos.
+
+Artista: fatos estruturados MusicBrainz, identificação única ou pelos créditos
+do álbum; abstenção para homônimos. Sugestões editoriais por gênero/artista,
+identificadas na tela. Consulta sob demanda, cache limitado e throttle comum
+MusicBrainz. Não há LLM, inferência de biografia nem trabalho no callback PCM.
+Setlist.fm Android usa chave própria criptografada, até cinco páginas de shows,
+seleção/reprises/covers e revisão no Text to Tonalify (C++ compartilhado) antes
+de salvar local e optar pela cópia Spotify. Windows mantém seu assistente.
+
+Detalhes: [SONG_PAGES_SHARE_SETLISTS_0140.md](docs/SONG_PAGES_SHARE_SETLISTS_0140.md).
+Testes e limites: `docs/song-pages-0140-tests.json`. Sem novo benchmark;
+sem teste físico. Automação Windows recebeu GetCursorPos/acesso negado;
+conferência por componentes Qt renderizados e AVD dedicada, sem chamar isso
+validação manual da janela nativa. APKs versionCode 19, mesma identidade.
+
+Validação 0.14: CTest Windows 10; QML 17/6/3; temas 183; política Java 40;
+Android 17 verificações nativas e 10 cenários de interface na AVD. MusicBrainz
+consultado ao vivo no C++ para Veruca Salt e Nirvana. Backups privados desta
+entrega: https://drive.google.com/drive/folders/1iztlSwSWiDcCk5A6Wd1XIBHlJRGzEae4.
