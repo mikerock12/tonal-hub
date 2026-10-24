@@ -683,6 +683,100 @@ public:
     std::cout << "PASS resume position/queue, failed request retained, new "
                  "choice during reconnect, cancelled API retries, pause\n";
   }
+  static void volumeControl() {
+    QTemporaryDir storage;
+    FakeNetwork network;
+    AuthManager auth(&network);
+    SpotifyApi api(&network, &auth);
+    LibrespotProcess engine(nullptr, storage.path());
+    Player player(&api, &engine, &auth);
+    fakeAuth(auth);
+    player.m_trackUri = "spotify:track:volume-fixture";
+    QJsonObject state{{"is_playing",false},{"progress_ms",0},
+      {"device",QJsonObject{{"id","volume-device"},{"volume_percent",60}}},
+      {"item",QJsonObject{{"uri",player.m_trackUri},{"duration_ms",200000}}}};
+    player.applyState(state);
+    QList<int> values;
+    QList<QString> devices;
+    int responseDelay = 320, responseStatus = 204, pollDelay = 0;
+    network.respond = [&](const QNetworkRequest &req, const QByteArray &) {
+      if (req.url().path().endsWith("/volume")) {
+        QUrlQuery query(req.url());
+        values << query.queryItemValue("volume_percent").toInt();
+        devices << query.queryItemValue("device_id");
+        return Response{responseStatus,{},false,responseDelay};
+      }
+      if (req.url().path() == "/v1/me/player")
+        return Response{200,QJsonDocument(state).toJson(),false,pollDelay};
+      return Response{};
+    };
+    // A long gesture must send while still moving, without overlapping PUTs.
+    for (int i=0;i<24;++i) {
+      player.setVolume(65+i%18);
+      spin([]{return false;},30);
+      player.applyState(state);
+      require(player.volume()==65+i%18,"stale volume changed a live drag");
+    }
+    require(values.size()>=2 && values.size()<=3,"volume is debounced until release or requests overlap");
+    player.setVolume(23);
+    require(spin([&]{return !player.m_volumeInFlight && player.m_pendingVolume<0;},1800),"latest volume never dispatched");
+    require(values.last()==23 && player.volume()==23,"last drag value was lost");
+    require(std::all_of(devices.begin(),devices.end(),[](const auto &d){return d=="volume-device";}),"volume targeted another device");
+    player.applyState(state);
+    require(player.volume()==23,"post-ACK stale poll pulled volume back");
+    player.m_pollTimer.stop();
+
+    // A GET created before the write must remain obsolete even after the guard.
+    responseDelay=20;pollDelay=450;
+    player.refresh();player.setVolume(41);
+    require(spin([&]{return !player.m_volumeInFlight && player.m_pendingVolume<0;},700),"second volume write stuck");
+    player.m_volumeIntentClock.invalidate();
+    require(spin([&]{return !player.m_requestInFlight;},700),"delayed volume GET stuck");
+    require(player.volume()==41,"pre-write GET applied after the settle window");
+    player.m_pollTimer.stop();
+    state["device"]=QJsonObject{{"id","volume-device"},{"volume_percent",52}};
+    player.applyState(state);
+    require(player.volume()==52,"external Connect volume never reconciled");
+
+    // Coalesce zero/100 endpoints, and do not leak a pending write on transfer.
+    player.setVolume(-500);player.setVolume(500);
+    require(player.volume()==100,"volume endpoints not clamped");
+    require(spin([&]{return !player.m_volumeInFlight && player.m_pendingVolume<0;},800),"clamped volume write stuck");
+    require(values.last()==100,"clamped target changed in transport");
+    player.setVolume(0);
+    require(spin([&]{return !player.m_volumeInFlight && player.m_pendingVolume<0;},800)&&values.last()==0,"mute not exact zero");
+    int before=values.size();
+    player.setVolume(61);
+    state["device"]=QJsonObject{{"id","other-device"},{"volume_percent",17}};
+    player.applyState(state);spin([]{return false;},180);
+    require(values.size()==before && player.volume()==17,"pending volume leaked across devices");
+
+    responseDelay=320;player.setVolume(44);
+    require(spin([&]{return values.size()>before;},600),"old route request missing");
+    state["device"]=QJsonObject{{"id","third-device"},{"volume_percent",15}};
+    player.applyState(state);responseDelay=20;player.setVolume(42);
+    require(spin([&]{return !player.m_volumeInFlight && player.m_pendingVolume<0;},800),"new route volume stuck");
+    spin([]{return false;},350);
+    require(player.volume()==42 && values.last()==42 && devices.last()=="third-device",
+            "old route ACK affected the new route");
+    before=values.size();player.m_pollTimer.stop();
+
+    // A superseded 429 must release the serialized slot, not retry old loudness.
+    responseStatus=429;responseDelay=20;pollDelay=0;
+    player.setVolume(67);
+    require(spin([&]{return values.size()>before;},600),"rate-limited write missing");
+    spin([]{return false;},60);responseStatus=204;player.setVolume(29);
+    require(spin([&]{return !player.m_volumeInFlight && player.m_pendingVolume<0;},1800),"superseded retry blocked latest volume");
+    require(values.size()==before+2 && values.last()==29,"obsolete volume retried after supersession");
+    player.m_pollTimer.stop();
+    responseStatus=403;QString notice;
+    QObject::connect(&player,&Player::message,&player,[&](const auto &s){notice=s;});
+    player.setVolume(30);
+    require(spin([&]{return !notice.isEmpty();},800),"refused volume failed silently");
+    require(!player.m_volumeInFlight && !player.m_volumeIntentClock.isValid(),"refused volume left reconciliation blocked");
+    player.cancelVolume();player.m_pollTimer.stop();
+    std::cout << "PASS volume: throttle, serialized latest value, stale GETs, endpoints, device transfer, retry supersession and refusal\n";
+  }
   static void remoteTransport() {
     QTemporaryDir storage;
     FakeNetwork network;
@@ -1098,26 +1192,30 @@ int main(int argc, char **argv) {
         app.arguments().contains("--ready-only"));
   else {
     try {
-      SpotifyRecoveryTests::networkAndResume();
-      SpotifyRecoveryTests::remoteTransport();
-      SpotifyRecoveryTests::seekAndRequeue();
-      SpotifyRecoveryTests::repeatAndMixQueue();
-      SpotifyRecoveryTests::deadlines();
-      SpotifyRecoveryTests::playlistTransport();
-      SpotifyRecoveryTests::listeningMix();
-      SpotifyRecoveryTests::contextQueue();
+      SpotifyRecoveryTests::volumeControl();
+      if (!app.arguments().contains("--volume-only")) {
+        SpotifyRecoveryTests::networkAndResume();
+        SpotifyRecoveryTests::remoteTransport();
+        SpotifyRecoveryTests::seekAndRequeue();
+        SpotifyRecoveryTests::repeatAndMixQueue();
+        SpotifyRecoveryTests::deadlines();
+        SpotifyRecoveryTests::playlistTransport();
+        SpotifyRecoveryTests::listeningMix();
+        SpotifyRecoveryTests::contextQueue();
 #ifdef _WIN32
-      for (const auto *mode : {"crash-once", "eof-once", "stall-once",
-                               "panic-once", "paused", "always-crash",
-                               "invalid-once", "invalid-always"})
-        SpotifyRecoveryTests::pipeline(mode);
+        for (const auto *mode : {"crash-once", "eof-once", "stall-once",
+                                 "panic-once", "paused", "always-crash",
+                                 "invalid-once", "invalid-always"})
+          SpotifyRecoveryTests::pipeline(mode);
 #endif
+      }
       std::cout << "SPOTIFY_RECOVERY_PASS\n";
       report = {{"passed", true},
                 {"real_spotify_session", false},
                 {"credentials_read", false},
                 {"scenarios",
                  QJsonArray{"unexpected_process_exit",
+                            "volume_throttle_serialization_stale_polls_and_device_guard",
                             "PCM_EOF_while_child_alive", "no_PCM_progress",
                             "Rust_panic", "intentional_pause_not_restarted",
                             "invalid_PCM_recovered_without_disabling_DSP",
@@ -1132,6 +1230,14 @@ int main(int argc, char **argv) {
       std::cerr << "FAIL " << error.what() << '\n';
       report = {{"passed", false}, {"error", QString::fromUtf8(error.what())}};
     }
+  }
+  if (app.arguments().contains("--volume-only")) {
+    report["suite"] = "volume_only";
+    report["scenarios"] = QJsonArray{"continuous_drag_throttled_not_debounced",
+      "single_inflight_latest_value", "stale_poll_after_ack",
+      "pre_write_GET_after_guard_expiry", "external_volume_reconciliation",
+      "zero_and_100_percent", "pending_device_transfer_cancelled", "late_ACK_after_device_transfer",
+      "superseded_429_not_retried", "refusal_visible_and_unblocked"};
   }
   report["recorded_at_utc"] =
       QDateTime::currentDateTimeUtc().toString(Qt::ISODate);

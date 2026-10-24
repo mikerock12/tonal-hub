@@ -1,0 +1,101 @@
+{
+  "version": "0.14.1",
+  "platform": "Windows",
+  "recorded_on": "2026-10-24",
+  "volume_regression": {
+    "credentials_read": false,
+    "passed": true,
+    "real_spotify_session": false,
+    "recorded_at_utc": "2026-10-24T10:12:38Z",
+    "scenarios": [
+      "continuous_drag_throttled_not_debounced",
+      "single_inflight_latest_value",
+      "stale_poll_after_ack",
+      "pre_write_GET_after_guard_expiry",
+      "external_volume_reconciliation",
+      "zero_and_100_percent",
+      "pending_device_transfer_cancelled",
+      "late_ACK_after_device_transfer",
+      "superseded_429_not_retried",
+      "refusal_visible_and_unblocked"
+    ],
+    "suite": "volume_only"
+  },
+  "qml": {
+    "passed": 20,
+    "failed": 0,
+    "includes_init_cleanup": true
+  },
+  "packaged_runtime": {
+    "passed": true,
+    "checks": [
+      {
+        "program": "TonalHub.exe",
+        "passed": true,
+        "own_deployed_runtime": true,
+        "offscreen": true
+      },
+      {
+        "program": "IndieTonal.exe",
+        "passed": true,
+        "own_deployed_runtime": true,
+        "offscreen": true
+      },
+      {
+        "program": "Tonalify.exe",
+        "passed": true,
+        "own_deployed_runtime": true,
+        "offscreen": true
+      }
+    ],
+    "installer_generated": true,
+    "installer_interactive_install_tested": false
+  },
+  "binaries": {
+    "version": "0.14.1",
+    "platform": "Windows",
+    "android_version_unchanged": "0.14.0",
+    "artifacts": {
+      "Tonal-Hub-0.14.1.0-Windows-x64-Setup.exe": {
+        "bytes": 81622213,
+        "sha256": "38e1af18bfef777bed37f7d8d169550301cf75baeab868c0b293680b43da3182",
+        "inno_setup_compilation_succeeded": true
+      }
+    }
+  },
+  "broad_ctest_attempts": [
+    {
+      "passed": 7,
+      "failed": 3,
+      "failed_tests": [
+        "spotify_recovery",
+        "audio_integration",
+        "audio_ui_smoke"
+      ],
+      "seconds": 110.62
+    },
+    {
+      "passed": 1,
+      "failed": 2,
+      "tests_rerun": 3,
+      "failed_tests": [
+        "spotify_recovery (timeout)",
+        "audio_integration"
+      ],
+      "seconds": 84.65
+    }
+  ],
+  "limitations": [
+    "Volume HTTP is simulated; no authenticated Spotify volume or acoustic measurement performed.",
+    "Broad audio/process tests failed or timed out with another project AVD/Java load present; causality not established. Existing tests were not disabled or relaxed.",
+    "Installer compiled and package runtime verified offscreen; interactive installation not tested.",
+    "Android unchanged at 0.14.0; no APK rebuild or benchmark."
+  ],
+  "initial_findings": [
+    "The rightmost clickable pixel did not reach 100%; endpoint mapping and the event test were corrected.",
+    "Added late-ACK route regression initially failed: an old GET could restore the previous device. Route generation now rejects that entire obsolete state response.",
+    "Malwarebytes blocked Ninja. User allowed it; pinned Ninja 1.13.2 restored. No protection disabled by agent; alternative NMake attempt cancelled."
+  ],
+  "original_author": "Matheus Nunes (natheus)",
+  "source": "https://github.com/natheus/tonal-player"
+}

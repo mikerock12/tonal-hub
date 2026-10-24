@@ -135,7 +135,9 @@ signals:
 private:
   friend class SpotifyRecoveryTests;
   void cancelResume();
-  void applyState(const QJsonObject &obj);
+  void applyState(const QJsonObject &obj, bool acceptVolume = true);
+  void dispatchVolume();
+  void cancelVolume();
   void clearState();
   void refreshSoon(int ms = 400);
   void scheduleNextPoll();
@@ -159,6 +161,12 @@ private:
   QTimer m_pollTimer;
   QTimer m_tickTimer;
   QTimer m_volumeTimer;
+  QElapsedTimer m_volumeIntentClock;
+  QElapsedTimer m_volumeSentClock;
+  uint64_t m_volumeGeneration = 0;
+  uint64_t m_volumeRouteGeneration = 0;
+  bool m_volumeInFlight = false;
+  QString m_volumeDevice;
   // Seek: a posição aparece na hora; o pedido à Web API sai uma vez, com a
   // última posição pedida, e um GET atrasado não puxa a barra de volta.
   QTimer m_seekTimer;

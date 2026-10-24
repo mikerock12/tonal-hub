@@ -12,6 +12,8 @@ Item {
     readonly property bool hovered: mouse.containsMouse
     readonly property bool active: hovered || dragging
     property real dragValue: 0
+    property real wheelRemainder: 0
+    property double wheelStamp: 0
     readonly property real shownValue: dragging ? dragValue : Math.max(0, Math.min(1, value))
 
     property var styleOverride: null      // pré-visualização de outro tema
@@ -87,9 +89,9 @@ Item {
         preventStealing: true
         cursorShape: Qt.PointingHandCursor
 
-        function valueAt(px) { return Math.max(0, Math.min(1, px / width)) }
+        function valueAt(px) { return Math.max(0, Math.min(1, px / Math.max(1, width - 1))) }
 
-        onPressed: (e) => { root.dragValue = valueAt(e.x); root.moving(root.dragValue) }
+        onPressed: (e) => { root.wheelRemainder = 0; root.dragValue = valueAt(e.x); root.moving(root.dragValue) }
         onPositionChanged: (e) => {
             if (pressed) {
                 root.dragValue = valueAt(e.x)
@@ -99,8 +101,19 @@ Item {
         onReleased: (e) => root.moved(valueAt(e.x))
         onWheel: (w) => {
             if (!root.wheelEnabled) { w.accepted = false; return }
-            const step = w.angleDelta.y > 0 ? 0.05 : -0.05
-            root.moved(Math.max(0, Math.min(1, root.value + step)))
+            // Two percentage points per detent (120 units). Accumulate fine
+            // touchpad deltas; horizontal/phase-only events never lower sound.
+            const delta = w.angleDelta.y !== 0 ? w.angleDelta.y / 60 : w.pixelDelta.y / 20
+            if (delta === 0) { w.accepted = false; return }
+            const now = Date.now()
+            if (now - root.wheelStamp > 500 || delta * root.wheelRemainder < 0)
+                root.wheelRemainder = 0
+            root.wheelStamp = now
+            root.wheelRemainder += delta
+            const steps = Math.trunc(root.wheelRemainder)
+            root.wheelRemainder -= steps
+            if (steps !== 0)
+                root.moved(Math.max(0, Math.min(1, root.value + steps / 100)))
         }
     }
 }

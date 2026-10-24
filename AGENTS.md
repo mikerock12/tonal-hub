@@ -1,7 +1,7 @@
 # Instruções para trabalhar neste repositório
 
 Leia [contexto.md](contexto.md), [README.md](README.md) e os documentos da área
-afetada antes de alterar o produto. Estado documental: 23/10/2026, produto 0.14.0.
+afetada antes de alterar o produto. Estado documental: 24/10/2026, Windows 0.14.1 / Android 0.14.0.
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
@@ -160,3 +160,16 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
 - Validação 0.14: docs/song-pages-0140-tests.json (CTest 10, QML 17/6/3,
   temas 183, Java 40, Android 18 nativas + 10 UI, MusicBrainz ao vivo no C++).
   Drive privado 0.14: 1iztlSwSWiDcCk5A6Wd1XIBHlJRGzEae4.
+
+## Volume Windows (0.14.1)
+
+- Referência: docs/VOLUME_WINDOWS_0141.md. Throttle 150 ms, um PUT por rota
+  em voo + último valor, geração para polls pré-intenção/pré-ACK e guarda 3 s.
+- Nunca enviar volume pendente para outro dispositivo. Cancelar ao mudar rota,
+  sessão ou entrar em arquivo local. 499 local opt-in libera pedido superado;
+  não mudar o comportamento de cancelamento das demais chamadas da API.
+- Roda: respeitar delta, acumular frações, ignorar eixo horizontal e zero;
+  extremos da barra atingem 0/100. Persistência agrupada, fora do callback PCM.
+- Não duplicar ganho: Spotify usa mixer librespot; arquivos locais usam OpenAL.
+  Validação simulada de transporte não equivale a medição acústica/Spotify real.
+- Android permanece 0.14.0 nesta correção exclusiva do Windows.
