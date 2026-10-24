@@ -9,6 +9,11 @@ sintéticos. Algumas telas históricas ainda usam botões de texto; as capturas
 [Voltar ao README](../README.md) · [Descoberta 2+1](DESCOBERTA_2_MAIS_1.md) ·
 [Benchmarks](BENCHMARKS.md) · [Origem, dimensões e hashes dos PNGs](screenshots/manifest.json).
 
+**Atualização 0.15.0:** Estatísticas e Backup ficam no cabeçalho global ao lado
+de busca, favoritas, áudio e conta. A faixa interna da música contém Agora,
+Biblioteca e Letras. As capturas abaixo preservam a versão indicada em cada
+legenda. [Guia das estatísticas e histórias locais](STATISTICS_STORIES_0150.md).
+
 ## 1. Entenda a navegação e os favoritos
 
 No Android, abra a música pelo miniplayer. O cabeçalho mantém **pesquisa,

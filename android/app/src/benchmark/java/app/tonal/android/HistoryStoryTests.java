@@ -21,10 +21,12 @@ final class HistoryStoryTests {
         test.runOnMainSync(store::clearHistory);CountDownLatch restored=new CountDownLatch(1);test.runOnMainSync(()->store.restoreFullBackup(Uri.fromFile(backup),success->{ok[0]=success;restored.countDown();}));require(restored.await(25,TimeUnit.SECONDS)&&ok[0],"full backup restore");
         JSONArray checks=new JSONArray().put("durable_10005_sessions").put("six_periods_and_year").put("WAL_pinned_archive_query").put("async_statistics").put("full_backup_size_and_restore");
         if(nativeModel){
-            LocalStories engine=new LocalStories(app,"native-test");require(engine.state().optBoolean("ready"),"verified Qwen fixture not installed");
+            // The production reader is requested from a visible Activity, not a background test UID.
+            android.app.Activity screen=test.startActivitySync(new android.content.Intent(app,MainActivity.class).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK));
+            LocalStories engine=new LocalStories(app,"native-test");long readyDeadline=android.os.SystemClock.elapsedRealtime()+5000;while(!engine.state().optBoolean("ready")&&android.os.SystemClock.elapsedRealtime()<readyDeadline)Thread.sleep(50);require(engine.state().optBoolean("ready"),"verified Qwen fixture not installed");
             engine.capture(track,"Uma canção sobre alguém que volta à casa da infância e reencontra lembranças de uma amizade distante. A distância causa tristeza, mas a pessoa segue em frente e encontra esperança no reencontro.");
             CountDownLatch generated=new CountDownLatch(1);test.runOnMainSync(()->{engine.observe(()->{JSONObject state=engine.state();if(!state.optString("summary").isEmpty())generated.countDown();});engine.analyze(new JSONArray().put(track),0);});
-            require(generated.await(65,TimeUnit.SECONDS),"native summary deadline: "+engine.state().optString("status"));JSONObject result=engine.state();require(result.optString("summary").length()>20,"empty native narrative");test.runOnMainSync(engine::detach);require(!engine.state().optBoolean("busy"),"cancelled reader still busy");checks.put("real_Qwen_JNI_service_inference").put("bound_service_released");
+            require(generated.await(110,TimeUnit.SECONDS),"native summary deadline: "+engine.state().optString("status"));JSONObject result=engine.state();require(result.optString("summary").length()>20,"empty native narrative");test.runOnMainSync(engine::detach);require(!engine.state().optBoolean("busy"),"cancelled reader still busy");checks.put("real_Qwen_JNI_service_inference").put("bound_service_released");test.runOnMainSync(screen::finish);
         }
         db.close();return new JSONObject().put("checks",checks).put("input","Synthetic history and original Portuguese descriptions; no live Spotify or physical phone").toString();
     }

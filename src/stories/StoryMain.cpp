@@ -11,7 +11,7 @@
 int main(int argc,char **argv){
  QCoreApplication app(argc,argv);
 #ifdef _WIN32
- SetPriorityClass(GetCurrentProcess(),BELOW_NORMAL_PRIORITY_CLASS);
+ SetPriorityClass(GetCurrentProcess(),IDLE_PRIORITY_CLASS);
 #endif
  if(app.arguments().size()!=2)return 2;QFile in;if(!in.open(stdin,QIODevice::ReadOnly))return 3;auto bytes=in.read(32769);if(bytes.size()>32768)return 4;
  auto object=QJsonDocument::fromJson(bytes).object();auto rows=object["texts"].toArray();std::vector<std::string> texts;for(auto v:rows)texts.push_back(v.toString().toUtf8().toStdString());

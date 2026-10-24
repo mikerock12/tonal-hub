@@ -67,8 +67,8 @@ Não houve treinamento ou ajuste fino do Qwen neste projeto. O classificador
 TonalMuse continua identificado separadamente, com seu corpus sintético.
 
 São **491.400.032 bytes** de pesos, não incluídos no APK/instalador. CPU somente,
-uma thread de inferência, contexto de 2.048 tokens, entrada até 1.536 tokens e
-saída até 96 tokens. Para caber nesse orçamento, usam-se trechos do começo,
+uma thread na geração e na preparação, contexto de 1.536 tokens, entrada até 1.024 tokens e
+saída até 48 tokens. Para caber nesse orçamento, usam-se trechos do começo,
 meio e fim das letras. O resultado descreve esse lote, não todas as músicas
 ouvidas. Letras não disponíveis e versões divergentes são omitidas, sem
 inventar seu conteúdo. Pode haver erros, especialmente em ironia, metáforas,
@@ -76,11 +76,32 @@ idiomas e contradições. Não é diagnóstico de humor, personalidade ou saúde
 
 O Windows executa `TonalStories.exe` em processo separado com prioridade
 reduzida. Android usa JNI C++ num serviço privado `:stories`, vinculado à tela,
-com thread em prioridade de segundo plano. Fechar/cancelar a leitura impede
+com thread em prioridade de segundo plano (nice +10). Fechar/cancelar a leitura impede
 entregas atrasadas e encerra o processo de inferência. O modelo não fica
-residente durante a reprodução normal. A inferência tem orçamento de 45 s e
-supervisão de 60 s; falhas de memória/tempo retornam estado explícito. Nenhum
+residente durante a reprodução normal. A inferência tem orçamento de 90 s e
+supervisão de 105 s; falhas de memória/tempo retornam estado explícito. Nenhum
 processamento, rede ou banco entra no callback PCM.
+
+### Prioridade da reprodução
+
+Preparação, recorte do texto, cache, hash e rede rodam em workers de baixa
+prioridade, separados da interface. O Windows entrega apenas snapshots para
+QML e usa um processo de inferência com prioridade ociosa; o Android usa uma
+thread de segundo plano e um serviço privado separado. Capturas pendentes são
+agrupadas e limitadas a 128 faixas. Os pesos só são carregados por solicitação.
+
+Download do modelo e busca adicional de letras desta análise aguardam uma pausa
+na reprodução. Letras já capturadas podem ser analisadas enquanto o áudio toca.
+Pausar ou cancelar o leitor não envia comandos ao player. A solicitação pendente
+pode ser cancelada enquanto aguarda recursos, sem iniciar música ou alterar fila.
+
+Antes de abrir o modelo, exige-se memória disponível de pelo menos o tamanho dos
+pesos mais 512 MiB (aproximadamente 981 MiB). Sob pressão durante a inferência
+(menos de 256 MiB livres; também `lowMemory` no Android), o processo opcional é
+encerrado, preservando o player. São guardas conservadoras, não reserva física
+nem garantia de impacto zero em qualquer aparelho. A análise consome recursos;
+prioridade baixa e limites dão preferência ao áudio. Com outros processos pesados,
+pode aguardar ou atingir o prazo em vez de produzir um resultado.
 
 O cache privado guarda no máximo 128 letras limitadas e 20 resumos. Os resumos
 dependem da versão do modelo, período e trechos de entrada. A mudança de período

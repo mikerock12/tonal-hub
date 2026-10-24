@@ -13,6 +13,8 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QProcess>
 #include <QTemporaryDir>
 #include <QThread>
@@ -553,6 +555,30 @@ void benchmark()
     std::cout << "BENCH DSP 512 frames / 48kHz: median=" << times[250] << "us p95=" << times[475]
               << "us (block budget 10667us)\n";
 }
+// Opt-in local synthetic test; no model download, credentials, or acoustic claims.
+void storyAudioTest(const QString &wave,const QString &helper,const QString &model)
+{
+ QTemporaryDir storage;AudioEngine engine(nullptr,storage.path());engine.setSetting("normalization",false);
+ engine.openFile(QUrl::fromLocalFile(QFileInfo(wave).absoluteFilePath()));
+ check(spin([&]{return engine.positionMs()>500;}),"local PCM did not start");
+ const int initial=engine.positionMs();const auto before=engine.metrics();
+ QProcess inference;inference.start(helper,{model});check(inference.waitForStarted(3000),"model helper did not start");
+ QJsonArray texts{QStringLiteral("Uma canção sobre reencontrar lembranças da infância, sentir saudade e seguir em frente com esperança."),QStringLiteral("Uma canção sobre superar uma relação difícil e recuperar a própria voz com coragem para mudar.")};
+ inference.write(QJsonDocument(QJsonObject{{"texts",texts},{"deadlineMs",90000}}).toJson(QJsonDocument::Compact));inference.closeWriteChannel();
+ QElapsedTimer elapsed;elapsed.start();qint64 lastAdvance=0,maxStall=0;int previous=initial;
+ while(inference.state()!=QProcess::NotRunning&&elapsed.elapsed()<105000){
+  QCoreApplication::processEvents();int position=engine.positionMs();if(position>previous){maxStall=std::max(maxStall,elapsed.elapsed()-lastAdvance);lastAdvance=elapsed.elapsed();previous=position;}
+  check(!engine.sourceFailed()&&engine.localPlaying(),"PCM stopped during inference");QThread::msleep(10);
+ }
+ if(inference.state()!=QProcess::NotRunning){inference.kill();inference.waitForFinished(2000);throw std::runtime_error("model watchdog expired");}
+ auto result=QJsonDocument::fromJson(inference.readAllStandardOutput()).object();auto after=engine.metrics();
+ QJsonObject evidence{{"test","local PCM plus real Qwen inference"},{"output","OpenAL null driver; no acoustic or Bluetooth measurement"},{"elapsedMs",double(elapsed.elapsed())},{"advancedMs",engine.positionMs()-initial},{"maxClockUpdateGapMs",double(maxStall)},{"before",QJsonObject::fromVariantMap(before)},{"after",QJsonObject::fromVariantMap(after)},{"model",result}};
+ std::cout<<QJsonDocument(evidence).toJson(QJsonDocument::Compact).constData()<<"\n";
+ check(inference.exitCode()==0&&!result["summary"].toString().isEmpty(),"native model did not finish");
+ check(after.value("underruns").toInt()==before.value("underruns").toInt(),"new underruns during model inference");
+ check(maxStall<750&&engine.positionMs()-initial>elapsed.elapsed()*0.9,"PCM clock stalled during inference");
+ std::cout<<"PASS local PCM continuity during low-priority inference\n";
+}
 int main(int argc, char **argv)
 {
 #ifdef _WIN32
@@ -569,6 +595,9 @@ int main(int argc, char **argv)
     qputenv("ALSOFT_DRIVERS", "null");
     try
     {
+        if(argc==5&&std::string(argv[1])=="--stories-audio"){
+            storyAudioTest(QString::fromLocal8Bit(argv[2]),QString::fromLocal8Bit(argv[3]),QString::fromLocal8Bit(argv[4]));return 0;
+        }
         if (argc == 4 && std::string(argv[1]) == "--render-iamf")
         {
             QString error;

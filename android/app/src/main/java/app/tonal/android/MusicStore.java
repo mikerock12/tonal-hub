@@ -18,7 +18,7 @@ final class MusicStore {
     final Handler main=new Handler(Looper.getMainLooper());
     private final ExecutorService disk=Executors.newSingleThreadExecutor();
     private final Context app;private LocalStories stories;
-    LocalStories stories(){if(stories==null)stories=new LocalStories(app,module);return stories;}
+    LocalStories stories(){if(stories==null){stories=new LocalStories(app,module);stories.setPlaying(playing);}return stories;}
     private final AtomicFile file;
     private final PersonalDatabase database;
     JSONObject data=new JSONObject(),current=new JSONObject(),rules=new JSONObject();
@@ -63,7 +63,7 @@ final class MusicStore {
         if(tracks.length()>3000){HashSet<String> keep=new HashSet<>();for(Object v:values(array(data,"favorites")))keep.add(String.valueOf(v));for(Object p:values(array(data,"playlists")))for(Object v:values(array((JSONObject)p,"tracks")))keep.add(String.valueOf(v));ArrayList<String> keys=new ArrayList<>();tracks.keys().forEachRemaining(keys::add);for(String k:keys)if(tracks.length()>3000&&!k.equals(id)&&!keep.contains(k))tracks.remove(k);}
         put(data,"tracks",tracks);save();
     }
-    void pulse(boolean active,int pos){long now=SystemClock.elapsedRealtime(),wall=now-at;at=now;int delta=pos-position;
+    void pulse(boolean active,int pos){if(stories!=null)stories.setPlaying(active);long now=SystemClock.elapsedRealtime(),wall=now-at;at=now;int delta=pos-position;
         if(data.optBoolean("history",true)&&playing&&active&&delta>0&&delta<5000){long ms=Math.min(Math.min(2000,Math.max(0,wall)),delta);pending+=ms;total+=ms;if(pending>=5000)checkpoint();}
         int duration=current.optInt("durationMs");if(duration>1000&&position>=duration-1500&&pos<1000){checkpoint();session=UUID.randomUUID().toString();total=0;}
         position=pos;playing=active;if(!active)checkpoint();

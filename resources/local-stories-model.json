@@ -7,5 +7,17 @@
   "model_bytes": 491400032,
   "model_sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
   "model_license": "Apache-2.0",
-  "runtime_license": "MIT"
+  "runtime_license": "MIT",
+  "prompt_version": "tonal-stories-v2",
+  "limits": {
+    "context_tokens": 1536,
+    "input_tokens": 1024,
+    "output_tokens": 48,
+    "decode_threads": 1,
+    "prefill_threads": 1,
+    "deadline_ms": 90000,
+    "watchdog_ms": 105000,
+    "minimum_available_memory_bytes": 1028270944,
+    "pressure_stop_bytes": 268435456
+  }
 }

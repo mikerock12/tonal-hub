@@ -8,7 +8,7 @@
 Repositório original: https://github.com/natheus/tonal-player
 
 Matheus Nunes é irmão de Maicon Nunes. A autoria do projeto original permanece
-explicitamente reconhecida, inclusive neste repositório privado e nos pacotes.
+explicitamente reconhecida, inclusive neste fork e nos pacotes.
 O aviso de copyright e a licença MIT original permanecem em `LICENSE`.
 
 ## Extensões locais

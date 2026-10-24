@@ -14,8 +14,8 @@ Rodapé mede arquivo local e último backup exportado, sem confundir com sync.
 Qwen2.5 0.5B Q4_K_M (Apache 2.0), 468,6 MiB opcionais, com llama.cpp MIT nativo.
 Não foi treinado pelo projeto. Até oito letras do período, cache privado limitado,
 resumo dos trechos com fontes explícitas; pode errar e não avalia saúde/humor.
-Inferência CPU de uma thread, processo separado Windows/Android :stories,
-45 s de orçamento e supervisão de 60 s, cancelamento ao fechar. Pesos não
+Inferência CPU de uma thread na geração e na preparação, processo separado Windows/Android :stories,
+90 s de orçamento e supervisão de 105 s, cancelamento ao fechar. Pesos não
 acompanham instaladores e não entram no backup JSON. Não há novo benchmark
 Spotify nesta versão. Evidências em docs/statistics-stories-0150-tests.json.
 
