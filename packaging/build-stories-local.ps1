@@ -19,6 +19,7 @@ if($Android){
   Copy-Item -LiteralPath (Join-Path $build 'libtonal_story.so') -Destination $dest -Force
  }
 }else{
+ chcp.com 65001 | Out-Null
  if(-not $BuildDirectory){$BuildDirectory=Join-Path $root 'out/stories/windows'}
  $qt=if($env:QTDIR){$env:QTDIR}else{Join-Path $root 'out/tools/Qt/6.8.3/msvc2022_64'}
  & $cmake -S (Join-Path $root 'src/stories') -B $BuildDirectory -G Ninja "-DCMAKE_MAKE_PROGRAM=$ninja" "-DCMAKE_PREFIX_PATH=$qt" -DCMAKE_BUILD_TYPE=Release

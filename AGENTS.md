@@ -199,7 +199,7 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
 - Não treinar nem chamar de treinado pelo Tonal o Qwen pré-treinado. Preservar
   Apache 2.0/MIT, revisões e hashes em resources/local-stories-model.json.
 - Só iniciar inferência por ação do leitor, máximo 8 letras, 1 thread CPU,
-  2048 contexto / 1536 entrada / 160 saída, orçamento 45 s e supervisão 60 s.
+  2048 contexto / 1536 entrada / 96 saída, orçamento 45 s e supervisão 60 s.
   Processo separado TonalStories.exe / serviço privado :stories; fechar cancela
   também seleções ainda pendentes. Nunca carregar pesos no player/callback PCM.
 - Cache 128 letras limitadas + 20 resumos, privado e descartável. Mostrar fontes,

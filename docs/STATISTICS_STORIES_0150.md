@@ -68,7 +68,7 @@ TonalMuse continua identificado separadamente, com seu corpus sintético.
 
 São **491.400.032 bytes** de pesos, não incluídos no APK/instalador. CPU somente,
 uma thread de inferência, contexto de 2.048 tokens, entrada até 1.536 tokens e
-saída até 160 tokens. Para caber nesse orçamento, usam-se trechos do começo,
+saída até 96 tokens. Para caber nesse orçamento, usam-se trechos do começo,
 meio e fim das letras. O resultado descreve esse lote, não todas as músicas
 ouvidas. Letras não disponíveis e versões divergentes são omitidas, sem
 inventar seu conteúdo. Pode haver erros, especialmente em ironia, metáforas,
