@@ -24,6 +24,9 @@ serializados por dispositivo; respostas antigas não puxam a barra de volta.
 Roda do mouse: dois pontos percentuais por passo, respeitando o delta e
 acumulando movimentos finos. O percentual aparece ao apontar/arrastar.
 [Detalhes e validação](docs/VOLUME_WINDOWS_0141.md). Android permanece 0.14.0.
+Validação complementar: **CTest Windows 10/10**, além dos 10 cenários de
+volume, QML 20/20 e runtime dos três programas. Tentativas iniciais e limites
+permanecem no [relatório](docs/volume-windows-0141-tests.json).
 
 ## Novidades 0.14.0
 

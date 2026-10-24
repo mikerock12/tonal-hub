@@ -83,19 +83,39 @@
         "audio_integration"
       ],
       "seconds": 84.65
+    },
+    {
+      "passed": 10,
+      "failed": 0,
+      "tests_run": 10,
+      "seconds": 58.04,
+      "target_avd_already_absent": true,
+      "other_avds_preserved": true,
+      "other_java_processes_untouched": true,
+      "source_changes_since_previous_attempt": false,
+      "test_limits_changed": false
     }
   ],
   "limitations": [
     "Volume HTTP is simulated; no authenticated Spotify volume or acoustic measurement performed.",
-    "Broad audio/process tests failed or timed out with another project AVD/Java load present; causality not established. Existing tests were not disabled or relaxed.",
     "Installer compiled and package runtime verified offscreen; interactive installation not tested.",
     "Android unchanged at 0.14.0; no APK rebuild or benchmark."
   ],
   "initial_findings": [
     "The rightmost clickable pixel did not reach 100%; endpoint mapping and the event test were corrected.",
     "Added late-ACK route regression initially failed: an old GET could restore the previous device. Route generation now rejects that entire obsolete state response.",
-    "Malwarebytes blocked Ninja. User allowed it; pinned Ninja 1.13.2 restored. No protection disabled by agent; alternative NMake attempt cancelled."
+    "Malwarebytes blocked Ninja. User allowed it; pinned Ninja 1.13.2 restored. No protection disabled by agent; alternative NMake attempt cancelled.",
+    "Final full CTest repeat passed 10/10 in 58.04 s without product or test-limit changes. Authorized target AVD was already absent; another AVD was preserved. Earlier failures retained as history; causality not established."
   ],
   "original_author": "Matheus Nunes (natheus)",
-  "source": "https://github.com/natheus/tonal-player"
+  "source": "https://github.com/natheus/tonal-player",
+  "broad_ctest_final": {
+    "passed": 10,
+    "failed": 0,
+    "seconds": 58.04,
+    "recorded_on": "2026-10-24",
+    "spotify_session_authenticated": false,
+    "acoustic_test": false
+  },
+  "validated_binary_code_commit": "d4c812d9cda8b66a1f40ccecd0c46aaddb3f5192"
 }
