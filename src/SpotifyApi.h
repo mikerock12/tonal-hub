@@ -35,7 +35,7 @@ public:
   void get(const QString &path, const QVariantMap &query, Callback cb);
   void put(const QString &path, const QVariantMap &query,
            const QJsonDocument &body, Callback cb = {},
-           std::function<bool()> isCurrent = {});
+           std::function<bool()> isCurrent = {}, bool notifyCancellation = false);
   void post(const QString &path, const QVariantMap &query,
             const QJsonDocument &body, Callback cb = {});
   void del(const QString &path, const QVariantMap &query,
@@ -68,6 +68,8 @@ private:
     std::function<bool()> isCurrent;
     QByteArray contentType = "application/json";
     bool retryServer = true;
+    // Opt-in for serialized controls: release their slot on supersession.
+    bool notifyCancellation = false;
   };
 
   QUrl buildUrl(const QString &path, const QVariantMap &query) const;

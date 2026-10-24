@@ -316,6 +316,7 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             iconSize: 17
             fillPath: Icons.speakerF
+            objectName: "muteButton"
             strokePath: root.player.volume === 0 ? Icons.muteS
                       : root.player.volume < 50 ? Icons.volLowS : Icons.volHighS
             strokeWidth: 1.8
@@ -331,12 +332,15 @@ Item {
             }
         }
         SeekBar {
+            objectName: "volumeSlider"
             width: 96
             anchors.verticalCenter: parent.verticalCenter
             wheelEnabled: true
             value: root.player.volume / 100
             onMoving: (v) => root.player.setVolume(Math.round(v * 100))
             onMoved: (v) => root.player.setVolume(Math.round(v * 100))
+            ToolTip.visible: hovered || dragging
+            ToolTip.text: Math.round(shownValue * 100) + "%"
         }
     }
 

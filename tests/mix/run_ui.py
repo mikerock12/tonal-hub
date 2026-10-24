@@ -15,7 +15,7 @@ QtObject {
  function dominantColor(url,callback){callback("#344455")}
  property QtObject auth:QtObject{property bool authenticated:true;property string userId:"user"}
  property QtObject music:QtObject{signal changed();function summary(k,v){return {ms:0,plays:0,tracks:[]}}}
- property QtObject player:QtObject{property string contextUri:"";property string trackUri:"";property bool hasTrack:false;property string repeatMode:"off";property int repeatCycles:0;function cycleRepeat(){repeatCycles++;repeatMode=repeatMode==="off"?"context":repeatMode==="context"?"track":"off"}property bool isPlaying:false;property bool shuffle:false;property var queue:[{uri:"spotify:track:next",name:"Next song",artists:"Next artist",durationMs:180000}];property bool delayQueue:false;property int refreshes:0;signal queueRefreshFinished(int status);function refreshQueue(){refreshes++;if(!delayQueue){queueChanged();queueRefreshFinished(200)}}signal playbackRequested();function togglePlay(){}function playContext(a,b,c){}function playUris(a,b){}}
+ property QtObject player:QtObject{property int volume:60;function setVolume(v){volume=Math.max(0,Math.min(100,v))}property string contextUri:"";property string trackUri:"";property bool hasTrack:false;property string repeatMode:"off";property int repeatCycles:0;function cycleRepeat(){repeatCycles++;repeatMode=repeatMode==="off"?"context":repeatMode==="context"?"track":"off"}property bool isPlaying:false;property bool shuffle:false;property var queue:[{uri:"spotify:track:next",name:"Next song",artists:"Next artist",durationMs:180000}];property bool delayQueue:false;property int refreshes:0;signal queueRefreshFinished(int status);function refreshQueue(){refreshes++;if(!delayQueue){queueChanged();queueRefreshFinished(200)}}signal playbackRequested();function togglePlay(){}function playContext(a,b,c){}function playUris(a,b){}}
  property QtObject listeningMix:QtObject{property bool busy:false;property string status:"";property var received:({});property var previewQueue:[];property var committedRows:[];property bool discoveryEnabled:false;property bool randomEnabled:false;property bool enrichmentEnabled:false;property string enrichmentStatus:"";function queueFor(uri){return committedRows}property var applied:null;function applyModes(rows,shake,random,discovery){applied={rows:rows,shake:shake,random:random,discovery:discovery}}property int appliedPosition:-1;signal changed();signal previewReady();function preview(rows,index,random,discovery,album){received={rows:rows,index:index,random:random,discover:discovery,album:album};previewQueue=rows.slice();previewReady();changed()}function applyPreview(position){appliedPosition=position}function cancel(){}function order(n,seed){let a=[];for(let i=1;i<n;i++)a.push(i);a.push(0);return a}function play(rows,index,random,discover,album){received={rows:rows,index:index,random:random,discover:discover,album:album}}}
  property QtObject api:QtObject{
   property int writes:0
@@ -141,6 +141,27 @@ Pane {width:1000;height:800;padding:0;palette.button:"#263440";palette.buttonTex
    page.randomPlayback=true;verify(page.applyToPlaying());verify(mix.applied!==null);compare(mix.applied.rows[0].uri,"spotify:track:fixture2");compare(mix.applied.rows.length,6);verify(mix.applied.random);
    App.player.trackUri="spotify:track:elsewhere";mix.applied=null;verify(!page.applyToPlaying());compare(mix.applied,null);
    App.player.hasTrack=false;App.player.trackUri="";page.randomPlayback=false
+  }
+  function test_volume_drag_keeps_pointer_and_endpoints(){
+   let s=findChild(playerBar,"volumeSlider");verify(s!==null);App.player.volume=60;
+   let y=s.height/2;mousePress(s,s.width*0.25,y);compare(App.player.volume,25);
+   mouseMove(s,s.width*0.8,y);verify(Math.abs(App.player.volume-80)<=1);
+   App.player.volume=10;verify(Math.abs(s.shownValue-0.8)<0.02);
+   mouseRelease(s,s.width*0.8,y);verify(Math.abs(App.player.volume-80)<=1);verify(Math.abs(s.shownValue-0.8)<0.02);
+   mouseClick(s,0,y);compare(App.player.volume,0);mouseClick(s,s.width-1,y);compare(App.player.volume,100);
+  }
+  function test_volume_wheel_respects_delta_and_horizontal(){
+   let s=findChild(playerBar,"volumeSlider");App.player.volume=50;s.wheelRemainder=0;s.wheelStamp=0;
+   mouseWheel(s,s.width/2,s.height/2,0,120);compare(App.player.volume,52);
+   mouseWheel(s,s.width/2,s.height/2,0,240);compare(App.player.volume,56);
+   mouseWheel(s,s.width/2,s.height/2,0,-120);compare(App.player.volume,54);
+   mouseWheel(s,s.width/2,s.height/2,120,0);compare(App.player.volume,54);
+   for(let i=0;i<4;i++)mouseWheel(s,s.width/2,s.height/2,0,30);
+   compare(App.player.volume,56);App.player.volume=100;mouseWheel(s,s.width/2,s.height/2,0,120);compare(App.player.volume,100);
+  }
+  function test_mute_restores_last_volume(){
+   App.player.volume=83;let mute=findChild(playerBar,"muteButton");verify(mute!==null);
+   mouseClick(mute);compare(App.player.volume,0);mouseClick(mute);compare(App.player.volume,83);
   }
   function test_player_bar_has_all_controls(){
    let mix=App.listeningMix;let row=findChild(playerBar,"transportControls");verify(row!==null);

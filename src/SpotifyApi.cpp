@@ -80,12 +80,13 @@ void SpotifyApi::get(const QString &path, const QVariantMap &query,
 
 void SpotifyApi::put(const QString &path, const QVariantMap &query,
                      const QJsonDocument &body, Callback cb,
-                     std::function<bool()> isCurrent) {
+                     std::function<bool()> isCurrent, bool notifyCancellation) {
   Pending pending{"PUT", buildUrl(path, query),
                   body.isNull() ? QByteArray()
                                 : body.toJson(QJsonDocument::Compact),
                   std::move(cb)};
   pending.isCurrent = std::move(isCurrent);
+  pending.notifyCancellation = notifyCancellation;
   enqueue(std::move(pending));
 }
 
@@ -171,8 +172,11 @@ void SpotifyApi::flushWaiting(bool tokenOk) {
 }
 
 void SpotifyApi::send(Pending p) {
-  if (p.isCurrent && !p.isCurrent())
+  if (p.isCurrent && !p.isCurrent()) {
+    if (p.notifyCancellation && p.cb)
+      p.cb(499, {}); // local cancellation, no HTTP request
     return;
+  }
   QNetworkRequest req(p.url);
   req.setRawHeader("Authorization",
                    "Bearer " + m_auth->accessToken().toLatin1());
@@ -192,6 +196,11 @@ void SpotifyApi::send(Pending p) {
   p.attempts++;
   connect(reply, &QNetworkReply::finished, this, [this, reply, p]() mutable {
     reply->deleteLater();
+    if (p.notifyCancellation && p.isCurrent && !p.isCurrent()) {
+      if (p.cb)
+        p.cb(499, {});
+      return; // an obsolete volume must not enter token/backoff retry queues
+    }
     const int status =
         reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
     const QByteArray data = reply->readAll();

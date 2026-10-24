@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.14.1 Windows — 24/10/2026
+
+- Corrige volume que só mudava após parar de arrastar e saltava com polls antigos.
+- Serializa comandos e guarda só o último valor; cancela retries de valores superados.
+- Corrige intensidade/eixo da roda do mouse, extremos 0/100 e mostra percentual.
+- Android permanece 0.14.0, sem recompilação.
+
 ## 0.14.0 — 23/10/2026
 
 - Música, letra e artista em seções verticais completas no PC e no Android.

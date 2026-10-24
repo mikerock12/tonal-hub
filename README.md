@@ -10,12 +10,20 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
-**Produto atual: 0.14.0. Documentação consolidada em 23/10/2026.**
+**Produto atual: Windows 0.14.1 · Android 0.14.0. Documentação consolidada em 24/10/2026.**
 
 [Guia visual com capturas](docs/GUIA_VISUAL.md) ·
 [Regras da Descoberta 2+1](docs/DESCOBERTA_2_MAIS_1.md) ·
 [Benchmarks realizados](docs/BENCHMARKS.md) ·
 [Contexto do projeto](contexto.md) · [Instruções de manutenção](AGENTS.md).
+
+## Correção Windows 0.14.1
+
+O volume acompanha o arraste, sem esperar soltar. Comandos são agrupados e
+serializados por dispositivo; respostas antigas não puxam a barra de volta.
+Roda do mouse: dois pontos percentuais por passo, respeitando o delta e
+acumulando movimentos finos. O percentual aparece ao apontar/arrastar.
+[Detalhes e validação](docs/VOLUME_WINDOWS_0141.md). Android permanece 0.14.0.
 
 ## Novidades 0.14.0
 
@@ -191,6 +199,15 @@ depurável, sem Hub; não comparar esse número ao Spotify sem login.
 [Índice e medições históricas](docs/BENCHMARKS.md).
 
 ![CPU e RAM medidos na versão 0.12.0, com os cenários identificados](docs/benchmarks/2026-10-19/comparison.png)
+
+## Instalar a correção Windows 0.14.1
+
+[Instalador privado Windows x64](https://drive.google.com/file/d/1mDaepCI5yVEVmrVBrvBw9ekfxaPHqyij/view)
+— `out/release-local/Tonal-Hub-0.14.1.0-Windows-x64-Setup.exe`.
+Feche os players e instale por cima; dados ficam separados dos executáveis.
+Android permanece na entrega 0.14.0 abaixo.
+[Validação e limites](docs/volume-windows-0141-tests.json) ·
+[Backup privado 0.14.1](https://drive.google.com/drive/folders/1X5iQCZHdaGoflbjW2B9H4h_XEAtcSqqb).
 
 ## Instalar a entrega pessoal 0.14.0
 

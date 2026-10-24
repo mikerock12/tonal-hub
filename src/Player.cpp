@@ -74,7 +74,7 @@ QVariantMap simplifyItem(const QJsonObject &item) {
 Player::Player(SpotifyApi *api, LibrespotProcess *librespot, AuthManager *auth,
                QObject *parent)
     : QObject(parent), m_api(api), m_librespot(librespot), m_auth(auth) {
-  m_volume = QSettings().value(QStringLiteral("player/volume"), 60).toInt();
+  m_volume = qBound(0, QSettings().value(QStringLiteral("player/volume"), 60).toInt(), 100);
 
   m_pollTimer.setSingleShot(true);
   connect(&m_pollTimer, &QTimer::timeout, this, &Player::refresh);
@@ -87,18 +87,13 @@ Player::Player(SpotifyApi *api, LibrespotProcess *librespot, AuthManager *auth,
       refreshSoon(300);
   });
 
-  // Volume: só manda para a API quando o usuário para de arrastar.
+  // Throttle (not debounce): dragging continuously still updates the device.
+  // One request in flight + one latest value; never a queue of mouse pixels.
   m_volumeTimer.setSingleShot(true);
-  m_volumeTimer.setInterval(250);
+  m_volumeTimer.setInterval(150);
   connect(&m_volumeTimer, &QTimer::timeout, this, [this] {
-    if (m_pendingVolume < 0)
-      return;
-    QVariantMap q{{QStringLiteral("volume_percent"), m_pendingVolume}};
-    if (!m_activeDeviceId.isEmpty())
-      q.insert(QStringLiteral("device_id"), m_activeDeviceId);
-    m_api->put(QStringLiteral("/me/player/volume"), q, {});
-    QSettings().setValue(QStringLiteral("player/volume"), m_pendingVolume);
-    m_pendingVolume = -1;
+    QSettings().setValue(QStringLiteral("player/volume"), m_volume);
+    dispatchVolume();
   });
 
   m_seekTimer.setSingleShot(true);
@@ -158,8 +153,7 @@ void Player::setAudioEngine(tonal::audio::AudioEngine *engine) {
       cancelResume();
       m_librespot->setPlaybackExpected(false);
       m_tickTimer.stop();
-      m_volumeTimer.stop();
-      m_pendingVolume = -1;
+      cancelVolume();
       m_audio->setLocalVolume(m_volume);
     }
     emit trackChanged();
@@ -209,17 +203,20 @@ void Player::refresh() {
   m_requestInFlight = true;
   const auto transportGeneration = m_transportGeneration;
   const auto seekGeneration = m_seekGeneration;
+  const auto volumeGeneration = m_volumeGeneration;
+  const auto volumeRouteGeneration = m_volumeRouteGeneration;
   m_api->get(QStringLiteral("/me/player"),
              {{QStringLiteral("additional_types"), QStringLiteral("episode")}},
-             [this, transportGeneration, seekGeneration](int status, const QJsonDocument &doc) {
+             [this, transportGeneration, seekGeneration, volumeGeneration, volumeRouteGeneration](int status, const QJsonDocument &doc) {
                m_requestInFlight = false;
                if (transportGeneration != m_transportGeneration ||
-                   seekGeneration != m_seekGeneration) {
+                   seekGeneration != m_seekGeneration ||
+                   volumeRouteGeneration != m_volumeRouteGeneration) {
                  refreshSoon(250);
                  return;
                }
                if (status == 200 && doc.isObject())
-                 applyState(doc.object());
+                 applyState(doc.object(), volumeGeneration == m_volumeGeneration);
                else if (status == 204)
                  clearState(); // nada tocando em nenhum dispositivo
                scheduleNextPoll();
@@ -241,7 +238,7 @@ void Player::refreshSoon(int ms) {
     m_pollTimer.start(ms);
 }
 
-void Player::applyState(const QJsonObject &obj) {
+void Player::applyState(const QJsonObject &obj, bool acceptVolume) {
   if (localPlayback())
     return;
   const QJsonObject item = obj.value(QStringLiteral("item")).toObject();
@@ -299,7 +296,11 @@ void Player::applyState(const QJsonObject &obj) {
   if (!repeatSettling && !(selectionLoading && m_repeatWanted != QLatin1String("off")))
     m_repeatMode = m_repeatWanted = remoteRepeat;
   m_contextUri = context.value(QStringLiteral("uri")).toString();
-  m_activeDeviceId = device.value(QStringLiteral("id")).toString();
+  const QString deviceId = device.value(QStringLiteral("id")).toString();
+  const bool volumeRouteChanged = deviceId != m_activeDeviceId;
+  if (volumeRouteChanged)
+    cancelVolume();
+  m_activeDeviceId = deviceId;
   m_activeDeviceName = device.value(QStringLiteral("name")).toString();
   m_librespot->setPlaybackExpected(m_isPlaying && playingHere());
   // Connect controls can arrive without a matching librespot debug command.
@@ -312,8 +313,10 @@ void Player::applyState(const QJsonObject &obj) {
 
   if (device.contains(QStringLiteral("volume_percent")) &&
       !device.value(QStringLiteral("volume_percent")).isNull() &&
-      m_pendingVolume < 0) {
-    const int v = device.value(QStringLiteral("volume_percent")).toInt();
+      (acceptVolume || volumeRouteChanged) && m_pendingVolume < 0 &&
+      !m_volumeInFlight && (!m_volumeIntentClock.isValid() ||
+                            m_volumeIntentClock.elapsed() >= 3000)) {
+    const int v = qBound(0, device.value(QStringLiteral("volume_percent")).toInt(), 100);
     if (v != m_volume) {
       m_volume = v;
       emit volumeChanged();
@@ -330,6 +333,7 @@ void Player::applyState(const QJsonObject &obj) {
 }
 
 void Player::clearState() {
+  cancelVolume();
   const bool hadTrack = hasTrack();
   m_isPlaying = false;
   m_tickTimer.stop();
@@ -779,15 +783,78 @@ void Player::setVolume(int percent) {
   if (percent == m_volume)
     return;
   m_volume = percent;
+  ++m_volumeGeneration;
+  m_volumeIntentClock.restart();
   if (localPlayback()) {
     m_audio->setLocalVolume(percent);
-    QSettings().setValue(QStringLiteral("player/volume"), percent);
-    emit volumeChanged();
+  } else {
+    m_pendingVolume = percent;
+    m_volumeDevice = m_activeDeviceId;
+  }
+  emit volumeChanged();
+  if (!m_volumeTimer.isActive())
+    m_volumeTimer.start(150);
+}
+
+void Player::cancelVolume() {
+  if (m_volumeTimer.isActive())
+    QSettings().setValue(QStringLiteral("player/volume"), m_volume);
+  m_volumeTimer.stop();
+  m_pendingVolume = -1;
+  m_volumeInFlight = false;
+  m_volumeDevice.clear();
+  m_volumeIntentClock.invalidate();
+  ++m_volumeGeneration;
+  ++m_volumeRouteGeneration;
+}
+
+void Player::dispatchVolume() {
+  if (localPlayback() || m_pendingVolume < 0 || m_volumeInFlight)
+    return;
+  if (m_volumeDevice.isEmpty() || m_volumeDevice != m_activeDeviceId) {
+    cancelVolume();
+    emit message(tr("Nenhum dispositivo ativo para ajustar o volume."));
+    refreshSoon(0);
     return;
   }
-  m_pendingVolume = percent;
-  emit volumeChanged();
-  m_volumeTimer.start();
+  const int delay = m_volumeSentClock.isValid() ? 150 - int(m_volumeSentClock.elapsed()) : 0;
+  if (delay > 0) {
+    m_volumeTimer.start(delay);
+    return;
+  }
+  const int wanted = std::exchange(m_pendingVolume, -1);
+  const auto generation = m_volumeGeneration;
+  const auto route = m_volumeRouteGeneration;
+  const auto device = m_volumeDevice;
+  const QPointer<Player> self(this);
+  m_volumeInFlight = true;
+  m_volumeSentClock.restart();
+  m_api->put(QStringLiteral("/me/player/volume"),
+      {{QStringLiteral("volume_percent"), wanted}, {QStringLiteral("device_id"), device}}, {},
+      [this, self, generation, route](int status, const QJsonDocument &) {
+        if (!self || route != m_volumeRouteGeneration)
+          return;
+        m_volumeInFlight = false;
+        if (m_pendingVolume >= 0) {
+          dispatchVolume();
+          return;
+        }
+        if (generation != m_volumeGeneration)
+          return;
+        if (status >= 200 && status < 300) {
+          ++m_volumeGeneration; // invalidate GETs started before this write completed
+          m_volumeIntentClock.restart(); // bounded eventual-consistency guard
+          refreshSoon(350);
+        } else if (status != 499) {
+          m_volumeIntentClock.invalidate();
+          emit message(tr("Não foi possível ajustar o volume no dispositivo. Tente novamente."));
+          refreshSoon(0);
+        }
+      },
+      [this, self, generation, route, device] {
+        return self && generation == m_volumeGeneration && route == m_volumeRouteGeneration &&
+               !localPlayback() && device == m_activeDeviceId;
+      }, true);
 }
 
 void Player::toggleShuffle() {

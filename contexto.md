@@ -1,6 +1,6 @@
 # Contexto do Tonal Hub
 
-Atualizado em **23/10/2026**. Estado do produto: **0.14.0** (páginas da música, compartilhar e setlist.fm no Android). Leia também [AGENTS.md](AGENTS.md).
+Atualizado em **24/10/2026**. Estado do produto: **Windows 0.14.1 / Android 0.14.0**. Leia também [AGENTS.md](AGENTS.md).
 
 ## Projeto, autoria e objetivo
 
@@ -308,3 +308,26 @@ mesma assinatura 0.13.3, versionCode 19, bibliotecas de áudio nativas idêntica
 Upgrade e abertura do APK universal conferidos na AVD. Código dos binários:
 `8e2ce30d432b45dc6cb308b56906cddafc18e3bd`; atualizações documentais posteriores
 não representam nova compilação. A instalação interativa Windows não foi testada.
+
+
+## Correção Windows 0.14.1 — Volume
+
+Volume: throttle de 150 ms enquanto arrasta, um PUT por rota em voo e apenas
+o último valor pendente. Polls anteriores à intenção/ACK não alteram o volume;
+guarda adicional de 3 s após confirmação. Trocar dispositivo, sair da sessão
+ou entrar em arquivo local cancela a rota anterior. Retry obsoleto recebe
+cancelamento local 499 opt-in e libera o slot; demais chamadas mantêm contrato.
+Falha atual é mostrada e libera reconciliação. Persistência agrupada, fora do
+callback de áudio. Master do Spotify continua uma única vez no librespot.
+Roda: 2 pontos/120 unidades; deltas pequenos acumulados, horizontal/zero ignorados.
+Extremos 0/100 e mudo/restaurar preservados. Percentual na barra do PC.
+Ver docs/VOLUME_WINDOWS_0141.md e docs/volume-windows-0141-tests.json.
+Android sem alteração/rebuild; permanecem os APKs 0.14.0 e suas evidências.
+
+Validação focada: 10 cenários C++ de volume e QML 20/20; três runtimes do
+pacote aprovados em offscreen. Primeira suíte CTest 7/10; repetição dos três
+falhos aprovou UI, mas recuperação/integração de áudio continuaram com falha
+ou timeout enquanto outra AVD/Java rodavam. Causa não estabelecida; não
+chamar a suíte ampla de aprovada nem desativar/afrouxar testes. Instalador
+0.14.1 gerado; instalação interativa/medição acústica não realizadas.
+Backup privado: https://drive.google.com/drive/folders/1X5iQCZHdaGoflbjW2B9H4h_XEAtcSqqb.
