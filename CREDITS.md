@@ -31,3 +31,10 @@ estão nos assets do aplicativo. Consulte `third_party/AUDIO-NOTICES.md`.
 Audius, Internet Archive, Live Music Archive, a coleção Aadam Jacobs,
 MusicBrainz, Jamendo e bibliotecas OpenSubsonic mantêm a identificação de suas
 fontes. Gravações e metadados pertencem aos respectivos autores e titulares.
+
+## Leitor opcional de letras (0.15.0)
+
+**Qwen Team / Alibaba Cloud**: Qwen2.5-0.5B-Instruct GGUF Q4_K_M, Apache 2.0,
+sem ajuste fino neste fork. **ggml-org e contribuidores**: llama.cpp/ggml, MIT.
+Detalhes e licenças em [third_party/LOCAL-STORIES.md](third_party/LOCAL-STORIES.md).
+O TonalMuse Tiny sintético permanece identificado separadamente.

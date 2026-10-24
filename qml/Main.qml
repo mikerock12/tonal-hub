@@ -6,12 +6,15 @@ ApplicationWindow {
     id: window
     property alias audioEffectsController: audioPanel
     function openMusic(){if(musicLoader.item)musicLoader.item.open();else musicLoader.setSource("qrc:/companion/qml/companion/MusicPanel.qml",{controller:App.music,audioEngine:App.audio,textPlaylistAvailable:true,mixController:App.listeningMix,transportPlayer:App.player})}
+    function openStatistics(){window.openMusic();if(musicLoader.item)musicLoader.item.section=1;else pendingMusicAction="stats"}
+    function openBackup(){window.openMusic();if(musicLoader.item)musicLoader.item.showBackup();else pendingMusicAction="backup"}
+    property string pendingMusicAction:""
     property string pendingTextPlaylistId:""
     function openTextPlaylist(id){pendingTextPlaylistId=id || "";if(!textPlaylistLoader.active)textPlaylistLoader.active=true;else if(textPlaylistLoader.item){if(pendingTextPlaylistId)textPlaylistLoader.item.resume(pendingTextPlaylistId);else textPlaylistLoader.item.fresh()}}
     Loader {id:textPlaylistLoader;active:false;sourceComponent:Component {TextPlaylistDialog {controller:App.textPlaylist}} onLoaded:{if(window.pendingTextPlaylistId)item.resume(window.pendingTextPlaylistId);else item.fresh()}}
     Connections {target:textPlaylistLoader.item;function onAuthorizationRequested(){App.auth.login()}function onLocalPlaylistRequested(id){window.openMusic();if(musicLoader.item){musicLoader.item.section=0;musicLoader.item.selectedPlaylist=id;musicLoader.item.refresh()}}}
     Connections {target:App.textPlaylist;function onSpotifyChanged(){Playlists.listChanged()}}
-    Loader { id: musicLoader; onLoaded: item.open() }
+    Loader { id: musicLoader; onLoaded: {item.open();if(window.pendingMusicAction==="stats")item.section=1;else if(window.pendingMusicAction==="backup")item.showBackup();window.pendingMusicAction=""} }
     Binding { target: musicLoader.item; property: "position"; value: App.player.positionMs; when: !!musicLoader.item }
     Binding { target: musicLoader.item; property: "playing"; value: App.player.isPlaying && App.player.playingHere; when: !!musicLoader.item }
     Binding { target: musicLoader.item; property: "themeTokens"; value: Theme.palette; when: !!musicLoader.item }
@@ -78,6 +81,8 @@ ApplicationWindow {
             anchors.right: parent.right
             anchors.top: parent.top
             height: Theme.topBarHeight
+            onStatisticsRequested: window.openStatistics()
+            onBackupRequested: window.openBackup()
             onAudioSettingsRequested: audioPanel.open()
             onMusicRequested:{window.openMusic();if(musicLoader.item)musicLoader.item.section=0}
         }

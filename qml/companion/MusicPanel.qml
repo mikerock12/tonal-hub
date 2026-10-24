@@ -102,6 +102,7 @@ Dialog {
         if(lyricTrack!==track){lyricTrack=track;translatedTrack="";if(!controller.lines.length&&!controller.busy)controller.fetchLyrics()}
         if(autoTranslation&&!controller.busy&&controller.lines.length&&translatedTrack!==track){translatedTrack=track;controller.translate("auto")}
     }
+    function showBackup(){backupMenu.open()}
     function showSong(){tabs.currentIndex=2;songPages.positionViewAtIndex(0,ListView.Beginning);open();ensureLyrics()}
     property bool followLyrics: true
     property int highlighted: -1
@@ -123,7 +124,8 @@ Dialog {
     function playSelection(index){if(mixController)mixController.play(displayTracks,index,randomPlayback,discoveryPlayback,false);else controller.play(displayTracks,index)}
     function refresh() {
         revision++
-        stats=controller.statistics(period.currentValue || 7,dimension.currentValue || "artists")
+        if(typeof controller.requestStatistics==="function"){controller.requestStatistics(period.currentIndex<0?7:period.currentValue,dimension.currentValue || "artists");stats=controller.statisticsReport}
+        else stats=controller.statistics(period.currentIndex<0?7:period.currentValue,dimension.currentValue || "artists")
         displayTracks=drillTracks!==null ? drillTracks : selectedPlaylist ? controller.playlistTracks(selectedPlaylist) : controller.favorites
         if(listShaken&&mixController){let original=displayTracks;displayTracks=mixController.order(original.length,mixSeed).map(i=>original[i])}
     }
@@ -135,6 +137,7 @@ Dialog {
     }
     Connections {
         target: panel.controller
+        function onStatisticsChanged(){if(panel.visible)panel.stats=panel.controller.statisticsReport}
         function onChanged(){if(panel.visible){panel.refresh();if(panel.audioEngine)panel.audioEngine.visualizerActive=tabs.currentIndex===2&&songPages.currentIndex===1&&(panel.controller.background==="Ondas"||panel.controller.background==="Espectro")}}
         function onLyricsChanged(){lyrics.model=panel.controller.lines;Qt.callLater(panel.ensureLyrics)}
         function onCurrentChanged(){Qt.callLater(panel.ensureLyrics);if(panel.visible&&songPages.currentIndex===2&&typeof panel.controller.loadArtistNotes==="function")panel.controller.loadArtistNotes()}
@@ -151,7 +154,7 @@ Dialog {
             ActionIcon { accentInk:panel.tone.accent;symbol:"heart";filled:{panel.revision;return panel.controller.liked(panel.controller.current)} description:filled?"Remover das favoritas":"Favoritar música"; enabled: !!panel.controller.current.title; onClicked: panel.controller.favorite(panel.controller.current) }
             ActionIcon { accentInk:panel.tone.accent;symbol:"plus";description:"Adicionar à playlist"; enabled: !!panel.controller.current.title; onClicked: addMenu.open() }
             ActionIcon {accentInk:panel.tone.accent;symbol:"share";description:"Compartilhar música";visible:panel.controller.current.provider==="Spotify";onClicked:shareSong.present(panel.controller.current)}
-            ActionIcon {accentInk:panel.tone.accent;symbol:"save";description:"Backup da biblioteca";onClicked:backupMenu.open()}
+
             ActionIcon {accentInk:panel.tone.accent;symbol:"close";description:"Fechar página da música";onClicked:panel.close()}
             Menu { id: backupMenu; MenuItem { text:"Exportar backup…"; onTriggered: backupSave.open() } MenuItem { text:"Restaurar backup…"; onTriggered: restoreConfirm.open() } }
             Menu { id: addMenu; Repeater { model: panel.controller.playlists; MenuItem { required property var modelData; text: modelData.name; onTriggered: panel.controller.addToPlaylist(modelData.id,panel.controller.current) } } MenuItem { text: "Criar playlist…"; onTriggered: createDialog.open() } MenuItem {text:"Criar com Text to Tonalify…";visible:panel.textPlaylistAvailable;onTriggered:panel.textPlaylistRequested()} }
@@ -161,7 +164,7 @@ Dialog {
             id: tabs; Layout.fillWidth: true
             onCurrentIndexChanged: {if(panel.audioEngine)panel.audioEngine.visualizerActive=panel.visible && currentIndex===2 && songPages.currentIndex===1 && (panel.controller.background==="Ondas" || panel.controller.background==="Espectro");Qt.callLater(panel.ensureLyrics)}
             TabButton { Accessible.name:"Biblioteca";contentItem:ActionIcon{accentInk:panel.tone.accent;symbol:"library";description:"Biblioteca";filled:tabs.currentIndex===0;onClicked:tabs.currentIndex=0} }
-            TabButton { Accessible.name:"Estatísticas";contentItem:ActionIcon{accentInk:panel.tone.accent;symbol:"chart";description:"Estatísticas";filled:tabs.currentIndex===1;onClicked:tabs.currentIndex=1} }
+            TabButton { visible:false;width:0;implicitWidth:0;Accessible.name:"Estatísticas";contentItem:ActionIcon{accentInk:panel.tone.accent;symbol:"chart";description:"Estatísticas";filled:tabs.currentIndex===1;onClicked:tabs.currentIndex=1} }
             TabButton { Accessible.name:"Letras";contentItem:ActionIcon{accentInk:panel.tone.accent;symbol:"lyrics";description:"Letras";filled:tabs.currentIndex===2;onClicked:{tabs.currentIndex=2;songPages.positionViewAtIndex(1,ListView.Beginning)}} }
         }
         StackLayout {
@@ -211,10 +214,11 @@ Dialog {
                 }
             }
             ColumnLayout {
+                Label { visible:!!panel.stats.historyError;Layout.fillWidth:true;wrapMode:Text.Wrap;color:"#ffce76";text:"Não foi possível consultar todo o histórico. Os dados podem estar incompletos." }
                 Label { text:"Seu ritmo"; font.pixelSize:28; font.bold:true }
                 Label { text:"Artistas, músicas e estilos que marcaram seus dias"; color:"#a5a8ad" }
                 RowLayout {
-                    ComboBox { id: period; textRole: "text"; valueRole: "value"; model:[{text:"7 dias",value:7},{text:"30 dias",value:30},{text:"90 dias",value:90},{text:"180 dias",value:180}]; onActivated: panel.refresh() }
+                    ComboBox { id: period;objectName:"statisticsPeriod"; textRole: "text"; valueRole: "value"; model:[{text:"1 semana",value:7},{text:"1 mês",value:30},{text:"3 meses",value:90},{text:"6 meses",value:180},{text:"1 ano",value:365},{text:"Desde o começo",value:0}]; onActivated: panel.refresh() }
                     ComboBox { id: dimension; textRole: "text"; valueRole: "value"; model:[{text:"Bandas / artistas",value:"artists"},{text:"Músicas",value:"tracks"},{text:"Álbuns",value:"albums"},{text:"Estilos",value:"genres"},{text:"Por dia",value:"days"}]; onActivated: panel.refresh() }
                     CheckBox { text: "Registrar escutas locais"; checked: panel.controller.historyEnabled; onToggled: panel.controller.historyEnabled=checked }
                     Button { text: "Apagar histórico"; onClicked: clearDialog.open() }
@@ -391,7 +395,8 @@ Dialog {
     }
     FileDialog{id:syncExport;fileMode:FileDialog.SaveFile;nameFilters:["Ajuste Tonal (*.json)"];onAccepted:panel.controller.exportSyncFeedback(selectedFile)}
     StatisticsDetail{id:drill;controller:panel.controller}
-    ClimateDetail{id:climate;controller:panel.controller;days:period.currentValue || 7}
+    footer:Label {padding:8;font.pixelSize:11;color:panel.tone.textSecondary;wrapMode:Text.WordWrap;text:{panel.revision;const info=panel.controller.storageInfo || ({});const kb=n=>n>=1048576?(n/1048576).toFixed(2)+" MiB":(n/1024).toFixed(1)+" KiB";return "Biblioteca no aparelho: "+kb(info.databaseBytes || 0)+(info.lastBackupBytes?" • Último backup exportado: "+kb(info.lastBackupBytes):" • Nenhum backup exportado neste aparelho")}}
+    ClimateDetail{id:climate;controller:panel.controller;days:period.currentIndex<0?7:period.currentValue}
     LyricStyleDialog{id:appearance;controller:panel.controller}
     LyricsFullscreen{id:fullscreen;controller:panel.controller;playing:panel.playing;position:panel.position;metrics:panel.audioEngine ? panel.audioEngine.metrics : ({})}
     SongShareDialog{id:shareSong;objectName:"songShareDialog"}
@@ -412,7 +417,7 @@ Dialog {
         }
     }
     FileDialog { id:photoPicker; title:"Foto da banda"; nameFilters:["Imagens (*.jpg *.jpeg *.png *.webp)"]; onAccepted: panel.controller.photo=selectedFile.toString() }
-    FileDialog { id:backupSave; title:"Salvar backup fora da pasta do aplicativo"; fileMode:FileDialog.SaveFile; defaultSuffix:"tonal-backup.json"; nameFilters:["Backup Tonal (*.json)"]; onAccepted: panel.controller.exportBackup(selectedFile) }
+    FileDialog { id:backupSave; title:"Salvar backup fora da pasta do aplicativo"; fileMode:FileDialog.SaveFile; defaultSuffix:"tonal-backup.json"; nameFilters:["Backup Tonal (*.json)"]; onAccepted: (typeof panel.controller.exportFullBackup==="function"?panel.controller.exportFullBackup(selectedFile):panel.controller.exportBackup(selectedFile)) }
     Dialog { id:restoreConfirm; title:"Restaurar substitui a biblioteca e o histórico deste player. Faça um backup antes."; width:Math.min(550,panel.width-40); anchors.centerIn:parent; standardButtons:Dialog.Ok|Dialog.Cancel; onAccepted:backupOpen.open() }
-    FileDialog { id:backupOpen; title:"Restaurar backup deste player"; nameFilters:["Backup Tonal (*.json)"]; onAccepted: panel.controller.restoreBackup(selectedFile) }
+    FileDialog { id:backupOpen; title:"Restaurar backup deste player"; nameFilters:["Backup Tonal (*.json)"]; onAccepted: (typeof panel.controller.restoreFullBackup==="function"?panel.controller.restoreFullBackup(selectedFile):panel.controller.restoreBackup(selectedFile)) }
 }

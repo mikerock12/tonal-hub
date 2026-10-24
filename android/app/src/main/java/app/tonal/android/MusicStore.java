@@ -17,6 +17,8 @@ final class MusicStore {
     static synchronized MusicStore get(Context c){if(instance==null)instance=new MusicStore(c.getApplicationContext());return instance;}
     final Handler main=new Handler(Looper.getMainLooper());
     private final ExecutorService disk=Executors.newSingleThreadExecutor();
+    private final Context app;private LocalStories stories;
+    LocalStories stories(){if(stories==null)stories=new LocalStories(app,module);return stories;}
     private final AtomicFile file;
     private final PersonalDatabase database;
     JSONObject data=new JSONObject(),current=new JSONObject(),rules=new JSONObject();
@@ -28,7 +30,7 @@ final class MusicStore {
     private final Runnable saveTask=this::flush;
     private MusicStore(Context c){this(c,"music-library-"+(Application.getProcessName().endsWith(":indie")?"indie":"tonalify")+"-v1.json");}
     MusicStore(Context c,String filename){
-        file=new AtomicFile(new File(c.getFilesDir(),filename));
+        app=c.getApplicationContext();file=new AtomicFile(new File(c.getFilesDir(),filename));
         database=new PersonalDatabase(c,filename.replace(".json",".sqlite"));
         try{data=database.read();if(data.length()==0&&file.getBaseFile().length()<8*1024*1024)data=new JSONObject(new String(file.readFully(),StandardCharsets.UTF_8));}catch(FileNotFoundException ignored){}catch(Exception error){Diagnostics.write("Biblioteca pessoal: falha ao ler SQLite");}
         try(InputStream in=c.getAssets().open("music-rules.json")){rules=new JSONObject(new String(in.readAllBytes(),StandardCharsets.UTF_8));}catch(Exception ignored){}
@@ -52,7 +54,7 @@ final class MusicStore {
     int revision;
     void save(){revision++;main.removeCallbacks(saveTask);main.postDelayed(saveTask,750);}
     void persist(java.util.function.Consumer<Boolean> done){main.removeCallbacks(saveTask);String snapshot=data.toString();disk.execute(()->{boolean success;try{database.write(snapshot);success=true;}catch(Exception e){success=false;}boolean result=success;main.post(()->done.accept(result));});}
-    void flush(){main.removeCallbacks(saveTask);String snapshot=data.toString();disk.execute(()->{try{database.write(snapshot);}catch(Exception error){Diagnostics.write("Biblioteca pessoal: falha ao salvar SQLite");}});}
+    void flush(){if(restoring)return;main.removeCallbacks(saveTask);String snapshot=data.toString();disk.execute(()->{try{database.write(snapshot);}catch(Exception error){Diagnostics.write("Biblioteca pessoal: falha ao salvar SQLite");}});}
     void select(JSONObject t){
         if(t.optString("title").isEmpty())return;String id=key(t);JSONObject tracks=object(data,"tracks"),old=object(tracks,id),next=safe(t);
         for(String k:new String[]{"album","image","albumId","artistId","genre","genreSource","metadataSource","tone","lyricsAnalyzed","topics","topicVersion"})if(old.has(k)&&(!next.has(k)||next.optString(k).isEmpty()))put(next,k,old.opt(k));
@@ -68,7 +70,7 @@ final class MusicStore {
     }
     void checkpoint(){if(pending<=0||current.length()==0)return;JSONArray events=array(data,"events");JSONObject e=null;for(int n=events.length()-1;n>=Math.max(0,events.length()-8);n--){JSONObject candidate=events.optJSONObject(n);if(candidate!=null&&candidate.optString("session").equals(session)){e=candidate;break;}}
         if(e==null){e=new JSONObject();put(e,"at",System.currentTimeMillis());events.put(e);}put(e,"session",session);put(e,"key",key(current));put(e,"ms",e.optLong("ms")+pending);int d=current.optInt("durationMs");put(e,"play",total>=(d>0?Math.min(30000,Math.max(1000,d/2)):30000));pending=0;
-        long cutoff=System.currentTimeMillis()-180L*86400000;JSONArray kept=new JSONArray();for(int n=Math.max(0,events.length()-10000);n<events.length();n++){JSONObject row=events.optJSONObject(n);if(row!=null&&row.optLong("at")>=cutoff)kept.put(row);}put(data,"events",kept);save();
+        JSONArray kept=new JSONArray();for(int n=Math.max(0,events.length()-10000);n<events.length();n++){JSONObject row=events.optJSONObject(n);if(row!=null)kept.put(row);}put(data,"events",kept);save();
     }
     boolean liked(JSONObject t){String k=key(t);for(Object v:values(array(data,"favorites")))if(k.equals(v))return true;return false;}
     void favorite(JSONObject t,boolean on){JSONObject tracks=object(data,"tracks"),stored=object(tracks,key(t)),clean=safe(t);clean.keys().forEachRemaining(k->{Object v=clean.opt(k);if(!(v instanceof String)||!((String)v).isEmpty())put(stored,k,v);});put(tracks,key(t),stored);put(data,"tracks",tracks);JSONArray next=new JSONArray();if(on)next.put(key(t));for(Object k:values(array(data,"favorites")))if(!key(t).equals(k))next.put(k);put(data,"favorites",next);save();}
@@ -90,22 +92,57 @@ final class MusicStore {
     void add(String id,JSONObject t){JSONObject all=object(data,"tracks");JSONObject saved=object(all,key(t)),cleanTrack=safe(t);cleanTrack.keys().forEachRemaining(k->{Object v=cleanTrack.opt(k);if(!(v instanceof String)||!((String)v).isEmpty())put(saved,k,v);});put(all,key(t),saved);put(data,"tracks",all);for(Object v:values(array(data,"playlists"))){JSONObject p=(JSONObject)v;if(!id.equals(p.optString("id")))continue;JSONArray tracks=array(p,"tracks");boolean exists=false;for(Object k:values(tracks))exists|=key(t).equals(k);if(!exists&&tracks.length()<1000)tracks.put(key(t));put(p,"tracks",tracks);}save();}
     void remove(String id,int row){for(Object v:values(array(data,"playlists"))){JSONObject p=(JSONObject)v;if(id.equals(p.optString("id")))array(p,"tracks").remove(row);}save();}
     void delete(String id){JSONArray all=array(data,"playlists");for(int i=all.length()-1;i>=0;i--)if(id.equals(all.optJSONObject(i).optString("id")))all.remove(i);put(data,"playlists",all);save();}
-    void clearHistory(){pending=total=0;put(data,"events",new JSONArray());save();}
+    void clearHistory(){put(data,"historyEpoch",UUID.randomUUID().toString());pending=total=0;put(data,"events",new JSONArray());save();}
     String exportBackup()throws Exception{checkpoint();return new JSONObject().put("format","tonal-personal-backup").put("version",1).put("module",module).put("createdAt",new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX",Locale.ROOT).format(new Date())).put("data",data).toString(2);}
-    void restoreBackup(String text)throws Exception{
-        if(text.getBytes(StandardCharsets.UTF_8).length>8*1024*1024)throw new IOException("Backup maior que 8 MiB");JSONObject doc=new JSONObject(text),incoming=doc.getJSONObject("data");JSONObject imported=incoming.getJSONObject("tracks");
-        if(!doc.optString("format").equals("tonal-personal-backup")||doc.optInt("version")!=1||!module.equals(doc.optString("module"))||imported.length()>3000||array(incoming,"events").length()>10000||array(incoming,"playlists").length()>100)throw new IOException("Backup incompatível com este player");
+    private boolean restoring;
+    private static JSONObject validateBackup(String text,String module)throws Exception{
+        if(text.getBytes(StandardCharsets.UTF_8).length>64*1024*1024)throw new IOException("Backup maior que 64 MiB");JSONObject doc=new JSONObject(text),incoming=doc.getJSONObject("data");JSONObject imported=incoming.getJSONObject("tracks");
+        if(!doc.optString("format").equals("tonal-personal-backup")||doc.optInt("version")!=1||!module.equals(doc.optString("module"))||imported.length()>100000||array(incoming,"events").length()>250000||array(incoming,"playlists").length()>100)throw new IOException("Backup incompatível com este player");
         JSONObject clean=new JSONObject(),tracks=new JSONObject();for(Iterator<String> it=imported.keys();it.hasNext();){String k=it.next();JSONObject raw=imported.getJSONObject(k),t=safe(raw);if(!key(t).equals(k))throw new IOException("Identificação de música inválida");JSONObject tone=new JSONObject(),scores=object(raw,"tone");for(String name:new String[]{"intenso","contemplativo","afetivo","festivo"})if(scores.has(name))put(tone,name,Math.max(0,Math.min(11,scores.optDouble(name))));put(t,"tone",tone);put(t,"lyricsAnalyzed",raw.optBoolean("lyricsAnalyzed"));JSONObject topics=new JSONObject();for(String topic:MusicInsights.TOPICS){double score=object(raw,"topics").optDouble(topic,-1);if(Double.isFinite(score)&&score>=0)put(topics,topic,Math.min(1,score));}put(t,"topics",topics);put(t,"topicVersion",1);put(tracks,k,t);}
         put(clean,"tracks",tracks);JSONArray favorites=new JSONArray();for(Object k:values(array(incoming,"favorites")))if(k instanceof String&&tracks.has((String)k)&&favorites.length()<3000)favorites.put(k);put(clean,"favorites",favorites);
         JSONArray playlists=new JSONArray();for(Object value:values(array(incoming,"playlists"))){JSONObject raw=(JSONObject)value,p=new JSONObject();put(p,"id",raw.getString("id"));put(p,"name",raw.optString("name").substring(0,Math.min(100,raw.optString("name").length())));JSONArray entries=new JSONArray();HashSet<String> seen=new HashSet<>();for(Object k:values(array(raw,"tracks")))if(k instanceof String&&tracks.has((String)k)&&entries.length()<1000)entries.put(k);put(p,"tracks",entries);put(p,"description",raw.optString("description").substring(0,Math.min(300,raw.optString("description").length())));String cover=raw.optString("cover");if(cover.startsWith("data:image/jpeg;base64,")&&cover.length()<=262200)put(p,"cover",cover);for(String key:new String[]{"spotifyId","syncedCount","cloudUncertain","spotifyPublic","cloudComplete","coverSynced","importSource"})if(raw.has(key))put(p,key,raw.opt(key));playlists.put(p);}put(clean,"playlists",playlists);
         JSONArray events=new JSONArray();for(Object value:values(array(incoming,"events"))){JSONObject raw=(JSONObject)value;if(!tracks.has(raw.optString("key")))continue;JSONObject e=new JSONObject();put(e,"key",raw.optString("key"));put(e,"session",raw.optString("session",UUID.randomUUID().toString()));put(e,"at",raw.optLong("at"));put(e,"ms",Math.max(0,Math.min(86400000,raw.optLong("ms"))));put(e,"play",raw.optBoolean("play"));events.put(e);}put(clean,"events",events);
-        for(String k:new String[]{"history","background","photo","translationDay","translationBytes","searches","lyricStyle","lyricSync","artistMetadata"})if(incoming.has(k))put(clean,k,incoming.opt(k));checkpoint();data=clean;JSONArray validSearches=new JSONArray();for(Object q:values(searches()))if(q instanceof String&&validSearches.length()<20)validSearches.put(((String)q).substring(0,Math.min(200,((String)q).length())));put(data,"searches",validSearches);put(data,"lyricStyle",lyricStyle());pending=total=0;session=UUID.randomUUID().toString();playing=false;at=SystemClock.elapsedRealtime();generation++;lyricVersion++;lines=new JSONArray();busy=false;save();
+        for(String k:new String[]{"history","background","photo","translationDay","translationBytes","searches","lyricStyle","lyricSync","artistMetadata"})if(incoming.has(k))put(clean,k,incoming.opt(k));return clean;
+    }
+    private void applyRestored(JSONObject clean){data=clean;JSONArray validSearches=new JSONArray();for(Object q:values(searches()))if(q instanceof String&&validSearches.length()<20)validSearches.put(((String)q).substring(0,Math.min(200,((String)q).length())));put(data,"searches",validSearches);put(data,"lyricStyle",lyricStyle());pending=total=0;session=UUID.randomUUID().toString();playing=false;at=SystemClock.elapsedRealtime();generation++;lyricVersion++;lines=new JSONArray();busy=false;save();
+statsRevision=-1;statsGeneration++;storyTracks=new JSONArray();statisticsReport=new JSONObject();insightsReport=new JSONObject();storyRequest++;storyPending=false;if(stories!=null)stories.resetSummary();}
+    void restoreBackup(String text)throws Exception{JSONObject clean=validateBackup(text,module);checkpoint();put(clean,"libraryEpoch",UUID.randomUUID().toString());applyRestored(clean);}
+    void exportFullBackup(android.net.Uri target,java.util.function.Consumer<Boolean> done){
+        if(restoring){done.accept(false);return;}
+        checkpoint();String snapshot=data.toString();disk.execute(()->{long count=0;boolean ok=false;
+            try{database.write(snapshot);JSONObject all=database.fullSnapshot();byte[] bytes=new JSONObject().put("format","tonal-personal-backup").put("version",1).put("module",module).put("createdAt",new Date().toString()).put("data",all).toString().getBytes(StandardCharsets.UTF_8);
+                if(bytes.length>64*1024*1024||object(all,"tracks").length()>100000||array(all,"events").length()>250000)throw new IOException("Backup ultrapassa o limite de importação");
+                try(OutputStream stream=app.getContentResolver().openOutputStream(target,"wt")){if(stream==null)throw new IOException();stream.write(bytes);stream.flush();}count=bytes.length;ok=true;
+            }catch(Exception ignored){}boolean success=ok;long bytes=count;main.post(()->{if(success){put(data,"lastBackupBytes",bytes);put(data,"lastBackupAt",new Date().toString());save();}done.accept(success);});
+        });
+    }
+    void restoreFullBackup(android.net.Uri source,java.util.function.Consumer<Boolean> done){
+        if(restoring){done.accept(false);return;}checkpoint();flush();main.removeCallbacks(saveTask);restoring=true;
+        disk.execute(()->{JSONObject result=null;try(InputStream stream=app.getContentResolver().openInputStream(source);ByteArrayOutputStream bytes=new ByteArrayOutputStream()){
+            if(stream==null)throw new IOException();byte[] block=new byte[8192];for(int n;(n=stream.read(block))!=-1;){if(bytes.size()+n>64*1024*1024)throw new IOException();bytes.write(block,0,n);}JSONObject clean=validateBackup(bytes.toString("UTF-8"),module);put(clean,"libraryEpoch",UUID.randomUUID().toString());database.write(clean.toString());result=database.read();
+        }catch(Exception ignored){}JSONObject restored=result;main.post(()->{restoring=false;if(restored!=null)applyRestored(restored);else save();done.accept(restored!=null);});});
     }
     static List<Object> values(JSONArray a){ArrayList<Object> r=new ArrayList<>();for(int i=0;i<a.length();i++)r.add(a.opt(i));return r;}
     JSONObject tone(String text,String genre){JSONObject result=new JSONObject(),defs=object(rules,"tones");List<String> words=Arrays.asList(IndieCatalog.normalize(text).split(" "));Iterator<String> it=defs.keys();while(it.hasNext()){String k=it.next();JSONObject d=object(defs,k);int hits=0;HashSet<String> lex=new HashSet<>();for(Object v:values(array(d,"words")))lex.add(IndieCatalog.normalize(String.valueOf(v)));for(String w:words)if(lex.contains(w))hits++;int bonus=0;for(Object g:values(array(d,"genres")))if(IndieCatalog.normalize(genre).contains(IndieCatalog.normalize(String.valueOf(g))))bonus=1;put(result,k,Math.min(10,hits)+bonus);}return result;}
-    void analyze(){StringBuilder text=new StringBuilder();for(Object v:values(lines))text.append(((JSONObject)v).optString("text")).append('\n');put(current,"tone",tone(text.toString(),current.optString("genre")));put(current,"lyricsAnalyzed",!text.toString().trim().isEmpty());JSONObject topics=text.toString().trim().isEmpty()?new JSONObject():MusicInsightModel.analyze(text.toString());put(current,"topics",topics);put(current,"topicVersion",1);JSONObject all=object(data,"tracks");put(all,key(current),current);put(data,"tracks",all);save();}
+    void analyze(){StringBuilder text=new StringBuilder();for(Object v:values(lines))text.append(((JSONObject)v).optString("text")).append('\n');stories().capture(current,text.toString());put(current,"tone",tone(text.toString(),current.optString("genre")));put(current,"lyricsAnalyzed",!text.toString().trim().isEmpty());JSONObject topics=text.toString().trim().isEmpty()?new JSONObject():MusicInsightModel.analyze(text.toString());put(current,"topics",topics);put(current,"topicVersion",1);JSONObject all=object(data,"tracks");put(all,key(current),current);put(data,"tracks",all);save();}
+    JSONArray storyTracks=new JSONArray();JSONObject statisticsReport=new JSONObject(),insightsReport=new JSONObject();private int statsDays=-1,statsRevision=-1;private String statsDimension="";private boolean statsRunning;private int statsGeneration;
+    boolean statisticsBusy(){return statsRunning;}
+    long databaseBytes(){return database.bytes();}
+    void requestStatistics(int days,String dimension,Runnable done){
+        if(restoring)return;if(statsDays==days&&statsDimension.equals(dimension)&&statsRevision==revision)return;
+        if(statsDays!=days||!statsDimension.equals(dimension)){statisticsReport=new JSONObject();insightsReport=new JSONObject();}statsDays=days;statsDimension=dimension;statsRevision=revision;int serial=++statsGeneration;if(statsRunning)return;statsRunning=true;
+        String snapshot=data.toString();disk.execute(()->{JSONObject selected;try{database.write(snapshot);selected=database.historySnapshot(new JSONObject(snapshot),MusicInsights.cutoff(days));}catch(Exception e){try{selected=new JSONObject(snapshot);put(selected,"historyError",true);}catch(Exception ignored){selected=new JSONObject();}}
+            JSONObject report=MusicInsights.report(this,days,dimension,30,selected),details=MusicInsights.details(this,days,selected);put(report,"historyError",selected.optBoolean("historyError"));JSONArray candidates=new JSONArray();for(Object v:values(array(MusicInsights.report(this,days,"tracks",8,selected),"rows"))){JSONArray list=array((JSONObject)v,"tracks");if(list.length()>0)candidates.put(list.opt(0));}
+            main.post(()->{statsRunning=false;if(serial!=statsGeneration){statsRevision=-1;requestStatistics(statsDays,statsDimension,done);return;}storyTracks=candidates;statisticsReport=report;insightsReport=details;done.run();dispatchStories();});
+        });
+    }
+    private int storyRequest,storyDays;private boolean storyPending;
+    void cancelStories(){storyRequest++;storyPending=false;if(stories!=null)stories.detach();}
+    private void dispatchStories(){if(!storyPending||statsRunning||statsDays!=storyDays||statisticsReport.length()==0)return;storyPending=false;stories().analyze(storyTracks,storyDays);}
+    void analyzeStories(int days){storyRequest++;storyPending=true;storyDays=days;requestStatistics(days,"artists",()->{});dispatchStories();}
+
     JSONObject statistics(int days,String dimension){return MusicInsights.report(this,days,dimension);}
-    JSONObject insights(int days){return MusicInsights.details(this,days);}
+    JSONObject insights(int days){return statsDays==days&&insightsReport.length()>0?insightsReport:MusicInsights.details(this,days);}
     JSONArray searches(){return array(data,"searches");}
     void rememberSearch(String query){String q=query.trim();if(q.isEmpty())return;q=q.substring(0,Math.min(200,q.length()));JSONArray a=new JSONArray();a.put(q);for(Object v:values(searches()))if(v instanceof String&&!q.equalsIgnoreCase((String)v)&&a.length()<20)a.put(v);put(data,"searches",a);save();}
     void forgetSearch(String query){JSONArray a=new JSONArray();for(Object v:values(searches()))if(!query.isEmpty()&&!query.equals(v))a.put(v);put(data,"searches",a);save();}

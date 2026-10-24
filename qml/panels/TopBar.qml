@@ -7,6 +7,8 @@ Item {
     id: root
     signal audioSettingsRequested()
     signal musicRequested()
+    signal statisticsRequested()
+    signal backupRequested()
 
     function focusSearch() {
         search.forceActiveFocus()
@@ -167,12 +169,12 @@ Item {
         anchors.right: parent.right
         anchors.rightMargin: 16
         anchors.verticalCenter: parent.verticalCenter
-        spacing: 12
+        spacing: 8
 
         // Aviso do motor de áudio quando ele não está pronto
         Rectangle {
             anchors.verticalCenter: parent.verticalCenter
-            visible: App.librespot.state !== Librespot.Ready && root.width > 1100
+            visible: App.librespot.state !== Librespot.Ready && root.width > 1350
             height: 32
             radius: 16
             width: Math.min(260, engineLabel.implicitWidth + 36)
@@ -218,6 +220,8 @@ Item {
         }
 
         Personal.ActionIcon{anchors.verticalCenter:parent.verticalCenter;symbol:"heart";description:"Biblioteca pessoal, estatísticas e letras";onClicked:root.musicRequested()}
+        Personal.ActionIcon{objectName:"globalStatistics";anchors.verticalCenter:parent.verticalCenter;symbol:"chart";description:"Estatísticas";onClicked:root.statisticsRequested()}
+        Personal.ActionIcon{objectName:"globalBackup";anchors.verticalCenter:parent.verticalCenter;symbol:"save";description:"Backup e restauração";onClicked:root.backupRequested()}
         Personal.ActionIcon{anchors.verticalCenter:parent.verticalCenter;symbol:"audio";description:"Áudio e efeitos";onClicked:root.audioSettingsRequested()}
 
         // Avatar + menu da conta

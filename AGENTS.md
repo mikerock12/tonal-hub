@@ -1,7 +1,7 @@
 # Instruções para trabalhar neste repositório
 
 Leia [contexto.md](contexto.md), [README.md](README.md) e os documentos da área
-afetada antes de alterar o produto. Estado documental: 24/10/2026, Windows 0.14.1 / Android 0.14.0.
+afetada antes de alterar o produto. Estado documental: 24/10/2026, Windows 0.15.0 / Android 0.15.0.
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
@@ -179,3 +179,31 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
   AVD preservada, sem alteração do produto/limites e sem causalidade provada.
   Binários continuam no código d4c812d9cda8b66a1f40ccecd0c46aaddb3f5192;
   commits documentais de evidência não significam rebuild ou novo benchmark.
+
+## Estatísticas e leitor local (0.15.0)
+
+- Ler docs/STATISTICS_STORIES_0150.md. Estatísticas e backup ficam no cabeçalho
+  global; período zero significa Desde o começo, sem fallback para 7 dias.
+- Não apagar sessões por idade ou evicção do cache (10.000 sessões recentes).
+  SQLite é o arquivo histórico. Exclusão explícita usa historyEpoch; restauração
+  usa libraryEpoch. C++ deve comparar epochs com value(), sem inserir null por
+  operator[] mutável. Queries/agrupamento e seleção do lote ficam no worker.
+- Android fixa uma transação durante o uso de tabelas TEMP no WAL: conexões do
+  pool não compartilham tabelas temporárias. Não ocultar falha como total completo.
+- Backup completo inclui o arquivo histórico, mede bytes efetivamente gravados e
+  não inclui pesos/credenciais/letras completas. Guardas JSON: 64 MiB, 250.000
+  sessões, 100.000 metadados, 100 playlists. Não confundir com retenção por idade.
+- O usuário autorizou explicitamente um LLM para interpretar letras: Qwen2.5 0.5B
+  Q4_K_M + llama.cpp, aberto, opcional e nativo. Isso não autoriza LLMs em recursos
+  simples ou no motor de áudio. Não substituir o Tiny por marketing de LLM.
+- Não treinar nem chamar de treinado pelo Tonal o Qwen pré-treinado. Preservar
+  Apache 2.0/MIT, revisões e hashes em resources/local-stories-model.json.
+- Só iniciar inferência por ação do leitor, máximo 8 letras, 1 thread CPU,
+  2048 contexto / 1536 entrada / 160 saída, orçamento 45 s e supervisão 60 s.
+  Processo separado TonalStories.exe / serviço privado :stories; fechar cancela
+  também seleções ainda pendentes. Nunca carregar pesos no player/callback PCM.
+- Cache 128 letras limitadas + 20 resumos, privado e descartável. Mostrar fontes,
+  lote e período. Não inventar temas para preencher o card, nem inferir saúde.
+  Downloads verificam 491.400.032 bytes e SHA-256 antes da ativação; usar HTTPS.
+- Build: packaging/build-stories-local.ps1 (Windows) ou -Android. Fontes externas
+  fixadas e verificadas; pesos baixados pelo app, não embutidos em EXE/APK.

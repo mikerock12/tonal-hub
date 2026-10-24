@@ -1,6 +1,23 @@
 # Contexto do Tonal Hub
 
-Atualizado em **24/10/2026**. Estado do produto: **Windows 0.14.1 / Android 0.14.0**. Leia também [AGENTS.md](AGENTS.md).
+Atualizado em **24/10/2026**. Estado do produto: **Windows 0.15.0 / Android 0.15.0**. Leia também [AGENTS.md](AGENTS.md).
+
+## Entrega 0.15.0 — estatísticas e histórias
+
+Referência: [STATISTICS_STORIES_0150.md](docs/STATISTICS_STORIES_0150.md).
+Atalhos Estatísticas/Backup no cabeçalho global dos players, retirados das abas
+internas da música. Seu ritmo: 7/30/90/180/365 dias ou zero para Desde o começo.
+SQLite conserva sessões sem expiração de 180 dias; cache recente limitado,
+agregação assíncrona e exportação/restauração completas do arquivo histórico.
+Rodapé mede arquivo local e último backup exportado, sem confundir com sync.
+
+Qwen2.5 0.5B Q4_K_M (Apache 2.0), 468,6 MiB opcionais, com llama.cpp MIT nativo.
+Não foi treinado pelo projeto. Até oito letras do período, cache privado limitado,
+resumo dos trechos com fontes explícitas; pode errar e não avalia saúde/humor.
+Inferência CPU de uma thread, processo separado Windows/Android :stories,
+45 s de orçamento e supervisão de 60 s, cancelamento ao fechar. Pesos não
+acompanham instaladores e não entram no backup JSON. Não há novo benchmark
+Spotify nesta versão. Evidências em docs/statistics-stories-0150-tests.json.
 
 ## Projeto, autoria e objetivo
 

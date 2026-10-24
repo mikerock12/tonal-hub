@@ -1,0 +1,57 @@
+{
+  "version": "0.15.0",
+  "date": "2026-10-24",
+  "windows_product_ctest": {
+    "passed": 10,
+    "failed": 0,
+    "seconds": 53.53
+  },
+  "portable_companion_checks": {
+    "passed": 7,
+    "failed": 0,
+    "seconds": 64.36,
+    "final_repeat": "in progress"
+  },
+  "qml": {
+    "mix_and_header": 21,
+    "lyrics": 6,
+    "playlist": 3,
+    "failed": 0
+  },
+  "themes": {
+    "themes": 6,
+    "checks": 183
+  },
+  "native_model_windows": {
+    "elapsedSeconds": 11.805845399998361,
+    "exit": 0,
+    "result": {
+      "elapsedMs": 11462,
+      "engine": "Qwen2.5 0.5B Q4_K_M / llama.cpp",
+      "error": "",
+      "summary": "O conjunto de trechos apresentados aborda temas de nostalgia, recomeçar, sair de uma relação e escolher um caminho. O primeiro trecho enfatiza a tristeza e a nostalgia, enquanto o segundo descreve a esperança e a mudança. A evidência é fraca, pois não há evidências específicas para identificar o que se espera de cada trecho.",
+      "tokens": 84
+    },
+    "input": "Two original synthetic Portuguese song descriptions, no copyrighted lyrics"
+  },
+  "android": {
+    "compile": "release/benchmark/comparison passed",
+    "runtime_validation": "in progress on dedicated AVD Tonal_Local_20261015 only",
+    "physical_phone": false
+  },
+  "prior_attempts": [
+    {
+      "check": "history archive eviction",
+      "result": "failed; corrected missing-epoch mutable QJsonObject lookup; final archive tests pass"
+    },
+    {
+      "check": "history aggregation stress",
+      "result": "interrupted after slow repeated genre profile evaluation; cached per track and repeated successfully"
+    },
+    {
+      "check": "Android install first attempt",
+      "result": "AVD package service not ready during boot; no product conclusion; repeated after sys.boot_completed=1"
+    }
+  ],
+  "benchmark": "No new Spotify benchmark; functional synthetic tests only"
+}

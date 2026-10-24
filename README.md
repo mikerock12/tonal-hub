@@ -10,12 +10,24 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
-**Produto atual: Windows 0.14.1 · Android 0.14.0. Documentação consolidada em 24/10/2026.**
+**Produto atual: Windows 0.15.0 · Android 0.15.0. Documentação consolidada em 24/10/2026.**
 
 [Guia visual com capturas](docs/GUIA_VISUAL.md) ·
 [Regras da Descoberta 2+1](docs/DESCOBERTA_2_MAIS_1.md) ·
 [Benchmarks realizados](docs/BENCHMARKS.md) ·
 [Contexto do projeto](contexto.md) · [Instruções de manutenção](AGENTS.md).
+
+## Estatísticas e histórias 0.15.0
+
+Estatísticas e backup ficam sempre no topo. Seu ritmo cobre de uma semana a
+**Desde o começo**, com histórico SQLite sem expiração de 180 dias e tamanho
+real da biblioteca/último backup no rodapé. O card de histórias pode interpretar
+até oito letras do período com **Qwen2.5 0.5B + llama.cpp**, inteiramente local.
+O modelo aberto é opcional (468,6 MiB), carregado somente durante a análise em
+processo separado. Não avalia seu humor ou saúde.
+
+[Como usar, limites e validação](docs/STATISTICS_STORIES_0150.md) ·
+[Proveniência e licenças](third_party/LOCAL-STORIES.md).
 
 ## Correção Windows 0.14.1
 

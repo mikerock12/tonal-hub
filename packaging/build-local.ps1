@@ -23,6 +23,7 @@ try {
     Check 'CMake'
     cmake --build --preset release --parallel 4
     Check 'Build'
+    & (Join-Path $PSScriptRoot 'build-stories-local.ps1')
     $build=Join-Path $projectRoot 'out\build\release'
     $librespot=Join-Path $env:USERPROFILE '.cargo\bin\librespot.exe'
     if(-not (Test-Path -LiteralPath $librespot)){throw 'Instale librespot: cargo install librespot --locked'}

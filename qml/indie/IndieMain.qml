@@ -22,7 +22,8 @@ ApplicationWindow {
     property bool songRequested: false
     property int musicRevision: 0
     function openMusic(song=false,section=0){songRequested=song;if(musicLoader.item){if(song)musicLoader.item.showSong();else{musicLoader.item.section=section;musicLoader.item.open()}}else musicLoader.setSource("qrc:/companion/qml/companion/MusicPanel.qml",{controller:music,audioEngine:audio,section:song?2:section})}
-    Loader { id: musicLoader; onLoaded: {if(window.songRequested)item.showSong();else item.open()} }
+    property bool backupRequested:false
+    Loader { id: musicLoader; onLoaded: {if(window.songRequested)item.showSong();else item.open();if(window.backupRequested){item.showBackup();window.backupRequested=false}} }
     Binding { target: musicLoader.item; property:"position"; value:audio ? audio.positionMs : 0; when:!!musicLoader.item }
     Binding { target: musicLoader.item; property:"playing"; value:audio ? audio.localPlaying : false; when:!!musicLoader.item }
     Connections { target: musicLoader.item; function onDiscover(artist){search.text=artist;catalog.search(artist,selectedProvider)} function onTogglePlayback(){audio.toggleLocalPlay()} function onPreviousRequested(){playAt(queueIndex-1)} function onNextRequested(){playAt(queueIndex+1)} }
@@ -67,6 +68,8 @@ ApplicationWindow {
             Button { text: hubMode ? "Abrir IndieTonal" : "Tonal Hub"; onClicked: hubMode ? hub.indie() : hub.hub() }
             Button { text: "Conexões"; visible: !hubMode; onClicked: { config.populate(); config.open() } }
             Button { text: "Áudio"; visible: !hubMode; onClicked: effects.open() }
+            Personal.ActionIcon {symbol:"chart";description:"Estatísticas";visible:!hubMode;onClicked:window.openMusic(false,1)}
+            Personal.ActionIcon {symbol:"save";description:"Backup e restauração";visible:!hubMode;onClicked:{if(musicLoader.item){window.openMusic();musicLoader.item.showBackup()}else{window.backupRequested=true;window.openMusic()}}}
             Button { text: "Sua música"; visible: !hubMode; onClicked: window.openMusic() }
             Button { text: "Arquivo"; visible: !hubMode; onClicked: filePicker.open() }
         }

@@ -1,5 +1,6 @@
 #include "PersonalDatabase.h"
 #include <QFileInfo>
+#include <QDateTime>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QSqlDatabase>
@@ -37,14 +38,16 @@ namespace personal {
 QJsonObject load(const QString &path){
   QJsonObject result;if(!QFileInfo::exists(path))return result;
   database(path,[&](auto &db){QSqlQuery q(db);q.exec("SELECT json FROM settings WHERE id='preferences'");if(q.next())result=QJsonDocument::fromJson(q.value(0).toByteArray()).object();
-    QJsonObject tracks;q.exec("SELECT id,json FROM tracks");while(q.next())tracks[q.value(0).toString()]=QJsonDocument::fromJson(q.value(1).toByteArray()).object();result["tracks"]=tracks;
-    for(auto table:{"listens","favorites","playlists"}){QJsonArray list;QString order=QString(table)=="listens"?"started_at,id":"position";q.exec("SELECT json FROM "+QString(table)+" ORDER BY "+order);while(q.next()){auto row=QJsonDocument::fromJson(q.value(0).toByteArray()).object();if(QString(table)=="favorites")list.append(row["key"]);else {row.remove("position");list.append(row);}}result[QString(table)=="listens"?"events":table]=list;}return true;});return result;
+    QJsonObject tracks;q.exec("SELECT id,json FROM tracks WHERE id IN (SELECT id FROM tracks ORDER BY rowid DESC LIMIT 3000) OR id IN (SELECT id FROM favorites) OR id IN (SELECT track_id FROM playlist_items)");while(q.next())tracks[q.value(0).toString()]=QJsonDocument::fromJson(q.value(1).toByteArray()).object();result["tracks"]=tracks;
+    for(auto table:{"listens","favorites","playlists"}){QJsonArray list;QString order=QString(table)=="listens"?"started_at,id":"position";q.exec(QString(table)=="listens"?"SELECT json FROM (SELECT id,started_at,json FROM listens ORDER BY started_at DESC,id DESC LIMIT 10000) ORDER BY started_at,id":"SELECT json FROM "+QString(table)+" ORDER BY "+order);while(q.next()){auto row=QJsonDocument::fromJson(q.value(0).toByteArray()).object();if(QString(table)=="favorites")list.append(row["key"]);else {row.remove("position");list.append(row);}}result[QString(table)=="listens"?"events":table]=list;}return true;});return result;
 }
 bool save(const QString &path,const QJsonObject &data,QJsonObject &previous){
-  bool ok=database(path,[&](auto &db){if(!db.transaction())return false;bool success=true;
+  bool ok=database(path,[&](auto &db){if(!db.transaction())return false;bool success=true;QJsonObject oldData=previous;
+    if(data.value("libraryEpoch")!=previous.value("libraryEpoch")){for(auto table:{"settings","tracks","listens","favorites","playlists","playlist_items"}){QSqlQuery q(db);success=q.exec("DELETE FROM "+QString(table))&&success;}oldData={};}
+    else if(data.value("historyEpoch")!=previous.value("historyEpoch")){QSqlQuery q(db);success=q.exec("DELETE FROM listens")&&success;oldData["events"]=QJsonArray();}
     for(const auto &table:QStringList{"settings","tracks","listens","favorites","playlists"}){
-      auto next=rows(data,table),old=rows(previous,table);
-      for(auto it=old.begin();it!=old.end();++it)if(!next.contains(it.key())){QSqlQuery q(db);q.prepare("DELETE FROM "+table+" WHERE id=?");q.addBindValue(it.key());success=q.exec()&&success;}
+      auto next=rows(data,table),old=rows(oldData,table);
+      for(auto it=old.begin();it!=old.end();++it)if(table!="listens"&&!next.contains(it.key())){QSqlQuery q(db);q.prepare("DELETE FROM "+table+" WHERE id=?"+(table=="tracks"?" AND NOT EXISTS(SELECT 1 FROM listens WHERE track_id=tracks.id)":""));q.addBindValue(it.key());success=q.exec()&&success;}
       for(auto it=next.begin();it!=next.end();++it){if(old.value(it.key())==it.value())continue;auto row=it.value();QStringList columns{"id","json"};QVariantList values{it.key(),json(row)};
         auto add=[&](QString k,QVariant v){columns<<k;values<<v;};
         if(table=="tracks"){for(auto k:{"provider","title","artist","genre"})add(k,row[k].toString());}
@@ -53,7 +56,29 @@ bool save(const QString &path,const QJsonObject &data,QJsonObject &previous){
         QStringList placeholders;for(int i=0;i<columns.size();i++)placeholders<<"?";QSqlQuery q(db);q.prepare("INSERT OR REPLACE INTO "+table+" ("+columns.join(',')+") VALUES ("+placeholders.join(',')+")");for(auto value:values)q.addBindValue(value);success=q.exec()&&success;
       }
     }
-    if(data["playlists"]!=previous["playlists"]){QSqlQuery clear(db);success=clear.exec("DELETE FROM playlist_items")&&success;for(auto v:data["playlists"].toArray()){auto p=v.toObject();int pos=0;for(auto t:p["tracks"].toArray()){QSqlQuery q(db);q.prepare("INSERT INTO playlist_items VALUES (?,?,?)");q.addBindValue(p["id"].toString());q.addBindValue(pos++);q.addBindValue(t.toString());success=q.exec()&&success;}}}
+    if(data["playlists"]!=oldData["playlists"]){QSqlQuery clear(db);success=clear.exec("DELETE FROM playlist_items")&&success;for(auto v:data["playlists"].toArray()){auto p=v.toObject();int pos=0;for(auto t:p["tracks"].toArray()){QSqlQuery q(db);q.prepare("INSERT INTO playlist_items VALUES (?,?,?)");q.addBindValue(p["id"].toString());q.addBindValue(pos++);q.addBindValue(t.toString());success=q.exec()&&success;}}}
     if(success)return db.commit();db.rollback();return false;});if(ok)previous=data;return ok;
+}
+}
+
+namespace personal {
+QJsonObject historySnapshot(const QString &path,const QJsonObject &current,qint64 cutoff){
+ QJsonObject result=current;QJsonObject tracks=current["tracks"].toObject();QJsonArray events=current["events"].toArray();
+ const bool ok=database(path,[&](auto &db){
+  QSqlQuery q(db);if(!q.exec("CREATE TEMP TABLE active_sessions(id TEXT PRIMARY KEY)"))return false;
+  q.prepare("INSERT OR IGNORE INTO active_sessions VALUES(?)");int index=0;
+  for(auto v:events){auto e=v.toObject();QString id=e["session"].toString();if(id.isEmpty())id=QString::number(index)+"|"+e["key"].toString();q.bindValue(0,id);if(!q.exec())return false;++index;}
+  q.exec("SELECT id,json FROM tracks WHERE id IN (SELECT track_id FROM listens WHERE id IN (SELECT id FROM active_sessions))");
+  while(q.next()){QString id=q.value(0).toString();if(!tracks.contains(id))tracks[id]=QJsonDocument::fromJson(q.value(1).toByteArray()).object();}
+  q.prepare("SELECT l.track_id,MIN(l.started_at),SUM(l.listened_ms),SUM(l.qualified),t.json FROM listens l JOIN tracks t ON t.id=l.track_id WHERE l.started_at>=? AND l.started_at<=? AND NOT EXISTS(SELECT 1 FROM active_sessions a WHERE a.id=l.id) GROUP BY l.track_id,date(l.started_at/1000,'unixepoch','localtime')");
+  q.addBindValue(cutoff);q.addBindValue(QDateTime::currentMSecsSinceEpoch());if(!q.exec())return false;
+  while(q.next()){QString key=q.value(0).toString();if(!tracks.contains(key))tracks[key]=QJsonDocument::fromJson(q.value(4).toByteArray()).object();events.append(QJsonObject{{"key",key},{"at",q.value(1).toDouble()},{"ms",q.value(2).toDouble()},{"plays",q.value(3).toInt()}});}
+  return true;
+ });if(!ok)result["historyError"]=true;result["tracks"]=tracks;result["events"]=events;return result;
+}
+QJsonObject fullSnapshot(const QString &path){
+ QJsonObject result;
+ database(path,[&](auto &db){QSqlQuery q(db);q.exec("SELECT json FROM settings WHERE id='preferences'");if(q.next())result=QJsonDocument::fromJson(q.value(0).toByteArray()).object();QJsonObject tracks;q.exec("SELECT id,json FROM tracks");while(q.next())tracks[q.value(0).toString()]=QJsonDocument::fromJson(q.value(1).toByteArray()).object();result["tracks"]=tracks;
+ for(auto table:{"listens","favorites","playlists"}){QJsonArray list;QString order=QString(table)=="listens"?"started_at,id":"position";q.exec("SELECT json FROM "+QString(table)+" ORDER BY "+order);while(q.next()){auto row=QJsonDocument::fromJson(q.value(0).toByteArray()).object();if(QString(table)=="favorites")list.append(row["key"]);else{row.remove("position");list.append(row);}}result[QString(table)=="listens"?"events":table]=list;}return true;});return result;
 }
 }

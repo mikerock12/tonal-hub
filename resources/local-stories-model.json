@@ -1,0 +1,11 @@
+{
+  "runtime_revision": "3f03b17724ad8b69040825f45c43c59b092a0244",
+  "runtime_archive_sha256": "48d85780f84c8758097f6c12be39a87fcbb0bee4bedd05e95a31ce54a0043d75",
+  "model_repo": "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
+  "model_revision": "9217f5db79a29953eb74d5343926648285ec7e67",
+  "model_file": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+  "model_bytes": 491400032,
+  "model_sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
+  "model_license": "Apache-2.0",
+  "runtime_license": "MIT"
+}
