@@ -90,6 +90,8 @@ QML e usa um processo de inferência com prioridade ociosa; o Android usa uma
 thread de segundo plano e um serviço privado separado. Capturas pendentes são
 agrupadas e limitadas a 128 faixas. Os pesos só são carregados por solicitação.
 
+A prioridade acompanha a intenção de reproduzir, inclusive durante buffering;
+falta momentânea de frames não é interpretada como pausa.
 Download do modelo e busca adicional de letras desta análise aguardam uma pausa
 na reprodução. Letras já capturadas podem ser analisadas enquanto o áudio toca.
 Pausar ou cancelar o leitor não envia comandos ao player. A solicitação pendente

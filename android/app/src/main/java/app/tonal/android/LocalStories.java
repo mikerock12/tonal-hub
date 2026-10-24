@@ -39,7 +39,7 @@ final class LocalStories {
     void observe(Runnable update){observer=update;}
     void detach(){observer=null;cancel();}
     private void notifyChanged(){if(observer!=null)observer.run();}
-    JSONObject state(){JSONObject o=new JSONObject();MusicStore.put(o,"ready",ready);MusicStore.put(o,"busy",busy);MusicStore.put(o,"downloading",downloading);MusicStore.put(o,"status",status);MusicStore.put(o,"summary",summary);MusicStore.put(o,"sources",sources);MusicStore.put(o,"progress",downloaded/(double)MODEL_BYTES);MusicStore.put(o,"modelBytes",storedModelBytes);MusicStore.put(o,"cacheBytes",cacheBytes);return o;}
+    JSONObject state(){JSONObject o=new JSONObject();MusicStore.put(o,"playbackPrioritized",playing);MusicStore.put(o,"ready",ready);MusicStore.put(o,"busy",busy);MusicStore.put(o,"downloading",downloading);MusicStore.put(o,"status",status);MusicStore.put(o,"summary",summary);MusicStore.put(o,"sources",sources);MusicStore.put(o,"progress",downloaded/(double)MODEL_BYTES);MusicStore.put(o,"modelBytes",storedModelBytes);MusicStore.put(o,"cacheBytes",cacheBytes);return o;}
     private static long bytes(File dir){long total=0;File[] files=dir.listFiles();if(files!=null)for(File f:files)total+=f.length();return total;}
     private static String hash(String value){try{return hex(MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8)));}catch(Exception error){throw new IllegalStateException(error);}}
     private static String hex(byte[] digest){StringBuilder b=new StringBuilder();for(byte v:digest)b.append(String.format(Locale.ROOT,"%02x",v&255));return b.toString();}

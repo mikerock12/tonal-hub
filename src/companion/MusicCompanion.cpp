@@ -58,7 +58,6 @@ void MusicCompanion::selectTrack(const QVariantMap &input){
   m_data["tracks"]=tracks;m_current=t;emit currentChanged();save();
 }
 void MusicCompanion::pulse(bool playing,int position){
-  m_stories->setPlaying(playing);
   qint64 wall=m_clock.restart();if(historyEnabled()&&!m_current.isEmpty()&&playing&&m_playing){qint64 delta=position-m_position;if(delta>0&&delta<5000){qint64 ms=std::min(std::clamp(wall,qint64(0),qint64(2000)),delta);m_pendingMs+=ms;m_sessionMs+=ms;if(m_pendingMs>=5000)checkpoint();}}
   int duration=m_current.value("durationMs").toInt();if(duration>1000&&m_position>=duration-1500&&position<1000&&m_counted){checkpoint();m_session=QUuid::createUuid().toString();m_sessionMs=0;m_counted=false;}
   m_position=position;m_playing=playing;if(!playing)checkpoint();

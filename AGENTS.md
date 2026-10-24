@@ -213,4 +213,6 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
   thread Android BACKGROUND. Download e LRCLIB deste leitor aguardam pausa.
   Exigir pesos + 512 MiB disponíveis antes de carregar; encerrar só inferência
   sob pressão (<256 MiB; lowMemory no Android). Aguardar/cancelar nunca toca fila.
+  Prioridade segue intenção de reproduzir, não simples presença de frames;
+  buffering não é pausa para liberar downloads.
   Guardas não autorizam prometer impacto absoluto zero ou encerrar outros apps.

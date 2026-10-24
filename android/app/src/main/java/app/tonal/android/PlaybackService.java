@@ -129,7 +129,7 @@ public final class PlaybackService extends Service {
     }
     private long historyFrames;private final Runnable historyTick=new Runnable(){public void run(){if(destroyed)return;MusicStore store=MusicStore.get(PlaybackService.this);long frames=NativeBridge.audio.frames.get();String uri;int position;boolean local;synchronized(NativeBridge.intent){uri=NativeBridge.intent.track;position=NativeBridge.intent.position;local=NativeBridge.intent.local;}
         if(!local&&!uri.isEmpty()&&!uri.equals(store.current.optString("uri"))){org.json.JSONObject known=MusicStore.object(MusicStore.object(store.data,"tracks"),"Spotify|||"+uri);if(known.length()==0){MusicStore.put(known,"provider","Spotify");MusicStore.put(known,"id",uri);MusicStore.put(known,"uri",uri);MusicStore.put(known,"title","Faixa Spotify • "+uri.substring(Math.max(0,uri.length()-8)));MusicStore.put(known,"playable",true);}store.select(known);}
-        if(local)position=(int)(frames*1000/Math.max(1,NativeBridge.audio.sampleRate()));store.pulse(NativeBridge.playing&&frames!=historyFrames,position);historyFrames=frames;refreshMetadata();publishState(position,local);control.postDelayed(this,1000);}};
+        store.setPlaybackPriority(NativeBridge.intent.desired);if(local)position=(int)(frames*1000/Math.max(1,NativeBridge.audio.sampleRate()));store.pulse(NativeBridge.playing&&frames!=historyFrames,position);historyFrames=frames;refreshMetadata();publishState(position,local);control.postDelayed(this,1000);}};
     private long resumeRevision;
     private final Runnable resume=()->{
         if(destroyed||!spotify||!NativeBridge.ready)return;
@@ -172,7 +172,7 @@ public final class PlaybackService extends Service {
         return START_NOT_STICKY;
     }
     @Override public void onDestroy(){
-        destroyed=true;MusicStore.get(this).pulse(false,NativeBridge.intent.position);MusicStore.get(this).flush();control.removeCallbacksAndMessages(null);connectivity.unregisterNetworkCallback(network);NativeBridge.commandListener=null;unregisterReceiver(switchPlayer);
+        destroyed=true;MusicStore.get(this).setPlaybackPriority(false);MusicStore.get(this).pulse(false,NativeBridge.intent.position);MusicStore.get(this).flush();control.removeCallbacksAndMessages(null);connectivity.unregisterNetworkCallback(network);NativeBridge.commandListener=null;unregisterReceiver(switchPlayer);
         NativeBridge.command("stop");NativeBridge.audio.release();NativeBridge.ready=false;NativeBridge.playing=false;
         NativeBridge.listeners.remove(statusListener);coverWorker.shutdownNow();media.release();audioManager.abandonAudioFocusRequest(focus);
         unregisterReceiver(noisy);

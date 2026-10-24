@@ -72,6 +72,7 @@ App::App(QObject *parent)
     });
     auto *historyTimer=new QTimer(this);historyTimer->setInterval(1000);
     connect(historyTimer,&QTimer::timeout,this,[this,lastFrames=uint64_t(0)]() mutable {
+        m_music->stories()->setPlaying(m_player->isPlaying()&&m_player->playingHere());
         const auto frames=m_audio->spotifyFramesRead();
         const bool actual=m_player->localPlayback()?m_audio->localPlaying():frames!=lastFrames;
         m_music->pulse(m_player->isPlaying()&&m_player->playingHere()&&actual,m_player->positionMs());lastFrames=frames;
