@@ -173,3 +173,9 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
 - Não duplicar ganho: Spotify usa mixer librespot; arquivos locais usam OpenAL.
   Validação simulada de transporte não equivale a medição acústica/Spotify real.
 - Android permanece 0.14.0 nesta correção exclusiva do Windows.
+
+- Validação complementar 0.14.1: CTest final 10/10, zero falhas, 58,04 s.
+  Preservar as tentativas anteriores no relatório; alvo AVD já ausente, outra
+  AVD preservada, sem alteração do produto/limites e sem causalidade provada.
+  Binários continuam no código d4c812d9cda8b66a1f40ccecd0c46aaddb3f5192;
+  commits documentais de evidência não significam rebuild ou novo benchmark.

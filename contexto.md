@@ -331,3 +331,13 @@ ou timeout enquanto outra AVD/Java rodavam. Causa não estabelecida; não
 chamar a suíte ampla de aprovada nem desativar/afrouxar testes. Instalador
 0.14.1 gerado; instalação interativa/medição acústica não realizadas.
 Backup privado: https://drive.google.com/drive/folders/1X5iQCZHdaGoflbjW2B9H4h_XEAtcSqqb.
+
+
+Validação complementar 0.14.1 em 24/10: nova suíte CTest completa **10/10**,
+zero falhas, 58,04 s, incluindo recuperação de processos, integração e UI de
+áudio. A AVD cuja parada foi autorizada já não estava ativa; outra AVD e os
+processos Java foram preservados. Sem mudanças de produto ou limites de teste
+entre as tentativas; não atribuir causa definitiva às falhas anteriores.
+As duas primeiras execuções permanecem no histórico do relatório JSON.
+Binários mantêm código `d4c812d9cda8b66a1f40ccecd0c46aaddb3f5192` e hash
+original; este complemento documental não recompila EXE/APK nem é benchmark.

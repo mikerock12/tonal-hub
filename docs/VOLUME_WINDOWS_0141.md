@@ -52,3 +52,20 @@ Instalador: `out/release-local/Tonal-Hub-0.14.1.0-Windows-x64-Setup.exe`.
 Feche os players e instale por cima. Dados continuam separados dos executáveis.
 Android permanece 0.14.0; não houve nova compilação de APK nesta correção.
 Créditos e MIT ao Tonal original de Matheus Nunes (natheus) preservados.
+
+
+## Repetição da suíte completa — 24/10/2026
+
+A nova execução passou os 10 CTest Windows, sem falhas, em 58,04 s. Inclui
+recuperação de processos, pipeline/DSP/decoders e smoke de UI de áudio.
+Não houve mudança de código ou de limites de teste entre as tentativas.
+Ao conferir a AVD cuja parada o usuário autorizou, ela já não estava ativa;
+outra AVD e os processos Java foram preservados. Isso não estabelece a causa
+das falhas anteriores, mantidas no histórico do relatório JSON.
+Os 10 cenários focados de volume, QML 20/20 e runtime do pacote já estavam
+aprovados. A repetição não mede áudio físico nem usa Spotify autenticado.
+
+Este complemento altera documentação/evidências. O instalador 0.14.1 mantém
+SHA-256 `38e1af18bfef777bed37f7d8d169550301cf75baeab868c0b293680b43da3182`,
+compilado a partir de `d4c812d9cda8b66a1f40ccecd0c46aaddb3f5192`.
+Não houve rebuild de EXE/APK.
