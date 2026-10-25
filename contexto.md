@@ -15,7 +15,9 @@ Qwen2.5 0.5B Q4_K_M (Apache 2.0), 468,6 MiB opcionais, com llama.cpp MIT nativo.
 Não foi treinado pelo projeto. Até oito letras do período, cache privado limitado,
 resumo dos trechos com fontes explícitas; pode errar e não avalia saúde/humor.
 Inferência CPU de uma thread na geração e na preparação, processo separado Windows/Android :stories,
-90 s de orçamento e supervisão de 105 s, cancelamento ao fechar. Pesos não
+90 s de orçamento e supervisão de 105 s, cancelamento ao fechar. No Android,
+a inferência aguarda pausa e é suspensa quando a reprodução retorna; a
+preparação permanece em segundo plano. Pesos não
 acompanham instaladores e não entram no backup JSON. Não há novo benchmark
 Spotify nesta versão. Evidências em docs/statistics-stories-0150-tests.json.
 
@@ -358,3 +360,14 @@ entre as tentativas; não atribuir causa definitiva às falhas anteriores.
 As duas primeiras execuções permanecem no histórico do relatório JSON.
 Binários mantêm código `d4c812d9cda8b66a1f40ccecd0c46aaddb3f5192` e hash
 original; este complemento documental não recompila EXE/APK nem é benchmark.
+
+## Ambiente Git local em 24/10/2026
+
+A instalação do Git do sistema estava sem o helper HTTPS. Para concluir a
+entrega, foi usada uma cópia portátil oficial, sem mudar a instalação global:
+`out/tools/git-repair/mingit/cmd/git.exe` (MinGit 2.56.0.3, Git for Windows).
+ZIP oficial verificado por SHA-256
+`2e5619966e588fde5f8122c5557cad50c0fbafcaed736689f40ec1dfb1d78ea7`.
+Operações de rede usam temporariamente o helper do GitHub CLI já autenticado;
+nenhuma credencial foi exportada ou salva no workspace. Push continua só para
+`private`. Essa ferramenta local não faz parte do instalador do player.

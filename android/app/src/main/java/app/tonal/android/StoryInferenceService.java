@@ -22,7 +22,7 @@ public final class StoryInferenceService extends Service {
         working=true;monitor.postDelayed(pressure,1000);worker.execute(()->{
             // Keep background CPU niceness without forcing Android's restrictive I/O
             // task profile onto mmap loading. The service remains NOT_FOREGROUND.
-            // The JNI entry applies nice +10 through Bionic setpriority before any
+            // The pause-only JNI entry applies nice +2 through Bionic setpriority before any
             // model loading; failure returns an error instead of running at full priority.
             String output;
             try {

@@ -210,7 +210,8 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
 
 - Prioridade de áudio no leitor 0.15: preparação/cache/rede fora da UI, captura
   pendente agrupada até 128 faixas; inferência CPU 1 thread, processo ocioso PC /
-  thread Android com niceness BACKGROUND (+10), sem forçar perfil de I/O ocioso
+  preparação Android BACKGROUND (+10); inferência só durante pausa, nice +2,
+  sem forçar perfil de I/O ocioso
   durante mmap (Bionic setpriority no JNI, antes dos pesos; erro impede inferência). O serviço
   continua BIND_NOT_FOREGROUND. Download e LRCLIB deste leitor aguardam pausa.
   Exigir pesos + 512 MiB disponíveis antes de carregar; encerrar só inferência

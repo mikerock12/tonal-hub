@@ -76,8 +76,8 @@ idiomas e contradições. Não é diagnóstico de humor, personalidade ou saúde
 
 O Windows executa `TonalStories.exe` em processo separado com prioridade
 reduzida. Android usa JNI C++ num serviço privado `:stories`, vinculado à tela,
-com thread de CPU em prioridade de segundo plano (nice +10), sem forçar um
-novo perfil restritivo de I/O para carregar os pesos. Fechar/cancelar a leitura impede
+com thread de CPU em prioridade reduzida (nice +2), executada só com a
+música pausada. Cache e preparação continuam em prioridade BACKGROUND (+10). Fechar/cancelar a leitura impede
 entregas atrasadas e encerra o processo de inferência. O modelo não fica
 residente durante a reprodução normal. A inferência tem orçamento de 90 s e
 supervisão de 105 s; falhas de memória/tempo retornam estado explícito. Nenhum
@@ -94,7 +94,9 @@ agrupadas e limitadas a 128 faixas. Os pesos só são carregados por solicitaç�
 A prioridade acompanha a intenção de reproduzir, inclusive durante buffering;
 falta momentânea de frames não é interpretada como pausa.
 Download do modelo e busca adicional de letras desta análise aguardam uma pausa
-na reprodução. Letras já capturadas podem ser analisadas enquanto o áudio toca.
+na reprodução. No Windows, letras capturadas podem ser analisadas enquanto o áudio toca.
+No Android, a inferência aguarda pausa; retomar a música encerra somente o
+processo de análise e mantém a solicitação pendente até outra pausa.
 Pausar ou cancelar o leitor não envia comandos ao player. A solicitação pendente
 pode ser cancelada enquanto aguarda recursos, sem iniciar música ou alterar fila.
 

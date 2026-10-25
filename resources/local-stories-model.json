@@ -19,5 +19,11 @@
     "watchdog_ms": 105000,
     "minimum_available_memory_bytes": 1028270944,
     "pressure_stop_bytes": 268435456
+  },
+  "android_scheduling": {
+    "inference_only_when_paused": true,
+    "cpu_nice": 2,
+    "preparation_nice": 10,
+    "resume_playback_cancels_inference": true
   }
 }
