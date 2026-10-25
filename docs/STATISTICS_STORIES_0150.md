@@ -76,7 +76,8 @@ idiomas e contradições. Não é diagnóstico de humor, personalidade ou saúde
 
 O Windows executa `TonalStories.exe` em processo separado com prioridade
 reduzida. Android usa JNI C++ num serviço privado `:stories`, vinculado à tela,
-com thread em prioridade de segundo plano (nice +10). Fechar/cancelar a leitura impede
+com thread de CPU em prioridade de segundo plano (nice +10), sem forçar um
+novo perfil restritivo de I/O para carregar os pesos. Fechar/cancelar a leitura impede
 entregas atrasadas e encerra o processo de inferência. O modelo não fica
 residente durante a reprodução normal. A inferência tem orçamento de 90 s e
 supervisão de 105 s; falhas de memória/tempo retornam estado explícito. Nenhum

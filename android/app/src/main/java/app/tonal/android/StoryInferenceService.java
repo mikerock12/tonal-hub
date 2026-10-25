@@ -20,8 +20,10 @@ public final class StoryInferenceService extends Service {
         if(texts==null||texts.length<1||texts.length>8)return true;
         for(String text:texts)if(text==null||text.getBytes(StandardCharsets.UTF_8).length>4096)return true;
         working=true;monitor.postDelayed(pressure,1000);worker.execute(()->{
-            // Inference yields CPU and I/O to foreground/audio tasks, even if it takes longer.
-            android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);
+            // Keep background CPU niceness without forcing Android's restrictive I/O
+            // task profile onto mmap loading. The service remains NOT_FOREGROUND.
+            // The JNI entry applies nice +10 through Bionic setpriority before any
+            // model loading; failure returns an error instead of running at full priority.
             String output;
             try {
                 File model=new File(getFilesDir(),"stories-model/qwen2.5-0.5b-instruct-q4_k_m.gguf");
