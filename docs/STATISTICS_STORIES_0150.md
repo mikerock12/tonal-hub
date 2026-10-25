@@ -67,8 +67,8 @@ Não houve treinamento ou ajuste fino do Qwen neste projeto. O classificador
 TonalMuse continua identificado separadamente, com seu corpus sintético.
 
 São **491.400.032 bytes** de pesos, não incluídos no APK/instalador. CPU somente,
-uma thread na geração e na preparação, contexto de 1.536 tokens, entrada até 1.024 tokens e
-saída até 48 tokens. Para caber nesse orçamento, usam-se trechos do começo,
+uma thread na geração e na preparação, contexto de 1.024 tokens, entrada até 768 tokens e
+saída até 32 tokens. Para caber nesse orçamento, usam-se trechos do começo,
 meio e fim das letras. O resultado descreve esse lote, não todas as músicas
 ouvidas. Letras não disponíveis e versões divergentes são omitidas, sem
 inventar seu conteúdo. Pode haver erros, especialmente em ironia, metáforas,
