@@ -10,15 +10,30 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
-**Build local: Windows 0.15.1 · Android 0.15.1. Documentação em 25/10/2026.**
+**Build local: Windows 0.15.2 · Android 0.15.2. Documentação em 26/10/2026.**
 
-[Pacotes e hashes 0.15.1](docs/artifacts-0151.json) · [Validação 0.15.1](docs/release-0151-tests.json) ·
+[Pacotes e hashes 0.15.2](docs/artifacts-0152.json) · [Validação 0.15.2](docs/release-0152-tests.json) ·
 [Guia visual com capturas](docs/GUIA_VISUAL.md) ·
 [Regras da Descoberta 2+1](docs/DESCOBERTA_2_MAIS_1.md) ·
 [Benchmarks realizados](docs/BENCHMARKS.md) ·
 [Contexto do projeto](contexto.md) · [Instruções de manutenção](AGENTS.md).
 
-## Atualização 0.15.1
+## Atualização 0.15.2 — análise que pode continuar
+
+Corrige o leitor que atingia o limite de tempo antes da primeira interpretação.
+A preparação, geração e conferência agora têm retomada privada: **Continuar
+análise** preserva o avanço mesmo com zero leituras concluídas. Cada ação
+processa uma faixa pendente do lote de até oito, mantendo 90 s, uma thread e
+execução somente com a música pausada pelo usuário. O APK inclui um backend
+ARM64 otimizado, selecionado somente em CPUs compatíveis, com alternativa genérica.
+
+Atualize sem desinstalar para reutilizar o mesmo modelo Qwen3.5 2B e os dados.
+Os testes confirmaram retomada no Windows e em emulador Android com pesos reais;
+o POCO X7 Pro físico ainda precisa de nova validação. A interpretação permanece
+experimental: a conferência pelo próprio modelo não comprova o significado.
+[Correção, uso e limites](docs/READER_RESUME_0152.md).
+
+## Atualização 0.15.1 (histórico)
 
 A tela inicial incorpora os álbuns ouvidos neste aparelho, mais ouvidos e
 álbuns dos seus artistas para explorar. A página da música fica mais limpa,

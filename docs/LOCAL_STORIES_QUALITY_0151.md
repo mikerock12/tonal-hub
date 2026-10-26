@@ -1,6 +1,9 @@
-# Leitura de letras — correção 0.15.1 em validação
+# Leitura de letras — histórico da correção 0.15.1
 
-Estado: **não entregue**. Não instalar os protótipos como se fossem o produto final.
+Estado atualizado em 26/10: a 0.15.1 foi entregue como experimental, com as
+limitações abaixo. O timeout relatado no POCO X7 Pro motivou a
+[retomada do leitor 0.15.2](READER_RESUME_0152.md). Protótipos de avaliação
+não são os pacotes finais identificados nos manifestos de artefatos.
 
 O usuário testou a 0.15.0 no telefone: oito letras produziram somente
 “O conjunto reúne letras que contrastam e contrastam.” A análise não passou

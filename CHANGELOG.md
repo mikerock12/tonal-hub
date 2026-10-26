@@ -1,6 +1,14 @@
 # Changelog
 
-## 0.15.1 — em validação, 25/10/2026
+## 0.15.2 — 26/10/2026
+
+- Retomada privada de preparação, geração e conferência do leitor, inclusive antes da primeira leitura aceita.
+- Uma faixa pendente por ação; progresso explícito e continuação, sem repetir leituras já concluídas.
+- Backend Android ARM64 DotProd/I8MM/FP16 condicionado às capacidades da CPU, preservando a alternativa genérica.
+- Mesmo modelo opcional e limites de áudio/CPU/tempo; interpretação ainda experimental, sem validação no POCO físico.
+- Evidências e limites em docs/READER_RESUME_0152.md e docs/release-0152-tests.json.
+
+## 0.15.1 — 25/10/2026
 
 - Atualizar letra nos controles de tela cheia Windows e Android, ignorando o cache corrente.
 - Página inicial baseada nas escutas locais, álbuns mais ouvidos e sugestões de discografia.

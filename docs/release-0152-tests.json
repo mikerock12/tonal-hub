@@ -1,0 +1,30 @@
+{
+  "version": "0.15.2",
+  "documentedOn": "2026-10-26",
+  "status": "local validation complete; GitHub CI pending",
+  "windows": {
+    "ctest": {"passed": 10, "failed": 0, "seconds": 50.45},
+    "earlierCtest": {"passed": 10, "failed": 0, "seconds": 53.59},
+    "portableCtest": {"passed": 7, "failed": 0, "seconds": 24.95},
+    "readerGuards": {"passed": 1, "failed": 0, "seconds": 0.54},
+    "qml": {"mixHomeReader": 24, "lyrics": 6, "failed": 0},
+    "forcedResumePrototype": {"tracks": 4, "actions": 17, "resumedProcesses": 13, "completed": true, "checkpointRemovedOnCompletion": true, "accepted": 0, "scope": "runtime only; rejected preliminary prompt"},
+    "finalPromptContentProbe": {"tracks": 4, "actions": 4, "sameModelGateAccepted": 4, "actionElapsedMs": [42678,47244,51415,42568], "manualSemanticAcceptance": false, "limitation": "manual reading still found questionable nuances; this is not 4/4 semantic accuracy"}
+  },
+  "android": {
+    "javaVariants": ["release", "benchmark", "comparison", "automation"],
+    "nativeBuilds": ["x86_64 baseline", "arm64-v8a baseline", "arm64-v8a guarded fast"],
+    "fastStaticInspection": {"smmlaPresent": true, "symbolicInternalBinding": true, "physicalSpeedMeasurement": false},
+    "historyStoryTests": {"passed": true, "groups": 10, "syntheticData": true, "physicalPhone": false},
+    "readerResumeTests": {"passed": true, "realWeights": true, "physicalPhone": false, "backend": "x86_64 baseline", "debugBudgetMs": 20000, "productionBudgetMs": 90000, "firstStage": "Preparando leitura", "secondStage": "Preparando leitura", "firstDone": 16, "secondDone": 48, "resumed": true, "zeroAcceptedStillResumable": true, "waitsForExplicitPause": true, "detachCancels": true, "meaningQualityValidated": false}
+  },
+  "failedAttemptsPreserved": [
+    "Initial checkpoint test hit missing logits after restoring native memory; fixed by checkpointing next token and review margin, then rerun.",
+    "Preliminary shortened prompt completed runtime tests but accepted zero of four readings; rejected as content improvement.",
+    "Benchmark Java initially failed compilation on Files.readString Android API compatibility; replaced with UTF-8 readAllBytes and rebuilt."
+  ],
+  "privacy": "Only curated metrics published. Full lyrics, drafts, checkpoints, model weights, user screenshot and personal databases excluded.",
+  "limitations": ["No physical POCO X7 Pro test", "No measured ARM acceleration speedup", "Same-model review is an uncalibrated heuristic", "No new Spotify benchmark"],
+  "additionalPcToolsInstalledOrDownloaded": [],
+  "modelWeightsReusedFromExistingVerifiedCache": true
+}

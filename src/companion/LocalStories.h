@@ -8,6 +8,7 @@
 #include <QProcess>
 #include <QTimer>
 #include <QSaveFile>
+#include <QFile>
 #include <QCryptographicHash>
 #include <memory>
 #include <QThread>
@@ -25,8 +26,8 @@ public:
  QVariantMap state() const;
  void capture(const QVariantMap &track,const QString &text);
  void analyze(const QVariantList &tracks,int days);
- void selectPeriod(int days){if(days!=m_days){cancel();m_days=days;m_summary.clear();m_sources.clear();m_items={};emit changed();}}
- void resetSummary(){cancel();m_summary.clear();m_sources.clear();m_items={};emit changed();}
+ void selectPeriod(int days){if(days!=m_days){cancel();m_days=days;m_summary.clear();m_sources.clear();m_items={};m_resumable=false;emit changed();}}
+ void resetSummary(){cancel();m_summary.clear();m_sources.clear();m_items={};m_resumable=false;QFile::remove(m_root+"/resume-v5.bin");QFile::remove(m_root+"/resume-v5.bin.tmp");emit changed();}
  Q_INVOKABLE void download();
  Q_INVOKABLE void cancel();
  Q_INVOKABLE void removeModel();
@@ -45,7 +46,7 @@ private:
  int m_index=0,m_days=7;bool m_busy=false,m_downloading=false,m_ready=false;
  qint64 m_downloaded=0,m_cooldown=0;quint64 m_serial=0;
  QNetworkAccessManager m_net;QPointer<QNetworkReply> m_reply;QPointer<QProcess> m_process;QTimer m_deadline,m_pressure,m_notify;
- bool m_playing=false,m_resumeDownload=false,m_complete=false;
+ bool m_playing=false,m_resumeDownload=false,m_complete=false,m_resumable=false;
  std::unique_ptr<QSaveFile> m_file;std::unique_ptr<QCryptographicHash> m_hash;
 };
 

@@ -27,7 +27,7 @@ public:static void run(){
  QJsonArray batch{QJsonObject{{"title","<Synthetic track>"},{"artist","Synthetic artist"}}};
  require(personal::storyReport(QJsonObject{{"summary","O conjunto reúne letras que contrastam e contrastam."}},batch).isEmpty(),"reject old generic cached sentence");
  QJsonObject reading{{"track",0},{"code","A"},{"pending",false},{"reviewed",true},{"accepted",true},{"theme","Perda e saudade"},{"meaning","Lembranças, ausência ou ligação com o que ficou para trás."}};
- QJsonObject typed{{"schema",2},{"format","lyric-reading-v4"},{"complete",true},{"error",""},{"summary","Neste lote, aparecem Perda e saudade em 1 música."},{"items",QJsonArray{reading}},{"total",1},{"qualified",1}};
+ QJsonObject typed{{"schema",3},{"format","lyric-reading-v5"},{"complete",true},{"resumable",false},{"progressTrack",0},{"progressDone",0},{"progressTotal",0},{"progressStage",""},{"error",""},{"summary","Neste lote, aparecem Perda e saudade em 1 música."},{"items",QJsonArray{reading}},{"total",1},{"qualified",1}};
  auto checked=personal::storyReport(typed,batch);require(!checked.isEmpty()&&checked["items"].toArray()[0].toObject()["title"]=="<Synthetic track>","structured report attaches exact track");
  auto invalid=typed;auto bad=reading;bad["track"]=0.5;invalid["items"]=QJsonArray{bad};require(personal::storyReport(invalid,batch).isEmpty(),"reject fractional index");
  bad=reading;bad["track"]=1;invalid["items"]=QJsonArray{bad};require(personal::storyReport(invalid,batch).isEmpty(),"reject out-of-batch index");
@@ -36,6 +36,12 @@ public:static void run(){
  invalid=typed;invalid["schema"]=1;require(personal::storyReport(invalid,batch).isEmpty(),"invalidate legacy report schema");
  invalid=typed;invalid["error"]="timeout";require(personal::storyReport(invalid,batch).isEmpty(),"reject partial error result");
  require(personal::storyReport(typed,QJsonArray{}).isEmpty(),"reject metadata mismatch");
+ auto pending=reading;pending["accepted"]=false;pending["reviewed"]=false;pending["pending"]=true;pending["code"]="L";pending["theme"]="Aguardando leitura";pending["meaning"]="Esta faixa ainda aguarda uma interpretação conferida.";
+ auto resume=typed;resume["items"]=QJsonArray{pending};resume["complete"]=false;resume["resumable"]=true;resume["qualified"]=0;resume["summary"]="";resume["progressDone"]=32;resume["progressTotal"]=200;resume["progressStage"]="Preparando leitura";
+ require(!personal::storyReport(resume,batch).isEmpty(),"zero accepted readings must still preserve valid resumable preparation");
+ auto invalidProgress=resume;invalidProgress["progressDone"]=201;require(personal::storyReport(invalidProgress,batch).isEmpty(),"reject progress beyond prepared prompt");
+ invalidProgress=resume;invalidProgress["resumable"]=false;require(personal::storyReport(invalidProgress,batch).isEmpty(),"pending work must be explicitly resumable");
+ invalidProgress=resume;invalidProgress["summary"]="Invented summary without any accepted readings.";require(personal::storyReport(invalidProgress,batch).isEmpty(),"never fill zero-coverage progress with a narrative");
  const qint64 albumNow=QDateTime::currentMSecsSinceEpoch();
  QJsonObject albumTrack{{"provider","Spotify"},{"albumId","AAAAAAAAAAAAAAAAAAAAAA"},{"album","Synthetic album"},{"artist","Synthetic artist"}};
  QJsonObject albumData{{"tracks",QJsonObject{{"one",albumTrack},{"opened",QJsonObject{{"provider","Spotify"},{"albumId","BBBBBBBBBBBBBBBBBBBBBB"},{"album","Only opened"}}}}},

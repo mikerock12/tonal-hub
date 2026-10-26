@@ -1,4 +1,5 @@
 out/
+.codex-remote-attachments/
 build/
 .vs/
 .qtcreator/

@@ -1,15 +1,27 @@
 # Contexto do Tonal Hub
 
-Trabalho adicional em validação em 25/10: início com histórico local de álbuns,
-inserção como próxima/última da fila, navegação da música simplificada,
-atualização de letra em tela cheia e opção binaural experimental em caixas.
-Estado e limites: [HOME_QUEUE_AUDIO_0151.md](docs/HOME_QUEUE_AUDIO_0151.md).
-Ainda sem instaláveis novos/merge desta rodada; leitor sem aceitação semântica
-e Jam em investigação conforme documentos específicos.
+Atualizado em **26/10/2026**. Estado do produto: **Windows 0.15.2 / Android 0.15.2**. Leia também [AGENTS.md](AGENTS.md).
 
-Atualizado em **24/10/2026**. Estado do produto: **Windows 0.15.0 / Android 0.15.0**. Leia também [AGENTS.md](AGENTS.md).
+## Leitor 0.15.2 — retomada após timeout
 
-## Entrega 0.15.0 — estatísticas e histórias
+O POCO X7 Pro físico do usuário atingiu o limite antes de entregar leituras na
+0.15.1. O leitor v5/schema 3 agora prepara uma faixa pendente por ação e salva
+o estado também durante preparação, geração e conferência. Continuação funciona
+mesmo com zero leituras aceitas, usando o lote exato. Mesmo Qwen3.5 2B, sem novo
+download de pesos; atualizar sem desinstalar. Checkpoint privado de até 64 MiB
+mais temporário, fora do backup da biblioteca. Uma thread, 90/105 s, separado do
+player e somente em pausa escolhida pelo usuário. ARM64 tem backend acelerado
+com verificação HWCAP e alternativa genérica. Não prometer ganho físico medido.
+Referência: [READER_RESUME_0152.md](docs/READER_RESUME_0152.md).
+
+Retomada validada com pesos reais no desktop e na AVD; não houve teste físico
+no POCO. Quatro propostas passaram no filtro do próprio modelo no desktop,
+mas a leitura manual ainda encontrou nuances discutíveis. Isso não é acurácia
+semântica de 4/4. Jam permanece experimental; alterações da home/fila/áudio
+0.15.1 foram entregues e têm limites em
+[HOME_QUEUE_AUDIO_0151.md](docs/HOME_QUEUE_AUDIO_0151.md).
+
+## Entrega 0.15.0 — estatísticas e histórias (histórico)
 
 Referência: [STATISTICS_STORIES_0150.md](docs/STATISTICS_STORIES_0150.md).
 Atalhos Estatísticas/Backup no cabeçalho global dos players, retirados das abas
