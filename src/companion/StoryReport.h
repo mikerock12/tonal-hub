@@ -8,7 +8,7 @@ namespace personal {
 // attached only after validating every index against this exact prepared batch.
 inline QJsonObject storyReport(const QJsonObject &report,const QJsonArray &tracks){
  const auto rows=report.value("items").toArray();const int count=tracks.size();
- if(report.value("format").toString()!="lyric-reading-v4"||!report.value("complete").isBool()||report.value("schema").toInt()!=2||!report.value("error").toString().isEmpty()||
+ if(report.value("format").toString()!="lyric-reading-v5"||!report.value("complete").isBool()||!report.value("resumable").isBool()||report.value("schema").toInt()!=3||!report.value("error").toString().isEmpty()||
     count<1||count>8||report.value("total").toInt()!=count||rows.size()!=count)return {};
  QSet<int> seen;QJsonArray items;int accepted=0;bool pending=false;
  for(const auto &value:rows){
@@ -25,9 +25,13 @@ inline QJsonObject storyReport(const QJsonObject &report,const QJsonArray &track
    {"artist",track.value("artist").toString().left(160)}, {"accepted",ok},
    {"pending",waiting},{"theme",item.value("theme")},{"meaning",item.value("meaning")}});
  }
- if(report.value("complete").toBool()==pending||accepted==0||report.value("qualified").toInt()!=accepted)return {};
+ const bool resumable=report.value("resumable").toBool();
+ if(report.value("complete").toBool()==pending||resumable!=pending||report.value("qualified").toInt()!=accepted)return {};
  const auto summary=report.value("summary").toString().trimmed();
- if(summary.size()<20||summary.size()>1400)return {};
- return {{"summary",summary},{"complete",!pending},{"items",items},{"qualified",accepted},{"total",count}};
+ if((accepted?summary.size()<20:!summary.isEmpty())||summary.size()>1400)return {};
+ const auto stage=report.value("progressStage").toString(),notice=report.value("notice").toString();
+ const auto cursor=report.value("progressDone"),total=report.value("progressTotal"),track=report.value("progressTrack");
+ if(stage.size()>80||notice.size()>400||!cursor.isDouble()||!total.isDouble()||!track.isDouble()||cursor.toDouble()!=cursor.toInt()||total.toDouble()!=total.toInt()||track.toDouble()!=track.toInt()||cursor.toInt()<0||total.toInt()<cursor.toInt()||total.toInt()>768||track.toInt()<0||track.toInt()>=count)return {};
+ return {{"summary",summary},{"complete",!pending},{"resumable",resumable},{"notice",notice},{"items",items},{"qualified",accepted},{"total",count}};
 }
 }

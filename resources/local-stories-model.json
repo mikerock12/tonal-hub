@@ -8,11 +8,11 @@
   "model_sha256": "aaf42c8b7c3cab2bf3d69c355048d4a0ee9973d48f16c731c0520ee914699223",
   "model_license": "Apache-2.0",
   "runtime_license": "MIT",
-  "prompt_version": "tonal-stories-v4",
+  "prompt_version": "tonal-stories-v5",
   "limits": {
     "context_tokens": 1024,
     "input_tokens": 768,
-    "output_tokens": 585,
+    "output_tokens": 520,
     "decode_threads": 1,
     "prefill_threads": 1,
     "deadline_ms": 90000,
@@ -20,12 +20,12 @@
     "minimum_available_memory_bytes": 1817706752,
     "pressure_stop_bytes": 268435456,
     "output_tokens_per_track": 64,
-    "output_tokens_synthesis": 64,
-    "prefix_cache_bytes": 67108864,
     "review_tokens_per_track": 1,
-    "review_tokens_synthesis": 1,
     "prepared_evidence_bytes": 3000,
-    "helper_stdin_bytes": 65536
+    "helper_stdin_bytes": 65536,
+    "checkpoint_bytes": 67108864,
+    "prefill_batch_tokens": 16,
+    "completed_tracks_per_action": 1
   },
   "android_scheduling": {
     "inference_only_when_paused": true,
@@ -37,5 +37,27 @@
   "windows_scheduling": {
     "inference_only_when_paused": true,
     "resume_playback_cancels_inference": true
+  },
+  "checkpoint": {
+    "format": "TonalR5c3f03b177 / TonalF5c3f03b177",
+    "scope": "one private state per reader; exact model/prompt/period/text/metadata batch key",
+    "periodic_save_seconds": 20,
+    "model_weights_in_checkpoint": false,
+    "library_backup_includes_checkpoint": false
+  },
+  "android_cpu_dispatch": {
+    "baseline": "ARM64 generic / x86_64",
+    "optional_variant": "armv8.2-a+dotprod+i8mm+fp16",
+    "runtime_requires": [
+      "AArch64",
+      "ASIMD",
+      "FPHP",
+      "ASIMDHP",
+      "ASIMDDP",
+      "ATOMICS",
+      "I8MM"
+    ],
+    "threads": 1,
+    "unavailable_variant_falls_back_to_baseline": true
   }
 }

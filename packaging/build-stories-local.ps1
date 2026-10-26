@@ -17,6 +17,14 @@ if($Android){
   $dest=Join-Path $root "android/app/src/main/jniLibs/$abi"
   New-Item -ItemType Directory -Force $dest | Out-Null
   Copy-Item -LiteralPath (Join-Path $build 'libtonal_story.so') -Destination $dest -Force
+  if($abi -eq 'arm64-v8a'){
+   $fast=Join-Path $root 'out/stories/android/arm64-v8a-fast'
+   & $cmake -S (Join-Path $root 'src/stories') -B $fast -G Ninja "-DCMAKE_MAKE_PROGRAM=$ninja" "-DCMAKE_TOOLCHAIN_FILE=$ndk/build/cmake/android.toolchain.cmake" "-DANDROID_ABI=$abi" -DANDROID_PLATFORM=android-28 -DANDROID_STL=c++_shared -DCMAKE_BUILD_TYPE=Release -DTONAL_STORY_ARM_FAST=ON
+   if($LASTEXITCODE -ne 0){throw 'Stories ARM otimizado configure falhou'}
+   & $cmake --build $fast --target tonal_story --parallel 2
+   if($LASTEXITCODE -ne 0){throw 'Stories ARM otimizado build falhou'}
+   Copy-Item -LiteralPath (Join-Path $fast 'libtonal_story_fast.so') -Destination $dest -Force
+  }
  }
 }else{
  chcp.com 65001 | Out-Null

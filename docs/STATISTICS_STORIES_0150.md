@@ -1,4 +1,9 @@
-# Seu ritmo e histórias das músicas — 0.15 / correção 0.15.1 em validação
+# Seu ritmo e histórias das músicas — histórico 0.15.0
+
+Estado atual do leitor: [retomada 0.15.2](READER_RESUME_0152.md). A 0.15.1
+foi entregue como experimental; as abas internas da música foram simplificadas
+e os atalhos globais continuam disponíveis. Os detalhes abaixo preservam a
+descrição da implementação 0.15.0 e suas limitações.
 
 Windows e Android. Os atalhos **Estatísticas** (gráfico) e **Backup** (salvar)
 ficam no cabeçalho global, junto de busca, favoritas, áudio e conta. Também

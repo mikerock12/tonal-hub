@@ -5,6 +5,9 @@ afetada antes de alterar o produto. Estado documental: 25/10/2026, builds Window
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
+Estado atual: 26/10/2026, Windows/Android 0.15.2. As seções 0.15.0/0.15.1
+abaixo são históricas; o contrato atual do leitor está ao final deste arquivo.
+
 ## Autoria, Git e privacidade
 
 - Preservar **Matheus Nunes (natheus)**, autor do Tonal original:
@@ -287,3 +290,25 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
 - Backup privado 0.15.1: 10OdK5GvZoO_7RinWatT8eHzwS2ITDgh6. Modelos/fontes
   externas regeneráveis, credenciais, letras completas e telefone físico não
   integram o snapshot privado SQLite deste PC. Nunca confundir com sincronização.
+
+## Leitor 0.15.2 — retomada e backend ARM64
+
+- Ler docs/READER_RESUME_0152.md e docs/release-0152-tests.json. V5/schema 3;
+  zero leituras aceitas com pendências é resultado parcial válido, sem frase
+  inventada. Cada ação processa uma faixa pendente, até oito por lote.
+- Checkpoint vinculado a modelo/prompt/período/textos/nomes exatos: até 64 MiB
+  mais temporário, checksum e limites antes do restore, escrita atômica. Privado,
+  descartável, fora do backup. Não publicar checkpoint, letras ou rascunhos.
+- O estado llama não preserva logits. Próximo token e margem de conferência
+  precisam ser salvos junto; não amostrar logits inexistentes após restore.
+- Continuam 90 s/105 s, uma thread e inferência somente durante pausa explícita.
+  Retomar áudio mata o leitor sem aguardar snapshot; retoma o último já válido.
+- ARM64 fast é opcional: HWCAP exige NEON, FP16 escalar/vetorial, DotProd,
+  I8MM e atomics. Ausência mantém baseline. Não usar nome do aparelho como guarda.
+- Mesmo modelo/hash 0.15.1; nenhum novo treinamento. A conferência pelo próprio
+  modelo é heurística. 4 propostas aceitas no teste desktop não são 4 acertos
+  semânticos; não declarar validação física ou velocidade medida no POCO X7 Pro.
+- Instaláveis identificados em docs/artifacts-0152.json, código de produto
+  93ef7455a5c98b3ee8aa66d0ab56c3bcee1b08bf. Commits documentais não são rebuild.
+- Backup privado 0.15.2: 1rVGPhTHvN79-CplhB5wJyEe3DeR_CZZl. Preservar verificação
+  de tamanho e privacidade; SHA remoto só quando o conector o fornecer.

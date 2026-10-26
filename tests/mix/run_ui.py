@@ -46,6 +46,7 @@ Pane {width:1000;height:800;padding:0;palette.button:"#263440";palette.buttonTex
  QtObject{id:jam;property bool busy:false;property string status:"Synthetic Jam fixture";property var session:({});property int reads:0;signal notice(string text);function refresh(){reads++}function start(){}function leave(){}function copyInvite(){}function join(value){}}
  JamDialog{id:jamDialog;controller:jam}
  JamToast{id:jamToast;controller:jam;width:380;z:1000}
+ StoryCard{id:progressCard;controller:personal;width:700;visible:false}
  MusicPanel{id:personalPanel;controller:personal;audioEngine:null;mixController:App.listeningMix;transportPlayer:App.player;position:12345;themeTokens:Theme.palette}
  SeekBar{id:themedSeek;x:20;y:760;width:300;value:0.5}
  ThemeDialog{id:themeDialog}
@@ -59,6 +60,13 @@ Pane {width:1000;height:800;padding:0;palette.button:"#263440";palette.buttonTex
    jam.notice("<b>Synthetic participant</b> entrou no Jam");compare(jamToast.message,"<b>Synthetic participant</b> entrou no Jam");verify(jamToast.showing);
    for(let i=0;i<20;i++)jam.notice("Synthetic change "+i);verify(jamToast.pending.length<=8);
    jamToast.message="";jamToast.pending=[];jamToast.showing=false;
+  }
+  function test_reader_continues_before_first_accepted_reading(){
+   const old=personal.stories.state;
+   personal.stories.state={ready:true,busy:false,summary:"",partial:true,status:"Preparando leitura: avanço salvo",items:[]};
+   let button=findChild(progressCard,"readerAnalyzeButton"),summary=findChild(progressCard,"readerSummary");verify(button!==null&&summary!==null);compare(button.text,"Continuar análise");verify(summary.text.indexOf("avanço está salvo")>=0);
+   personal.stories.state={ready:true,busy:false,summary:"",partial:false,status:"Lote concluído",items:[{title:"Fixture",artist:"Synthetic",theme:"Leitura inconclusiva",meaning:"Nenhuma interpretação validada."}]};
+   verify(summary.text.indexOf("não produziu uma leitura validada")>=0);personal.stories.state=old;
   }
   function test_home_uses_local_album_evidence(){
    const first={kind:"album",id:"first",uri:"spotify:album:first",title:"Recently heard",listenedMs:1000,lastAt:2000};

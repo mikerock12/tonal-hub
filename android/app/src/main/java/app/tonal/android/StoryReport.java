@@ -7,7 +7,7 @@ final class StoryReport {
     static JSONObject decode(JSONObject report,JSONArray tracks){
         try {
             JSONArray rows=report.optJSONArray("items");int count=tracks.length();
-            if(!report.optString("format").equals("lyric-reading-v4")||!(report.opt("complete") instanceof Boolean)||report.optInt("schema")!=2||!report.optString("error").isEmpty()||count<1||count>8||
+            if(!report.optString("format").equals("lyric-reading-v5")||!(report.opt("complete") instanceof Boolean)||!(report.opt("resumable") instanceof Boolean)||report.optInt("schema")!=3||!report.optString("error").isEmpty()||count<1||count>8||
                 report.optInt("total")!=count||rows==null||rows.length()!=count)return null;
             HashSet<Integer> seen=new HashSet<>();JSONArray items=new JSONArray();int accepted=0;boolean pending=false;
             for(int n=0;n<count;n++){
@@ -23,8 +23,10 @@ final class StoryReport {
                     .put("artist",bound(track.optString("artist"),160)).put("accepted",ok).put("pending",waiting).put("theme",theme).put("meaning",meaning));
             }
             String summary=report.getString("summary").trim();
-            if(report.getBoolean("complete")==pending||accepted==0||report.getInt("qualified")!=accepted||summary.length()<20||summary.length()>1400)return null;
-            return new JSONObject().put("summary",summary).put("complete",!pending).put("items",items).put("qualified",accepted).put("total",count);
+            if(report.getBoolean("complete")==pending||report.getBoolean("resumable")!=pending||report.getInt("qualified")!=accepted||(accepted>0?summary.length()<20:!summary.isEmpty())||summary.length()>1400)return null;
+            String stage=report.getString("progressStage"),notice=report.optString("notice");double done=report.getDouble("progressDone"),total=report.getDouble("progressTotal"),track=report.getDouble("progressTrack");
+            if(stage.length()>80||notice.length()>400||!(report.get("progressDone") instanceof Number)||!(report.get("progressTotal") instanceof Number)||!(report.get("progressTrack") instanceof Number)||done!=(int)done||total!=(int)total||track!=(int)track||done<0||total<done||total>768||track<0||track>=count)return null;
+            return new JSONObject().put("summary",summary).put("complete",!pending).put("resumable",pending).put("notice",notice).put("items",items).put("qualified",accepted).put("total",count);
         }catch(Exception invalid){return null;}
     }
     private static String bound(String value,int size){return value.substring(0,Math.min(size,value.length()));}
