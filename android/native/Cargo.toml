@@ -11,6 +11,8 @@ crate-type = ["cdylib"]
 librespot = { version = "=0.8.0", default-features = false, features = ["rustls-tls-webpki-roots"] }
 jni = "=0.21.1"
 log = "=0.4.34"
+serde_json = "=1.0.154"
+tonal-jam-transport = { path = "../../native/jam-transport" }
 tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "macros"] }
 symphonia = { version = "0.5", default-features = false, features = ["mp3", "ogg", "vorbis", "flac", "wav", "pcm", "isomp4", "aac"] }
 

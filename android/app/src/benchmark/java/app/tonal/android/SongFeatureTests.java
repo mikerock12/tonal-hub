@@ -12,6 +12,10 @@ import java.io.*;
 final class SongFeatureTests {
     static String run(Instrumentation instrumentation)throws Exception{
         JSONArray checks=new JSONArray();Context context=instrumentation.getTargetContext();
+        JSONObject jam=new JSONObject().put("id","synthetic-session").put("session_owner_id","synthetic-owner").put("join_session_token","synthetic-token").put("members",new JSONArray().put(new JSONObject().put("user_id","guest").put("name","Synthetic participant")));
+        JSONObject parsedJam=JamClient.parse(jam,"synthetic-owner");check(parsedJam!=null&&parsedJam.optBoolean("host")&&parsedJam.getJSONArray("members").length()==1,"jam_native_owner_and_member_aliases",checks);
+        jam.getJSONArray("members").put(jam.getJSONArray("members").get(0));check(JamClient.parse(jam)==null,"jam_rejects_duplicate_arrivals",checks);
+        int[] aligned=ListeningMixNative.alignQueue(new String[]{"a","b","outside","c"},new String[]{"a","guest","b","outside"});check(java.util.Arrays.equals(aligned,new int[]{0,-1,1,2,3}),"jam_queue_alignment_preserves_discovery_tail",checks);
         JSONObject track=new JSONObject().put("uri","spotify:track:0123456789ABCDEFGHIJKL").put("title","Música de teste · dados sintéticos").put("artist","Artista de teste");
         check(SongShare.link(track).equals("https://open.spotify.com/track/0123456789ABCDEFGHIJKL"),"share_canonical_track_link",checks);
         check(SongShare.link(new JSONObject().put("uri","spotify:artist:0123456789ABCDEFGHIJKL")).isEmpty(),"share_rejects_nontrack_and_missing_id",checks);

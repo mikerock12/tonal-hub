@@ -52,6 +52,10 @@ fn status(generation: u64, text: &str) {
         }
     }
 }
+fn jam_result(generation:u64,value:&serde_json::Value){
+    if generation!=GENERATION.load(Ordering::SeqCst){return;}
+    if let Some(vm)=JVM.get(){if let Ok(env)=vm.attach_current_thread_permanently(){if let Ok(s)=env.new_string(value.to_string()){let s=env.auto_local(s);let _=call_void("onJamResult","(JLjava/lang/String;)V",&[JValue::Long(generation as jlong),JValue::Object(s.as_ref())]);}}}
+}
 fn pcm(samples: &[f32]) -> SinkResult<()> {
     let env = JVM.get().unwrap().attach_current_thread_permanently()
         .map_err(|e|SinkError::OnWrite(e.to_string()))?;
@@ -133,12 +137,12 @@ pub extern "system" fn Java_app_tonal_android_NativeBridge_nativeStart(mut env: 
                 let player = Player::new(config, session.clone(), Box::new(mixer::NoOpVolume), move ||Box::new(AndroidSink{generation}));
                 let connect = ConnectConfig {name:"Tonalify Android".into(), initial_volume:u16::MAX,disable_volume:true, ..Default::default()};
                 let events=player.get_player_event_channel();
-                let (spirc,task)=Spirc::new(connect, session, credentials, player, mixer).await?;
-                Ok::<_,librespot::core::Error>((spirc,task,events))
+                let (spirc,task)=Spirc::new(connect, session.clone(), credentials, player, mixer).await?;
+                Ok::<_,librespot::core::Error>((spirc,task,events,session))
             };
             let connection = tokio::time::timeout(Duration::from_secs(40), result);
             tokio::pin!(connection);
-            let (spirc, task, mut events) = loop {
+            let (spirc, task, mut events,jam_session) = loop {
                 tokio::select! {
                     result = &mut connection => match result {
                         Ok(Ok(pair)) => break pair,
@@ -152,6 +156,7 @@ pub extern "system" fn Java_app_tonal_android_NativeBridge_nativeStart(mut env: 
             let _ = spirc.activate();
             status(generation, "Pronto • Spotify Connect: Tonalify Android");
             tokio::pin!(task);
+            let jam_busy=std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
             loop {
                 tokio::select! {
                     _ = &mut task => {if generation==GENERATION.load(Ordering::SeqCst){status(generation, "Sessão Spotify encerrada. Toque na música para reconectar.");}break;},
@@ -165,6 +170,16 @@ pub extern "system" fn Java_app_tonal_android_NativeBridge_nativeStart(mut env: 
                     },
                     cmd = rx.recv() => {
                         let Some(cmd) = cmd else {let _=spirc.shutdown();break;};
+                        if let Some(payload)=cmd.strip_prefix("jam|"){
+                            if payload.len()>8192{jam_result(generation,&serde_json::json!({"status":413,"error":"command_too_large"}));continue;}
+                            let Ok(mut command)=serde_json::from_str::<serde_json::Value>(payload) else {jam_result(generation,&serde_json::json!({"status":400,"error":"invalid_json"}));continue;};
+                            if jam_busy.swap(true,Ordering::SeqCst){jam_result(generation,&serde_json::json!({"status":409,"error":"busy","request":command.get("request")}));continue;}
+                            if let Some(object)=command.as_object_mut(){object.insert("device".into(),serde_json::Value::String(jam_session.device_id().to_owned()));}
+                            let session=jam_session.clone();let busy=jam_busy.clone();
+                            // A network await never blocks the Spirc pause/stop command loop.
+                            tokio::spawn(async move{let result=tonal_jam_transport::execute(&session,&command).await;busy.store(false,Ordering::SeqCst);jam_result(generation,&result);});
+                            continue;
+                        }
                         let result = match cmd.as_str() {
                             "stop" => {let _=spirc.shutdown();break;},
                             "play"=>spirc.play(), "pause"=>spirc.pause(), "toggle"=>spirc.play_pause(),
@@ -173,11 +188,11 @@ pub extern "system" fn Java_app_tonal_android_NativeBridge_nativeStart(mut env: 
                             "repeat:on"=>spirc.repeat(true), "repeat:off"=>spirc.repeat(false),
                             "repeat-track:on"=>spirc.repeat_track(true), "repeat-track:off"=>spirc.repeat_track(false),
                             // requeue keeps the audible decoder; restore reloads it.
-                            _ if cmd.starts_with("restore|") || cmd.starts_with("requeue|") => {
-                                let mut parts=cmd.splitn(4,'|');let keep_playing_track=parts.next()==Some("requeue");
+                            _ if cmd.starts_with("restore|") || cmd.starts_with("requeue|") || cmd.starts_with("editqueue|") => {
+                                let mut parts=cmd.splitn(4,'|');let kind=parts.next();let edit_only=kind==Some("editqueue");let keep_playing_track=edit_only||kind==Some("requeue");
                                 let Some(position)=parts.next().and_then(|s|s.parse::<u32>().ok()) else {continue;};
                                 let track=parts.next().unwrap_or_default();let selection=parts.next().unwrap_or_default();
-                                let mut options=LoadRequestOptions{start_playing:true,seek_to:position,keep_playing_track,..Default::default()};
+                                let mut options=LoadRequestOptions{start_playing:!edit_only,seek_to:position,keep_playing_track,queue_edit_only:edit_only,..Default::default()};
                                 if !track.is_empty(){options.playing_track=Some(PlayingTrack::Uri(track.to_owned()));}
                                 if selection.starts_with("queue|")||selection.starts_with("context|") {
                                     let mut selection_parts=selection.splitn(3,'|');let kind=selection_parts.next().unwrap_or_default();

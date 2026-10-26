@@ -10,6 +10,27 @@ concurrency:
   group: tonal-ci-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  native-jam-transport:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the native endpoint allowlist without Spotify credentials
+        run: cargo test --manifest-path native/jam-transport/Cargo.toml --locked --release --jobs 2
+  native-story-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify pinned open source runtime and build the C++ reader
+        run: |
+          python packaging/fetch-story-runtime.py
+          cmake -S src/stories -B out/ci-stories -DCMAKE_BUILD_TYPE=Release -DTONAL_STORY_CORE_ONLY=ON
+          cmake --build out/ci-stories --parallel 2
+          ctest --test-dir out/ci-stories --output-on-failure
   personal-library:
     runs-on: windows-2022
     timeout-minutes: 20

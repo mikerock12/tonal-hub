@@ -101,6 +101,10 @@ void Lyrics::retry()
     if (m_active && m_status == Error)
         load();
 }
+void Lyrics::reload(){
+    if(!m_active||m_status==Loading)return;
+    const auto uri=m_player->trackUri();m_cache.remove(uri);m_cacheOrder.removeAll(uri);m_trackUri.clear();m_retries=0;load();
+}
 
 void Lyrics::load()
 {

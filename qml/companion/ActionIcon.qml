@@ -24,6 +24,8 @@ AbstractButton {
             c.strokeStyle=button.ink;c.fillStyle=button.ink;c.lineWidth=1.8;c.lineCap="round";c.lineJoin="round";c.beginPath()
             const line=(a,b,x,y)=>{c.moveTo(a,b);c.lineTo(x,y)}
             switch(button.symbol){
+            case "jam":c.arc(8,7,3,0,Math.PI*2);c.moveTo(22,8);c.arc(19,8,2.5,0,Math.PI*2);c.moveTo(2,21);c.bezierCurveTo(2,11,14,11,14,21);line(2,21,14,21);c.moveTo(16,14);c.bezierCurveTo(22,13,23,18,23,21);break
+            case "home":line(2,11,12,3);line(12,3,22,11);line(5,9,5,21);line(5,21,10,21);line(10,21,10,15);line(10,15,14,15);line(14,15,14,21);line(14,21,19,21);line(19,21,19,9);break
             case "share":c.arc(18,5,3,0,Math.PI*2);c.moveTo(8,12);c.arc(5,12,3,0,Math.PI*2);c.moveTo(21,19);c.arc(18,19,3,0,Math.PI*2);line(8,10.5,15,6.5);line(8,13.5,15,17.5);break
             case "now":c.arc(12,12,9,0,Math.PI*2);c.moveTo(15,12);c.arc(12,12,3,0,Math.PI*2);break
             case "library":line(4,4,4,21);line(10,4,10,21);line(16,4,21,21);break

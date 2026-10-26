@@ -79,6 +79,7 @@ final class Ui {
                 case "chevron":canvas.drawLine(8,5,16,12,p);canvas.drawLine(16,12,8,19,p);break;
                 case "chart":canvas.drawLine(3,21,21,21,p);for(int i=0;i<3;i++){int x=5+i*6;canvas.drawRoundRect(x,15-i*5,x+3,20,1,1,p);}break;
                 case "save":canvas.drawLine(12,3,12,16,p);canvas.drawLine(7,11,12,16,p);canvas.drawLine(12,16,17,11,p);canvas.drawLine(4,18,4,21,p);canvas.drawLine(4,21,20,21,p);canvas.drawLine(20,21,20,18,p);break;
+                case "jam":canvas.drawCircle(8,7,3,p);canvas.drawCircle(19,8,2.5f,p);canvas.drawArc(2,13,14,27,180,180,false,p);canvas.drawLine(2,20,14,20,p);canvas.drawArc(14,14,24,26,230,130,false,p);break;
                 case "search":canvas.drawCircle(10,10,6,p);canvas.drawLine(15,15,21,21,p);break;
                 case "back":canvas.drawLine(15,4,7,12,p);canvas.drawLine(7,12,15,20,p);break;
                 case "home":{Path h=new Path();h.moveTo(3,10);h.lineTo(12,3);h.lineTo(21,10);h.lineTo(21,21);h.lineTo(15,21);h.lineTo(15,14);h.lineTo(9,14);h.lineTo(9,21);h.lineTo(3,21);h.close();canvas.drawPath(h,p);break;}

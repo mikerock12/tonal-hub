@@ -1,5 +1,6 @@
 #pragma once
 #include <QObject>
+#include "LocalStories.h"
 #include <QJsonObject>
 #include <QNetworkAccessManager>
 #include <QTimer>
@@ -14,6 +15,12 @@
 class MusicCompanion : public QObject {
   friend class ListeningMix;
   Q_OBJECT
+  Q_PROPERTY(LocalStories* stories READ stories CONSTANT)
+  Q_PROPERTY(bool statisticsBusy READ statisticsBusy NOTIFY statisticsChanged)
+  Q_PROPERTY(QVariantMap statisticsReport READ statisticsReport NOTIFY statisticsChanged)
+  Q_PROPERTY(QVariantList homeAlbums READ homeAlbums NOTIFY homeAlbumsChanged)
+  Q_PROPERTY(bool homeHistoryError READ homeHistoryError NOTIFY homeAlbumsChanged)
+  Q_PROPERTY(QVariantMap storageInfo READ storageInfo NOTIFY changed)
   Q_PROPERTY(QVariantMap current READ current NOTIFY currentChanged)
   Q_PROPERTY(QVariantMap artistNotes READ artistNotes NOTIFY artistNotesChanged)
   Q_PROPERTY(QVariantList favorites READ favorites NOTIFY changed)
@@ -78,23 +85,39 @@ public:
   Q_INVOKABLE void removeFromPlaylist(const QString &,int);
   Q_INVOKABLE QVariantList playlistTracks(const QString &) const;
   Q_INVOKABLE void play(const QVariantList &tracks,int index=0){emit queueRequested(tracks,index);}
+  LocalStories* stories()const{return m_stories;}
+  Q_INVOKABLE void analyzeStories(int days);
+  Q_INVOKABLE void selectStoryPeriod(int days){m_stories->selectPeriod(days);}
+  Q_INVOKABLE void cancelStories(){m_storyRequested=false;m_stories->cancel();}
+  bool statisticsBusy()const{return m_statisticsRunning;}
+  QVariantMap statisticsReport() const{return m_statisticsReport;}
+  QVariantList homeAlbums() const{return m_homeAlbums;}
+  bool homeHistoryError() const{return m_homeHistoryError;}
+  Q_INVOKABLE void requestHomeAlbums();
+  QVariantMap storageInfo() const;
+  Q_INVOKABLE void requestStatistics(int days,const QString &dimension);
   Q_INVOKABLE QVariantMap statistics(int days,const QString &dimension) const;
   Q_INVOKABLE QVariantMap insights(int days) const;
   Q_INVOKABLE void clearHistory();
   Q_INVOKABLE void setGenre(const QString &);
   Q_INVOKABLE void editMetadata(const QString &,const QString &);
   Q_INVOKABLE void fetchLyrics();
+  Q_INVOKABLE void reloadLyrics(){if(m_busy)return;m_lyricCache.remove(key(m_current));fetchLyrics();}
   Q_INVOKABLE void translate(const QString &language);
   Q_INVOKABLE void importLyrics(const QString &,bool translation=false);
   Q_INVOKABLE bool useDisplayedLyrics(const QString &trackUri,const QVariantList &lines);
   Q_INVOKABLE void seek(int ms){emit seekRequested(ms);}
+  Q_INVOKABLE bool exportFullBackup(const QUrl &);
   Q_INVOKABLE bool exportBackup(const QUrl &);
+  Q_INVOKABLE bool restoreFullBackup(const QUrl &);
   Q_INVOKABLE bool restoreBackup(const QUrl &);
   static QString key(const QVariantMap &);
   static QVariantMap safeTrack(const QVariantMap &);
   static QVariantList parseLyrics(const QString &);
   static QVariantMap tone(const QString &,const QString &genre);
 signals:
+  void homeAlbumsChanged();
+  void statisticsChanged();
   void metadataRequested(const QVariantMap &track);
   void artistNotesChanged();
   void changed();void currentChanged();void lyricsChanged();
@@ -104,6 +127,15 @@ signals:
   void spotifyFavoriteRequested(const QVariantMap &,bool);
 private:
   friend class CompanionTests;
+  bool m_restoring=false;
+  QVariantList m_homeAlbums;bool m_homeRunning=false,m_homeHistoryError=false;
+  static QJsonObject validateBackup(const QJsonObject &,const QString &,QString &);
+  void applyRestored(const QJsonObject &);
+  static QVariantMap statisticsFor(const QJsonObject &,int,const QString &);
+  static QVariantMap insightsFor(const QJsonObject &,int);
+  LocalStories *m_stories=nullptr;bool m_storyRequested=false;int m_storyDays=7;
+  QVariantList m_statisticsTracks;QJsonObject m_statisticsData;QVariantMap m_statisticsReport,m_insightsReport;bool m_statisticsRunning=false;
+  int m_statisticsDays=-1;QString m_statisticsDimension;quint64 m_statisticsRevision=~quint64(0),m_statisticsGeneration=0;
   QString syncKey() const;void metadataNext();
   void save();void flush();void checkpoint();
   void get(const QUrl &,std::function<void(int,const QJsonDocument &)>,std::function<bool()> active={});

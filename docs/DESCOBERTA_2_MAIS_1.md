@@ -152,3 +152,16 @@ específicas para essas situações.
 - [Guia visual](GUIA_VISUAL.md).
 
 Original Tonal: **Matheus Nunes (natheus)**, [tonal-player](https://github.com/natheus/tonal-player).
+
+## Convivência com Jam experimental (0.15.1)
+
+A janela de fila confirmada pelo serviço é alinhada por ocorrências à seleção
+preparada. Entradas correspondentes conservam os marcadores de Descoberta, e a
+cauda conhecida fora dessa janela é preservada. Uma faixa adicionada por outra
+pessoa não vira automaticamente uma descoberta: desligar Descoberta só remove
+as externas marcadas pelo algoritmo. Nenhuma autoria é deduzida pelo alinhamento.
+
+Atualizar o cache não recarrega a faixa audível. Shake/Aleatório continuam
+independentes, dentro do limite de 500 entradas. Acima dele, reaplicar os modos
+é recusado com aviso, sem truncar músicas. A janela remota é parcial; não há
+promessa de reconstruir uma fila remota inteira desconhecida.

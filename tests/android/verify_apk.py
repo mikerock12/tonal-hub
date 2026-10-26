@@ -11,6 +11,7 @@ parser=argparse.ArgumentParser()
 parser.add_argument('--apk',type=Path,default=root/'out/android/Tonal-Android-0.3.0-local.apk')
 parser.add_argument('--output',type=Path,default=root/'out/android/apk-validation-0.3.0.json')
 parser.add_argument('--abis',default='arm64-v8a,x86_64')
+parser.add_argument('--stories',action='store_true',help='Require the optional native reader library, without model weights')
 args=parser.parse_args()
 apk = args.apk
 report = dict(sha256=hashlib.sha256(apk.read_bytes()).hexdigest(), size_bytes=apk.stat().st_size,
@@ -26,6 +27,8 @@ with apk.open('rb') as raw, zipfile.ZipFile(apk) as archive:
         libraries = [n for n in names if n.startswith(f'lib/{abi}/') and n.endswith('.so')]
         expected = {'libtonal_muse.so','libtonal_android.so','libtonal_audio.so','libopenal.so','libc++_shared.so',
                     'libavfilter.so','libavformat.so','libavcodec.so','libavutil.so','libswresample.so'}
+        if args.stories:expected.add("libtonal_story.so")
+        assert not any(n.endswith(".gguf") for n in names), "Model weights must remain optional"
         assert {Path(n).name for n in libraries} == expected
         results = {}
         for name in libraries:

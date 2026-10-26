@@ -93,7 +93,7 @@ Popup {
                                 orientation: Qt.Vertical
                                 from: -12; to: 12; stepSize: 0.5
                                 value: panel.state.eq[index]
-                                enabled: panel.state.enabled && panel.state.eqEnabled
+                                enabled: panel.state.enabled
                                 onMoved: App.audio.setEqBand(index, value)
                                 TapHandler { onDoubleTapped: App.audio.setEqBand(index, 0) }
                             }
@@ -122,10 +122,12 @@ Popup {
                 Label { text: qsTr("Áudio espacial"); color: Theme.textPrimary; font.bold: true }
                 ButtonGroup { id: modes }
                 RowLayout {
-                    RadioButton { text: qsTr("Original"); checked: !App.audio.sourceIamf && !App.audio.hrtfActive; enabled: !App.audio.sourceIamf; ButtonGroup.group: modes; onClicked: App.audio.setSetting("spatial", "original") }
-                    RadioButton { objectName: "hrtfMode"; text: qsTr("HRTF para fones"); checked: !App.audio.sourceIamf && App.audio.hrtfActive; enabled: panel.state.enabled && App.audio.hrtfAvailable && !App.audio.sourceIamf; ButtonGroup.group: modes; onClicked: App.audio.setSetting("spatial", "hrtf") }
+                    RadioButton { text: qsTr("Original"); checked: !App.audio.sourceIamf && panel.state.spatial==="original"; enabled: !App.audio.sourceIamf; ButtonGroup.group: modes; onClicked: App.audio.setSetting("spatial", "original") }
+                    RadioButton { objectName: "hrtfMode"; text: qsTr("HRTF para fones"); checked: !App.audio.sourceIamf && panel.state.spatial==="hrtf"; enabled: panel.state.enabled && App.audio.hrtfAvailable && !App.audio.sourceIamf; ButtonGroup.group: modes; onClicked: App.audio.setSetting("spatial", "hrtf") }
                     RadioButton { text: qsTr("IAMF binaural"); checked: App.audio.sourceIamf; enabled: App.audio.iamfAvailable && App.audio.sourceIamf; ButtonGroup.group: modes }
                 }
+                RadioButton { text: qsTr("HRTF em caixas / carro • experimental"); checked: !App.audio.sourceIamf && panel.state.spatial==="hrtf-speakers"; enabled: panel.state.enabled && App.audio.hrtfAvailable && !App.audio.sourceIamf; ButtonGroup.group: modes; onClicked: App.audio.setSetting("spatial", "hrtf-speakers") }
+                Label { text: qsTr("Em caixas, este modo aplica binaural sem cancelamento do cruzamento entre caixas e ouvidos. O resultado depende da posição e do ambiente. Mover uma banda ativa o EQ; o bypass mestre continua prevalecendo."); wrapMode: Text.WordWrap; color: Theme.textMuted; font.pixelSize: 11; Layout.fillWidth: true }
                 Label {
                     text: App.audio.sourceIamf ? qsTr("Renderização OAR binaural: HRTF adicional desativado.")
                         : !panel.state.enabled ? qsTr("Ative o motor de áudio para usar HRTF.")

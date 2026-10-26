@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.15.1 — em validação, 25/10/2026
+
+- Atualizar letra nos controles de tela cheia Windows e Android, ignorando o cache corrente.
+- Página inicial baseada nas escutas locais, álbuns mais ouvidos e sugestões de discografia.
+- Navegação da música simplificada; ações de colocar a faixa como próxima ou última da fila.
+- Equalizador ativado ao mover bandas e opção experimental de HRTF para caixas/carro.
+- Leitor local v4 por faixa, cobertura explícita e continuação; modelo opcional Qwen3.5 2B.
+- Jam experimental com avisos e integração nativa; participação real entre contas ainda pendente.
+- Correções de relatórios anteriores: testes sintéticos não comprovam qualidade semântica das letras.
+
 ## 0.14.1 Windows — 24/10/2026
 
 - Corrige volume que só mudava após parar de arrastar e saltava com polls antigos.

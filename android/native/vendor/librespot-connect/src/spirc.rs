@@ -1004,7 +1004,7 @@ impl SpircTask {
         use protobuf::Message;
 
         match TransferState::parse_from_bytes(&cluster.transfer_data) {
-            Ok(transfer_state) => self.handle_transfer(transfer_state)?,
+            Ok(transfer_state) => self.handle_transfer(transfer_state,false)?,
             Err(why) => error!("failed to take over control: {why}"),
         }
 
@@ -1142,7 +1142,8 @@ impl SpircTask {
             }
             // modification and update of the connect_state
             Transfer(transfer) => {
-                self.handle_transfer(transfer.data.expect("by condition checked"))?;
+                let retain=transfer.options.retain_session.as_deref().is_some_and(|s|s=="true"||s==self.session.session_id());
+                self.handle_transfer(transfer.data.expect("by condition checked"),retain)?;
                 return self.notify().await;
             }
             Play(mut play) => {
@@ -1186,6 +1187,7 @@ impl SpircTask {
                             playing_track: play.options.skip_to.and_then(|s| s.try_into().ok()),
                             context_options,
                             keep_playing_track: false,
+                            queue_edit_only: false,
                         },
                     },
                     play.context.pages.pop(),
@@ -1234,7 +1236,15 @@ impl SpircTask {
         Ok(())
     }
 
-    fn handle_transfer(&mut self, mut transfer: TransferState) -> Result<(), Error> {
+    fn handle_transfer(&mut self, mut transfer: TransferState,retain_session:bool) -> Result<(), Error> {
+        // A Jam queue update can transfer the entire session back to its host.
+        // Keep this separate from an actual handoff or a new selection.
+        let old_track=self.connect_state.current_track(|t|t.clone());
+        let incoming=self.connect_state.current_track_from_transfer(&transfer).ok();
+        let keep=retain_session&&self.connect_state.is_active()
+            && matches!(self.play_status,SpircPlayStatus::Playing{..}|SpircPlayStatus::Paused{..})
+            && incoming.as_ref().is_some_and(|t|!old_track.uri.is_empty()&&t.uri==old_track.uri&&(old_track.uid.is_empty()||t.uid.is_empty()||old_track.uid==t.uid));
+        let kept_position=if keep{self.position()}else{0};
         let mut ctx_uri = match transfer.current_session.context.uri {
             None => Err(SpircError::NoUri("transfer context"))?,
             // can apparently happen when a state is transferred and was started with "uris" via the api
@@ -1353,7 +1363,21 @@ impl SpircTask {
             }
         }
 
-        self.load_track(is_playing, position.try_into()?)
+        if keep {
+            // The current pause/play state wins over the transferred snapshot.
+            // Updating the following tracks never seeks or restarts this decoder.
+            self.connect_state.update_position(kept_position,self.now_ms());
+            self.connect_state.set_status(&self.play_status);
+            match &mut self.play_status {
+                SpircPlayStatus::Playing{preloading_of_next_track_triggered,..}
+                | SpircPlayStatus::Paused{preloading_of_next_track_triggered,..}=>*preloading_of_next_track_triggered=false,
+                _=>{},
+            }
+            self.update_state=true;
+            Ok(())
+        } else {
+            self.load_track(is_playing, position.try_into()?)
+        }
     }
 
     async fn handle_disconnect(&mut self) -> Result<(), Error> {
@@ -1418,8 +1442,11 @@ impl SpircTask {
         page: Option<ContextPage>,
         fallback_index: Option<usize>,
     ) -> Result<(), Error> {
-        let pending_recovery=self.buffer_recovery.take();
         let audible_uri=self.connect_state.current_track(|t|t.uri.clone());
+        if cmd.options.queue_edit_only && !matches!(&cmd.options.playing_track, Some(PlayingTrack::Uri(uri)) if !audible_uri.is_empty() && *uri==audible_uri) {
+            return Ok(());
+        }
+        let pending_recovery=self.buffer_recovery.take();
         self.connect_state
             .reset_context(if let PlayContext::Uri(ref uri) = cmd.context {
                 ResetContext::WhenDifferent(uri)

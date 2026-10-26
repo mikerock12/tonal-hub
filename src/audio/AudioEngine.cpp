@@ -96,6 +96,7 @@ void AudioEngine::setEqBand(int i, double db) {
   {
     std::lock_guard l(m_mutex);
     m_settings.eq[i] = std::clamp(db, -12., 12.);
+    m_settings.eqEnabled = true;
     m_settings.preset = "Personalizada";
   }
   changed();
@@ -428,14 +429,14 @@ void AudioEngine::run() {
         (settings.spatial != next.spatial || settings.enabled != next.enabled);
     settings = next;
     if (opened && spatialChanged &&
-        !output.setHrtf(settings.enabled && settings.spatial == "hrtf",
+        !output.setHrtf(settings.enabled && (settings.spatial == "hrtf" || settings.spatial == "hrtf-speakers"),
                         error)) {
       fail(error);
       continue;
     }
     if (!opened || spatialChanged) {
       if (!opened &&
-          !output.open(format, settings.enabled && settings.spatial == "hrtf",
+          !output.open(format, settings.enabled && (settings.spatial == "hrtf" || settings.spatial == "hrtf-speakers"),
                        error)) {
         fail(error);
         continue;

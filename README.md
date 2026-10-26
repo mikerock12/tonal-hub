@@ -10,12 +10,52 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
-**Produto atual: Windows 0.14.1 · Android 0.14.0. Documentação consolidada em 24/10/2026.**
+**Build local: Windows 0.15.1 · Android 0.15.1. Documentação em 25/10/2026.**
 
+[Pacotes e hashes 0.15.1](docs/artifacts-0151.json) · [Validação 0.15.1](docs/release-0151-tests.json) ·
 [Guia visual com capturas](docs/GUIA_VISUAL.md) ·
 [Regras da Descoberta 2+1](docs/DESCOBERTA_2_MAIS_1.md) ·
 [Benchmarks realizados](docs/BENCHMARKS.md) ·
 [Contexto do projeto](contexto.md) · [Instruções de manutenção](AGENTS.md).
+
+## Atualização 0.15.1
+
+A tela inicial incorpora os álbuns ouvidos neste aparelho, mais ouvidos e
+álbuns dos seus artistas para explorar. A página da música fica mais limpa,
+com uma casa para voltar ao início. O menu da faixa permite colocá-la como
+próxima ou última da fila. Os controles de letras em tela cheia incluem
+**Atualizar letra**, com nova busca que ignora o cache da faixa.
+
+Mover uma banda ativa o equalizador; o bypass mestre continua prevalecendo.
+Há uma opção explícita de HRTF para caixas/carro, **experimental**, sem
+calibração acústica ou cancelamento de crosstalk.
+[Como funciona e limites](docs/HOME_QUEUE_AUDIO_0151.md).
+
+O leitor local v4 apresenta leituras por faixa, cobertura e continuação de
+resultados parciais. O modelo opcional passa a Qwen3.5 2B Q4_K_M (cerca de
+1,2 GiB), com inferência apenas durante pausa escolhida pelo usuário nas duas
+plataformas. A avaliação real ainda teve cobertura limitada, **1/4** leituras
+aceitas: não é garantia de interpretação. [Avaliação](docs/LOCAL_STORIES_QUALITY_0151.md).
+
+**Jam experimental:** painel de sessão e participantes, cópia de convite e
+avisos de entrada/alteração da fila. Não simula aprovação de participantes nem
+atribui músicas a alguém sem identificação do serviço. A participação entre
+contas com Spotify nativo ainda precisa ser validada.
+[Integração e evidências](docs/JAM_RESEARCH.md).
+
+## Estatísticas e histórias 0.15.0 (histórico)
+
+Estatísticas e backup ficam sempre no topo. Seu ritmo cobre de uma semana a
+**Desde o começo**, com histórico SQLite sem expiração de 180 dias e tamanho
+real da biblioteca/último backup no rodapé. O card de histórias da 0.15.0 usava
+até oito letras do período com **Qwen2.5 0.5B + llama.cpp**, inteiramente local.
+A frase genérica gerada falhou na aceitação física do usuário; consulte a
+correção e as limitações da 0.15.1 acima.
+O modelo aberto é opcional (468,6 MiB), carregado somente durante a análise em
+processo separado. Não avalia seu humor ou saúde.
+
+[Como usar, limites e validação](docs/STATISTICS_STORIES_0150.md) ·
+[Proveniência e licenças](third_party/LOCAL-STORIES.md).
 
 ## Correção Windows 0.14.1
 

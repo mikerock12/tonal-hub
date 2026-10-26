@@ -5,7 +5,7 @@ find_package(Qt6 6.8 REQUIRED COMPONENTS Core Gui Network Sql Qml)
 qt_standard_project_setup(REQUIRES 6.8)
 get_filename_component(ROOT "../.." ABSOLUTE)
 qt_add_executable(TonalCompanionChecks CompanionTests.cpp
-    "${ROOT}/src/companion/MusicCompanion.h" "${ROOT}/src/companion/MusicCompanion.cpp" "${ROOT}/src/companion/ArtistNotes.cpp"
+    "${ROOT}/src/companion/LocalStories.h" "${ROOT}/src/companion/LocalStories.cpp" "${ROOT}/src/companion/MusicCompanion.h" "${ROOT}/src/companion/MusicCompanion.cpp" "${ROOT}/src/companion/ArtistNotes.cpp"
     "${ROOT}/src/companion/PersonalDatabase.h" "${ROOT}/src/companion/PersonalDatabase.cpp" "${ROOT}/src/companion/PersonalInsights.cpp" "${ROOT}/src/insights/TinyMusicModel.cpp")
 target_include_directories(TonalCompanionChecks PRIVATE "${ROOT}/src")
 target_link_libraries(TonalCompanionChecks PRIVATE Qt6::Core Qt6::Network Qt6::Sql)
@@ -15,9 +15,14 @@ add_library(TonalPlayerCompileCheck OBJECT "${ROOT}/src/Player.cpp")
 set_target_properties(TonalPlayerCompileCheck PROPERTIES AUTOMOC OFF)
 target_include_directories(TonalPlayerCompileCheck PRIVATE "${ROOT}/src")
 target_link_libraries(TonalPlayerCompileCheck PRIVATE Qt6::Core Qt6::Network Qt6::Qml)
+add_library(TonalJamCompileCheck OBJECT "${ROOT}/src/jam/JamController.cpp")
+set_target_properties(TonalJamCompileCheck PROPERTIES AUTOMOC OFF)
+target_include_directories(TonalJamCompileCheck PRIVATE "${ROOT}/src")
+target_link_libraries(TonalJamCompileCheck PRIVATE Qt6::Core Qt6::Gui Qt6::Network Qt6::Qml)
 if(MSVC)
     target_compile_options(TonalCompanionChecks PRIVATE /utf-8)
     target_compile_options(TonalPlayerCompileCheck PRIVATE /utf-8)
+    target_compile_options(TonalJamCompileCheck PRIVATE /utf-8)
 endif()
 qt_add_resources(TonalCompanionChecks "rules" PREFIX "/companion" BASE "${ROOT}" FILES "${ROOT}/resources/music-rules.json")
 enable_testing()
@@ -25,7 +30,7 @@ add_test(NAME personal_library COMMAND TonalCompanionChecks)
 add_executable(TonalTextPlaylistChecks ../playlist/ImportChecks.cpp
     "${ROOT}/src/playlist/TextPlaylistCore.cpp" "${ROOT}/src/playlist/TextPlaylistImport.cpp"
     "${ROOT}/src/playlist/TextPlaylistImport.hpp"
-    "${ROOT}/src/companion/MusicCompanion.cpp" "${ROOT}/src/companion/ArtistNotes.cpp" "${ROOT}/src/companion/MusicCompanion.h"
+    "${ROOT}/src/companion/MusicCompanion.cpp" "${ROOT}/src/companion/ArtistNotes.cpp" "${ROOT}/src/companion/LocalStories.h" "${ROOT}/src/companion/LocalStories.cpp" "${ROOT}/src/companion/MusicCompanion.h"
     "${ROOT}/src/companion/PersonalDatabase.cpp" "${ROOT}/src/companion/PersonalInsights.cpp"
     "${ROOT}/src/insights/TinyMusicModel.cpp")
 target_include_directories(TonalTextPlaylistChecks PRIVATE "${ROOT}/src")
@@ -67,3 +72,16 @@ if(MSVC)
 endif()
 qt_add_resources(TonalThemeCatalogChecks "themes" PREFIX "/themes" BASE "${ROOT}" FILES "${ROOT}/resources/themes.json")
 add_test(NAME theme_catalog COMMAND TonalThemeCatalogChecks)
+
+qt_add_executable(TonalHistoryChecks HistoryChecks.cpp
+ "${ROOT}/src/companion/MusicCompanion.h" "${ROOT}/src/companion/MusicCompanion.cpp"
+ "${ROOT}/src/companion/LocalStories.h" "${ROOT}/src/companion/LocalStories.cpp"
+ "${ROOT}/src/companion/PersonalDatabase.cpp" "${ROOT}/src/companion/PersonalInsights.cpp"
+ "${ROOT}/src/companion/ArtistNotes.cpp" "${ROOT}/src/insights/TinyMusicModel.cpp")
+target_include_directories(TonalHistoryChecks PRIVATE "${ROOT}/src")
+target_link_libraries(TonalHistoryChecks PRIVATE Qt6::Core Qt6::Network Qt6::Sql)
+if(MSVC)
+ target_compile_options(TonalHistoryChecks PRIVATE /utf-8)
+endif()
+qt_add_resources(TonalHistoryChecks "history_rules" PREFIX "/companion" BASE "${ROOT}" FILES "${ROOT}/resources/music-rules.json")
+add_test(NAME history_stories COMMAND TonalHistoryChecks)

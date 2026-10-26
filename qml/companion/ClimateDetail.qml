@@ -7,9 +7,10 @@ Dialog {
     required property var controller
     property int days:7
     property var report:({})
-    onOpened:{controller.refreshMetadata();report=controller.insights(days)}
+    onOpened:{if(typeof controller.selectStoryPeriod==="function")controller.selectStoryPeriod(days);controller.refreshMetadata();if(typeof controller.requestStatistics==="function")controller.requestStatistics(days,"artists");report=controller.insights(days)}
+    onClosed:{if(typeof controller.cancelStories==="function")controller.cancelStories();else if(controller.stories)controller.stories.cancel()}
     Connections{target:detail.controller;function onChanged(){if(detail.visible)detail.report=detail.controller.insights(detail.days)}}
-    title:"Seu repertório · últimos "+days+" dias"
+    title:days===0?"Seu repertório · desde o começo":"Seu repertório · últimos "+days+" dias"
     parent:Overlay.overlay;anchors.centerIn:parent;modal:true
     width:Math.min(820,parent?parent.width-40:780);height:Math.min(820,parent?parent.height-40:760)
     background:Rectangle{color:"#14171c";radius:22;border.color:"#303946"}
@@ -24,11 +25,12 @@ Dialog {
                     Label{text:(detail.report.coverage||0)+" músicas · "+(detail.report.artistCount||0)+" artistas · "+(detail.report.albumCount||0)+" álbuns";color:"#b8c6d4";font.pixelSize:15}
                 }
             }
-            Rectangle{Layout.fillWidth:true;implicitHeight:themes.implicitHeight+40;radius:18;color:"#303044"
+            StoryCard{controller:detail.controller;days:detail.days}
+            Rectangle{visible:(detail.report.themes||[]).length>0;Layout.fillWidth:true;implicitHeight:themes.implicitHeight+40;radius:18;color:"#303044"
                 ColumnLayout{id:themes;anchors.fill:parent;anchors.margins:20;spacing:12
-                    Label{text:"As histórias das suas músicas";font.pixelSize:23;font.bold:true;color:"#f5f5f5"}
+                    Label{text:"Pistas do classificador leve";font.pixelSize:23;font.bold:true;color:"#f5f5f5"}
                     Label{text:"Pistas nas letras, sem diagnosticar seu humor.";Layout.fillWidth:true;wrapMode:Text.Wrap;color:"#b8c6d4";font.pixelSize:15}
-                    Label{visible:!(detail.report.themes||[]).length;text:"Ainda não há um tema com evidência suficiente. A análise se enriquece conforme as letras são carregadas.";Layout.fillWidth:true;wrapMode:Text.Wrap;color:"#f5f5f5";font.pixelSize:16}
+                    Label{visible:!(detail.report.themes||[]).length;text:"O classificador simples não destacou um tema. Use a análise local acima para interpretar as letras disponíveis.";Layout.fillWidth:true;wrapMode:Text.Wrap;color:"#f5f5f5";font.pixelSize:16}
                     Repeater{model:detail.report.themes||[]
                         ColumnLayout{required property var modelData;Layout.fillWidth:true
                             Label{text:modelData.label+" · "+modelData.percent.toFixed(0)+"%";textFormat:Text.PlainText;font.pixelSize:17;color:"#f5f5f5"}

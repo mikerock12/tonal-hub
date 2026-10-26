@@ -23,6 +23,7 @@ final class MusicLyrics implements AutoCloseable {
     MusicLyrics(MusicStore store,Translator translator,Fetcher fetcher){this.store=store;this.translator=translator;this.fetcher=fetcher;}
     private void result(int generation,Runnable r){main.post(()->{if(!closed&&generation==store.generation){r.run();store.lyricVersion++;}});}
     void fetch(){if(store.busy)return;retries=0;fetchAttempt();}
+    void refresh(){if(store.busy)return;cache.remove(MusicStore.key(store.current));fetch();}
     private void fetchAttempt(){
         if(store.busy||store.current.length()==0)return;
         String key=MusicStore.key(store.current),title=store.current.optString("title"),artist=store.current.optString("artist"),album=store.current.optString("album");int duration=store.current.optInt("durationMs"),g=++store.generation;if(!key.equals(retryKey)){retryKey=key;retries=0;}

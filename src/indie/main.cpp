@@ -73,7 +73,7 @@ int main(int argc, char **argv) {
   engine.rootContext()->setContextProperty("hub", &hub);
   engine.rootContext()->setContextProperty("music", &music);
   QTimer historyTimer;historyTimer.setInterval(1000);
-  QObject::connect(&historyTimer,&QTimer::timeout,&app,[&] {if(audio)music.pulse(audio->localPlaying(),audio->positionMs());});historyTimer.start();
+  QObject::connect(&historyTimer,&QTimer::timeout,&app,[&] {if(audio){music.stories()->setPlaying(audio->localPlaying());music.pulse(audio->localPlaying(),audio->positionMs());}});historyTimer.start();
   if(audio)QObject::connect(&music,&MusicCompanion::seekRequested,audio.get(),&tonal::audio::AudioEngine::seekLocal);
   engine.rootContext()->setContextProperty("audio", audio.get());
   engine.rootContext()->setContextProperty("hubMode", hubMode);

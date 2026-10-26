@@ -15,14 +15,19 @@ $vs=& $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.
 if(-not $vs){throw 'Visual Studio com ferramentas C++ nao encontrado.'}
 $env:Path+=';'+(Split-Path $vswhere)
 & (Join-Path $vs 'Common7\Tools\Launch-VsDevShell.ps1') -Arch amd64 -HostArch amd64 -SkipAutomaticLocation | Out-Null
-chcp.com 850 | Out-Null
+chcp.com 65001 | Out-Null
 Push-Location $projectRoot
 try {
+    & (Join-Path $tools 'Scripts/python.exe') -X utf8 (Join-Path $PSScriptRoot 'repair-msvc-diagnostics.py') (Join-Path $projectRoot 'out/build/release')
+    $repair=$LASTEXITCODE
+    if($repair -ne 0 -and $repair -ne 10){throw 'Falha ao conferir dependências MSVC'}
     $iamf=if($WithoutIamf){'OFF'}else{'ON'}
     cmake --preset release "-DTONAL_ENABLE_IAMF=$iamf" -DBUILD_TESTING=ON -DALSOFT_ENABLE_MODULES=OFF
     Check 'CMake'
-    cmake --build --preset release --parallel 4
+    $rebuild=if($repair -eq 10){@("--clean-first")}else{@()}
+    cmake --build --preset release --parallel 4 @rebuild
     Check 'Build'
+    & (Join-Path $PSScriptRoot 'build-stories-local.ps1')
     $build=Join-Path $projectRoot 'out\build\release'
     $librespot=Join-Path $env:USERPROFILE '.cargo\bin\librespot.exe'
     if(-not (Test-Path -LiteralPath $librespot)){throw 'Instale librespot: cargo install librespot --locked'}

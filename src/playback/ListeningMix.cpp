@@ -18,8 +18,9 @@ void ListeningMix::setEnrichmentEnabled(bool enabled){m_enrichment->setEnabled(e
 QString ListeningMix::enrichmentStatus()const{return m_enrichment->status();}
 QVariantList ListeningMix::order(int count,quint32 seed)const{QVariantList out;for(int i:tonal::mix::order(count,seed))out<<i;return out;}
 void ListeningMix::cancel(){++m_generation;m_busy=false;m_autoApply=false;emit changed();}
-void ListeningMix::forgetApplied(){if(m_appliedQueue.isEmpty()&&!m_activeDiscovery&&!m_activeRandom)return;m_appliedQueue.clear();m_activeDiscovery=m_activeRandom=false;emit changed();}
+void ListeningMix::forgetApplied(){m_queueCapacityExceeded=false;if(m_appliedQueue.isEmpty()&&!m_activeDiscovery&&!m_activeRandom)return;m_appliedQueue.clear();m_activeDiscovery=m_activeRandom=false;emit changed();}
 void ListeningMix::applyModes(const QVariantList &queue,bool shake,bool random,bool discovery){
+ if(m_queueCapacityExceeded){emit m_music->message("A fila do Jam excede 500 músicas. Aguarde espaço antes de reaplicar os modos.");return;}
  if(queue.isEmpty())return;
  QVariantList rows=queue;
  if(shake&&rows.size()>2){const auto rest=rows.mid(1);rows=QVariantList{queue.first()};for(int i:tonal::mix::order(int(rest.size()),QRandomGenerator::global()->generate()))rows<<rest[i];}
@@ -30,7 +31,7 @@ QString ListeningMix::genres(const QVariantMap&t)const{auto g=known(t)["genre"].
 void ListeningMix::play(const QVariantList&t,int n,bool r,bool d,bool a){prepare(t,n,r,d,a,false);}
 void ListeningMix::preview(const QVariantList&t,int n,bool r,bool d,bool a){prepare(t,n,r,d,a,true);}
 QVariantList ListeningMix::queueFor(const QString &uri)const{for(int i=0;i<m_appliedQueue.size();++i)if(m_appliedQueue[i].toMap()["uri"].toString()==uri)return m_appliedQueue.mid(i);return {};}
-void ListeningMix::applyPreview(int position){if(!m_busy&&!m_previewQueue.isEmpty()){m_appliedQueue=m_previewQueue;m_activeDiscovery=m_discovery;m_activeRandom=m_random;emit changed();emit resumeReady(m_previewQueue,std::max(0,position));}}
+void ListeningMix::applyPreview(int position){if(m_queueCapacityExceeded){emit m_music->message("A fila do Jam excede 500 músicas. Aguarde espaço antes de reaplicar os modos.");return;}if(!m_busy&&!m_previewQueue.isEmpty()){m_appliedQueue=m_previewQueue;m_activeDiscovery=m_discovery;m_activeRandom=m_random;emit changed();emit resumeReady(m_previewQueue,std::max(0,position));}}
 void ListeningMix::prepare(const QVariantList &tracks, int selected, bool random,
                            bool discovery, bool album, bool preview, bool autoApply) {
  cancel();

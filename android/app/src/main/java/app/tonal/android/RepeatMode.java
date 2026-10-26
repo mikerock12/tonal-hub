@@ -12,7 +12,7 @@ final class RepeatMode {
     static int next(int mode){return (mode+1)%3;}
     static int sanitize(int mode){return mode==QUEUE||mode==TRACK?mode:OFF;}
     static boolean loadsSelection(String command){
-        return command.startsWith("queue|")||command.startsWith("context|")||command.startsWith("restore|")||command.startsWith("requeue|")||command.startsWith("spotify:");
+        return command.startsWith("editqueue|")||command.startsWith("queue|")||command.startsWith("context|")||command.startsWith("restore|")||command.startsWith("requeue|")||command.startsWith("spotify:");
     }
     static int afterCommand(int mode,String command){return mode==TRACK&&command.equals("next")?QUEUE:mode;}
     static String[] engineCommands(int mode){return new String[]{mode!=OFF?"repeat:on":"repeat:off",mode==TRACK?"repeat-track:on":"repeat-track:off"};}

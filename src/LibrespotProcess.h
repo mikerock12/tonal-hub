@@ -35,6 +35,8 @@ public:
   QString statusText() const { return m_statusText; }
   QString deviceName() const { return m_deviceName; }
   QString executablePath() const { return m_exe; }
+  QString sessionCachePath() const { return cacheDir(); }
+  bool nativeLoginAvailable() const { return hasCachedCredentials(); }
   int bitrate() const { return m_bitrate; }
   void setBitrate(int kbps);
   void setAudioEngine(tonal::audio::AudioEngine *engine);

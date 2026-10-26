@@ -1,5 +1,5 @@
 {
-  "documented_on": "2026-10-23",
+  "documented_on": "2026-10-25",
   "scope": "Real app/test screenshots with version and fixture provenance per image. Historical captures preserved; two new 0.12.0 native Android queue captures; four 0.13.0 theme captures without personal data; four 0.13.1 control/repeat captures without personal data.",
   "captures": [
     {
@@ -421,6 +421,30 @@
       "height": 1200,
       "bytes": 50447,
       "sha256": "22fb7e8e1d9936826e196cc7fd0deae3cb30548b8cbc9e83a36d18dc58073a39"
+    },
+    {
+      "file": "desktop-letra-tela-cheia-0151.png",
+      "source": "out/lyrics-inline-ui/fullscreen-refresh-0151.png",
+      "platform": "Windows",
+      "capture_context": "0.15.1: atualizar letra em tela cheia",
+      "note": "QML de produção 0.15.1 em fixture, versos sintéticos e renderização offscreen; não é medição de desempenho.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 800,
+      "height": 800,
+      "bytes": 16355,
+      "sha256": "3d4b0992a989b6338c221a1336ce6e281c2566984d8f09bde06be7f8182c642e"
+    },
+    {
+      "file": "android-letra-tela-cheia-0151.png",
+      "source": "out/android/song-0151/fullscreen-refresh.png",
+      "platform": "Android",
+      "capture_context": "0.15.1: atualizar letra em tela cheia",
+      "note": "APK benchmark 0.15.1 na AVD exclusiva; versos e traduções sintéticos; sem telefone físico.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 540,
+      "height": 1200,
+      "bytes": 92785,
+      "sha256": "e355aeeb7786df5729a0e901a8456822ac4b40de9abdbfab67723cca7eea0545"
     }
   ]
 }

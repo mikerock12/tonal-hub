@@ -938,6 +938,24 @@ public:
     require(resumed==before&&!mix.busy(),"cancelled discovery still replaced the queue");
     std::cout<<"PASS repeat persistence, ordered mix queue and direct mode buttons\n";
   }
+  static void queueInsertion(){
+    QTemporaryDir storage;FakeNetwork network;AuthManager auth(&network);SpotifyApi api(&network,&auth);
+    LibrespotProcess engine(nullptr,storage.path());Player player(&api,&engine,&auth);fakeAuth(auth);
+    player.m_localDeviceId=player.m_activeDeviceId="local-device";player.m_trackUri="spotify:track:AAAAAAAAAAAAAAAAAAAAAA";
+    auto row=[](const QString &id,bool external=false){return QVariantMap{{"uri","spotify:track:"+id},{"title",id},{"mixExternal",external}};};
+    player.setOrderedQueue({row("AAAAAAAAAAAAAAAAAAAAAA"),row("BBBBBBBBBBBBBBBBBBBBBB",true),row("CCCCCCCCCCCCCCCCCCCCCC")});
+    int plays=0;QJsonObject body;network.respond=[&](const QNetworkRequest &r,const QByteArray &bytes){if(r.url().path().endsWith("/play")){++plays;body=QJsonDocument::fromJson(bytes).object();}return Response{};};
+    player.insertInQueue(row("DDDDDDDDDDDDDDDDDDDDDD"),true);
+    require(player.m_queueEditPending&&!player.m_isPlaying&&plays==0&&player.queue().size()==3,"queue insertion must preserve a pause");
+    require(player.queue()[0].toMap()["uri"]=="spotify:track:DDDDDDDDDDDDDDDDDDDDDD"&&player.m_orderedRows[2].toMap()["mixExternal"].toBool(),"next insertion lost order or discovery");
+    player.insertInQueue(row("DDDDDDDDDDDDDDDDDDDDDD"),false);
+    require(player.m_orderedRows.size()==5&&player.m_orderedRows.last().toMap()["uri"]=="spotify:track:DDDDDDDDDDDDDDDDDDDDDD","last insertion must preserve duplicate occurrences");
+    player.togglePlay();require(spin([&]{return plays==1;},800)&&body["uris"].toArray().size()==5,"pending queue must apply on explicit resume");
+    require(!player.m_queueEditPending,"pending queue applied more than once");
+    player.m_isPlaying=false;QVariantList full;for(int i=0;i<500;++i)full<<row("AAAAAAAAAAAAAAAAAAAAAA");player.setOrderedQueue(full);player.insertInQueue(row("BBBBBBBBBBBBBBBBBBBBBB"),true);
+    require(player.m_orderedRows.size()==500,"queue limit discarded original songs");
+    std::cout<<"PASS queue insertion, pause, duplicate occurrences, discoveries and explicit resume\n";
+  }
   static void deadlines() {
     QTemporaryDir storage;
     FakeNetwork network;
@@ -1198,6 +1216,7 @@ int main(int argc, char **argv) {
         SpotifyRecoveryTests::remoteTransport();
         SpotifyRecoveryTests::seekAndRequeue();
         SpotifyRecoveryTests::repeatAndMixQueue();
+        SpotifyRecoveryTests::queueInsertion();
         SpotifyRecoveryTests::deadlines();
         SpotifyRecoveryTests::playlistTransport();
         SpotifyRecoveryTests::listeningMix();

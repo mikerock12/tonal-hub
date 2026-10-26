@@ -190,7 +190,7 @@ Item {
 
     Personal.LyricBackdrop{id:backdrop;anchors.top:translationBar.bottom;anchors.bottom:parent.bottom;width:parent.width;mode:App.music.background;playing:App.player.isPlaying;active:root.visible&&!fullscreen.visible;metrics:App.audio ? App.audio.metrics : ({})}
     Personal.LyricStyleDialog{id:appearance;controller:App.music}
-    Personal.LyricsFullscreen{id:fullscreen;controller:App.music;verses:root.translationMatches ? root.translationLines : App.lyrics.lines;playing:App.player.isPlaying;position:App.player.positionMs;metrics:App.audio ? App.audio.metrics : ({})}
+    Personal.LyricsFullscreen{id:fullscreen;refreshBusy:root.status===Lyrics.Loading;refreshAction:()=>{root.requestedTranslation="";App.lyrics.reload()};controller:App.music;verses:root.translationMatches ? root.translationLines : App.lyrics.lines;playing:App.player.isPlaying;position:App.player.positionMs;metrics:App.audio ? App.audio.metrics : ({})}
     ListView {
         id: list
         anchors.top: translationBar.bottom
