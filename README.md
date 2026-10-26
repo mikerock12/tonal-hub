@@ -10,14 +10,15 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
-**Produto atual: Windows 0.15.0 · Android 0.15.0. Documentação consolidada em 24/10/2026.**
+**Build local: Windows 0.15.1 · Android 0.15.1. Documentação em 25/10/2026.**
 
+[Pacotes e hashes 0.15.1](docs/artifacts-0151.json) · [Validação 0.15.1](docs/release-0151-tests.json) ·
 [Guia visual com capturas](docs/GUIA_VISUAL.md) ·
 [Regras da Descoberta 2+1](docs/DESCOBERTA_2_MAIS_1.md) ·
 [Benchmarks realizados](docs/BENCHMARKS.md) ·
 [Contexto do projeto](contexto.md) · [Instruções de manutenção](AGENTS.md).
 
-## Atualização 0.15.1 em validação
+## Atualização 0.15.1
 
 A tela inicial incorpora os álbuns ouvidos neste aparelho, mais ouvidos e
 álbuns dos seus artistas para explorar. A página da música fica mais limpa,

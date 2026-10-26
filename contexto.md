@@ -428,4 +428,7 @@ CTest Windows 10, complementar 7, QML 23/6, Java três variantes, política 43,
 Android 35 cenários instrumentados + 13 UI e suíte digital de áudio aprovada.
 Ver docs/release-0151-tests.json e docs/LOCAL_STORIES_QUALITY_0151.md.
 Backup privado 0.15.1 preparado em 10OdK5GvZoO_7RinWatT8eHzwS2ITDgh6;
-pacotes finais, CI, merge e verificação do backup ainda pendentes nesta revisão.
+pacotes e hashes em docs/artifacts-0151.json. O CI do produto d2bc7cb passou
+no run 40253559819. O estado final do merge e dos checks está no PR #19.
+O manifesto privado do backup registra uploads e verificações; não inclui
+credenciais, pesos opcionais nem dados do telefone físico.

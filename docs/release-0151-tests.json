@@ -1,7 +1,7 @@
 {
   "version": "0.15.1",
   "documentedOn": "2026-10-25",
-  "status": "local validation; GitHub CI and final packaging pending",
+  "status": "local validation complete; product-source GitHub CI passed",
   "windows": {
     "ctest": {
       "passed": 10,
@@ -22,6 +22,13 @@
     "readerGuards": {
       "passed": 1,
       "seconds": 0.68
+    },
+    "packagedStartup": {
+      "passed": true,
+      "source": "portable staging folder",
+      "externalQtPathsRemoved": true,
+      "isolatedSmokeProfile": true,
+      "liveUserInstallationChanged": false
     }
   },
   "android": {
@@ -263,7 +270,24 @@
       ]
     },
     "playbackIntentChecks": 43,
-    "apkSignaturesVerified": true
+    "apkSignaturesVerified": true,
+    "releaseInstall": {
+      "passed": true,
+      "before": {
+        "version": null,
+        "firstInstall": "2026-10-15 06:39:54",
+        "dataInode": "770154"
+      },
+      "after": {
+        "version": "0.15.1-local",
+        "firstInstall": "2026-10-15 06:39:54",
+        "dataInode": "770154"
+      },
+      "uninstallPerformed": false,
+      "apkSha256": "4cd29336afa015e577131d2c5c659867002dae0e01c4cbf13d3d25de25b4542f",
+      "physicalPhone": false,
+      "interpretation": "AVD data directory preserved; previous version string unavailable, so no version-to-version upgrade claim"
+    }
   },
   "jam": {
     "nativeTransportTestCases": 1,
@@ -330,5 +354,12 @@
       "name": "llama.cpp pinned source and optional Qwen evaluation weights",
       "purpose": "Native reader build and quality evaluation; weights are not embedded in EXE/APK"
     }
-  ]
+  ],
+  "productSourceCommit": "d2bc7cb51b3f6fe022ba881263eab9b2c3691790",
+  "ciProductRun": {
+    "id": 40253559819,
+    "url": "https://github.com/mikerock12/tonal-hub/actions/runs/40253559819",
+    "head": "d2bc7cb51b3f6fe022ba881263eab9b2c3691790",
+    "conclusion": "success"
+  }
 }

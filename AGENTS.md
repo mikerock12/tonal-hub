@@ -1,7 +1,7 @@
 # Instruções para trabalhar neste repositório
 
 Leia [contexto.md](contexto.md), [README.md](README.md) e os documentos da área
-afetada antes de alterar o produto. Estado documental: 24/10/2026, Windows 0.15.0 / Android 0.15.0.
+afetada antes de alterar o produto. Estado documental: 25/10/2026, builds Windows 0.15.1 / Android 0.15.1.
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
@@ -266,3 +266,24 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
 - HRTF para caixas/carro é binaural experimental, sem crosstalk cancellation ou
   calibração do ambiente. Não declarar equivalência acústica com fones nem teste
   no rádio físico sem evidência. Bypass mestre prevalece sobre EQ/HRTF.
+
+## Entrega 0.15.1 e limites
+
+- Atualizar letra também na tela cheia: busca explícita ignora cache; preservar
+  primeiro toque para revelar controles e serialização de busca/tradução.
+- Home deriva álbuns de escutas >0 ms; consultas/agrupamento no worker.
+- Próxima/última preservam ocorrências e pausa. Jam reconcilia janela parcial
+  por ocorrências; conserva marcadores de Descoberta e cauda conhecida. Acima de
+  500, recusar reaplicar modos sem truncar músicas. Não atribuir autoria por inferência.
+- Jam permanece experimental: o teste nativo read-only respondeu 404 sem sessão;
+  não prova participação entre contas. HRTF caixas/carro não tem crosstalk/calibração.
+- Leitor 2B ainda limitado: 1/4 leituras aceitas no lote real, duas inconclusivas
+  e uma pendente. Revisor do próprio modelo é heurístico; não declarar problema
+  semântico totalmente resolvido. Trechos agora até 3.000 bytes antes do limite
+  de tokens; stdin do auxiliar até 64 KiB. Pesos não treinados pelo Tonal.
+- Evidências: docs/release-0151-tests.json e docs/artifacts-0151.json. Binaries
+  associados ao commit de produto d2bc7cb51b3f6fe022ba881263eab9b2c3691790;
+  commits documentais posteriores não significam novo build ou benchmark.
+- Backup privado 0.15.1: 10OdK5GvZoO_7RinWatT8eHzwS2ITDgh6. Modelos/fontes
+  externas regeneráveis, credenciais, letras completas e telefone físico não
+  integram o snapshot privado SQLite deste PC. Nunca confundir com sincronização.

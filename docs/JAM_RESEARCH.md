@@ -7,11 +7,12 @@ disponível. Aprovação prévia deixou de ser requisito nessa condição. Alter
 avisos leves no canto inferior esquerdo, subindo e desaparecendo em fade.
 Preservar áudio, fila e Descoberta 2+1; nenhum convite é enviado automaticamente.
 
-Estado: **protótipo em implementação**, sem instaláveis publicados nem teste
+Estado: **experimental no build local 0.15.1**, sem teste
 com participantes reais. O código de interface não comprova interoperabilidade.
 
 Em 25/10, o transporte nativo Windows autenticou com o cache existente e fez
-somente `GET sessions/current`: retorno 404 em 1,71 s, esperado também quando não
+somente `GET sessions/current`: retorno 404 em 1,71 s; a repetição com o
+transporte final e fallback HTTPS retornou 404 em 3,32 s, esperado também quando não
 há sessão ativa. Nenhum dispositivo Connect foi anunciado por esse auxiliar,
 nenhum Jam foi criado e não houve comando de áudio. Esse resultado não comprova
 criação, participação de amigos ou alterações de fila numa sessão real.

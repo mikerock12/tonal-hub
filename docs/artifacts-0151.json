@@ -1,0 +1,83 @@
+{
+  "version": "0.15.1",
+  "productSourceCommit": "d2bc7cb51b3f6fe022ba881263eab9b2c3691790",
+  "documentationCommitsDoNotImplyRebuild": true,
+  "windowsPackagingVersion": "0.15.1.0",
+  "androidVersionCode": 21,
+  "files": [
+    {
+      "file": "Tonal-Hub-0.15.1.0-Windows-x64-Setup.exe",
+      "localPath": "D:/PROJETOS/Tonal-Player-Matheus/out/release-local/Tonal-Hub-0.15.1.0-Windows-x64-Setup.exe",
+      "bytes": 85219313,
+      "sha256": "b16e7b2989c1619b79d8759c1b70d9080cd512e36e437e6fe5d46cd26055d437"
+    },
+    {
+      "file": "Tonal-Hub-0.15.1-local.zip",
+      "localPath": "D:/PROJETOS/Tonal-Player-Matheus/out/release-local/Tonal-Hub-0.15.1-local.zip",
+      "bytes": 120964182,
+      "sha256": "c7df401840e27b96d8216db738e18140384ec6430665f34f4bd5ef6e816dd1f4"
+    },
+    {
+      "file": "Tonal-Android-0.15.1-local.apk",
+      "localPath": "D:/PROJETOS/Tonal-Player-Matheus/out/android/Tonal-Android-0.15.1-local.apk",
+      "bytes": 58693591,
+      "sha256": "4cd29336afa015e577131d2c5c659867002dae0e01c4cbf13d3d25de25b4542f"
+    },
+    {
+      "file": "Tonal-Android-0.15.1-arm64-v8a.apk",
+      "localPath": "D:/PROJETOS/Tonal-Player-Matheus/out/android/Tonal-Android-0.15.1-arm64-v8a.apk",
+      "bytes": 30565230,
+      "sha256": "0e749ff2cbd34dde0418098a4cb0afa2c3ee4f906e743eb66278b69a31a9a4b2"
+    }
+  ],
+  "windowsComponents": [
+    {
+      "file": "Tonal.exe",
+      "sha256": "a70ed3fde392fb505c14eceb0737ccc9c3239bd82ef5e26b1e3357f187a60bab"
+    },
+    {
+      "file": "TonalHub.exe",
+      "sha256": "8e5811c5c4b024230bd8e92bdae53f0d1bbe4fa5fd102cd2f213180e1ccb691e"
+    },
+    {
+      "file": "IndieTonal.exe",
+      "sha256": "37bd0d217fe5e75c0155ac4000858bf35d9fde819f1ab295f4ec9560aa4173bc"
+    },
+    {
+      "file": "TonalStories.exe",
+      "sha256": "d94dda8b0fc519789e0106bc1c180d6cf028a732153aa17a9282f52a59870498"
+    },
+    {
+      "file": "TonalJam.exe",
+      "sha256": "4649b94f843d21ca13c369ca49bb7e3fdde7d66c1231faaafe0fe7e48f629a52"
+    },
+    {
+      "file": "librespot.exe",
+      "sha256": "154417e807c1c5dafbe0b80178f32b68c2ff3a583d3a997de7c105d42250664e"
+    }
+  ],
+  "cliProvenance": {
+    "upstream": "librespot 0.8.0",
+    "registrySha256": "030c5e98cc06f20283b5948ae23bdac1de0dec58dee2c5ec4c8dafc7aaa796ab",
+    "verifiedSourceFiles": 16,
+    "patches": [
+      "librespot-core",
+      "librespot-audio",
+      "librespot-playback",
+      "librespot-connect"
+    ]
+  },
+  "validation": "docs/release-0151-tests.json",
+  "productCI": {
+    "id": 40253559819,
+    "conclusion": "success",
+    "url": "https://github.com/mikerock12/tonal-hub/actions/runs/40253559819"
+  },
+  "driveFolder": "https://drive.google.com/drive/folders/10OdK5GvZoO_7RinWatT8eHzwS2ITDgh6",
+  "limitations": [
+    "Local builds; no physical Android phone or car Bluetooth measurement",
+    "Jam experimental; no native Spotify participants tested",
+    "Local reader semantic quality remains limited (1/4 accepted in development batch)",
+    "Model weights, credentials, full lyrics, external music files and phone data are excluded from the library/source backup"
+  ]
+}

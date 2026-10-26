@@ -1,7 +1,8 @@
 # Início, fila, navegação e áudio — trabalho 0.15.1
 
-Estado em 25/10/2026: alterações em validação, sem novos instaláveis publicados.
-Esta página não afirma que o leitor local ou o Jam já foram entregues.
+Estado em 25/10/2026: builds locais 0.15.1 com validação sintética concluída.
+O Jam permanece experimental e a qualidade semântica do leitor continua limitada.
+Commit de produto e hashes dos pacotes ficam no manifesto da entrega.
 
 ## Página inicial
 
