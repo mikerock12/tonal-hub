@@ -12,6 +12,9 @@ Window {
     property bool playing: false
     property int position: 0
     property int selected: -1
+    signal refreshRequested()
+    property var refreshAction:null
+    property bool refreshBusy:false
     readonly property var style: controller.lyricStyle
     color: "#242a38"
     title: "Letras • Tonal"
@@ -46,8 +49,9 @@ Window {
         id:toolbar;objectName:"lyricsFullscreenControls";anchors.bottom:parent.bottom;anchors.horizontalCenter:parent.horizontalCenter;anchors.bottomMargin:24;width:Math.min(parent.width-48,670);height:74;color:"#ee171b24";radius:18
         RowLayout{anchors.fill:parent;anchors.margins:12
             ActionIcon{symbol:"close";description:"Sair da tela cheia";onClicked:screen.close()}
-            ComboBox{Layout.fillWidth:true;model:backdrop.modes;currentIndex:Math.max(0,model.indexOf(screen.controller.background));onActivated:{screen.controller.background=currentText;screen.reveal()} onPressedChanged:if(pressed)hide.stop()}
-            CheckBox{text:"Sincronia";checked:screen.controller.syncEnabled;onToggled:screen.controller.syncEnabled=checked}
+            ActionIcon{objectName:"fullscreenRefreshLyrics";symbol:"refresh";description:"Atualizar letra";enabled:!screen.controller.busy&&!screen.refreshBusy;onClicked:{screen.refreshRequested();if(screen.refreshAction)screen.refreshAction();else if(typeof screen.controller.reloadLyrics==="function")screen.controller.reloadLyrics();else screen.controller.fetchLyrics();screen.reveal()}}
+            ComboBox{Layout.fillWidth:true;implicitHeight:42;font.pixelSize:14;palette.button:"#263440";palette.buttonText:"#f5f5f5";palette.text:"#f5f5f5";palette.base:"#171b24";palette.window:"#171b24";palette.windowText:"#f5f5f5";model:backdrop.modes;currentIndex:Math.max(0,model.indexOf(screen.controller.background));onActivated:{screen.controller.background=currentText;screen.reveal()} onPressedChanged:if(pressed)hide.stop()}
+            CheckBox{text:"Sincronia";font.pixelSize:14;palette.windowText:"#f5f5f5";palette.text:"#f5f5f5";checked:screen.controller.syncEnabled;onToggled:screen.controller.syncEnabled=checked}
             ActionIcon{symbol:"font";description:"Fontes e cores";onClicked:{hide.stop();appearance.open()}}
         }
     }

@@ -5,6 +5,9 @@ import QtQuick.Controls
 ApplicationWindow {
     id: window
     property alias audioEffectsController: audioPanel
+    function openJam(){if(jamLoader.item)jamLoader.item.present();else jamLoader.setSource("qrc:/companion/qml/companion/JamDialog.qml",{controller:App.jam})}
+    Loader{id:jamLoader;onLoaded:item.present()}
+    Loader{parent:Overlay.overlay;width:Math.min(420,window.width-48);height:item?item.height:0;anchors.left:parent.left;anchors.leftMargin:24;anchors.bottom:parent.bottom;anchors.bottomMargin:118;z:1000;Component.onCompleted:setSource("qrc:/companion/qml/companion/JamToast.qml",{controller:App.jam})}
     function openMusic(){if(musicLoader.item)musicLoader.item.open();else musicLoader.setSource("qrc:/companion/qml/companion/MusicPanel.qml",{controller:App.music,audioEngine:App.audio,textPlaylistAvailable:true,mixController:App.listeningMix,transportPlayer:App.player})}
     function openStatistics(){window.openMusic();if(musicLoader.item)musicLoader.item.section=1;else pendingMusicAction="stats"}
     function openBackup(){window.openMusic();if(musicLoader.item)musicLoader.item.showBackup();else pendingMusicAction="backup"}
@@ -18,7 +21,7 @@ ApplicationWindow {
     Binding { target: musicLoader.item; property: "position"; value: App.player.positionMs; when: !!musicLoader.item }
     Binding { target: musicLoader.item; property: "playing"; value: App.player.isPlaying && App.player.playingHere; when: !!musicLoader.item }
     Binding { target: musicLoader.item; property: "themeTokens"; value: Theme.palette; when: !!musicLoader.item }
-    Connections { target: musicLoader.item; function onTextPlaylistRequested(){musicLoader.item.close();window.openTextPlaylist("")} function onTextPlaylistResume(id){musicLoader.item.close();window.openTextPlaylist(id)} function onDiscover(artist){Nav.go("search",{query:artist})} function onTogglePlayback(){App.player.togglePlay()} function onPreviousRequested(){App.player.previous()} function onNextRequested(){App.player.next()} }
+    Connections { target: musicLoader.item; function onClosed(){App.music.requestHomeAlbums()} function onHomeRequested(){Nav.go("home")} function onJamRequested(){window.openJam()} function onTextPlaylistRequested(){musicLoader.item.close();window.openTextPlaylist("")} function onTextPlaylistResume(id){musicLoader.item.close();window.openTextPlaylist(id)} function onDiscover(artist){Nav.go("search",{query:artist})} function onTogglePlayback(){App.player.togglePlay()} function onPreviousRequested(){App.player.previous()} function onNextRequested(){App.player.next()} }
 
     width: 1280
     height: 820
@@ -231,8 +234,12 @@ ApplicationWindow {
         property var track: ({})
 
         DarkMenuItem {
-            text: qsTr("Adicionar à fila")
-            onTriggered: App.player.addToQueue(trackMenu.track.uri)
+            text: qsTr("Colocar como próxima da fila")
+            onTriggered: App.player.insertInQueue(trackMenu.track,true)
+        }
+        DarkMenuItem {
+            text: qsTr("Colocar como última da fila")
+            onTriggered: App.player.insertInQueue(trackMenu.track,false)
         }
         DarkMenu {
             id: addToPlaylistMenu

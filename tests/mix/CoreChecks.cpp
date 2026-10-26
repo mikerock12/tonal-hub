@@ -1,4 +1,5 @@
 #include "playback/ListeningMixCore.hpp"
+#include "playback/QueueMergeCore.hpp"
 #include <stdexcept>
 #include <set>
 #include <iostream>
@@ -30,4 +31,12 @@ check(shortRemainder.size()==3&&std::find(shortRemainder.begin(),shortRemainder.
 std::vector<Track> lyricReferences={{"l1","Reference","a","",1994,false,false,1},{"l2","Reference","a","",1994,false,false,1}};
 std::vector<Track> lyricCandidates={{"no-theme","Other","b","",1994},{"shared-theme","New Artist","c","",1994,false,false,1}};
 check(plan(lyricReferences,lyricCandidates,0,false,true,42)==std::vector<int>({0,1,-2}));
-std::cout<<"LISTENING_MIX_CORE_PASS order, restore identity, random selection, 2+1 cadence, novelty, exclusions, offline fallback, bounds\n";}
+// Service windows may insert a guest song, advance, remove an occurrence, or
+// stop before the prepared tail. Preserve identities, including duplicates.
+auto guest=tonal::queue::align({"a","b","external","c","d"},{"a","guest","b","external"});
+check(guest.matches==std::vector<int>({0,-1,1,2})&&guest.suffix==3);
+auto advance=tonal::queue::align({"a","b","external","c"},{"b","c"});check(advance.matches==std::vector<int>({1,3})&&advance.suffix==4);
+auto duplicate=tonal::queue::align({"a","a","b","c"},{"a","b"});check(duplicate.matches==std::vector<int>({0,2})&&duplicate.suffix==3);
+auto changed=tonal::queue::align({"a","b"},{"x","y"});check(changed.matches==std::vector<int>({-1,-1})&&changed.suffix==2);
+auto reordered=tonal::queue::align({"a","b","external","c","d"},{"a","c","external"});check(reordered.matches==std::vector<int>({0,3,2})&&reordered.suffix==3);
+std::cout<<"LISTENING_MIX_CORE_PASS order, restore identity, random selection, 2+1 cadence, novelty, exclusions, offline fallback, bounds, guest occurrence alignment\n";}

@@ -379,8 +379,13 @@ void engineTest(const QString &dir)
     check(spin([&] { return engine.hrtfActive(); }), "stereo switches to actual HRTF");
     engine.setSetting("spatial", "original");
     check(spin([&] { return !engine.hrtfActive(); }), "switch back to original");
-    engine.setSetting("eqEnabled", true);
+    engine.setSetting("spatial", "hrtf-speakers");
+    check(spin([&] { return engine.hrtfActive(); }), "explicit experimental speaker HRTF reaches renderer");
+    engine.setSetting("spatial", "original");
+    check(spin([&] { return !engine.hrtfActive(); }), "speaker HRTF can return to original");
+    engine.setSetting("eqEnabled", false);
     engine.setEqBand(5, 3);
+    check(engine.settings().value("eqEnabled").toBool(), "moving an EQ band enables equalization");
     engine.setSetting("bass", 2);
     engine.setSetting("compressor", true);
     check(spin([&] { return engine.positionMs() > 450; }), "live DSP updates keep playback advancing");

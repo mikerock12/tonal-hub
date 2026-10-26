@@ -89,6 +89,9 @@ public:
   }
   QString localDeviceId() const { return m_localDeviceId; }
   QVariantList queue() const { return m_queue; }
+  QVariantList preparedQueue() const {return m_orderedRows;}
+  bool queueEditPending() const{return m_queueEditPending;}
+  void reconcileJamQueue(const QVariantList &rows){if(rows.isEmpty()||rows.first().toMap().value("uri").toString()!=m_trackUri)return;m_orderedRows=rows;emit orderedQueueEdited(rows);queueFromOrderedRows();}
   QVariantList devices() const { return m_devices; }
 
   Q_INVOKABLE void togglePlay();
@@ -112,6 +115,7 @@ public:
   // Linhas do mix aplicado (título, artista, capa, Descoberta) para a Fila.
   Q_INVOKABLE void setOrderedQueue(const QVariantList &rows);
   Q_INVOKABLE void addToQueue(const QString &uri);
+  Q_INVOKABLE void insertInQueue(const QVariantMap &track,bool next);
   Q_INVOKABLE void transferTo(const QString &deviceId);
   Q_INVOKABLE void refresh();
   Q_INVOKABLE void refreshQueue();
@@ -127,6 +131,7 @@ signals:
   void localDeviceChanged();
   void queueChanged();
   void queueRefreshFinished(int status);
+  void orderedQueueEdited(const QVariantList &rows);
   // Uma seleção comum (não um mix) substituiu a reprodução.
   void selectionReplaced();
   void devicesChanged();
@@ -183,6 +188,8 @@ private:
   QElapsedTimer m_repeatClock;
   QElapsedTimer m_selectionClock;
   QVariantList m_orderedRows;
+  bool m_queueInsertionBusy=false,m_queueEditPending=false;
+  QString m_queueEditAnchor,m_queueEditDevice;
   void reapplyRepeat(const QString &deviceId);
   void skipLeavesTrackRepeat();
   bool queueFromOrderedRows();

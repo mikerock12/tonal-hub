@@ -24,6 +24,8 @@ public:
  // que toca). A janela Fila continua com prévia e Aplicar.
  Q_INVOKABLE void applyModes(const QVariantList &queue,bool shake,bool random,bool discovery);
  void forgetApplied();
+ void retainEditedQueue(const QVariantList &rows){cancel();m_appliedQueue=rows;emit changed();}
+ void setQueueCapacityExceeded(bool value){m_queueCapacityExceeded=value;}
  QVariantList previewQueue()const{return m_previewQueue;}
  bool discoveryEnabled()const{return m_activeDiscovery;}
  bool randomEnabled()const{return m_activeRandom;}
@@ -34,6 +36,7 @@ public:
  Q_INVOKABLE void cancel();
 signals:void changed();void previewReady();void ready(const QVariantList&);void resumeReady(const QVariantList&,int);
 private:
+ bool m_queueCapacityExceeded=false;
  void prepare(const QVariantList&,int,bool,bool,bool,bool,bool autoApply=false);
  bool m_autoApply=false;
  QVariantList m_previewQueue,m_appliedQueue;bool m_preview=false,m_activeDiscovery=false,m_activeRandom=false;

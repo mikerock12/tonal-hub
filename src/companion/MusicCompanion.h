@@ -18,6 +18,8 @@ class MusicCompanion : public QObject {
   Q_PROPERTY(LocalStories* stories READ stories CONSTANT)
   Q_PROPERTY(bool statisticsBusy READ statisticsBusy NOTIFY statisticsChanged)
   Q_PROPERTY(QVariantMap statisticsReport READ statisticsReport NOTIFY statisticsChanged)
+  Q_PROPERTY(QVariantList homeAlbums READ homeAlbums NOTIFY homeAlbumsChanged)
+  Q_PROPERTY(bool homeHistoryError READ homeHistoryError NOTIFY homeAlbumsChanged)
   Q_PROPERTY(QVariantMap storageInfo READ storageInfo NOTIFY changed)
   Q_PROPERTY(QVariantMap current READ current NOTIFY currentChanged)
   Q_PROPERTY(QVariantMap artistNotes READ artistNotes NOTIFY artistNotesChanged)
@@ -89,6 +91,9 @@ public:
   Q_INVOKABLE void cancelStories(){m_storyRequested=false;m_stories->cancel();}
   bool statisticsBusy()const{return m_statisticsRunning;}
   QVariantMap statisticsReport() const{return m_statisticsReport;}
+  QVariantList homeAlbums() const{return m_homeAlbums;}
+  bool homeHistoryError() const{return m_homeHistoryError;}
+  Q_INVOKABLE void requestHomeAlbums();
   QVariantMap storageInfo() const;
   Q_INVOKABLE void requestStatistics(int days,const QString &dimension);
   Q_INVOKABLE QVariantMap statistics(int days,const QString &dimension) const;
@@ -97,6 +102,7 @@ public:
   Q_INVOKABLE void setGenre(const QString &);
   Q_INVOKABLE void editMetadata(const QString &,const QString &);
   Q_INVOKABLE void fetchLyrics();
+  Q_INVOKABLE void reloadLyrics(){if(m_busy)return;m_lyricCache.remove(key(m_current));fetchLyrics();}
   Q_INVOKABLE void translate(const QString &language);
   Q_INVOKABLE void importLyrics(const QString &,bool translation=false);
   Q_INVOKABLE bool useDisplayedLyrics(const QString &trackUri,const QVariantList &lines);
@@ -110,6 +116,7 @@ public:
   static QVariantList parseLyrics(const QString &);
   static QVariantMap tone(const QString &,const QString &genre);
 signals:
+  void homeAlbumsChanged();
   void statisticsChanged();
   void metadataRequested(const QVariantMap &track);
   void artistNotesChanged();
@@ -121,6 +128,7 @@ signals:
 private:
   friend class CompanionTests;
   bool m_restoring=false;
+  QVariantList m_homeAlbums;bool m_homeRunning=false,m_homeHistoryError=false;
   static QJsonObject validateBackup(const QJsonObject &,const QString &,QString &);
   void applyRestored(const QJsonObject &);
   static QVariantMap statisticsFor(const QJsonObject &,int,const QString &);

@@ -44,6 +44,8 @@ QtObject {
         function lineAt(ms) { return 0 }
         function lineTime(i) { return -1 }
         function retry() {}
+        property int reloadCalls:0
+        function reload(){reloadCalls++}
     }
     property QtObject music: QtObject {
         property var current: ({uri:"spotify:track:fixture"})
@@ -63,6 +65,9 @@ QtObject {
         function exportSyncFeedback(url){return true}
         signal changed()
         property string lastLanguage: ""
+        property int fetchCalls: 0
+        function fetchLyrics(){fetchCalls++}
+        function reloadLyrics(){fetchCalls++}
         property int translateCalls: 0
         function useDisplayedLyrics(uri, source) {
             if (uri !== current.uri) return false

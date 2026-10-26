@@ -129,6 +129,13 @@ statsRevision=-1;statsGeneration++;storyTracks=new JSONArray();statisticsReport=
     JSONArray storyTracks=new JSONArray();JSONObject statisticsReport=new JSONObject(),insightsReport=new JSONObject();private int statsDays=-1,statsRevision=-1;private String statsDimension="";private boolean statsRunning;private int statsGeneration;
     boolean statisticsBusy(){return statsRunning;}
     long databaseBytes(){return database.bytes();}
+    boolean homeHistoryError;
+    void requestHomeAlbums(java.util.function.Consumer<JSONArray> done){
+        String snapshot=data.toString();
+        disk.execute(()->{JSONArray albums;boolean failed=false;try{database.write(snapshot);albums=HomeAlbums.collect(database.historySnapshot(new JSONObject(snapshot),0));}
+            catch(Exception e){failed=true;try{albums=HomeAlbums.collect(new JSONObject(snapshot));}catch(Exception ignored){albums=new JSONArray();}}
+            JSONArray result=albums;boolean error=failed;main.post(()->{homeHistoryError=error;done.accept(result);});});
+    }
     void requestStatistics(int days,String dimension,Runnable done){
         if(restoring)return;if(statsDays==days&&statsDimension.equals(dimension)&&statsRevision==revision)return;
         if(statsDays!=days||!statsDimension.equals(dimension)){statisticsReport=new JSONObject();insightsReport=new JSONObject();}statsDays=days;statsDimension=dimension;statsRevision=revision;int serial=++statsGeneration;if(statsRunning)return;statsRunning=true;

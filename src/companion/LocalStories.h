@@ -25,8 +25,8 @@ public:
  QVariantMap state() const;
  void capture(const QVariantMap &track,const QString &text);
  void analyze(const QVariantList &tracks,int days);
- void selectPeriod(int days){if(days!=m_days){cancel();m_days=days;m_summary.clear();m_sources.clear();emit changed();}}
- void resetSummary(){cancel();m_summary.clear();m_sources.clear();emit changed();}
+ void selectPeriod(int days){if(days!=m_days){cancel();m_days=days;m_summary.clear();m_sources.clear();m_items={};emit changed();}}
+ void resetSummary(){cancel();m_summary.clear();m_sources.clear();m_items={};emit changed();}
  Q_INVOKABLE void download();
  Q_INVOKABLE void cancel();
  Q_INVOKABLE void removeModel();
@@ -41,11 +41,11 @@ private:
  QString modelPath() const;
  void trimCache();
  QString m_root,m_status="Resumo das letras no aparelho. O modelo é opcional.",m_summary,m_sources,m_key;
- QVariantList m_tracks;QJsonArray m_texts;
+ QVariantList m_tracks;QJsonArray m_texts,m_preparedTracks,m_items,m_known;
  int m_index=0,m_days=7;bool m_busy=false,m_downloading=false,m_ready=false;
  qint64 m_downloaded=0,m_cooldown=0;quint64 m_serial=0;
  QNetworkAccessManager m_net;QPointer<QNetworkReply> m_reply;QPointer<QProcess> m_process;QTimer m_deadline,m_pressure,m_notify;
- bool m_playing=false,m_resumeDownload=false;
+ bool m_playing=false,m_resumeDownload=false,m_complete=false;
  std::unique_ptr<QSaveFile> m_file;std::unique_ptr<QCryptographicHash> m_hash;
 };
 

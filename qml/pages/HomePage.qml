@@ -7,11 +7,16 @@ Flickable {
 
     property var route
     property var shortcuts: []      // { kind, id, uri, title, imageUrl }
-    property var recent: []         // cards
+    property var serviceRecent: []
+    property var localAlbums: App.music.homeAlbums
+    property var recent: mergeAlbums(localAlbums,serviceRecent).slice(0,12)
+    property var favoriteAlbums: localAlbums.slice().sort((a,b)=>(b.listenedMs||0)-(a.listenedMs||0)).slice(0,12)
+    property var suggestions: []
     property var topArtists: []
     property var topTracks: []
     property var myPlaylists: []
-    property var savedAlbums: []
+    property var serviceAlbums: []
+    property var savedAlbums: mergeAlbums(localAlbums,serviceAlbums)
     property string expanded: ""    // prateleira aberta em "Mostrar tudo"
     property color tint: Theme.accentDeep
 
@@ -64,7 +69,9 @@ Flickable {
         } else App.player.playContext(item.uri)
     }
 
+    function mergeAlbums(first,second){const seen={};return first.concat(second).filter(c=>{if(!c||!c.uri||!c.title||seen[c.uri])return false;seen[c.uri]=true;return true})}
     function load() {
+        App.music.requestHomeAlbums()
         // Tocadas recentemente -> contextos únicos (playlist/álbum/artista)
         App.api.call("GET", "/me/player/recently-played", { limit: 50 }, null, function(status, data) {
             if (status !== 200) return
@@ -72,8 +79,9 @@ Flickable {
             const pending = []
             for (let i = 0; i < data.items.length && pending.length < 12; ++i) {
                 const it = data.items[i]
+                const track=it.track||it.item; if(!track||!track.album)continue
                 const ctx = it.context
-                let uri = ctx && ctx.uri ? ctx.uri : it.track.album.uri
+                let uri = ctx && ctx.uri ? ctx.uri : track.album.uri
                 if (uri.endsWith(":collection")) uri = "liked"
                 if (seen[uri]) continue
                 seen[uri] = true
@@ -81,11 +89,11 @@ Flickable {
                     pending.push({ kind: "liked", id: "", uri: Nav.likedSongsUri(), title: qsTr("Músicas Curtidas"),
                                    subtitle: qsTr("Playlist"), imageUrl: "" })
                 else if (uri.indexOf("spotify:album:") === 0)
-                    pending.push(root.cardFor("album", it.track.album))
+                    pending.push(root.cardFor("album", track.album))
                 else
                     pending.push({ kind: uri.split(":")[1], id: Theme.idFromUri(uri), uri: uri, title: "", imageUrl: "" })
             }
-            root.recent = pending
+            root.serviceRecent = pending
             root.buildShortcuts()
             // Playlists e artistas do histórico vêm sem nome: busca os metadados (poucas chamadas).
             for (let j = 0; j < pending.length; ++j) {
@@ -94,19 +102,19 @@ Flickable {
                 const path = p.kind === "playlist" ? "/playlists/" + p.id : "/artists/" + p.id
                 const q = p.kind === "playlist" ? { fields: "id,uri,name,description,images,owner(display_name,id)" } : {}
                 App.api.call("GET", path, q, null, function(s, obj) {
-                    const copy = root.recent.slice()
+                    const copy = root.serviceRecent.slice()
                     const idx = copy.findIndex(c => c.uri === p.uri)
                     if (idx < 0) return
                     if (s === 200) copy[idx] = root.cardFor(p.kind, obj)
                     else copy.splice(idx, 1)
-                    root.recent = copy
+                    root.serviceRecent = copy
                     root.buildShortcuts()
                 })
             }
         })
 
         App.api.call("GET", "/me/top/artists", { limit: 10, time_range: "short_term" }, null, function(status, data) {
-            if (status === 200) root.topArtists = data.items.map(a => root.cardFor("artist", a))
+            if(status===200){root.topArtists=data.items.map(a=>root.cardFor("artist",a));for(const artist of data.items.slice(0,3))App.api.call("GET","/artists/"+artist.id+"/albums",{include_groups:"album,single",limit:5},null,function(code,result){if(code===200){const heard={};for(const a of root.localAlbums)heard[a.uri]=true;root.suggestions=root.mergeAlbums(root.suggestions,result.items.map(a=>root.cardFor("album",a))).filter(a=>!heard[a.uri]).slice(0,12)}})}
         })
         App.api.call("GET", "/me/top/tracks", { limit: 10, time_range: "short_term" }, null, function(status, data) {
             if (status === 200) root.topTracks = data.items.map(t => root.cardFor("track", t))
@@ -118,7 +126,7 @@ Flickable {
             }
         })
         App.api.call("GET", "/me/albums", { limit: 20 }, null, function(status, data) {
-            if (status === 200) root.savedAlbums = data.items.map(it => root.cardFor("album", it.album))
+            if (status === 200) root.serviceAlbums = data.items.map(it => root.cardFor("album", it.album))
         })
     }
 
@@ -138,6 +146,8 @@ Flickable {
     }
 
     Component.onCompleted: load()
+    onLocalAlbumsChanged: buildShortcuts()
+    onVisibleChanged: if(visible)App.music.requestHomeAlbums()
 
     // Degradê do topo, tingido pela capa do primeiro atalho
     Rectangle {
@@ -192,10 +202,13 @@ Flickable {
         }
 
         Shelf { key: "recent"; title: qsTr("Tocadas recentemente"); model: root.recent.filter(c => c && c.title) }
+        Label { visible:!!App.music.homeHistoryError;text:qsTr("Não foi possível consultar todo o histórico local. Os álbuns abaixo podem refletir apenas as escutas recentes.");color:Theme.textSecondary;width:parent.width;wrapMode:Text.Wrap }
+        Shelf { key: "topAlbums"; title: qsTr("Seus álbuns mais ouvidos"); model: root.favoriteAlbums }
+        Shelf { key: "newAlbums"; title: qsTr("Álbuns dos seus artistas para explorar"); model: root.suggestions }
         Shelf { key: "topArtists"; title: qsTr("Seus artistas mais ouvidos"); model: root.topArtists }
         Shelf { key: "topTracks"; title: qsTr("Suas músicas do momento"); model: root.topTracks }
         Shelf { key: "playlists"; title: qsTr("Suas playlists"); model: root.myPlaylists }
-        Shelf { key: "albums"; title: qsTr("Álbuns salvos"); model: root.savedAlbums }
+        Shelf { key: "albums"; title: qsTr("Seus álbuns"); model: root.savedAlbums }
 
         Label {
             visible: root.expanded !== ""

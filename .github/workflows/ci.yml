@@ -10,6 +10,13 @@ concurrency:
   group: tonal-ci-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  native-jam-transport:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the native endpoint allowlist without Spotify credentials
+        run: cargo test --manifest-path native/jam-transport/Cargo.toml --locked --release --jobs 2
   native-story-runtime:
     runs-on: ubuntu-latest
     timeout-minutes: 15

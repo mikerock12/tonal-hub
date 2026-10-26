@@ -1,5 +1,12 @@
 # Contexto do Tonal Hub
 
+Trabalho adicional em validação em 25/10: início com histórico local de álbuns,
+inserção como próxima/última da fila, navegação da música simplificada,
+atualização de letra em tela cheia e opção binaural experimental em caixas.
+Estado e limites: [HOME_QUEUE_AUDIO_0151.md](docs/HOME_QUEUE_AUDIO_0151.md).
+Ainda sem instaláveis novos/merge desta rodada; leitor sem aceitação semântica
+e Jam em investigação conforme documentos específicos.
+
 Atualizado em **24/10/2026**. Estado do produto: **Windows 0.15.0 / Android 0.15.0**. Leia também [AGENTS.md](AGENTS.md).
 
 ## Entrega 0.15.0 — estatísticas e histórias
@@ -371,3 +378,54 @@ ZIP oficial verificado por SHA-256
 Operações de rede usam temporariamente o helper do GitHub CLI já autenticado;
 nenhuma credencial foi exportada ou salva no workspace. Push continua só para
 `private`. Essa ferramenta local não faz parte do instalador do player.
+
+
+## Ferramentas adicionais — preferência de relatório (25/10/2026)
+
+Informar no relatório final quais aplicativos/ferramentas extras foram instalados
+ou baixados no PC e o motivo. Inclui ferramentas portáteis. O Nightly Private
+Browsing foi instalado por outro projeto para testes de navegador; sua permanência
+foi aceita pelo usuário. Nesta entrega do Tonal, o MinGit portátil foi necessário
+porque a instalação Git do sistema não tinha o helper HTTPS. Não mudou o Git global.
+
+
+## Leitor 0.15.1 em desenvolvimento (25/10/2026)
+
+O usuário rejeitou o resumo vazio da 0.15.0 e autorizou explicitamente priorizar
+a qualidade com um modelo opcional de cerca de 1,2 GiB, carregado só durante
+pausa e descarregado ao terminar. Candidato: Qwen3.5 2B Q4_K_M, quantização
+Unsloth, Apache 2.0, runtime C++ llama.cpp existente. Não houve treino pelo Tonal.
+Leituras por faixa, síntese, guardas de formato e cache v4 estão em validação.
+Não confundir compilação ou quantidade de letras com qualidade semântica.
+A nova solicitação de Jam Spotify com aprovação de participantes e avisos leves
+de fila faz parte da sequência de trabalho. A API pública não cobre sessões;
+a investigação do protocolo nativo está em docs/JAM_RESEARCH.md.
+
+Jam: o usuário dispensou aprovação se indisponível. Priorizar avisos de entrada
+e das músicas adicionadas/alteradas, com pessoa identificada só se houver dado
+real. Sala de espera própria/servidor extra não são necessários para esse escopo.
+
+## Validação local 0.15.1 — 25/10/2026
+
+Atualizar letra incluído nos controles de tela cheia Windows/Android, com busca
+explícita que ignora o cache. Contraste corrigido no painel Windows. Início usa
+álbuns realmente ouvidos; página da música sem Agora/Biblioteca/Letras/X no topo,
+casa para o início e Voltar Android conserva a rota anterior. Próxima/última na
+fila preservam pausa e ocorrências. EQ ativa ao mover bandas; HRTF para caixas
+é opção experimental explícita, sem crosstalk/correção de sala.
+
+Jam experimental implementado em Rust compartilhado + C++/QML e Java. HTTP fora
+do loop de comandos Spirc; transferências que retêm a faixa conservam decoder e
+pausa. Cache de fila alinha ocorrências, conserva marcadores de Descoberta e
+cauda conhecida; não atribui autoria sem dado. Sem teste com amigos reais.
+
+Leitor v4 rejeita a frase genérica da 0.15.0 e mostra por-faixa/cobertura. Qwen3.5
+2B pré-treinado autorizado, opcional; roda só durante pausa explícita. No lote
+real obtido, 1/4 leituras passou, duas inconclusivas e uma pendente em 90 s.
+Não tratar isso como qualidade semântica resolvida ou modelo treinado no Tonal.
+
+CTest Windows 10, complementar 7, QML 23/6, Java três variantes, política 43,
+Android 35 cenários instrumentados + 13 UI e suíte digital de áudio aprovada.
+Ver docs/release-0151-tests.json e docs/LOCAL_STORIES_QUALITY_0151.md.
+Backup privado 0.15.1 preparado em 10OdK5GvZoO_7RinWatT8eHzwS2ITDgh6;
+pacotes finais, CI, merge e verificação do backup ainda pendentes nesta revisão.

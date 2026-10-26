@@ -13,6 +13,7 @@ Item {
         function test_climate_cards(){climate.open();tryCompare(climate,"visible",true);compare(climate.report.artistCount,1);compare(climate.report.themes[0].label,"rebeldia");grabImage(page).save("climate-cards.png");climate.close()}
         function test_manual_sync_toggle(){App.music.alignLyrics(1,15000);compare(App.music.syncOffset,-14000);App.music.syncEnabled=false;compare(App.music.lineAt(15000),-1);App.music.syncEnabled=true}
         function test_fullscreen_styles_and_controls() {
+            const savedBusy=App.music.busy
             const full=findChild(page,"lyricsFullscreenWindow")
             verify(full!==null)
             full.present()
@@ -27,6 +28,12 @@ Item {
             App.music.background="Estrelas"
             wait(3700)
             compare(controls.visible,false)
+            const refresh=findChild(full,"fullscreenRefreshLyrics")
+            verify(refresh!==null)
+            full.reveal();let calls=App.lyrics.reloadCalls
+            App.music.busy=false;mouseClick(refresh);compare(App.lyrics.reloadCalls,calls+1)
+            App.music.busy=true;verify(!refresh.enabled);App.music.busy=false
+            controls.visible=false
             const offset=App.music.syncOffset
             const verse=full.verseItem(0)
             verify(verse!==null)
@@ -39,8 +46,10 @@ Item {
             mouseClick(verse,verse.width/2,verse.height/2) // hidden again: reveal without changing alignment
             compare(controls.visible,true)
             compare(App.music.syncOffset,-full.position)
+            grabImage(full.contentItem).save("fullscreen-refresh-0151.png")
             full.close()
             tryCompare(full,"visible",false)
+            App.music.busy=savedBusy
         }
         function test_translation_and_track_change() {
             const button = findChild(page, "translateLyricsButton")

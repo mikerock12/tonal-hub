@@ -35,6 +35,7 @@ App::App(QObject *parent)
     , m_textPlaylist(new TextPlaylistImport(m_music,[this](const QByteArray &method,const QString &path,const QVariantMap &query,const QByteArray &body,const QByteArray &mime,TextPlaylistImport::Reply cb,std::function<bool()> current){m_api->raw(method,path,query,body,mime,std::move(cb),std::move(current));},this))
     , m_listeningMix(new ListeningMix(m_api,m_music,this))
     , m_theme(new ThemeCatalog(this))
+    , m_jam(new JamController(m_player,m_librespot,m_api,this))
 {
     // Ícone da janela e da barra de tarefas com as cores do tema escolhido.
     updateWindowIcon();
@@ -47,6 +48,9 @@ App::App(QObject *parent)
         if(tracks.isEmpty()||tracks.first().toMap()["uri"].toString()!=m_player->trackUri()){emit m_player->message("A música mudou durante a preparação. Use o modo de novo.");return;}
         m_music->rememberTracks(tracks);QStringList uris;for(auto v:tracks)uris<<v.toMap()["uri"].toString();m_player->setOrderedQueue(tracks);m_player->playOrderedUrisAt(uris,position);});
     connect(m_player,&Player::selectionReplaced,m_listeningMix,&ListeningMix::forgetApplied);
+    connect(m_player,&Player::orderedQueueEdited,m_listeningMix,&ListeningMix::retainEditedQueue);
+    connect(m_jam,&JamController::queueCapacityExceeded,m_listeningMix,&ListeningMix::setQueueCapacityExceeded);
+    connect(m_jam,&JamController::changed,this,[this]{if(!m_jam->session().value("active").toBool())m_listeningMix->setQueueCapacityExceeded(false);});
     m_librespot->setAudioEngine(m_audio);
     m_player->setAudioEngine(m_audio);
     connect(m_music,&MusicCompanion::metadataRequested,this,[this](const QVariantMap &t){

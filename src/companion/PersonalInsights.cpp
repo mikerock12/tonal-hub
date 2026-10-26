@@ -1,5 +1,6 @@
 #include "MusicCompanion.h"
 #include "PersonalDatabase.h"
+#include "HomeAlbums.h"
 #include <QCoreApplication>
 #include <QPointer>
 #include <QFileInfo>
@@ -63,6 +64,17 @@ void MusicCompanion::metadataNext(){
 
 QVariantMap MusicCompanion::statistics(int days,const QString &dimension) const{return statisticsFor(m_data,days,dimension);}
 QVariantMap MusicCompanion::insights(int days) const{return m_statisticsDays==days&&!m_insightsReport.isEmpty()?m_insightsReport:insightsFor(m_data,days);}
+void MusicCompanion::requestHomeAlbums(){
+ if(m_restoring||m_homeRunning)return;m_homeRunning=true;
+ const auto data=m_data;const auto path=m_path;auto written=m_written;QPointer<MusicCompanion> self(this);
+ const auto epoch=data.value("historyEpoch"),libraryEpoch=data.value("libraryEpoch");
+ QMetaObject::invokeMethod(m_disk,[self,data,path,written,epoch,libraryEpoch]{
+  const bool saved=personal::save(path,data,*written);const auto snapshot=personal::historySnapshot(path,data,0);const auto albums=personal::homeAlbums(snapshot);const bool error=!saved||snapshot.value("historyError").toBool();
+  QMetaObject::invokeMethod(QCoreApplication::instance(),[self,albums,epoch,libraryEpoch,error]{if(!self)return;self->m_homeRunning=false;
+   if(epoch!=self->m_data.value("historyEpoch")||libraryEpoch!=self->m_data.value("libraryEpoch")){self->requestHomeAlbums();return;}
+   self->m_homeAlbums=albums;self->m_homeHistoryError=error;emit self->homeAlbumsChanged();},Qt::QueuedConnection);
+ },Qt::QueuedConnection);
+}
 void MusicCompanion::requestStatistics(int days,const QString &dimension){
  if(m_restoring)return;days=std::clamp(days,0,365000);if(m_statisticsDays==days&&m_statisticsDimension==dimension&&m_statisticsRevision==m_revision)return;
  if(m_statisticsDays!=days||m_statisticsDimension!=dimension){m_statisticsReport={};m_insightsReport={};}

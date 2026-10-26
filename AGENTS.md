@@ -118,6 +118,11 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
 
 ## Ambiente e backup
 
+- Preferência do usuário (25/10/2026): o relatório final deve informar qualquer
+  aplicativo ou ferramenta adicional instalado/baixado no PC durante a tarefa e
+  por que foi necessário, incluindo ferramentas portáteis. Não confundir dependência
+  local de build com componente instalado no produto.
+
 - Workspace Windows: `D:/PROJETOS/Tonal-Player-Matheus`, PowerShell.
 - Qt local: `out/tools/Qt/6.8.3/msvc2022_64`; Python:
   `out/tools/python/Scripts/python.exe`; build Windows: preset `release`.
@@ -193,18 +198,20 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
 - Backup completo inclui o arquivo histórico, mede bytes efetivamente gravados e
   não inclui pesos/credenciais/letras completas. Guardas JSON: 64 MiB, 250.000
   sessões, 100.000 metadados, 100 playlists. Não confundir com retenção por idade.
-- O usuário autorizou explicitamente um LLM para interpretar letras: Qwen2.5 0.5B
-  Q4_K_M + llama.cpp, aberto, opcional e nativo. Isso não autoriza LLMs em recursos
+- O usuário autorizou explicitamente um LLM para interpretar letras e, em 25/10,
+  priorizou qualidade com modelo opcional de cerca de 1,2 GiB: Qwen3.5 2B
+  Q4_K_M (quantização Unsloth) + llama.cpp, aberto, opcional e nativo. Isso não autoriza LLMs em recursos
   simples ou no motor de áudio. Não substituir o Tiny por marketing de LLM.
 - Não treinar nem chamar de treinado pelo Tonal o Qwen pré-treinado. Preservar
   Apache 2.0/MIT, revisões e hashes em resources/local-stories-model.json.
 - Só iniciar inferência por ação do leitor, máximo 8 letras, 1 thread CPU tanto na geração quanto na preparação,
-  1024 contexto / 768 entrada / 32 saída, orçamento 90 s e supervisão 105 s.
+  1024 contexto / 768 entrada por passe / 64 saída por faixa + 64 de síntese
+  (até 585 tokens no lote), orçamento 90 s e supervisão 105 s.
   Processo separado TonalStories.exe / serviço privado :stories; fechar cancela
   também seleções ainda pendentes. Nunca carregar pesos no player/callback PCM.
 - Cache 128 letras limitadas + 20 resumos, privado e descartável. Mostrar fontes,
   lote e período. Não inventar temas para preencher o card, nem inferir saúde.
-  Downloads verificam 491.400.032 bytes e SHA-256 antes da ativação; usar HTTPS.
+  Downloads verificam 1.280.835.840 bytes e SHA-256 antes da ativação; usar HTTPS.
 - Build: packaging/build-stories-local.ps1 (Windows) ou -Android. Fontes externas
   fixadas e verificadas; pesos baixados pelo app, não embutidos em EXE/APK.
 
@@ -219,3 +226,43 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
   Prioridade segue intenção de reproduzir, não simples presença de frames;
   buffering não é pausa para liberar downloads.
   Guardas não autorizam prometer impacto absoluto zero ou encerrar outros apps.
+
+
+## Leitor 0.15.1 e Jam em desenvolvimento (25/10/2026)
+
+- A frase “O conjunto reúne letras que contrastam e contrastam.” da 0.15.0
+  falhou na aceitação física do usuário. Testes sintéticos de execução não
+  comprovam interpretação real. Preservar a limitação nos relatórios históricos.
+- Leitor v4: leitura por faixa, síntese das leituras aceitas, rejeição de formato
+  genérico/repetitivo/cópia e relatório tipado com cobertura e índices conferidos.
+  Os filtros são heurísticos, não garantem correção semântica. Não expor escores
+  não calibrados como confiança de interpretação.
+- Inferência também no Windows só em pausa, por escolha explícita do usuário.
+  Retomar reprodução encerra só o processo do leitor, mantendo a solicitação
+  pendente. Não pausar a música automaticamente para liberar inferência.
+- Orçamento de 90 s por ação: preservar leituras parciais válidas e permitir
+  Continuar análise com cache do lote exato (modelo/prompt/período/textos/nomes).
+  Não chamar pendência de tempo de faixa analisada nem recalcular leituras já válidas.
+- Qwen3.5 2B é pré-treinado, não treinado pelo Tonal. Troca de pesos é manual,
+  verificada; só remover os pesos 0.15.0 após ativar/verificar os novos.
+- Nova solicitação: Jam com amigos no Spotify, moderação de entrada e avisos
+  leves no canto inferior esquerdo com subida/fade. Referência: docs/JAM_RESEARCH.md.
+  A API pública da fila não informa autor nem controla participantes; preservar
+  a distinção entre protocolo experimental, recurso simulado e teste ao vivo.
+
+- Esclarecimento Jam do usuário (25/10): se não houver controle de aprovação,
+  basta aviso de quem entrou. Faixas adicionadas/alteradas e autoria são exibidas
+  quando o protocolo as identificar; não inventar atribuição a participantes.
+
+## Início, fila e áudio em validação (0.15.1)
+
+- Ler docs/HOME_QUEUE_AUDIO_0151.md. Recência usa escutas >0 ms e ID de álbum;
+  consultas ao arquivo histórico ficam no worker. Abrir um álbum não é ouvi-lo.
+- Atualização manual da letra ignora apenas o cache corrente. Tela cheia deve
+  atualizar o provider da letra exibida e permitir tradução automática novamente.
+- Inserir na fila preserva pausa, ocorrências repetidas e descobertas. Edição
+  atrasada Android deve conferir a faixa antes de tocar no contexto. Windows
+  prepara a edição pausada para o próximo play explícito pelo Tonalify.
+- HRTF para caixas/carro é binaural experimental, sem crosstalk cancellation ou
+  calibração do ambiente. Não declarar equivalência acústica com fones nem teste
+  no rádio físico sem evidência. Bypass mestre prevalece sobre EQ/HRTF.

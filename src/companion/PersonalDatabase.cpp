@@ -70,9 +70,9 @@ QJsonObject historySnapshot(const QString &path,const QJsonObject &current,qint6
   for(auto v:events){auto e=v.toObject();QString id=e["session"].toString();if(id.isEmpty())id=QString::number(index)+"|"+e["key"].toString();q.bindValue(0,id);if(!q.exec())return false;++index;}
   q.exec("SELECT id,json FROM tracks WHERE id IN (SELECT track_id FROM listens WHERE id IN (SELECT id FROM active_sessions))");
   while(q.next()){QString id=q.value(0).toString();if(!tracks.contains(id))tracks[id]=QJsonDocument::fromJson(q.value(1).toByteArray()).object();}
-  q.prepare("SELECT l.track_id,MIN(l.started_at),SUM(l.listened_ms),SUM(l.qualified),t.json FROM listens l JOIN tracks t ON t.id=l.track_id WHERE l.started_at>=? AND l.started_at<=? AND NOT EXISTS(SELECT 1 FROM active_sessions a WHERE a.id=l.id) GROUP BY l.track_id,date(l.started_at/1000,'unixepoch','localtime')");
+  q.prepare("SELECT l.track_id,MIN(l.started_at),SUM(l.listened_ms),SUM(l.qualified),t.json,MAX(l.started_at) FROM listens l JOIN tracks t ON t.id=l.track_id WHERE l.started_at>=? AND l.started_at<=? AND NOT EXISTS(SELECT 1 FROM active_sessions a WHERE a.id=l.id) GROUP BY l.track_id,date(l.started_at/1000,'unixepoch','localtime')");
   q.addBindValue(cutoff);q.addBindValue(QDateTime::currentMSecsSinceEpoch());if(!q.exec())return false;
-  while(q.next()){QString key=q.value(0).toString();if(!tracks.contains(key))tracks[key]=QJsonDocument::fromJson(q.value(4).toByteArray()).object();events.append(QJsonObject{{"key",key},{"at",q.value(1).toDouble()},{"ms",q.value(2).toDouble()},{"plays",q.value(3).toInt()}});}
+  while(q.next()){QString key=q.value(0).toString();if(!tracks.contains(key))tracks[key]=QJsonDocument::fromJson(q.value(4).toByteArray()).object();events.append(QJsonObject{{"key",key},{"at",q.value(1).toDouble()},{"ms",q.value(2).toDouble()},{"plays",q.value(3).toInt()},{"lastAt",q.value(5).toDouble()}});}
   return true;
  });if(!ok)result["historyError"]=true;result["tracks"]=tracks;result["events"]=events;return result;
 }

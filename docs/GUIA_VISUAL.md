@@ -14,6 +14,22 @@ de busca, favoritas, áudio e conta. A faixa interna da música contém Agora,
 Biblioteca e Letras. As capturas abaixo preservam a versão indicada em cada
 legenda. [Guia das estatísticas e histórias locais](STATISTICS_STORIES_0150.md).
 
+## Atualizar letras em tela cheia — 0.15.1
+
+Toque uma vez na tela cheia para revelar os controles. O ícone de seta circular
+**Atualizar letra** força uma nova busca para a faixa atual, mesmo com cache.
+Uma busca/tradução em andamento continua serializada. O primeiro toque numa
+linha apenas revela os controles; outro toque pode alinhar a letra.
+
+<img src="screenshots/android-letra-tela-cheia-0151.png" width="300" alt="Android 0.15.1: controles de tela cheia, incluindo atualizar letra; dados sintéticos na AVD">
+<img src="screenshots/desktop-letra-tela-cheia-0151.png" width="480" alt="Windows 0.15.1: atualizar letra e controles com contraste corrigido; fixture QML sintética">
+
+As duas capturas usam o código de produção com textos sintéticos. A do Android
+foi obtida na AVD, a do Windows na suíte QML offscreen; não são benchmarks ou
+prova de reprodução Spotify no telefone físico. A página da música 0.15.1
+retira Agora/Biblioteca/Letras e o X do topo e oferece uma casa para o início.
+As imagens das seções históricas abaixo conservam suas versões originais.
+
 ## 1. Entenda a navegação e os favoritos
 
 No Android, abra a música pelo miniplayer. O cabeçalho mantém **pesquisa,

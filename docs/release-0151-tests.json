@@ -1,0 +1,334 @@
+{
+  "version": "0.15.1",
+  "documentedOn": "2026-10-25",
+  "status": "local validation; GitHub CI and final packaging pending",
+  "windows": {
+    "ctest": {
+      "passed": 10,
+      "failed": 0,
+      "seconds": 64.53,
+      "evidence": "out/stories-0151/product-current-ctest.log"
+    },
+    "portableCtest": {
+      "passed": 7,
+      "failed": 0,
+      "seconds": 25.76
+    },
+    "qml": {
+      "lyrics": 6,
+      "mixHomeJam": 23,
+      "failed": 0
+    },
+    "readerGuards": {
+      "passed": 1,
+      "seconds": 0.68
+    }
+  },
+  "android": {
+    "javaVariants": [
+      "release",
+      "benchmark",
+      "comparison"
+    ],
+    "nativeAbis": [
+      "x86_64",
+      "arm64-v8a"
+    ],
+    "instrumentation": {
+      "songFeatureTests": {
+        "passed": true,
+        "checks": [
+          "jam_native_owner_and_member_aliases",
+          "jam_rejects_duplicate_arrivals",
+          "jam_queue_alignment_preserves_discovery_tail",
+          "share_canonical_track_link",
+          "share_rejects_nontrack_and_missing_id",
+          "setlist_preserves_encore_order_and_reprises",
+          "setlist_cover_keeps_show_performer",
+          "setlist_empty_result",
+          "setlist_cap_applies_across_all_sets",
+          "artist_sourced_formation",
+          "artist_missing_values_not_invented",
+          "ambiguous_artist_not_attributed",
+          "artist_album_disambiguates_homonyms",
+          "ambiguous_album_still_abstains",
+          "provider_not_exported",
+          "share_renderer_style_0",
+          "share_renderer_style_1",
+          "share_renderer_style_2",
+          "provider_reads_generated_card",
+          "provider_refuses_write",
+          "provider_refuses_path_traversal"
+        ]
+      },
+      "historyStoryTests": {
+        "checks": [
+          "buffering_priority_and_explicit_pause",
+          "durable_10005_sessions",
+          "six_periods_and_year",
+          "WAL_pinned_archive_query",
+          "async_statistics",
+          "full_backup_size_and_restore",
+          "home_album_evidence_and_recency",
+          "jam_typed_session_and_invitation",
+          "structured_story_report_and_old_cache_rejection"
+        ],
+        "input": "Synthetic history and original Portuguese descriptions; no live Spotify or physical phone"
+      },
+      "lyricPipelineTests": {
+        "passed": true,
+        "checks": [
+          "transient_failure_retries_bounded",
+          "failed_verse_does_not_stop_remaining_translation",
+          "manual_resume_translates_only_missing_rows",
+          "cached_tail_increments_ui_version_without_network",
+          "explicit_refresh_bypasses_current_lyric_cache"
+        ]
+      }
+    },
+    "songPages": {
+      "passed": true,
+      "version": "0.15.1",
+      "checks": [
+        "simplified_player_header",
+        "hero_contains_controls_without_adjacent_lyrics",
+        "hero_bottom_action_inside_viewport",
+        "swipe_snaps_to_lyrics",
+        "fullscreen_controls_initially_hidden",
+        "fullscreen_reveal_has_refresh",
+        "lyrics_inner_scroll_then_swipe_to_artist",
+        "share_customization_has_copy_and_card",
+        "native_sharesheet_opened_without_sending",
+        "share_created_only_restricted_png",
+        "setlist_wizard_available_on_android",
+        "setlist_requires_artist_and_key",
+        "no_android_fatal_exception"
+      ],
+      "synthetic": true,
+      "remote_playlist_written": false,
+      "message_sent": false,
+      "physical_phone_tested": false
+    },
+    "digitalAudio": {
+      "passed": true,
+      "checks": [
+        "native_dsp_bypass_eq_bass_compressor_limiter_ramp_hrtf_multichannel_binaural_nan",
+        {
+          "file": "stereo-44100.wav",
+          "metadata": {
+            "rate": 44100,
+            "channels": 2,
+            "binaural": false,
+            "lufs": -19.990736,
+            "peak": 0.100061,
+            "replayGain": null,
+            "replayPeak": 0
+          }
+        },
+        {
+          "file": "stereo-96000.wav",
+          "metadata": {
+            "rate": 96000,
+            "channels": 2,
+            "binaural": false,
+            "lufs": -20.010679,
+            "peak": 0.100006,
+            "replayGain": null,
+            "replayPeak": 0
+          }
+        },
+        {
+          "file": "stereo.flac",
+          "metadata": {
+            "rate": 48000,
+            "channels": 2,
+            "binaural": false,
+            "lufs": -19.993211,
+            "peak": 0.100006,
+            "replayGain": null,
+            "replayPeak": 0
+          }
+        },
+        {
+          "file": "stereo.mp3",
+          "metadata": {
+            "rate": 48000,
+            "channels": 2,
+            "binaural": false,
+            "lufs": -20.438634,
+            "peak": 0.097101,
+            "replayGain": null,
+            "replayPeak": 0
+          }
+        },
+        {
+          "file": "stereo.m4a",
+          "metadata": {
+            "rate": 48000,
+            "channels": 2,
+            "binaural": false,
+            "lufs": -20.002501,
+            "peak": 0.111663,
+            "replayGain": null,
+            "replayPeak": 0
+          }
+        },
+        {
+          "file": "replaygain.flac",
+          "metadata": {
+            "rate": 48000,
+            "channels": 2,
+            "binaural": false,
+            "lufs": -19.993211,
+            "peak": 0.100006,
+            "replayGain": -3,
+            "replayPeak": 0
+          }
+        },
+        {
+          "file": "surround-51.wav",
+          "metadata": {
+            "rate": 48000,
+            "channels": 6,
+            "binaural": false,
+            "lufs": -21.737077,
+            "peak": 0.05004,
+            "replayGain": null,
+            "replayPeak": 0
+          }
+        },
+        {
+          "file": "surround-71.wav",
+          "metadata": {
+            "rate": 48000,
+            "channels": 8,
+            "binaural": false,
+            "lufs": -19.637683,
+            "peak": 0.05004,
+            "replayGain": null,
+            "replayPeak": 0
+          }
+        },
+        {
+          "file": "stereo.iamf",
+          "metadata": {
+            "rate": 48000,
+            "channels": 2,
+            "binaural": true,
+            "lufs": -20.056272,
+            "peak": 0.100861,
+            "replayGain": null,
+            "replayPeak": 0
+          }
+        },
+        {
+          "file": "surround.iamf",
+          "metadata": {
+            "rate": 48000,
+            "channels": 2,
+            "binaural": true,
+            "lufs": -26.675487,
+            "peak": 0.050497,
+            "replayGain": null,
+            "replayPeak": 0
+          }
+        },
+        {
+          "file": "quiet.wav",
+          "metadata": {
+            "rate": 48000,
+            "channels": 2,
+            "binaural": false,
+            "lufs": -19.993211,
+            "peak": 0.100006,
+            "replayGain": null,
+            "replayPeak": 0
+          }
+        },
+        {
+          "file": "loud.wav",
+          "metadata": {
+            "rate": 48000,
+            "channels": 2,
+            "binaural": false,
+            "lufs": -7.952371,
+            "peak": 0.399994,
+            "replayGain": null,
+            "replayPeak": 0
+          }
+        },
+        "invalid_file_rejected",
+        "decode_cancellation",
+        "profiles_persistence_and_isolation"
+      ]
+    },
+    "playbackIntentChecks": 43,
+    "apkSignaturesVerified": true
+  },
+  "jam": {
+    "nativeTransportTestCases": 1,
+    "allowlistAssertions": 7,
+    "readOnlyProbe": {
+      "readOnly": true,
+      "createdJam": false,
+      "advertisedConnectDevice": false,
+      "elapsedSeconds": 3.319,
+      "exitCode": 0,
+      "stderrBytes": 0,
+      "responses": [
+        {
+          "status": 404,
+          "error": "spotify_unavailable",
+          "resultFields": []
+        }
+      ]
+    },
+    "experimental": true,
+    "realParticipantsTested": false,
+    "attributionInvented": false
+  },
+  "reader": {
+    "model": "Qwen3.5-2B-Q4_K_M, Unsloth pretrained quantization",
+    "realLyricsRequested": 8,
+    "realLyricsObtained": 4,
+    "providerFailure": "HTTP 503 prevented the remaining fixtures",
+    "acceptedReadings": 1,
+    "inconclusiveReadings": 2,
+    "pendingReadings": 1,
+    "semanticAcceptanceComplete": false,
+    "lastRun": {
+      "wallSeconds": 90.412,
+      "cpuSeconds": 85.594,
+      "cpuOneCorePercent": 94.67,
+      "peakRssBytes": 1460453376,
+      "peakUssBytes": 176906240,
+      "priority": "IDLE_PRIORITY_CLASS",
+      "audioPlayingDuringInference": false
+    },
+    "measurementScope": "Standalone development reader, not app-vs-Spotify benchmark or acoustic test; private lyric texts not published"
+  },
+  "limitations": [
+    "No physical Android phone or car Bluetooth measurement",
+    "No real multi-account Jam participation",
+    "No authenticated setlist.fm request or message sent",
+    "No live Spotify queue insertion/repetition assertion from these synthetic checks",
+    "Semantic coverage is limited; format guards and same-model review are not proof of meaning"
+  ],
+  "attemptsPreserved": [
+    "QML initial fixture leaked busy state; restored fixture state without removing assertion",
+    "Java initial Jam field order caused illegal forward reference; corrected",
+    "Java queue reconciliation used a private field; replaced with explicit current-track check",
+    "Initial CLI preparation expected an absent extracted checksum file; now verifies the official cached crate SHA-256 before extraction",
+    "Earlier reader models/prompt trials generated unsupported interpretations; not accepted as semantic validation"
+  ],
+  "extraLocalDownloads": [
+    {
+      "name": "MinGit 2.56.0.3 portable",
+      "purpose": "System Git lacked the HTTPS helper; no global Git installation changed"
+    },
+    {
+      "name": "llama.cpp pinned source and optional Qwen evaluation weights",
+      "purpose": "Native reader build and quality evaluation; weights are not embedded in EXE/APK"
+    }
+  ]
+}

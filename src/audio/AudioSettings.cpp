@@ -24,7 +24,7 @@ void AudioSettings::validate()
     bass = clamp(bass, 0, 12);
     targetLufs = clamp(targetLufs, -24, -10, -16);
     ceilingDb = clamp(ceilingDb, -6, -0.1, -1);
-    if (spatial != "original" && spatial != "hrtf" && spatial != "iamf")
+    if (spatial != "original" && spatial != "hrtf" && spatial != "hrtf-speakers" && spatial != "iamf")
         spatial = "original";
 }
 QJsonObject AudioSettings::json() const

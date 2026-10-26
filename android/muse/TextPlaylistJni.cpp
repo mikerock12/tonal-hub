@@ -23,6 +23,12 @@ extern "C" JNIEXPORT jdoubleArray JNICALL Java_app_tonal_android_TextPlaylistNat
 }
 
 #include "playback/ListeningMixCore.hpp"
+#include "playback/QueueMergeCore.hpp"
+extern "C" JNIEXPORT jintArray JNICALL Java_app_tonal_android_ListeningMixNative_alignQueue(JNIEnv *e,jclass,jobjectArray prepared,jobjectArray observed){
+ if(!prepared||!observed||e->GetArrayLength(prepared)>500||e->GetArrayLength(observed)>101)return nullptr;
+ auto read=[&](jobjectArray array){std::vector<std::string> out;for(jsize n=0;n<e->GetArrayLength(array);++n){auto value=static_cast<jstring>(e->GetObjectArrayElement(array,n));auto s=fromString(e,value);if(value)e->DeleteLocalRef(value);if(s.empty()||s.size()>256)throw std::length_error("URI inválida na fila");out.push_back(std::move(s));}return out;};
+ try{auto old=read(prepared),seen=read(observed);auto result=tonal::queue::align(old,seen);result.matches.push_back(result.suffix);auto a=e->NewIntArray(jsize(result.matches.size()));e->SetIntArrayRegion(a,0,jsize(result.matches.size()),result.matches.data());return a;}catch(const std::exception &x){error(e,x);return nullptr;}
+}
 namespace {
 jintArray mixInts(JNIEnv*e,const std::vector<int>&v){auto a=e->NewIntArray(jsize(v.size()));e->SetIntArrayRegion(a,0,jsize(v.size()),v.data());return a;}
 std::vector<tonal::mix::Track> mixTracks(JNIEnv*e,jobjectArray array,int limit){std::vector<tonal::mix::Track> out;if(!array)return out;int n=e->GetArrayLength(array);if(n%7||n>limit*7)return out;for(int i=0;i<n;i+=7){std::string f[7];for(int j=0;j<7;++j){auto s=static_cast<jstring>(e->GetObjectArrayElement(array,i+j));f[j]=fromString(e,s);e->DeleteLocalRef(s);}int year=std::atoi(f[4].c_str()),heard=std::atoi(f[5].c_str());out.push_back({f[0],f[1],f[2],f[3],year,bool(heard&1),bool(heard&2),unsigned(std::atoi(f[6].c_str())),bool(heard&4)});}return out;}

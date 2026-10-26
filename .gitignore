@@ -7,6 +7,7 @@ CMakeUserPresets.json
 android/.gradle/
 android/local.properties
 android/native/target/
+native/**/target/
 android/app/src/main/jniLibs/
 android/*.keystore
 __pycache__/

@@ -1,4 +1,4 @@
-# Seu ritmo e histórias das músicas — 0.15.0
+# Seu ritmo e histórias das músicas — 0.15 / correção 0.15.1 em validação
 
 Windows e Android. Os atalhos **Estatísticas** (gráfico) e **Backup** (salvar)
 ficam no cabeçalho global, junto de busca, favoritas, áudio e conta. Também
@@ -49,26 +49,28 @@ aparecem quando há resultados.
 
 Em **Estatísticas → Clima do repertório → As histórias das suas músicas**:
 
-1. Toque em **Baixar modelo · 468,6 MiB**. É necessário fazer isso uma vez no
+1. Toque em **Baixar modelo · 1,19 GiB**. É necessário fazer isso uma vez no
    aparelho/player; o download pode ser cancelado e só é ativado após verificar
    tamanho exato e SHA-256.
 2. Toque em **Analisar letras**. O app seleciona até oito das faixas mais
    ouvidas no período. Usa as letras já capturadas e consulta o LRCLIB para as
    ausentes, sem mudar a música que toca.
-3. Leia o resumo, a lista do lote analisado e os limites de interpretação.
+3. Leia a síntese e toque em **Ver leitura por música** para abrir cada interpretação
+   vinculada à sua faixa. O contador informa leituras disponíveis, não confiança.
    **Atualizar análise** reaproveita um resultado em cache se a entrada não
-   mudou. **Remover modelo** libera o espaço dos pesos.
+   mudou. Se o prazo terminar com leituras prontas, **Continuar análise** reutiliza
+   essas leituras e processa as pendentes. **Remover modelo** libera os pesos.
 
-Modelo: [Qwen2.5-0.5B-Instruct GGUF](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF),
+Modelo: [Qwen3.5-2B](https://huggingface.co/Qwen/Qwen3.5-2B) com quantização [Unsloth Q4_K_M](https://huggingface.co/unsloth/Qwen3.5-2B-GGUF),
 Q4_K_M, licença Apache 2.0. Runtime:
 [llama.cpp](https://github.com/ggml-org/llama.cpp), MIT. Revisões, tamanho e
 hashes estão em [local-stories-model.json](../resources/local-stories-model.json).
 Não houve treinamento ou ajuste fino do Qwen neste projeto. O classificador
 TonalMuse continua identificado separadamente, com seu corpus sintético.
 
-São **491.400.032 bytes** de pesos, não incluídos no APK/instalador. CPU somente,
+São **1.280.835.840 bytes** de pesos, não incluídos no APK/instalador. CPU somente,
 uma thread na geração e na preparação, contexto de 1.024 tokens, entrada até 768 tokens e
-saída até 32 tokens. Para caber nesse orçamento, usam-se trechos do começo,
+saída até 64 tokens por faixa mais 64 na síntese, até 585 no lote. Para caber nesse orçamento, usam-se trechos do começo,
 meio e fim das letras. O resultado descreve esse lote, não todas as músicas
 ouvidas. Letras não disponíveis e versões divergentes são omitidas, sem
 inventar seu conteúdo. Pode haver erros, especialmente em ironia, metáforas,
@@ -94,14 +96,13 @@ agrupadas e limitadas a 128 faixas. Os pesos só são carregados por solicitaç�
 A prioridade acompanha a intenção de reproduzir, inclusive durante buffering;
 falta momentânea de frames não é interpretada como pausa.
 Download do modelo e busca adicional de letras desta análise aguardam uma pausa
-na reprodução. No Windows, letras capturadas podem ser analisadas enquanto o áudio toca.
-No Android, a inferência aguarda pausa; retomar a música encerra somente o
+na reprodução. No Windows e no Android, a inferência aguarda pausa; retomar a música encerra somente o
 processo de análise e mantém a solicitação pendente até outra pausa.
 Pausar ou cancelar o leitor não envia comandos ao player. A solicitação pendente
 pode ser cancelada enquanto aguarda recursos, sem iniciar música ou alterar fila.
 
 Antes de abrir o modelo, exige-se memória disponível de pelo menos o tamanho dos
-pesos mais 512 MiB (aproximadamente 981 MiB). Sob pressão durante a inferência
+pesos mais 512 MiB (aproximadamente 1.734 MiB). Sob pressão durante a inferência
 (menos de 256 MiB livres; também `lowMemory` no Android), o processo opcional é
 encerrado, preservando o player. São guardas conservadoras, não reserva física
 nem garantia de impacto zero em qualquer aparelho. A análise consome recursos;
@@ -125,3 +126,26 @@ não valida a interpretação de todo um repertório real. Testes em AVD são
 identificados como emulador. Não houve novo benchmark comparativo com Spotify
 nesta entrega; os números de 0.12.0 permanecem históricos, separados em
 [BENCHMARKS.md](BENCHMARKS.md). Análise com LLM consome CPU/RAM durante a execução.
+
+
+## Correção semântica 0.15.1 (em validação)
+
+Na 0.15.0, a frase “O conjunto reúne letras que contrastam e contrastam.”
+foi aceita indevidamente. O usuário autorizou priorizar qualidade com um modelo
+opcional de cerca de 1,2 GiB. A 0.15.1 troca os pesos, analisa as faixas
+separadamente e usa as leituras válidas na síntese. Formato, repetição, eco das
+instruções e cópia de versos são filtrados; isso não prova correção semântica.
+
+O cache v3 não é reaproveitado. O novo download é solicitado pelo usuário,
+verificado por tamanho/SHA-256 e só então substitui os pesos antigos. Nenhum
+favorito, playlist ou histórico é apagado nessa troca. Não desinstale o aplicativo
+para atualizar. Os arquivos de modelo continuam fora do APK/EXE.
+
+Um lote tem até oito letras selecionadas; faixas ainda pendentes são identificadas.
+Cada ação usa até 90 s de inferência, com supervisão de 105 s. Pausa/retomada de
+áudio e cancelamento prevalecem. Uma retomada da música encerra só o leitor; o
+app não pausa nem inicia música para liberar recursos de análise.
+
+A 0.15.0 e suas tentativas de AVD permanecem históricas no relatório de testes.
+O novo leitor exige validação própria. Não chamar um CI de compilação de prova
+de compreensão de letras reais, nem de benchmark do Spotify.

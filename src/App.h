@@ -23,6 +23,7 @@ class QQmlEngine;
 #include "playlist/TextPlaylistImport.hpp"
 #include "playback/ListeningMix.hpp"
 #include "ThemeCatalog.h"
+#include "jam/JamController.h"
 
 // Registro dos tipos C++ que o QML enxerga (sem criação pelo QML).
 struct AuthManagerForeign {
@@ -39,6 +40,7 @@ struct IndieCatalogForeign { Q_GADGET QML_FOREIGN(CatalogService) QML_ANONYMOUS 
 struct TonalHubForeign { Q_GADGET QML_FOREIGN(HubController) QML_ANONYMOUS };
 struct MusicCompanionForeign { Q_GADGET QML_FOREIGN(MusicCompanion) QML_ANONYMOUS };
 struct ListeningMixForeign { Q_GADGET QML_FOREIGN(ListeningMix) QML_ANONYMOUS };
+struct JamForeign { Q_GADGET QML_FOREIGN(JamController) QML_ANONYMOUS };
 struct TextPlaylistForeign { Q_GADGET QML_FOREIGN(TextPlaylistImport) QML_ANONYMOUS };
 struct SpotifyApiForeign {
     Q_GADGET
@@ -88,6 +90,7 @@ class App : public QObject
     Q_PROPERTY(ListeningMix *listeningMix READ listeningMix CONSTANT)
     Q_PROPERTY(TextPlaylistImport *textPlaylist READ textPlaylist CONSTANT)
     Q_PROPERTY(ThemeCatalog *theme READ theme CONSTANT)
+    Q_PROPERTY(JamController *jam READ jam CONSTANT)
     // Idioma em uso nesta execução: "pt" ou "en".
     Q_PROPERTY(QString language READ language CONSTANT)
 
@@ -115,6 +118,7 @@ public:
     ListeningMix *listeningMix() const{return m_listeningMix;}
     TextPlaylistImport *textPlaylist() const { return m_textPlaylist; }
     ThemeCatalog *theme() const { return m_theme; }
+    JamController *jam() const {return m_jam;}
     QString language() const;
 
     // Idioma do próximo início: o salvo no menu ou, sem escolha, o do Windows (português ou, senão, inglês).
@@ -155,4 +159,5 @@ private:
     TextPlaylistImport *m_textPlaylist;
     ListeningMix *m_listeningMix;
     ThemeCatalog *m_theme;
+    JamController *m_jam;
 };

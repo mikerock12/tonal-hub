@@ -83,6 +83,8 @@ Dialog {
     property int mixSeed:Math.floor(Math.random()*2147483647)
     property bool textPlaylistAvailable:false
     signal textPlaylistRequested()
+    signal homeRequested()
+    signal jamRequested()
     signal textPlaylistResume(string id)
     property int position: 0
     property bool playing: false
@@ -155,13 +157,14 @@ Dialog {
             ActionIcon { accentInk:panel.tone.accent;symbol:"plus";description:"Adicionar à playlist"; enabled: !!panel.controller.current.title; onClicked: addMenu.open() }
             ActionIcon {accentInk:panel.tone.accent;symbol:"share";description:"Compartilhar música";visible:panel.controller.current.provider==="Spotify";onClicked:shareSong.present(panel.controller.current)}
 
-            ActionIcon {accentInk:panel.tone.accent;symbol:"close";description:"Fechar página da música";onClicked:panel.close()}
+            ActionIcon {accentInk:panel.tone.accent;symbol:tabs.currentIndex===2?"home":"close";description:tabs.currentIndex===2?"Ir para o início":"Fechar";onClicked:{if(tabs.currentIndex===2)panel.homeRequested();panel.close()}}
             Menu { id: backupMenu; MenuItem { text:"Exportar backup…"; onTriggered: backupSave.open() } MenuItem { text:"Restaurar backup…"; onTriggered: restoreConfirm.open() } }
             Menu { id: addMenu; Repeater { model: panel.controller.playlists; MenuItem { required property var modelData; text: modelData.name; onTriggered: panel.controller.addToPlaylist(modelData.id,panel.controller.current) } } MenuItem { text: "Criar playlist…"; onTriggered: createDialog.open() } MenuItem {text:"Criar com Text to Tonalify…";visible:panel.textPlaylistAvailable;onTriggered:panel.textPlaylistRequested()} }
         }
         Label { visible: panel.notice.length>0; text: panel.notice; textFormat: Text.PlainText; wrapMode: Text.WordWrap; color: "#ffcc8d"; Layout.fillWidth: true }
         TabBar {
             id: tabs; Layout.fillWidth: true
+            visible:currentIndex!==2
             onCurrentIndexChanged: {if(panel.audioEngine)panel.audioEngine.visualizerActive=panel.visible && currentIndex===2 && songPages.currentIndex===1 && (panel.controller.background==="Ondas" || panel.controller.background==="Espectro");Qt.callLater(panel.ensureLyrics)}
             TabButton { Accessible.name:"Biblioteca";contentItem:ActionIcon{accentInk:panel.tone.accent;symbol:"library";description:"Biblioteca";filled:tabs.currentIndex===0;onClicked:tabs.currentIndex=0} }
             TabButton { visible:false;width:0;implicitWidth:0;Accessible.name:"Estatísticas";contentItem:ActionIcon{accentInk:panel.tone.accent;symbol:"chart";description:"Estatísticas";filled:tabs.currentIndex===1;onClicked:tabs.currentIndex=1} }
@@ -252,9 +255,6 @@ Dialog {
                 Flow { Layout.fillWidth: true; spacing: 5; Repeater { model: panel.stats.recommendations || []; Button { required property string modelData; text: modelData; onClicked: {panel.discover(modelData);panel.close()} } } }
             }
             ColumnLayout {
-                RowLayout {Layout.alignment:Qt.AlignHCenter
-                    Repeater{model:["Música","Letra","Artista"];delegate:Button{required property string modelData;required property int index;text:modelData;highlighted:songPages.currentIndex===index;background:Rectangle{radius:18;color:parent.highlighted?panel.tone.accent:panel.tone.accentDeep}contentItem:Label{text:parent.text;color:parent.highlighted?"#000000":panel.tone.text;horizontalAlignment:Text.AlignHCenter;verticalAlignment:Text.AlignVCenter}onClicked:songPages.currentIndex=index}}
-                }
                 ListView {
                     id:songPages;objectName:"songPages";Layout.fillWidth:true;Layout.fillHeight:true;orientation:ListView.Vertical
                     clip:true;snapMode:ListView.SnapOneItem;boundsBehavior:Flickable.StopAtBounds;highlightRangeMode:ListView.StrictlyEnforceRange
@@ -288,6 +288,7 @@ Dialog {
                     ActionIcon{accentInk:panel.tone.accent;objectName:"songRepeat";visible:!!panel.transportPlayer&&typeof panel.transportPlayer.cycleRepeat==="function";symbol:panel.transportPlayer&&panel.transportPlayer.repeatMode==="track"?"repeat1":"repeat";filled:!!panel.transportPlayer&&panel.transportPlayer.repeatMode!=="off";description:!panel.transportPlayer||panel.transportPlayer.repeatMode==="off"?"Repetir a fila":panel.transportPlayer.repeatMode==="context"?"Repetindo a fila: repetir só esta música":"Repetindo esta música: desligar repetição";onClicked:panel.transportPlayer.cycleRepeat()}
                     ActionIcon{accentInk:panel.tone.accent;objectName:"songDiscovery";visible:panel.quickModes;enabled:!panel.mixController||!panel.mixController.busy;symbol:"discover";description:panel.mixController&&panel.mixController.busy?panel.mixController.status:"Descoberta 2+1: duas da fila, uma descoberta / desligar";filled:!!panel.mixController&&panel.mixController.discoveryEnabled;onClicked:panel.applySongMode(2)}
                     ActionIcon{accentInk:panel.tone.accent;objectName:"songQueueButton";visible:panel.quickModes;symbol:"queue";description:"Fila: ver, preparar com prévia e aplicar";onClicked:panel.openQueue()}
+                    ActionIcon{accentInk:panel.tone.accent;objectName:"songJamButton";visible:panel.quickModes;symbol:"jam";description:"Jam com amigos";onClicked:panel.jamRequested()}
                 }
                 RowLayout {
                     Label { text:panel.formatClock(songSeek.pressed?songSeek.value:panel.position); color:panel.tone.textSecondary; font.pixelSize:12; font.features:({"tnum":1}) }
@@ -310,7 +311,7 @@ Dialog {
                         }
                         ColumnLayout {width:songPages.width;height:songPages.height;spacing:8
                 RowLayout {
-                    ActionIcon { accentInk:panel.tone.accent;symbol:"refresh";description:"Atualizar letra"; enabled: !panel.controller.busy; onClicked: panel.controller.fetchLyrics() }
+                    ActionIcon { accentInk:panel.tone.accent;symbol:"refresh";description:"Atualizar letra"; enabled: !panel.controller.busy; onClicked:{panel.translatedTrack="";if(typeof panel.controller.reloadLyrics==="function")panel.controller.reloadLyrics();else panel.controller.fetchLyrics()} }
                     Label { text:"Idioma automático"; color:"#a5a8ad" }
                     ActionIcon { accentInk:panel.tone.accent;symbol:"translate";description:"Traduzir pt-BR"; enabled: !panel.controller.busy && panel.controller.lines.length>0; onClicked:{panel.translatedTrack="";panel.autoTranslation=true;panel.ensureLyrics()} }
                     ActionIcon { accentInk:panel.tone.accent;symbol:"font";description:"Fontes e cores";onClicked:appearance.open() }
@@ -398,7 +399,7 @@ Dialog {
     footer:Label {padding:8;font.pixelSize:11;color:panel.tone.textSecondary;wrapMode:Text.WordWrap;text:{panel.revision;const info=panel.controller.storageInfo || ({});const kb=n=>n>=1048576?(n/1048576).toFixed(2)+" MiB":(n/1024).toFixed(1)+" KiB";return "Biblioteca no aparelho: "+kb(info.databaseBytes || 0)+(info.lastBackupBytes?" • Último backup exportado: "+kb(info.lastBackupBytes):" • Nenhum backup exportado neste aparelho")}}
     ClimateDetail{id:climate;controller:panel.controller;days:period.currentIndex<0?7:period.currentValue}
     LyricStyleDialog{id:appearance;controller:panel.controller}
-    LyricsFullscreen{id:fullscreen;controller:panel.controller;playing:panel.playing;position:panel.position;metrics:panel.audioEngine ? panel.audioEngine.metrics : ({})}
+    LyricsFullscreen{id:fullscreen;onRefreshRequested:panel.translatedTrack="";controller:panel.controller;playing:panel.playing;position:panel.position;metrics:panel.audioEngine ? panel.audioEngine.metrics : ({})}
     SongShareDialog{id:shareSong;objectName:"songShareDialog"}
     Dialog { id: createDialog; anchors.centerIn: parent; title:"Criar playlist pessoal"; standardButtons: Dialog.Ok|Dialog.Cancel; TextField { id: newName; placeholderText:"Nome da playlist"; maximumLength:100 } onAccepted: {let id=panel.controller.createPlaylist(newName.text);if(id&&panel.controller.current.title)panel.controller.addToPlaylist(id,panel.controller.current);newName.clear()} }
     Dialog { id: renameDialog; anchors.centerIn: parent; title:"Renomear playlist"; standardButtons: Dialog.Ok|Dialog.Cancel; TextField { id: renameField; placeholderText:"Novo nome"; maximumLength:100 } onAccepted: panel.controller.renamePlaylist(panel.selectedPlaylist,renameField.text) }

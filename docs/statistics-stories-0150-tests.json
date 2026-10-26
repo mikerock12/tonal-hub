@@ -4,13 +4,14 @@
   "windows_product_ctest": {
     "passed": 10,
     "failed": 0,
-    "seconds": 53.53
+    "seconds": 57.06,
+    "log": "out/stories-0150/final-release-ctest.log"
   },
   "portable_companion_checks": {
     "passed": 7,
     "failed": 0,
-    "seconds": 64.36,
-    "final_repeat": "in progress"
+    "seconds": 67.02,
+    "final_repeat": "7/7 passed; historical 0.15.0 baseline, before semantic bug fix"
   },
   "qml": {
     "mix_and_header": 21,
@@ -32,12 +33,18 @@
       "summary": "O conjunto de trechos apresentados aborda temas de nostalgia, recomeçar, sair de uma relação e escolher um caminho. O primeiro trecho enfatiza a tristeza e a nostalgia, enquanto o segundo descreve a esperança e a mudança. A evidência é fraca, pois não há evidências específicas para identificar o que se espera de cada trecho.",
       "tokens": 84
     },
-    "input": "Two original synthetic Portuguese song descriptions, no copyrighted lyrics"
+    "input": "Two original synthetic Portuguese song descriptions, no copyrighted lyrics",
+    "status": "Historical early-prompt experiment; superseded. This output does not validate semantic quality with eight lyrics."
   },
   "android": {
     "compile": "release/benchmark/comparison passed",
-    "runtime_validation": "in progress on dedicated AVD Tonal_Local_20261015 only",
-    "physical_phone": false
+    "runtime_validation": "History/UI/build checks completed; all native-model AVD attempts exceeded the inference deadline. Physical user feedback found a generic repeated summary.",
+    "physical_phone": "User installed 0.15.0 and reported semantic failure; no agent-run physical benchmark",
+    "limitations": [
+      "Dedicated AVD only; no equivalent live Spotify test or acoustic measurement.",
+      "An earlier concurrent model run recorded one cumulative underrun without preserved baseline; causality was not established.",
+      "Final pause-only attempt preserved pause and did not resume music, but model interpretation still timed out."
+    ]
   },
   "prior_attempts": [
     {
@@ -53,5 +60,11 @@
       "result": "AVD package service not ready during boot; no product conclusion; repeated after sys.boot_completed=1"
     }
   ],
-  "benchmark": "No new Spotify benchmark; functional synthetic tests only"
+  "benchmark": "No new Spotify benchmark; functional synthetic tests only",
+  "semantic_quality": {
+    "status": "0.15.0 failed user acceptance; correction in validation, not delivered",
+    "reported_output": "O conjunto reúne letras que contrastam e contrastam.",
+    "cause": "The old output gate checked length/token count, not specificity. Combined input and a 32-token forced continuation were insufficient for meaningful eight-lyric interpretation.",
+    "new_checks": "Structured per-track report; old-cache rejection; repetition, quoted-text and instruction-echo format guards. These are not proof of semantic correctness."
+  }
 }

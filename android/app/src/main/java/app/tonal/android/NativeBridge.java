@@ -10,6 +10,9 @@ public final class NativeBridge {
     private static native void nativeStart(String token, String cache, int bitrate, boolean normalize);
     static native void sendCommand(String command);
     static volatile Consumer<String> commandListener;
+    static volatile Consumer<String> jamListener;
+    static void jamRequest(String json){if(ready&&json.length()<=8192)sendCommand("jam|"+json);}
+    public static void onJamResult(long epoch,String json){if(epoch!=generation||json.length()>600*1024)return;main.post(()->{Consumer<String> listener=jamListener;if(epoch==generation&&listener!=null)listener.accept(json);});}
     /** Engine position events (Seeked/PositionChanged), delivered on the main thread. */
     static volatile java.util.function.BiConsumer<String,Integer> progressObserver;
     static final CopyOnWriteArrayList<Consumer<String>> commandListeners=new CopyOnWriteArrayList<>();

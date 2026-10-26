@@ -47,6 +47,8 @@ pub struct LoadRequestOptions {
     /// Tonal: when the resolved current track is the one already loaded, replace
     /// only the upcoming order and keep the audible decoder untouched.
     pub keep_playing_track: bool,
+    /// Tonal: reject a late queue edit before changing any context if its anchor differs.
+    pub queue_edit_only: bool,
 }
 
 /// The options which decide how the playback is started

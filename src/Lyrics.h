@@ -39,6 +39,7 @@ public:
     // Início da linha em ms (-1 se não houver).
     Q_INVOKABLE int lineTime(int index) const;
     Q_INVOKABLE void retry();
+    Q_INVOKABLE void reload();
 
 signals:
     void activeChanged();

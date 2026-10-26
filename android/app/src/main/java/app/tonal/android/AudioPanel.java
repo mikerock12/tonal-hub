@@ -27,7 +27,7 @@ final class AudioPanel {
     private void save(){if(!building)audio.updateConfig(config,key);}
     private void title(String text){TextView v=ui.title(text,18);ui.pad(v,0,12);content.addView(v);}
     private void note(String text){TextView v=ui.text(text,12,Ui.MUTED);ui.pad(v,0,6);content.addView(v);}
-    private void check(String text,boolean value,Consumer<Boolean> change){CheckBox box=new CheckBox(activity);box.setText(text);box.setTextColor(Ui.TEXT);box.setChecked(value);content.addView(box);box.setOnCheckedChangeListener((v,on)->{change.accept(on);save();});}
+    private CheckBox check(String text,boolean value,Consumer<Boolean> change){CheckBox box=new CheckBox(activity);box.setText(text);box.setTextColor(Ui.TEXT);box.setChecked(value);content.addView(box);box.setOnCheckedChangeListener((v,on)->{change.accept(on);save();});return box;}
     private void choice(String name,String[] values,int selected,IntConsumer change){
         note(name);Spinner spinner=new Spinner(activity);spinner.setContentDescription(name);spinner.setAdapter(new ArrayAdapter<>(activity,android.R.layout.simple_spinner_dropdown_item,values));spinner.setSelection(selected,false);content.addView(spinner);
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){int previous=selected;public void onItemSelected(AdapterView<?> p,View v,int i,long id){if(previous==i)return;previous=i;if(!building){change.accept(i);save();}}public void onNothingSelected(AdapterView<?> p){}});
@@ -48,7 +48,7 @@ final class AudioPanel {
             check("Permitir retomar por Bluetooth ou tela bloqueada",controls.getBoolean("allowLockedMediaResume",false),on->controls.edit().putBoolean("allowLockedMediaResume",on).apply());
             note("Desativado por padrão para impedir comandos automáticos de carro ou fones após uma pausa. A música já iniciada continua com a tela bloqueada. Para retomar pausas pelos controles externos com o aparelho bloqueado, ative esta opção.");
         }
-        note("O buffer aumenta se houver falhas. Reduzi-lo não elimina o atraso do Bluetooth. As preferências ficam salvas para esta saída; carro e caixa de som usam estéreo.");
+        note("O buffer aumenta se houver falhas. As preferências são próprias desta saída. O modo binaural experimental para caixas deve ser escolhido explicitamente.");
         if(spotify){title("Streaming Spotify");SharedPreferences prefs=audio.prefs();int quality=prefs.getInt("quality",320);
         choice("Qualidade Spotify",new String[]{"320 kbps • muito alta","160 kbps • alta","96 kbps • economia"},quality==96?2:quality==160?1:0,i->{prefs.edit().putInt("quality",new int[]{320,160,96}[i]).apply();notice.accept("Qualidade salva. Reconecte o motor Spotify para aplicar.");});
         check("Normalizar volume no Spotify",prefs.getBoolean("normalize",true),on->{prefs.edit().putBoolean("normalize",on).apply();notice.accept("Normalização salva. Reconecte o motor Spotify para aplicar.");});
@@ -58,8 +58,8 @@ final class AudioPanel {
         }
         title("Efeitos");check("Ativar processamento de áudio",config.enabled,on->config.enabled=on);
         choice("Preset",AudioConfig.PRESETS,config.preset,i->{config.preset(i);save();build();});
-        check("Ativar equalizador de 10 bandas",config.eq,on->config.eq=on);
-        for(int i=0;i<10;i++){final int band=i;slider(Dsp.FREQUENCIES[i]+" Hz",config.gains[i],-12,12,.5f,v->{config.gains[band]=v;});}
+        CheckBox equalizer=check("Ativar equalizador de 10 bandas",config.eq,on->config.eq=on);
+        for(int i=0;i<10;i++){final int band=i;slider(Dsp.FREQUENCIES[i]+" Hz",config.gains[i],-12,12,.5f,v->{config.gains[band]=v;if(!config.eq)equalizer.setChecked(true);});}
         content.addView(ui.action("Zerar equalizador",()->{config.gains=new float[10];config.eq=false;config.preset=0;save();build();}));
         slider("Graves • shelf 110 Hz",config.bass,0,12,.5f,v->config.bass=v);
         check("Compressor",config.compressor,on->config.compressor=on);
@@ -68,13 +68,13 @@ final class AudioPanel {
         slider("Teto de amostras",config.ceiling,-6,-.1f,.1f,v->config.ceiling=v);
         note("ReplayGain tem prioridade; sem metadados, o arquivo é analisado em LUFS. O teto protege picos de amostra dos efeitos; não garante true peak após a codificação Bluetooth. Ganhos altos podem reduzir a dinâmica.");
         title("Áudio espacial");
-        choice("Renderização espacial",new String[]{"Original","HRTF para fones • OpenAL Soft","IAMF binaural • arquivo IAMF"},audio.binauralSource?2:config.spatial,i->{
-            if(i==2){notice.accept(audio.binauralSource?"Esta faixa já é renderizada em IAMF binaural.":"Abra um arquivo .iamf compatível para usar o renderer binaural.");}
+        choice("Renderização espacial",new String[]{"Original","HRTF para fones • OpenAL Soft","HRTF em caixas / carro • experimental","IAMF binaural • arquivo IAMF"},audio.binauralSource?3:config.spatial,i->{
+            if(i==3){notice.accept(audio.binauralSource?"Esta faixa já é renderizada em IAMF binaural.":"Abra um arquivo .iamf compatível para usar o renderer binaural.");}
             else {config.spatial=i;if(i==1&&config.profile==0)config.profile=1;save();}
             build();
         });
         note(audio.binauralSource?"IAMF binaural ativo • libiamf/OAR. HRTF adicional desativada para esta faixa.":"IAMF binaural disponível para arquivos .iamf compatíveis. O renderer é ativado ao abrir esse conteúdo. Uma música estéreo do Spotify não contém IAMF.");
-        note("HRTF virtualiza mono, estéreo, quad, 5.1 e 7.1 em fones, inclusive Bluetooth. Escolha o perfil Fones para utilizá-la. Não há rastreamento de cabeça. O modo Original e o bypass preservam o estéreo sem efeitos.");
+        note("HRTF para fones só atua no perfil Fones ou numa saída de fones reconhecida. Para carro/caixas, use a opção experimental: aplica o mesmo binaural sem cancelar o cruzamento entre caixas e ouvidos; o resultado varia com posição e ambiente. Não há rastreamento de cabeça. Ative o processamento mestre para ouvir efeitos.");
         title("Componentes de áudio");note("FFmpeg • OpenAL Soft • libiamf / OAR • libebur128. Processamento local, sem root, microfone ou modo de chamada. Licenças e fontes: pacote local que acompanha este APK.");
         building=false;
     }
