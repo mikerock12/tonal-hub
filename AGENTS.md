@@ -308,3 +308,7 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
 - Mesmo modelo/hash 0.15.1; nenhum novo treinamento. A conferência pelo próprio
   modelo é heurística. 4 propostas aceitas no teste desktop não são 4 acertos
   semânticos; não declarar validação física ou velocidade medida no POCO X7 Pro.
+- Instaláveis identificados em docs/artifacts-0152.json, código de produto
+  93ef7455a5c98b3ee8aa66d0ab56c3bcee1b08bf. Commits documentais não são rebuild.
+- Backup privado 0.15.2: 1rVGPhTHvN79-CplhB5wJyEe3DeR_CZZl. Preservar verificação
+  de tamanho e privacidade; SHA remoto só quando o conector o fornecer.
