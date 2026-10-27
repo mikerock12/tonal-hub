@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QElapsedTimer>
+#include <utility>
 #include <QObject>
 #include <QProcess>
 #include <QStringList>
@@ -64,6 +65,11 @@ signals:
   // tocando aqui se perde.
   void sessionLost();
 
+public:
+  // Primeira faixa de uma sequência que o librespot pulou por falta de chave de
+  // áudio. O Player retoma por ela depois do reinício; consumir uma vez.
+  QString takeFailedTrack() { return std::exchange(m_failedTrack, QString()); }
+
 private:
   friend class SpotifyRecoveryTests;
   void beginRestart(bool automatic, const QString &reason);
@@ -83,7 +89,9 @@ private:
   QProcess m_process;
   QTimer m_restartTimer;
   QTimer m_terminateTimer, m_healthTimer;
-  QElapsedTimer m_recoveryWindow, m_pcmProgressClock;
+  QElapsedTimer m_recoveryWindow, m_pcmProgressClock, m_loadFailureClock, m_keyTimeoutClock;
+  int m_loadFailures = 0;
+  QString m_firstFailedTrack, m_failedTrack;
   QByteArray m_buffer;
   QStringList m_log;
   QString m_exe;

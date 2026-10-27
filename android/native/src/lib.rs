@@ -157,15 +157,38 @@ pub extern "system" fn Java_app_tonal_android_NativeBridge_nativeStart(mut env: 
             status(generation, "Pronto • Spotify Connect: Tonalify Android");
             tokio::pin!(task);
             let jam_busy=std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+            // Audio keys can stop arriving on a half-broken session: librespot then
+            // skips every track in a few seconds. Two tracks lost to key timeouts
+            // within 30 s end the cascade: report the first one as the resume point
+            // and let the service reconnect, instead of sweeping the whole queue.
+            // Tracks that are really unavailable (no key timeout) are skipped as before.
+            let mut key_failures=0u32;let mut first_failure:Option<std::time::Instant>=None;
+            let mut seen_timeouts=librespot::core::audio_key::KEY_TIMEOUTS.load(Ordering::Relaxed);
             loop {
                 tokio::select! {
                     _ = &mut task => {if generation==GENERATION.load(Ordering::SeqCst){status(generation, "Sessão Spotify encerrada. Toque na música para reconectar.");}break;},
                     Some(event) = events.recv() => {
-                        let progress=match event {
+                        let mut progress_override=None;
+                        let key_timed_out=matches!(event,PlayerEvent::Unavailable{..})&&{let t=librespot::core::audio_key::KEY_TIMEOUTS.load(Ordering::Relaxed);let changed=t!=seen_timeouts;seen_timeouts=t;changed};
+                        match &event {
+                            PlayerEvent::Unavailable{track_id,..} if key_timed_out => {
+                                let now=std::time::Instant::now();
+                                if first_failure.map_or(true,|at|now.duration_since(at)>Duration::from_secs(30)) {first_failure=Some(now);key_failures=0;progress_override=Some((track_id.clone(),0u32,true));}
+                                key_failures+=1;
+                                if key_failures>=2 && generation==GENERATION.load(Ordering::SeqCst) {key_failures=0;first_failure=None;status(generation,"Falha Spotify: músicas indisponíveis em sequência; reconectando sem pular a fila.");}
+                            },
+                            PlayerEvent::Playing{..} => {key_failures=0;first_failure=None;},
+                            // Jam membership pushed by the service (see spirc handle_session_update).
+                            PlayerEvent::SessionClientChanged{client_id,client_name,..} if client_id=="tonal-jam" && client_name.len()<=65536 => {
+                                if let Ok(update)=serde_json::from_str::<serde_json::Value>(client_name){jam_result(generation,&serde_json::json!({"event":"session_update","update":update}));}
+                            },
+                            _ => {}
+                        }
+                        let progress=progress_override.or(match event {
                             PlayerEvent::Playing{track_id,position_ms,..}|PlayerEvent::PositionChanged{track_id,position_ms,..}|PlayerEvent::Seeked{track_id,position_ms,..}=>Some((track_id,position_ms,true)),
                             PlayerEvent::Paused{track_id,position_ms,..}=>Some((track_id,position_ms,false)),
                             _=>None,
-                        };
+                        });
                         if generation==GENERATION.load(Ordering::SeqCst) {if let Some((track,position,active))=progress {if let Some(vm)=JVM.get(){if let Ok(env)=vm.attach_current_thread_permanently(){if let Ok(uri)=env.new_string(track.to_uri().unwrap_or_default()){let uri=env.auto_local(uri);let _=call_void("onProgress","(JLjava/lang/String;IZ)V",&[JValue::Long(generation as jlong),JValue::Object(uri.as_ref()),JValue::Int(position.min(i32::MAX as u32) as i32),JValue::Bool(active as u8)]);}}}}}
                     },
                     cmd = rx.recv() => {

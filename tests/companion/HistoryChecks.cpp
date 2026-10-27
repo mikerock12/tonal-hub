@@ -22,6 +22,7 @@ public:static void run(){
  require(tonal::jam::joined({},*firstJam).isEmpty(),"initial Jam snapshot must not invent new arrivals");
  auto added=jam.value("session_members").toArray();added.append(QJsonObject{{"id","member-two"},{"display_name","Outro participante"}});jam["session_members"]=added;auto nextJam=tonal::jam::parse(jam);
  require(nextJam&&tonal::jam::joined(*firstJam,*nextJam)==QStringList{"Outro participante"},"Jam reports the actual new member");
+ require(tonal::jam::left(*nextJam,*firstJam)==QStringList{"Outro participante"}&&tonal::jam::left(*firstJam,*nextJam).isEmpty(),"Jam reports who left without inventing departures");
  added.append(added[0]);jam["session_members"]=added;require(!tonal::jam::parse(jam),"duplicate member IDs are not valid arrivals");
  jam["session_members"]=QJsonArray{};jam["join_session_token"]="https://untrusted.invalid/path";auto noLink=tonal::jam::parse(jam);require(noLink&&noLink->value("link").toString().isEmpty(),"server content cannot inject a share URL");
  QJsonArray batch{QJsonObject{{"title","<Synthetic track>"},{"artist","Synthetic artist"}}};

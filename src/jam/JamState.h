@@ -38,4 +38,5 @@ inline QStringList joined(const QVariantMap &old,const QVariantMap &now){
     QSet<QString> before;for(const auto &v:old.value("members").toList())before.insert(v.toMap().value("id").toString());
     QStringList names;for(const auto &v:now.value("members").toList()){const auto m=v.toMap();if(!before.contains(m.value("id").toString()))names<<m.value("name").toString();}return names;
 }
+inline QStringList left(const QVariantMap &old,const QVariantMap &now){return joined(now,old);}
 }

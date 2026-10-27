@@ -50,6 +50,7 @@ public final class MainActivity extends Activity {
     private final Runnable ticker=new Runnable(){public void run(){
         if(destroyed)return;
         updateTransport();
+        if(!local&&api.loggedIn())jamClient.check();
         if(!local&&NativeBridge.ready&&api.loggedIn()&&!polling&&SystemClock.elapsedRealtime()-lastPoll>3000){
             polling=true;lastPoll=SystemClock.elapsedRealtime();
             int revision=playbackRevision;api.get("me/player",json->{polling=false;if(revision==playbackRevision)updatePlayer(json);},error->{polling=false;});
@@ -61,7 +62,7 @@ public final class MainActivity extends Activity {
     @Override public void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);AppTheme.apply(this);NativeBridge.repeatMode=RepeatMode.sanitize(getSharedPreferences("settings",MODE_PRIVATE).getInt("repeatMode",0));getWindow().setStatusBarColor(Ui.BG);getWindow().setNavigationBarColor(Ui.BG);
         importTestSession();
-        api=new SpotifyClient(this);engineApi=new SpotifyClient(this,true);ui=new Ui(this);artwork=new Artwork(this);
+        api=new SpotifyClient(this);engineApi=new SpotifyClient(this,true);ui=new Ui(this);artwork=new Artwork(this);jamClient=new JamClient(this,api);
         diagnostics=BuildConfig.DEBUG&&(getIntent().getBooleanExtra("benchmark",false)||getIntent().getBooleanExtra("selfTest",false)||getIntent().getBooleanExtra("streamingBenchmark",false)||getIntent().getBooleanExtra("catalogTest",false));
         buildShell();catalog=new CatalogScreen(this,api,artwork,body);
         setContentView(root);if(BuildConfig.DEBUG&&getIntent().getBooleanExtra("songPageFixture",false))handler.post(()->DebugSongPage.show(this,api));if(BuildConfig.DEBUG&&getIntent().getBooleanExtra("openSetlists",false))handler.post(()->DebugSongPage.setlists(this,api));if(BuildConfig.DEBUG&&getIntent().getBooleanExtra("mixUiFixture",false))handler.post(this::mixUiFixture);if(BuildConfig.DEBUG&&getIntent().getBooleanExtra("openTextPlaylist",false))handler.post(()->TextPlaylistWizard.show(this,api));NativeBridge.listeners.add(statusListener);NativeBridge.commandListeners.add(commandObserver);NativeBridge.progressObserver=progressObserver;home();String literal=getIntent().getStringExtra("literalQuery");if(literal!=null)catalog.search(literal);
@@ -99,7 +100,7 @@ public final class MainActivity extends Activity {
     void showHome(){home();}
     void songPageClosed(){catalog.refreshHome();}
     boolean isForeground(){return foreground&&!destroyed;}
-    void showJam(){if(jamClient==null)jamClient=new JamClient(this,api);jamClient.show();}
+    void showJam(){jamClient.show();}
     boolean isCurrentTrack(String uri){return !local&&uri.equals(currentUri);}
     private void search(){catalog.search();}
     private void library(){catalog.library();}

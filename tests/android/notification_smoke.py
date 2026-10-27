@@ -29,7 +29,7 @@ def launcher_aliases():
 def main():
     assert ui.run('shell','getprop','ro.kernel.qemu')=='1' and 'Tonal_Local_20261015' in ui.run('emu','avd','name')
     ui.run('install','-r',str(ROOT/'android/app/build/outputs/apk/benchmark/app-benchmark.apk'),timeout=180);ui.run('logcat','-c')
-    version=ui.run('shell','dumpsys','package',P).split('versionName=')[1].split()[0];assert version.startswith('0.13.'),version
+    version=ui.run('shell','dumpsys','package',P).split('versionName=')[1].split()[0];assert version==__import__('re').search(r"versionName '([^']+)'",(ROOT/'android/app/build.gradle').read_text()).group(1),version
     check('benchmark_apk_0132_installed',version=version)
     ui.run('shell','am','force-stop',P);ui.run('shell','am','start','-W','-n',P+'/app.tonal.android.MainActivity');time.sleep(2)
     ui.click('Conta');ui.click('Testar áudio por 60 segundos',scroll=True);time.sleep(6)

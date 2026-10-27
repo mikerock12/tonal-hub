@@ -7,6 +7,10 @@ use tokio::sync::oneshot;
 
 use crate::{Error, FileId, SpotifyId, packet::PacketType, util::SeqGenerator};
 
+/// Tonal: key responses that timed out, so the player can tell a broken session
+/// (keys stop arriving) from a track that is really unavailable.
+pub static KEY_TIMEOUTS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
 #[derive(Debug, Hash, PartialEq, Eq, Copy, Clone)]
 pub struct AudioKey(pub [u8; 16]);
 
@@ -92,6 +96,7 @@ impl AudioKeyManager {
         match tokio::time::timeout(KEY_RESPONSE_TIMEOUT, rx).await {
             Err(_) => {
                 error!("Audio key response timeout");
+                KEY_TIMEOUTS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                 Err(AudioKeyError::Timeout.into())
             }
             Ok(k) => k?,

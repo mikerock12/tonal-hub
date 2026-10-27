@@ -1,8 +1,22 @@
 # Contexto do Tonal Hub
 
-Atualizado em **26/10/2026**. Estado do produto: **Windows 0.15.2 / Android 0.15.2**. Leia também [AGENTS.md](AGENTS.md).
+Atualizado em **27/10/2026**. Estado do produto: **Windows 0.15.3 / Android 0.15.3**. Leia também [AGENTS.md](AGENTS.md).
 
-## Leitor 0.15.2 — retomada após timeout
+## 0.15.3 — faixas puladas, volume, botões de mídia e Jam
+
+Referência: [SKIP_VOLUME_JAM_0153.md](docs/SKIP_VOLUME_JAM_0153.md). Timeouts de
+chave de áudio faziam o librespot pular a fila inteira; agora dois pulos com
+timeout em 30 s reiniciam a sessão e retomam pela primeira faixa pulada, do
+começo. Faixa realmente indisponível continua só pulada. Volume inicial do motor
+nos primeiros 15 s após Ready (>10 pontos de diferença) é substituído uma vez
+pelo do usuário; mudo persiste o volume anterior. Android registra
+MediaButtonReceiver nas sessões (tecla com player fechado é ignorada, não acorda
+o Spotify). Jam: cliente Android criado na abertura, eventos SessionUpdate do
+dealer, avisos de entrada/saída/fila, compartilhamento do convite ao iniciar
+(PC copia). Sem teste entre contas reais, sem fone/carro físico e sem
+reprodução da falha de chaves com Spotify real.
+
+## Leitor 0.15.2 — retomada após timeout (histórico)
 
 O POCO X7 Pro físico do usuário atingiu o limite antes de entregar leituras na
 0.15.1. O leitor v5/schema 3 agora prepara uma faixa pendente por ação e salva

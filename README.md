@@ -10,15 +10,26 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
-**Build local: Windows 0.15.2 · Android 0.15.2. Documentação em 26/10/2026.**
+**Build local: Windows 0.15.3 · Android 0.15.3. Documentação em 27/10/2026.**
 
-[Pacotes e hashes 0.15.2](docs/artifacts-0152.json) · [Validação 0.15.2](docs/release-0152-tests.json) ·
+[Pacotes e hashes 0.15.3](docs/artifacts-0153.json) · [Validação 0.15.3](docs/release-0153-tests.json) ·
 [Guia visual com capturas](docs/GUIA_VISUAL.md) ·
 [Regras da Descoberta 2+1](docs/DESCOBERTA_2_MAIS_1.md) ·
 [Benchmarks realizados](docs/BENCHMARKS.md) ·
 [Contexto do projeto](contexto.md) · [Instruções de manutenção](AGENTS.md).
 
-## Atualização 0.15.2 — análise que pode continuar
+## Atualização 0.15.3 — reprodução estável e Jam com avisos
+
+Corrige as músicas que passavam sozinhas quando a sessão Spotify parava de
+entregar chaves de áudio: o Tonal reconecta e volta à primeira faixa pulada.
+No PC, o volume não salta mais após um reinício do motor e o mudo restaura o
+volume anterior. No Android, fones e carro deixam de abrir o app Spotify em
+segundo plano. O Jam mostra, no canto inferior esquerdo, quem entrou ou saiu e
+o que mudou na fila; ao iniciar, o convite é compartilhado (Android) ou copiado
+(PC), pois os amigos entram pelo link. Autoria de faixas não é inferida.
+[Correções e limites](docs/SKIP_VOLUME_JAM_0153.md).
+
+## Atualização 0.15.2 (histórico) — análise que pode continuar
 
 Corrige o leitor que atingia o limite de tempo antes da primeira interpretação.
 A preparação, geração e conferência agora têm retomada privada: **Continuar

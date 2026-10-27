@@ -4,7 +4,9 @@ $root=Split-Path $PSScriptRoot -Parent
 $sdkPath=Join-Path $env:LOCALAPPDATA 'Android\Sdk'
 $ndkPath=Join-Path $sdkPath 'ndk\27.0.12077973'
 $compilerPath=Join-Path $ndkPath 'toolchains\llvm\prebuilt\windows-x86_64\bin'
-$env:JAVA_HOME='C:\Program Files\Microsoft\jdk-17.0.20.101-hotspot'
+# O Microsoft OpenJDK 17 se atualiza sozinho e troca a pasta: usa o mais novo instalado.
+$env:JAVA_HOME=(Get-ChildItem 'C:\Program Files\Microsoft' -Directory -Filter 'jdk-17*' -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -First 1).FullName
+if(-not $env:JAVA_HOME){throw 'JDK 17 da Microsoft não encontrado em C:\Program Files\Microsoft.'}
 $env:ANDROID_HOME=$sdkPath
 $env:ANDROID_NDK_HOME=$ndkPath
 $env:PATH="$env:USERPROFILE\.cargo\bin;$env:JAVA_HOME\bin;$compilerPath;$env:PATH"
@@ -61,6 +63,6 @@ if($PhoneOnly){$gradleArgs+='-PtonalAbi=arm64-v8a'}
 if($LASTEXITCODE -ne 0){throw 'Build APK falhou'}
 $outputPath=Join-Path $root 'out\android'
 New-Item -ItemType Directory -Force $outputPath | Out-Null
-$apkName=if($PhoneOnly){'Tonal-Android-0.15.2-arm64-v8a.apk'}else{'Tonal-Android-0.15.2-local.apk'}
+$apkName=if($PhoneOnly){'Tonal-Android-0.15.3-arm64-v8a.apk'}else{'Tonal-Android-0.15.3-local.apk'}
 Copy-Item -LiteralPath (Join-Path $root 'android\app\build\outputs\apk\release\app-release.apk') -Destination (Join-Path $outputPath $apkName) -Force
 Write-Host "APK local: $outputPath\$apkName"

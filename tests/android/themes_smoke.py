@@ -44,7 +44,7 @@ def main():
     apk=ROOT/'android/app/build/outputs/apk/benchmark/app-benchmark.apk'
     ui.run('install','-r',str(apk),timeout=180);ui.run('logcat','-c')
     ui.run('shell','am','force-stop',P);ui.run('shell','am','start','-W','-n',P+'/app.tonal.android.MainActivity');time.sleep(2)
-    version=ui.run('shell','dumpsys','package',P).split('versionName=')[1].split()[0];assert version.startswith('0.13.'),version
+    version=ui.run('shell','dumpsys','package',P).split('versionName=')[1].split()[0];assert version==__import__('re').search(r"versionName '([^']+)'",(ROOT/'android/app/build.gradle').read_text()).group(1),version
     check('benchmark_apk_0130_installed',version=version)
     before=rehearsal()
     check('local_audio_playing',frames=before['frames'])

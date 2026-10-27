@@ -489,6 +489,32 @@ void LibrespotProcess::handleLine(const QString &line) {
   }
   // Aqui o próprio librespot abre uma sessão nova; só avisamos que a reprodução
   // se perdeu. O "Authenticated as" seguinte volta o estado para Ready.
+  // Sem chave de áudio (sessão com o canal de chaves travado), o librespot pula
+  // para a próxima a cada ~4 s e varre a fila inteira. Duas faixas seguidas
+  // assim encerram a cascata: reinicia a sessão e retoma pela primeira.
+  if (line.contains(QLatin1String("Audio key response timeout")))
+    m_keyTimeoutClock.start();
+  // Só a falta de chave (sessão meio quebrada) conta; faixa de fato
+  // indisponível continua sendo pulada pelo librespot, sem reinício.
+  if (line.contains(QLatin1String("Skipping to next track, unable to load track")) &&
+      m_keyTimeoutClock.isValid() && m_keyTimeoutClock.elapsed() < 10000) {
+    const int start = line.indexOf(QLatin1String("spotify:track:"));
+    const QString uri = start < 0 ? QString() : line.mid(start, 36);
+    if (!m_loadFailureClock.isValid() || m_loadFailureClock.elapsed() > 30000) {
+      m_loadFailureClock.start();
+      m_loadFailures = 0;
+      m_firstFailedTrack = uri;
+    }
+    if (++m_loadFailures >= 2) {
+      m_failedTrack = m_firstFailedTrack;
+      m_loadFailures = 0;
+      m_loadFailureClock.invalidate();
+      beginRestart(true, "audio keys unavailable; tracks were being skipped");
+    }
+    return;
+  }
+  if (line.contains(QLatin1String(") loaded")))
+    m_loadFailures = 0;
   if (line.contains(QLatin1String("Spirc shut down unexpectedly"))) {
     beginRestart(true, "Spotify Connect session stopped unexpectedly");
     return;

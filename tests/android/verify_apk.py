@@ -28,6 +28,8 @@ with apk.open('rb') as raw, zipfile.ZipFile(apk) as archive:
         expected = {'libtonal_muse.so','libtonal_android.so','libtonal_audio.so','libopenal.so','libc++_shared.so',
                     'libavfilter.so','libavformat.so','libavcodec.so','libavutil.so','libswresample.so'}
         if args.stories:expected.add("libtonal_story.so")
+        # 0.15.2+: ARM64 also carries the guarded accelerated reader backend.
+        if args.stories and abi=="arm64-v8a":expected.add("libtonal_story_fast.so")
         assert not any(n.endswith(".gguf") for n in names), "Model weights must remain optional"
         assert {Path(n).name for n in libraries} == expected
         results = {}
