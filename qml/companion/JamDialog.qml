@@ -15,7 +15,7 @@ Dialog {
     function present(){open();controller.refresh()}
     contentItem:ScrollView {clip:true;ColumnLayout {
         width:panel.availableWidth;spacing:14
-        Label {Layout.fillWidth:true;wrapMode:Text.Wrap;text:"Convide amigos que usam o Spotify. As entradas são informadas; não há aprovação prévia de participantes nesta integração experimental."}
+        Label {Layout.fillWidth:true;wrapMode:Text.Wrap;text:"Iniciar Jam cria a sessão; seus amigos entram pelo convite (link). Ao iniciar, o convite é copiado para você colar na conversa que escolher. As entradas são informadas; não há aprovação prévia de participantes nesta integração experimental."}
         Label {Layout.fillWidth:true;wrapMode:Text.Wrap;textFormat:Text.PlainText;text:panel.controller.status;font.bold:true}
         BusyIndicator {running:panel.controller.busy;visible:running;Layout.alignment:Qt.AlignHCenter}
         Flow {
@@ -25,6 +25,7 @@ Dialog {
             Button {text:"Copiar convite";visible:!!panel.controller.session.link;onClicked:panel.controller.copyInvite()}
             Button {text:panel.controller.session.host?"Encerrar Jam":"Sair do Jam";visible:!!panel.controller.session.active;enabled:!panel.controller.busy;onClicked:panel.controller.leave()}
         }
+        TextField {objectName:"jamInviteLink";Layout.fillWidth:true;readOnly:true;selectByMouse:true;visible:!!panel.controller.session.link;text:panel.controller.session.link||""}
         Label {text:"Participantes";font.bold:true;visible:!!panel.controller.session.active}
         Repeater {model:panel.controller.session.members||[];Label {required property var modelData;Layout.fillWidth:true;wrapMode:Text.Wrap;textFormat:Text.PlainText;text:modelData.name}}
         TextField {id:invite;Layout.fillWidth:true;maximumLength:600;placeholderText:"Cole um convite open.spotify.com/socialsession…"}

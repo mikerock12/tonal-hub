@@ -1929,6 +1929,24 @@ impl SpircTask {
             Some(session) => session,
         };
 
+        // Tonal: forward Jam membership changes (who joined/left, as named by the
+        // service) to the app through a reserved client id. Nothing is inferred.
+        {
+            let member = |m: &librespot_protocol::social_connect_v2::SessionMember| {
+                let name = if !m.display_name.is_empty() { &m.display_name } else { &m.username };
+                serde_json::json!({"id": m.id.chars().take(160).collect::<String>(), "name": name.chars().take(160).collect::<String>()})
+            };
+            let payload = serde_json::json!({
+                "reason": reason.map(|r| format!("{r:?}")).unwrap_or_else(|_| "UNKNOWN".into()),
+                "session": session.session_id.chars().take(128).collect::<String>(),
+                "owner": session.is_session_owner,
+                "members": session.session_members.iter().take(128).map(member).collect::<Vec<_>>(),
+                "updated": session_update.updated_session_members.iter().take(32).map(member).collect::<Vec<_>>(),
+            });
+            self.player.emit_session_client_changed_event(
+                "tonal-jam".into(), payload.to_string(), String::new(), String::new());
+        }
+
         let active_device = session.host_active_device_id.take();
         if matches!(active_device, Some(ref device) if device == self.session.device_id()) {
             info!(

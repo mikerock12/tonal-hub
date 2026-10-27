@@ -28,6 +28,8 @@ JamController::JamController(Player*p,LibrespotProcess*e,SpotifyApi*a,QObject*pa
     connect(&m_process,&QProcess::finished,this,[this](int,QProcess::ExitStatus){if(m_busy)fail("A conexão Jam foi encerrada. Atualize para reconectar.");});
     m_poll.setInterval(5000);connect(&m_poll,&QTimer::timeout,this,[this]{if(!m_busy&&QGuiApplication::applicationState()==Qt::ApplicationActive)refresh();});
     connect(p,&Player::playbackRequested,this,[this]{m_queueBaseline=false;m_quietUntil=QDateTime::currentMSecsSinceEpoch()+3500;});
+    connect(qGuiApp,&QGuiApplication::applicationStateChanged,this,[this](Qt::ApplicationState s){if(s==Qt::ApplicationActive)autoCheck();});
+    connect(e,&LibrespotProcess::stateChanged,this,[this]{if(m_engine->state()==LibrespotProcess::Ready)QTimer::singleShot(4000,this,&JamController::autoCheck);});
     connect(e,&LibrespotProcess::stateChanged,this,[this]{if(m_engine->state()==LibrespotProcess::Stopped||m_engine->state()==LibrespotProcess::NeedsLogin){++m_epoch;m_session.clear();m_poll.stop();m_process.kill();m_busy=false;m_timeout.stop();m_queueBaseline=false;emit changed();}});
 }
 JamController::~JamController(){m_process.kill();m_process.waitForFinished(1000);}
@@ -46,8 +48,13 @@ void JamController::request(QJsonObject command){
     else {m_buffer.clear();m_process.setProgram(QCoreApplication::applicationDirPath()+"/TonalJam.exe");m_process.setArguments({m_engine->sessionCachePath()});m_process.start();}
 }
 void JamController::refresh(){request({{"op","current"}});}
+void JamController::autoCheck(){
+    const auto now=QDateTime::currentMSecsSinceEpoch();
+    if(m_busy||m_session.value("active").toBool()||m_engine->state()!=LibrespotProcess::Ready||QGuiApplication::applicationState()!=Qt::ApplicationActive||(m_lastAutoCheck&&now-m_lastAutoCheck<300000))return;
+    m_lastAutoCheck=now;refresh();
+}
 void JamController::start(){request({{"op","start"}});}
-void JamController::copyInvite(){const auto link=m_session.value("link").toString();if(!link.isEmpty())QGuiApplication::clipboard()->setText(link);}
+void JamController::copyInvite(){const auto link=m_session.value("link").toString();if(!link.isEmpty()){QGuiApplication::clipboard()->setText(link);emit notice("Convite do Jam copiado. Cole o link para seus amigos.");}}
 void JamController::join(const QString &value){
     QString token=value.trimmed();const QUrl u(token);
     if(u.scheme()=="https"&&u.host()=="open.spotify.com"&&u.userInfo().isEmpty()&&u.path().startsWith("/socialsession/"))token=u.path().mid(15);
@@ -65,7 +72,11 @@ void JamController::response(const QJsonObject &reply){
     if(!parsed){if(op!="current"){QTimer::singleShot(0,this,&JamController::refresh);return;}m_status="O Spotify retornou um formato Jam não reconhecido.";m_poll.stop();emit changed();return;}
     if(m_session.value("id")!=parsed->value("id")){++m_epoch;m_queueBaseline=false;}
     for(const auto &name:tonal::jam::joined(m_session,*parsed))emit notice(name+" entrou no Jam");
-    m_session=*parsed;m_status="Jam ativo • alterações confirmadas aparecem no player";m_poll.start();emit changed();pollQueue();
+    for(const auto &name:tonal::jam::left(m_session,*parsed))emit notice(name+" saiu do Jam");
+    m_session=*parsed;m_status="Jam ativo • alterações confirmadas aparecem no player";
+    // Iniciar só cria a sessão: os amigos entram pelo convite, que já vai para a área de transferência.
+    if(op=="start"){if(!m_session.value("link").toString().isEmpty()){QGuiApplication::clipboard()->setText(m_session.value("link").toString());m_status="Jam iniciado • convite copiado. Envie o link para seus amigos entrarem.";}else m_status="Jam iniciado • atualize para obter o convite.";}
+    m_poll.start();emit changed();pollQueue();
 }
 void JamController::pollQueue(){
     if(m_queueBusy||!m_session.value("active").toBool())return;m_queueBusy=true;const auto epoch=m_epoch;
@@ -83,10 +94,11 @@ void JamController::pollQueue(){
             for(int i=alignment.suffix;i<old.size();++i)if(std::find(alignment.matches.begin(),alignment.matches.end(),i)==alignment.matches.end())observed<<old[i];emit queueCapacityExceeded(observed.size()>500);
             if(observed.size()<=500){std::vector<std::string> merged;for(const auto &v:observed)merged.push_back(v.toMap().value("uri").toString().toStdString());if(merged!=before)m_player->reconcileJamQueue(observed);}
         }
-        QStringList ids,names;for(const auto &v:object.value("queue").toArray()){if(ids.size()>=100)break;const auto t=v.toObject();const auto uri=t.value("uri").toString();if(uri.isEmpty())continue;ids<<uri;names<<t.value("name").toString().left(160);}
+        QStringList ids,names;for(const auto &v:object.value("queue").toArray()){if(ids.size()>=100)break;const auto t=v.toObject();const auto uri=t.value("uri").toString();if(uri.isEmpty())continue;ids<<uri;const auto artists=t.value("artists").toArray();const auto artist=artists.isEmpty()?QString():artists.first().toObject().value("name").toString();names<<(artist.isEmpty()?t.value("name").toString():t.value("name").toString()+" — "+artist).left(200);}
         const bool notify=m_queueBaseline&&anchor==m_queueAnchor&&QDateTime::currentMSecsSinceEpoch()>=m_quietUntil;
         if(notify&&ids!=m_queueUris){QStringList remaining=m_queueUris,added;for(int i=0;i<ids.size();++i){int at=remaining.indexOf(ids[i]);if(at>=0)remaining.removeAt(at);else if(added.size()<3)added<<names[i];}
-            emit notice(added.isEmpty()?"A ordem ou as músicas da fila do Jam foram alteradas":"Adicionada à fila do Jam: "+added.join(" • "));
+            const int removed=remaining.size();
+            emit notice(!added.isEmpty()?"Adicionada à fila do Jam: "+added.join(" • "):removed>0?(removed==1?QString("Uma música saiu da fila do Jam"):QString("%1 músicas saíram da fila do Jam").arg(removed)):QString("A ordem da fila do Jam mudou"));
         }
         m_queueAnchor=anchor;m_queueUris=ids;m_queueBaseline=true;
     });

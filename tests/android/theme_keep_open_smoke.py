@@ -39,7 +39,7 @@ def launch_from_icon():
 def main():
     assert ui.run('shell','getprop','ro.kernel.qemu')=='1' and 'Tonal_Local_20261015' in ui.run('emu','avd','name')
     ui.run('install','-r',str(ROOT/'android/app/build/outputs/apk/benchmark/app-benchmark.apk'),timeout=180);ui.run('logcat','-c')
-    version=ui.run('shell','dumpsys','package',P).split('versionName=')[1].split()[0];assert version.startswith('0.13.3') or __import__('os').environ.get('TONAL_REPRO_OLD')=='1',version
+    version=ui.run('shell','dumpsys','package',P).split('versionName=')[1].split()[0];assert version==__import__('re').search(r"versionName '([^']+)'",(ROOT/'android/app/build.gradle').read_text()).group(1) or __import__('os').environ.get('TONAL_REPRO_OLD')=='1',version
     check('benchmark_apk_0133_installed',version=version)
     ui.run('shell','am','force-stop',P)
     if aliases()!=['HubIconTonal']:

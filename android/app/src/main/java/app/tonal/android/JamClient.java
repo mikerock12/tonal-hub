@@ -33,12 +33,20 @@ final class JamClient implements AutoCloseable {
         if(!same){host.cancelMix();host.orderedQueue.clear();host.orderedQueue.addAll(observed);host.orderedCursor=0;}
     }
     void quiet(){baseline=false;quietUntil=SystemClock.elapsedRealtime()+3500;}
-    void foreground(boolean value){main.removeCallbacks(poll);if(value&&active())main.post(poll);if(!value){notices.clear();if(popup!=null)popup.dismiss();popup=null;}}
+    // Notices that arrive while the app is in the background wait (at most eight)
+    // and appear when it returns; the in-app popup never draws over other apps.
+    void foreground(boolean value){main.removeCallbacks(poll);if(value&&active())main.post(poll);if(value){check();if(popup==null)nextNotice();}else{if(popup!=null)popup.dismiss();popup=null;}}
+    private long lastCheck;
+    /** Finds an active Jam without opening the dialog (engine ready, app in front), at most every two minutes. */
+    void check(){if(closed||busy||active()||!host.isForeground()||!NativeBridge.ready)return;long now=SystemClock.elapsedRealtime();if(lastCheck!=0&&now-lastCheck<120000)return;lastCheck=now;request("current",null);}
+    /** Share sheet chosen by the user; nothing is sent automatically. */
+    private void shareInvite(){String link=session.optString("link");if(link.isEmpty()||closed)return;Intent send=new Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT,"Entre no meu Jam no Spotify: "+link);try{host.startActivity(Intent.createChooser(send,"Convidar para o Jam"));}catch(ActivityNotFoundException e){host.notice("Convite copiado");}}
     void show(){
-        LinearLayout content=ui.column();ui.pad(content,18,12);content.addView(ui.text("Convide amigos que usam o Spotify. A entrada será informada, sem aprovação prévia. Protocolo experimental.",14,Ui.MUTED));
+        LinearLayout content=ui.column();ui.pad(content,18,12);content.addView(ui.text("Iniciar Jam cria a sessão; seus amigos entram pelo convite (link). Ao iniciar, o Tonalify abre o compartilhamento para você escolher para quem enviar. A entrada é informada, sem aprovação prévia. Protocolo experimental.",14,Ui.MUTED));
         TextView state=ui.text(status,15,Ui.TEXT);content.addView(state);LinearLayout controls=ui.row();
         TextView start=ui.action("Iniciar Jam",()->request("start",null));ui.weight(controls,start);
         TextView refresh=ui.action("Atualizar",()->request("current",null));ui.weight(controls,refresh);content.addView(controls);
+        TextView share=ui.action("Compartilhar convite",this::shareInvite);content.addView(share);
         TextView copy=ui.action("Copiar convite",()->{String link=session.optString("link");if(!link.isEmpty()){host.getSystemService(android.content.ClipboardManager.class).setPrimaryClip(ClipData.newPlainText("Convite Jam",link));host.notice("Convite copiado");}});content.addView(copy);
         TextView leave=ui.action("Sair / encerrar Jam",()->request(session.optBoolean("host")?"end":"leave",null));content.addView(leave);
         LinearLayout members=ui.column();content.addView(members);
@@ -50,7 +58,7 @@ final class JamClient implements AutoCloseable {
             if(token==null||!token.matches("[A-Za-z0-9_-]{6,512}")){host.notice("Use um convite open.spotify.com/socialsession ou o código do Jam.");return;}request("join",token);
         });content.addView(join);content.addView(ui.text("O Spotify pode exigir Premium. Avisos mostram a autoria apenas quando identificada pelo serviço. Nenhum convite é enviado automaticamente.",12,Ui.MUTED));
         ScrollView scroll=new ScrollView(host);scroll.addView(content);dialog=new AlertDialog.Builder(host).setTitle("Jam com amigos").setView(scroll).setPositiveButton("Fechar",null).create();
-        redraw=()->{state.setText(status);start.setEnabled(!busy&&!active());refresh.setEnabled(!busy);join.setEnabled(!busy);leave.setVisibility(active()?View.VISIBLE:View.GONE);leave.setEnabled(!busy);copy.setVisibility(session.optString("link").isEmpty()?View.GONE:View.VISIBLE);members.removeAllViews();for(Object v:MusicStore.values(MusicStore.array(session,"members")))members.addView(ui.text(((JSONObject)v).optString("name"),16,Ui.TEXT));};
+        redraw=()->{state.setText(status);start.setEnabled(!busy&&!active());refresh.setEnabled(!busy);join.setEnabled(!busy);leave.setVisibility(active()?View.VISIBLE:View.GONE);leave.setEnabled(!busy);copy.setVisibility(session.optString("link").isEmpty()?View.GONE:View.VISIBLE);share.setVisibility(copy.getVisibility());members.removeAllViews();for(Object v:MusicStore.values(MusicStore.array(session,"members")))members.addView(ui.text(((JSONObject)v).optString("name"),16,Ui.TEXT));};
         dialog.setOnDismissListener(d->{redraw=()->{};dialog=null;});dialog.show();redraw.run();request("current",null);
     }
     private void request(String operation,String token){
@@ -63,16 +71,31 @@ final class JamClient implements AutoCloseable {
     private final Runnable poll=new Runnable(){public void run(){if(closed||!host.isForeground()||!active())return;if(!busy)request("current",null);main.postDelayed(this,5000);}};
     private void result(String json){
         if(closed)return;try{
-            JSONObject response=new JSONObject(json);if(!busy||response.optInt("request",-1)!=pending)return;busy=false;main.removeCallbacks(timeout);int code=response.optInt("status");
+            JSONObject response=new JSONObject(json);
+            if("session_update".equals(response.optString("event"))){update(response.optJSONObject("update"));return;}
+            if(!busy||response.optInt("request",-1)!=pending)return;busy=false;main.removeCallbacks(timeout);int code=response.optInt("status");
             if(code==404&&op.equals("current")){session=new JSONObject();baseline=false;status="Nenhum Jam ativo nesta conta.";main.removeCallbacks(poll);redraw.run();return;}
             if(code<200||code>=300){cooldown=SystemClock.elapsedRealtime()+(code==429?60000:code==503?15000:5000);status="Jam indisponível nesta sessão (HTTP "+code+").";main.removeCallbacks(poll);redraw.run();return;}
             if(op.equals("end")||op.equals("leave")){session=new JSONObject();baseline=false;status="Você saiu do Jam.";main.removeCallbacks(poll);redraw.run();return;}
             JSONObject next=parse(response.optJSONObject("result"),response.optString("viewer"));
             if(next==null){if(!op.equals("current")){request("current",null);return;}status="Formato de sessão Jam não reconhecido.";redraw.run();return;}
-            if(session.optString("id").equals(next.optString("id"))){Set<String> old=new HashSet<>();for(Object v:MusicStore.values(MusicStore.array(session,"members")))old.add(((JSONObject)v).optString("id"));for(Object v:MusicStore.values(MusicStore.array(next,"members"))){JSONObject m=(JSONObject)v;if(!old.contains(m.optString("id")))notice(m.optString("name")+" entrou no Jam");}}
+            if(session.optString("id").equals(next.optString("id"))){Set<String> old=new HashSet<>();for(Object v:MusicStore.values(MusicStore.array(session,"members")))old.add(((JSONObject)v).optString("id"));for(Object v:MusicStore.values(MusicStore.array(next,"members"))){JSONObject m=(JSONObject)v;if(!old.remove(m.optString("id")))notice(m.optString("name")+" entrou no Jam");}for(Object v:MusicStore.values(MusicStore.array(session,"members"))){JSONObject m=(JSONObject)v;if(old.contains(m.optString("id")))notice(m.optString("name")+" saiu do Jam");}}
             else baseline=false;
-            session=next;status="Jam ativo • alterações confirmadas aparecem no player";redraw.run();main.removeCallbacks(poll);if(host.isForeground())main.postDelayed(poll,5000);pollQueue();
+            session=next;status="Jam ativo • alterações confirmadas aparecem no player";redraw.run();if(op.equals("start")){status="Jam iniciado • envie o convite para seus amigos entrarem";redraw.run();shareInvite();}main.removeCallbacks(poll);if(host.isForeground())main.postDelayed(poll,5000);pollQueue();
         }catch(Exception invalid){busy=false;main.removeCallbacks(poll);status="Resposta Jam inválida.";redraw.run();}
+    }
+    /** Membership pushed by the service: who joined or left, as the service names them. */
+    private void update(JSONObject update){
+        if(update==null||closed)return;String reason=update.optString("reason"),id=update.optString("session");
+        if(!id.matches("[A-Za-z0-9_-]{6,128}"))return;
+        JSONArray members=new JSONArray();for(Object v:MusicStore.values(MusicStore.array(update,"members"))){if(!(v instanceof JSONObject)||members.length()>=128)continue;JSONObject m=(JSONObject)v;try{members.put(new JSONObject().put("id",m.optString("id")).put("name",m.optString("name").isEmpty()?"Participante":m.optString("name")));}catch(JSONException ignored){}}
+        boolean known=id.equals(session.optString("id"));
+        for(Object v:MusicStore.values(MusicStore.array(update,"updated"))){if(!(v instanceof JSONObject))continue;String name=((JSONObject)v).optString("name");if(name.isEmpty())name="Um participante";
+            if(reason.equals("USER_JOINED"))notice(name+" entrou no Jam");else if(reason.equals("USER_LEFT"))notice(name+" saiu do Jam");else if(reason.equals("USER_KICKED"))notice(name+" foi removido do Jam");}
+        if(reason.equals("SESSION_DELETED")||reason.equals("YOU_LEFT")||reason.equals("YOU_WERE_KICKED")){if(known){session=new JSONObject();baseline=false;main.removeCallbacks(poll);}notice(reason.equals("SESSION_DELETED")?"O Jam foi encerrado":reason.equals("YOU_WERE_KICKED")?"Você foi removido do Jam":"Você saiu do Jam");status="Nenhum Jam ativo nesta conta.";redraw.run();return;}
+        // Keep the polled member list in step so the next poll does not repeat these notices.
+        try{if(known||session.length()==0){if(!known){session=new JSONObject().put("id",id).put("active",true).put("host",update.optBoolean("owner")).put("link","");}session.put("members",members);}}catch(JSONException ignored){}
+        redraw.run();if(!busy&&(session.optString("link").isEmpty()||!known))request("current",null);else if(host.isForeground()){main.removeCallbacks(poll);main.postDelayed(poll,5000);}
     }
     private static String text(JSONObject value,String... fields){for(String field:fields){Object v=value.opt(field);if(v instanceof String)return (String)v;}return "";}
     static JSONObject parse(JSONObject value)throws JSONException{return parse(value,"");}
@@ -85,12 +108,12 @@ final class JamClient implements AutoCloseable {
     private void pollQueue(){
         if(queueBusy||!active()||!host.isForeground())return;queueBusy=true;String identity=session.optString("id");
         api.get("me/player/queue",data->{queueBusy=false;if(closed||!identity.equals(session.optString("id")))return;
-            String current=MusicStore.object(data,"currently_playing").optString("uri");ArrayList<String> next=new ArrayList<>(),names=new ArrayList<>();for(Object v:MusicStore.values(MusicStore.array(data,"queue"))){if(next.size()>=100)break;JSONObject track=(JSONObject)v;if(!track.optString("uri").isEmpty()){next.add(track.optString("uri"));names.add(track.optString("name"));}}
-            if(baseline&&current.equals(queueAnchor)&&SystemClock.elapsedRealtime()>=quietUntil&&!next.equals(queue)){ArrayList<String> old=new ArrayList<>(queue),added=new ArrayList<>();for(int i=0;i<next.size();i++){if(!old.remove(next.get(i))&&added.size()<3)added.add(names.get(i));}notice(added.isEmpty()?"A ordem ou as músicas da fila do Jam foram alteradas":"Adicionada à fila do Jam: "+String.join(" • ",added));}
+            String current=MusicStore.object(data,"currently_playing").optString("uri");ArrayList<String> next=new ArrayList<>(),names=new ArrayList<>();for(Object v:MusicStore.values(MusicStore.array(data,"queue"))){if(next.size()>=100)break;JSONObject track=(JSONObject)v;if(!track.optString("uri").isEmpty()){next.add(track.optString("uri"));JSONArray who=track.optJSONArray("artists");String artist=who!=null&&who.length()>0?who.optJSONObject(0).optString("name"):"";names.add(artist.isEmpty()?track.optString("name"):track.optString("name")+" — "+artist);}}
+            if(baseline&&current.equals(queueAnchor)&&SystemClock.elapsedRealtime()>=quietUntil&&!next.equals(queue)){ArrayList<String> old=new ArrayList<>(queue),added=new ArrayList<>();for(int i=0;i<next.size();i++){if(!old.remove(next.get(i))&&added.size()<3)added.add(names.get(i));}int removed=old.size();notice(!added.isEmpty()?"Adicionada à fila do Jam: "+String.join(" • ",added):removed>0?(removed==1?"Uma música saiu da fila do Jam":removed+" músicas saíram da fila do Jam"):"A ordem da fila do Jam mudou");}
             reconcile(data,current);queue=next;queueAnchor=current;baseline=true;
         },error->queueBusy=false);
     }
-    private void notice(String text){if(!host.isForeground()||closed)return;String bounded=text.substring(0,Math.min(600,text.length()));if(notices.contains(bounded))return;while(notices.size()>=8)notices.removeFirst();notices.addLast(bounded);if(popup==null)nextNotice();}
+    private void notice(String text){if(closed)return;String bounded=text.substring(0,Math.min(600,text.length()));if(notices.contains(bounded))return;while(notices.size()>=8)notices.removeFirst();notices.addLast(bounded);if(popup==null&&host.isForeground())nextNotice();}
     private void nextNotice(){
         if(closed||!host.isForeground()||notices.isEmpty())return;
         TextView label=ui.text(notices.removeFirst(),14,Ui.TEXT);ui.pad(label,16,14);ui.rounded(label,Ui.TINT,14);int width=Math.min(ui.dp(360),host.getResources().getDisplayMetrics().widthPixels-ui.dp(32));

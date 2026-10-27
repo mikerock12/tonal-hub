@@ -321,15 +321,8 @@ Item {
                       : root.player.volume < 50 ? Icons.volLowS : Icons.volHighS
             strokeWidth: 1.8
             tooltip: root.player.volume === 0 ? qsTr("Ativar som") : qsTr("Sem som")
-            property int lastVolume: 50
-            onClicked: {
-                if (root.player.volume > 0) {
-                    lastVolume = root.player.volume
-                    root.player.setVolume(0)
-                } else {
-                    root.player.setVolume(lastVolume)
-                }
-            }
+            // O volume anterior ao mudo fica salvo no Player (sobrevive a reinícios).
+            onClicked: root.player.toggleMute()
         }
         SeekBar {
             objectName: "volumeSlider"

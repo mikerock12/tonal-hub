@@ -1,0 +1,138 @@
+{
+  "version": "0.15.3",
+  "productSourceCommit": "f5bd00de16f0c27420534ce0d3ee150e44300693",
+  "documentationCommitsDoNotImplyRebuild": true,
+  "windowsPackagingVersion": "0.15.3.0",
+  "androidVersionCode": 23,
+  "files": [
+    {
+      "file": "Tonal-Hub-0.15.3.0-Windows-x64-Setup.exe",
+      "localPath": "D:/PROJETOS/Tonal-Player-Matheus/out/release-local/Tonal-Hub-0.15.3.0-Windows-x64-Setup.exe",
+      "bytes": 84552657,
+      "sha256": "e7da403dbc875fc55a6331985f8d4469f488db002c02c86e870b4e635f4dd8c5"
+    },
+    {
+      "file": "Tonal-Hub-0.15.3-local.zip",
+      "localPath": "D:/PROJETOS/Tonal-Player-Matheus/out/release-local/Tonal-Hub-0.15.3-local.zip",
+      "bytes": 119749621,
+      "sha256": "d1664922dad1cb68bf1461add9a5a7a810357c95e6491af4ab88bca5f85d7560"
+    },
+    {
+      "file": "Tonal-Android-0.15.3-local.apk",
+      "localPath": "D:/PROJETOS/Tonal-Player-Matheus/out/android/Tonal-Android-0.15.3-local.apk",
+      "bytes": 64125193,
+      "sha256": "ce7f79ecfead83c5009f2d9d799f25f88a7beff1c2b4f5717f22a4d4a9cb3cb0"
+    },
+    {
+      "file": "Tonal-Android-0.15.3-arm64-v8a.apk",
+      "localPath": "D:/PROJETOS/Tonal-Player-Matheus/out/android/Tonal-Android-0.15.3-arm64-v8a.apk",
+      "bytes": 35956888,
+      "sha256": "8d12701cba05beb05b3e969adbec5e880c8fdc9c7011d5cd5c1ec29f745a64e4"
+    }
+  ],
+  "windowsComponents": [
+    {
+      "file": "TonalHub.exe",
+      "sha256": "de3d3e8ab2a9420e47b40e7c79e7cdc8254057c766734be8868002c316fc3518"
+    },
+    {
+      "file": "Tonalify.exe",
+      "sha256": "b0511f39513318f994b9aa8554a49842e26cff6335c16dd9ba3fff19fbf710b8"
+    },
+    {
+      "file": "IndieTonal.exe",
+      "sha256": "7bf916e6dec3365397fa9f84284b3208bc6e4a0f670c1ef395ef47b18cbaf607"
+    },
+    {
+      "file": "TonalStories.exe",
+      "sha256": "841915640427776ae8799b8a8fb4fa74cc2fde5a736e47252835ffa834bbc3ec"
+    },
+    {
+      "file": "TonalJam.exe",
+      "sha256": "4649b94f843d21ca13c369ca49bb7e3fdde7d66c1231faaafe0fe7e48f629a52"
+    },
+    {
+      "file": "librespot.exe",
+      "sha256": "bad3a71ef164fd59c7bedd026860b03c53e8ddf223d3d269b2ba09e6e2284287"
+    }
+  ],
+  "androidSigning": {
+    "certificate": "CN=Android Debug, O=Android, C=US",
+    "sha256": "464ae7cf34f4f145541569db215f8fcdef5deda1be31921d8e366eed20aa22c2",
+    "note": "same local signing key as earlier builds; install over the previous version"
+  },
+  "cliProvenance": {
+    "upstream": "librespot 0.8.0",
+    "registrySha256": "030c5e98cc06f20283b5948ae23bdac1de0dec58dee2c5ec4c8dafc7aaa796ab",
+    "verifiedSourceFiles": 16,
+    "patches": [
+      "librespot-core",
+      "librespot-audio",
+      "librespot-playback",
+      "librespot-connect"
+    ]
+  },
+  "readerProvenance": {
+    "runtime_revision": "3f03b17724ad8b69040825f45c43c59b092a0244",
+    "runtime_archive_sha256": "48d85780f84c8758097f6c12be39a87fcbb0bee4bedd05e95a31ce54a0043d75",
+    "model_repo": "unsloth/Qwen3.5-2B-GGUF",
+    "model_revision": "f6d5376be1edb4d416d56da11e5397a961aca8ae",
+    "model_file": "Qwen3.5-2B-Q4_K_M.gguf",
+    "model_bytes": 1280835840,
+    "model_sha256": "aaf42c8b7c3cab2bf3d69c355048d4a0ee9973d48f16c731c0520ee914699223",
+    "model_license": "Apache-2.0",
+    "runtime_license": "MIT",
+    "prompt_version": "tonal-stories-v5",
+    "limits": {
+      "context_tokens": 1024,
+      "input_tokens": 768,
+      "output_tokens": 520,
+      "decode_threads": 1,
+      "prefill_threads": 1,
+      "deadline_ms": 90000,
+      "watchdog_ms": 105000,
+      "minimum_available_memory_bytes": 1817706752,
+      "pressure_stop_bytes": 268435456,
+      "output_tokens_per_track": 64,
+      "review_tokens_per_track": 1,
+      "prepared_evidence_bytes": 3000,
+      "helper_stdin_bytes": 65536,
+      "checkpoint_bytes": 67108864,
+      "prefill_batch_tokens": 16,
+      "completed_tracks_per_action": 1
+    },
+    "android_scheduling": {
+      "inference_only_when_paused": true,
+      "cpu_nice": 2,
+      "preparation_nice": 10,
+      "resume_playback_cancels_inference": true
+    },
+    "model_base_repo": "Qwen/Qwen3.5-2B",
+    "windows_scheduling": {
+      "inference_only_when_paused": true,
+      "resume_playback_cancels_inference": true
+    },
+    "checkpoint": {
+      "format": "TonalR5c3f03b177 / TonalF5c3f03b177",
+      "scope": "one private state per reader; exact model/prompt/period/text/metadata batch key",
+      "periodic_save_seconds": 20,
+      "model_weights_in_checkpoint": false,
+      "library_backup_includes_checkpoint": false
+    },
+    "android_cpu_dispatch": {
+      "baseline": "ARM64 generic / x86_64",
+      "optional_variant": "armv8.2-a+dotprod+i8mm+fp16",
+      "runtime_requires": [
+        "AArch64",
+        "ASIMD",
+        "FPHP",
+        "ASIMDHP",
+        "ASIMDDP",
+        "ATOMICS",
+        "I8MM"
+      ],
+      "threads": 1,
+      "unavailable_variant_falls_back_to_baseline": true
+    }
+  }
+}

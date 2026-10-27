@@ -118,8 +118,10 @@ Player::Player(SpotifyApi *api, LibrespotProcess *librespot, AuthManager *auth,
   connect(m_librespot, &LibrespotProcess::sessionLost, this,
           &Player::rememberForResume);
   connect(m_librespot, &LibrespotProcess::stateChanged, this, [this] {
-    if (m_librespot->state() == LibrespotProcess::Ready)
+    if (m_librespot->state() == LibrespotProcess::Ready) {
+      m_engineReadyClock.restart();
       findLocalDevice(8);
+    }
     else if (!m_localDeviceId.isEmpty() &&
              m_librespot->state() != LibrespotProcess::NeedsLogin) {
       if (m_activeDeviceId == m_localDeviceId) {
@@ -318,8 +320,15 @@ void Player::applyState(const QJsonObject &obj, bool acceptVolume) {
       !m_volumeInFlight && (!m_volumeIntentClock.isValid() ||
                             m_volumeIntentClock.elapsed() >= 3000)) {
     const int v = qBound(0, device.value(QStringLiteral("volume_percent")).toInt(), 100);
-    if (v != m_volume) {
+    // Logo após o motor voltar (reinício automático, nova sessão), o Spotify
+    // informa o volume inicial do motor; um salto grande não foi pedido aqui.
+    if (v != m_volume && playingHere() && m_engineReadyClock.isValid() &&
+        m_engineReadyClock.elapsed() < 15000 && qAbs(v - m_volume) > 10) {
+      reassertVolume();
+    } else if (v != m_volume) {
       m_volume = v;
+      if (playingHere())
+        QSettings().setValue(QStringLiteral("player/volume"), m_volume);
       emit volumeChanged();
     }
   }
@@ -513,23 +522,26 @@ void Player::findLocalDevice(int attemptsLeft) {
 void Player::rememberForResume() {
   if (!m_resumeBody.isEmpty())
     return;
+  // Faixas puladas por falta de chave: retoma pela primeira, do começo.
+  const QString failed = m_librespot->takeFailedTrack();
   if (!m_isPlaying || !playingHere() || m_trackUri.isEmpty())
     return;
-  QJsonObject body{{QStringLiteral("position_ms"), positionMs()}};
-  const QJsonObject offset{{QStringLiteral("uri"), m_trackUri}};
+  const QString track = failed.isEmpty() ? m_trackUri : failed;
+  QJsonObject body{{QStringLiteral("position_ms"), failed.isEmpty() ? positionMs() : 0}};
+  const QJsonObject offset{{QStringLiteral("uri"), track}};
   if (!m_contextUri.isEmpty()) {
     body.insert(QStringLiteral("context_uri"), m_contextUri);
     body.insert(QStringLiteral("offset"), offset);
-  } else if (m_lastUris.contains(m_trackUri)) {
+  } else if (m_lastUris.contains(track)) {
     // Lista solta (busca, populares): manda a lista toda para manter o que vem
     // depois. Com "uris" usamos offset por posição, o mesmo formato do
     // playUris.
     body.insert(QStringLiteral("uris"), QJsonArray::fromStringList(m_lastUris));
     body.insert(QStringLiteral("offset"),
                 QJsonObject{{QStringLiteral("position"),
-                             int(m_lastUris.indexOf(m_trackUri))}});
+                             int(m_lastUris.indexOf(track))}});
   } else {
-    body.insert(QStringLiteral("uris"), QJsonArray{m_trackUri});
+    body.insert(QStringLiteral("uris"), QJsonArray{track});
   }
   m_resumeBody = body;
   ++m_resumeGeneration;
@@ -801,6 +813,28 @@ void Player::setVolume(int percent) {
   emit volumeChanged();
   if (!m_volumeTimer.isActive())
     m_volumeTimer.start(150);
+}
+
+void Player::toggleMute() {
+  if (m_volume > 0) {
+    QSettings().setValue(QStringLiteral("player/volumeBeforeMute"), m_volume);
+    setVolume(0);
+  } else {
+    setVolume(qBound(1, QSettings().value(QStringLiteral("player/volumeBeforeMute"), 30).toInt(), 100));
+  }
+}
+
+// Reenvia ao aparelho local o volume que o usuário escolheu.
+void Player::reassertVolume() {
+  if (localPlayback() || m_activeDeviceId.isEmpty())
+    return;
+  m_engineReadyClock.invalidate();
+  ++m_volumeGeneration;
+  m_volumeIntentClock.restart();
+  m_pendingVolume = m_volume;
+  m_volumeDevice = m_activeDeviceId;
+  if (!m_volumeTimer.isActive())
+    m_volumeTimer.start(0);
 }
 
 void Player::cancelVolume() {

@@ -61,7 +61,7 @@ public final class PlaybackService extends Service {
             @Override public void onSeekTo(long position){if(!NativeBridge.intent.local)NativeBridge.command("seek|"+Math.max(0,position));}
             @Override public void onStop(){stopSelf();}
         });
-        media.setActive(true);
+        MediaButtonReceiver.attach(media,this);media.setActive(true);
         audioManager=getSystemService(AudioManager.class);
         focus=new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
             .setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build())

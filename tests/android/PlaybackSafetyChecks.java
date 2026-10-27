@@ -4,6 +4,7 @@ package app.tonal.android;
 public final class PlaybackSafetyChecks {
     private static int checks;
     private static void check(boolean value,String message){if(!value)throw new AssertionError(message);checks++;}
+    private static String source(String path){try{return new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(path)),java.nio.charset.StandardCharsets.UTF_8);}catch(java.io.IOException e){throw new AssertionError("missing "+path);}}
     public static void main(String[] args){
         PlaybackIntent state=new PlaybackIntent();
         check(!state.desired&&!state.canRecover(1000),"cold launch must be silent");
@@ -60,6 +61,11 @@ public final class PlaybackSafetyChecks {
         check(RepeatMode.afterCommand(RepeatMode.TRACK,"next")==RepeatMode.QUEUE,"skipping ahead leaves track repeat like the official app");
         check(RepeatMode.afterCommand(RepeatMode.TRACK,"prev")==RepeatMode.TRACK&&RepeatMode.afterCommand(RepeatMode.QUEUE,"next")==RepeatMode.QUEUE,"other commands keep the chosen repeat");
         check(RepeatMode.sanitize(7)==RepeatMode.OFF&&RepeatMode.icon(RepeatMode.TRACK).equals("repeat_one"),"saved values are sanitized and track repeat has its own icon");
+        // Media keys: Tonalify is the remembered target, so a headset or car does not wake the Spotify app.
+        String code="android/app/src/main/java/app/tonal/android/",manifest=source("android/app/src/main/AndroidManifest.xml"),receiver=source(code+"MediaButtonReceiver.java");
+        check(manifest.contains("<receiver android:name=\".MediaButtonReceiver\"")&&manifest.contains("android.intent.action.MEDIA_BUTTON"),"media button receiver is declared");
+        check(!receiver.contains("NativeBridge.command")&&!receiver.contains("startForegroundService")&&!receiver.contains("PlaybackService.start")&&!receiver.contains("startActivity"),"a media key with the player closed never starts playback or opens an app");
+        for(String service:new String[]{"PlaybackService.java","IndiePlaybackService.java"})check(source(code+service).contains("MediaButtonReceiver.attach(media,this);media.setActive(true);"),"session registers the receiver before activation: "+service);
         System.out.println("PLAYBACK_SAFETY_PASS "+checks+" checks");
     }
 }

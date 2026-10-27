@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.15.3 — 27/10/2026
+
+- Interrompe a cascata de músicas puladas quando o Spotify deixa de entregar chaves de áudio (PC e Android): reconecta e retoma pela primeira faixa pulada.
+- Volume do PC: o volume inicial do motor após reinício não substitui mais o escolhido; mudo restaura o volume anterior.
+- Android: o Tonalify passa a ser o destino dos botões de mídia, para fones/carro não acordarem o app Spotify em segundo plano.
+- Jam: avisos leves de entrada, saída, encerramento e mudanças da fila; convite compartilhado ao iniciar; detecção automática de Jam ativo.
+- Detalhes e limites em docs/SKIP_VOLUME_JAM_0153.md e docs/release-0153-tests.json.
+
 ## 0.15.2 — 26/10/2026
 
 - Retomada privada de preparação, geração e conferência do leitor, inclusive antes da primeira leitura aceita.

@@ -100,6 +100,8 @@ public:
   Q_INVOKABLE void previous();
   Q_INVOKABLE void seek(int ms);
   Q_INVOKABLE void setVolume(int percent);
+  // Mudo: guarda o volume anterior (persistido) e o restaura ao reativar.
+  Q_INVOKABLE void toggleMute();
   Q_INVOKABLE void toggleShuffle();
   Q_INVOKABLE void cycleRepeat();
   Q_INVOKABLE void toggleLike();
@@ -168,6 +170,10 @@ private:
   QTimer m_volumeTimer;
   QElapsedTimer m_volumeIntentClock;
   QElapsedTimer m_volumeSentClock;
+  // Desde quando o motor voltou a ficar pronto: um volume remoto muito
+  // diferente logo depois é o valor inicial do motor, não escolha do usuário.
+  QElapsedTimer m_engineReadyClock;
+  void reassertVolume();
   uint64_t m_volumeGeneration = 0;
   uint64_t m_volumeRouteGeneration = 0;
   bool m_volumeInFlight = false;

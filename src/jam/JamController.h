@@ -31,6 +31,9 @@ private:
     void response(const QJsonObject&);
     void fail(const QString&);
     void pollQueue();
+    // Procura um Jam ativo sem abrir a janela: motor pronto ou janela ativada, no máximo a cada 5 min.
+    void autoCheck();
+    qint64 m_lastAutoCheck=0;
     Player *m_player;LibrespotProcess *m_engine;SpotifyApi *m_api;
     QProcess m_process;QTimer m_timeout,m_poll,m_idle;
     QByteArray m_buffer,m_command;

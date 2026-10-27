@@ -1,0 +1,137 @@
+{
+  "version": "0.15.3",
+  "documentedOn": "2026-10-27",
+  "productSourceCommit": "f5bd00de16f0c27420534ce0d3ee150e44300693",
+  "status": "local validation complete; per-commit GitHub CI tracked in pull request",
+  "windows": {
+    "ctest": {
+      "passed": 10,
+      "failed": 0,
+      "seconds": 27.85,
+      "new": [
+        "skip cascade: key timeouts restart once and resume from the first skipped track",
+        "engine initial volume reasserted once; small differences and other devices reconciled",
+        "mute restores the previous volume",
+        "Jam reports who left without inventing departures"
+      ]
+    },
+    "qml": {
+      "mixHomeReader": 24,
+      "lyrics": 6,
+      "playlist": 3,
+      "failed": 0
+    },
+    "themes": {
+      "checks": 183,
+      "failed": 0
+    },
+    "packagedStartup": {
+      "checks": [
+        {
+          "program": "TonalHub.exe",
+          "exit_code": 0,
+          "passed": true
+        },
+        {
+          "program": "IndieTonal.exe",
+          "exit_code": 0,
+          "passed": true
+        },
+        {
+          "program": "Tonalify.exe",
+          "exit_code": 0,
+          "passed": true
+        }
+      ],
+      "private_runtime_files_packaged": false,
+      "archive_integrity": {
+        "passed": true,
+        "files": 1432,
+        "all_crc_verified": true,
+        "executables_match_portable_directory": true
+      },
+      "isolated_profile": true,
+      "null_audio_backend": true,
+      "source": "portable stage 0.15.3",
+      "syntheticLocalFixture": true,
+      "physicalAudioMeasurement": false
+    },
+    "note": "The power outage on 2026-10-27 truncated out/build/release/CMakeCache.txt; it was moved aside and the build reconfigured before these runs."
+  },
+  "android": {
+    "playbackSafetyJavaChecks": {
+      "passed": 47,
+      "failed": 0
+    },
+    "apkVerification": {
+      "universal": "passed",
+      "arm64": "passed",
+      "apkSignatureV2": true,
+      "alignment16k": true,
+      "privateTokensPresent": false
+    },
+    "avd": {
+      "name": "Tonal_Local_20261015",
+      "serial": "emulator-5560",
+      "upgradeFrom": "0.15.2-local",
+      "installedOver": true,
+      "smokes": {
+        "notification": 7,
+        "repeat": 8,
+        "themeKeepOpen": 6,
+        "mediaButton": 5
+      },
+      "mediaButton": {
+        "version": "0.15.3-local",
+        "checks": [
+          {
+            "name": "benchmark_apk_installed",
+            "passed": true,
+            "version": "0.15.3-local"
+          },
+          {
+            "name": "tonalify_session_registers_receiver",
+            "passed": true
+          },
+          {
+            "name": "play_with_player_stopped_wakes_nothing",
+            "passed": true,
+            "spotify_running": false,
+            "tonalify_playing": false
+          },
+          {
+            "name": "play_after_process_death_wakes_nothing",
+            "passed": true,
+            "spotify_running": false,
+            "tonalify_playing": false
+          },
+          {
+            "name": "no_fatal_exception",
+            "passed": true
+          }
+        ],
+        "physical_device": false,
+        "real_headset_or_car": false,
+        "spotify_account": false
+      },
+      "interruption": "System UI ANR dialog after a cold boot with software GPU; dismissed with Wait and the suite repeated after load fell below 6. No app code involved."
+    },
+    "nativeBuilds": [
+      "x86_64",
+      "arm64-v8a baseline",
+      "arm64-v8a guarded fast reader"
+    ]
+  },
+  "notTested": [
+    "Real Spotify session: key-timeout cascade reproduced only with synthetic librespot log lines",
+    "Jam between two real accounts (protocol experimental)",
+    "Physical headset, car or Bluetooth keys; physical POCO X7 Pro",
+    "Acoustic or audible volume measurement"
+  ],
+  "tools": {
+    "installedOrDownloaded": [
+      "npm packages of the site from package-lock (npm ci --ignore-scripts) in the site worktree"
+    ],
+    "notes": "Microsoft OpenJDK 17 updated itself from 17.0.20 to 17.0.21 outside this task; the build script now finds it."
+  }
+}

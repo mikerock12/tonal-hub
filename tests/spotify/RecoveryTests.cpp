@@ -683,6 +683,47 @@ public:
     std::cout << "PASS resume position/queue, failed request retained, new "
                  "choice during reconnect, cancelled API retries, pause\n";
   }
+  // Chaves de áudio que deixam de chegar fazem o librespot pular a fila inteira.
+  static void skipCascade() {
+    QTemporaryDir storage;
+    FakeNetwork network;
+    AuthManager auth(&network);
+    SpotifyApi api(&network, &auth);
+    LibrespotProcess engine(nullptr, storage.path());
+    Player player(&api, &engine, &auth);
+    fakeAuth(auth);
+    engine.m_state = LibrespotProcess::Ready;
+    engine.m_restartBaseMs = 600000;
+    int lost = 0;
+    QObject::connect(&engine, &LibrespotProcess::sessionLost, &engine, [&] { ++lost; });
+    const QString first = "spotify:track:" + QString(22, 'a'), second = "spotify:track:" + QString(22, 'b');
+    player.m_trackUri = "spotify:track:" + QString(22, 'c');
+    player.m_contextUri = "spotify:album:" + QString(22, 'd');
+    player.m_isPlaying = true;
+    player.m_durationMs = 200000;
+    player.m_positionBase = 9000;
+    player.m_localDeviceId = player.m_activeDeviceId = "local-device";
+    auto feed = [&](const QString &line) { engine.m_buffer += line.toUtf8() + '\n'; engine.onReadyRead(); };
+    auto skip = [&](const QString &uri) {
+      feed("[2026-10-27T01:49:40Z ERROR librespot_playback::player] Skipping to next track, unable to load track <SpotifyUri(\"" + uri + "\")>: ()");
+    };
+    // Faixa de fato indisponível (sem timeout de chave): o librespot segue, sem reinício.
+    skip(first); skip(second);
+    require(lost == 0 && engine.state() == LibrespotProcess::Ready, "really unavailable tracks restarted the engine");
+    feed("[2026-10-27T01:49:35Z ERROR librespot_core::audio_key] Audio key response timeout");
+    skip(first);
+    require(lost == 0, "a single key timeout restarted the engine");
+    feed("[2026-10-27T01:49:42Z ERROR librespot_core::audio_key] Audio key response timeout");
+    skip(second);
+    require(lost == 1 && engine.state() == LibrespotProcess::Starting, "key-timeout cascade was not stopped");
+    const auto resume = player.m_resumeBody;
+    require(resume["offset"].toObject()["uri"].toString() == first && resume["position_ms"].toInt() == 0 &&
+                resume["context_uri"].toString() == player.m_contextUri,
+            "resume did not return to the first skipped track");
+    require(engine.takeFailedTrack().isEmpty(), "failed track was reused by a later recovery");
+    engine.stop();
+    std::cout << "PASS skip cascade: key timeouts restart once and resume from the first skipped track\n";
+  }
   static void volumeControl() {
     QTemporaryDir storage;
     FakeNetwork network;
@@ -774,6 +815,36 @@ public:
     player.setVolume(30);
     require(spin([&]{return !notice.isEmpty();},800),"refused volume failed silently");
     require(!player.m_volumeInFlight && !player.m_volumeIntentClock.isValid(),"refused volume left reconciliation blocked");
+    player.cancelVolume();player.m_pollTimer.stop();
+
+    // O motor recém-reiniciado informa o próprio volume inicial: um salto grande
+    // não substitui a escolha do usuário; pequenas diferenças e outros aparelhos sim.
+    responseStatus=204;responseDelay=20;pollDelay=0;
+    player.m_localDeviceId="local-volume";player.m_volumeIntentClock.invalidate();
+    state["device"]=QJsonObject{{"id","local-volume"},{"volume_percent",30}};
+    player.applyState(state);
+    require(player.volume()==30&&player.playingHere(),"local route fixture");
+    before=values.size();player.m_engineReadyClock.start();
+    state["device"]=QJsonObject{{"id","local-volume"},{"volume_percent",100}};
+    player.applyState(state);
+    require(player.volume()==30,"engine initial volume replaced the user's volume");
+    require(spin([&]{return values.size()>before&&!player.m_volumeInFlight;},800)&&values.last()==30&&devices.last()=="local-volume","user volume was not reasserted on the new engine");
+    player.m_volumeIntentClock.invalidate();player.m_pollTimer.stop();
+    player.applyState(state);
+    require(player.volume()==100,"reassert must be one-shot; later remote changes are reconciled");
+    player.m_engineReadyClock.start();player.m_volumeIntentClock.invalidate();
+    state["device"]=QJsonObject{{"id","local-volume"},{"volume_percent",95}};
+    player.applyState(state);
+    require(player.volume()==95,"small differences after a restart are accepted");
+    player.m_engineReadyClock.invalidate();player.m_pollTimer.stop();
+
+    // Mudo volta ao volume anterior, não a um valor fixo.
+    player.setVolume(45);
+    require(spin([&]{return !player.m_volumeInFlight && player.m_pendingVolume<0;},800),"pre-mute volume stuck");
+    player.toggleMute();
+    require(spin([&]{return !player.m_volumeInFlight && player.m_pendingVolume<0;},800)&&player.volume()==0&&values.last()==0,"mute did not reach zero");
+    player.toggleMute();
+    require(spin([&]{return !player.m_volumeInFlight && player.m_pendingVolume<0;},800)&&player.volume()==45&&values.last()==45,"unmute did not restore the previous volume");
     player.cancelVolume();player.m_pollTimer.stop();
     std::cout << "PASS volume: throttle, serialized latest value, stale GETs, endpoints, device transfer, retry supersession and refusal\n";
   }
@@ -1212,6 +1283,7 @@ int main(int argc, char **argv) {
     try {
       SpotifyRecoveryTests::volumeControl();
       if (!app.arguments().contains("--volume-only")) {
+        SpotifyRecoveryTests::skipCascade();
         SpotifyRecoveryTests::networkAndResume();
         SpotifyRecoveryTests::remoteTransport();
         SpotifyRecoveryTests::seekAndRequeue();
@@ -1234,6 +1306,8 @@ int main(int argc, char **argv) {
                 {"credentials_read", false},
                 {"scenarios",
                  QJsonArray{"unexpected_process_exit",
+                            "audio_key_timeout_skip_cascade_resumes_first_track",
+                            "engine_initial_volume_reasserted_and_mute_restores",
                             "volume_throttle_serialization_stale_polls_and_device_guard",
                             "PCM_EOF_while_child_alive", "no_PCM_progress",
                             "Rust_panic", "intentional_pause_not_restarted",

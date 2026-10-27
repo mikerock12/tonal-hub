@@ -5,8 +5,9 @@ afetada antes de alterar o produto. Estado documental: 25/10/2026, builds Window
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
-Estado atual: 26/10/2026, Windows/Android 0.15.2. As seções 0.15.0/0.15.1
-abaixo são históricas; o contrato atual do leitor está ao final deste arquivo.
+Estado atual: 27/10/2026, Windows/Android 0.15.3. As seções 0.15.0/0.15.1
+abaixo são históricas; o contrato atual do leitor está na seção 0.15.2 e as
+correções de reprodução/Jam 0.15.3, ao final deste arquivo.
 
 ## Autoria, Git e privacidade
 
@@ -312,3 +313,20 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
   93ef7455a5c98b3ee8aa66d0ab56c3bcee1b08bf. Commits documentais não são rebuild.
 - Backup privado 0.15.2: 1rVGPhTHvN79-CplhB5wJyEe3DeR_CZZl. Preservar verificação
   de tamanho e privacidade; SHA remoto só quando o conector o fornecer.
+
+## Reprodução e Jam 0.15.3
+
+- Ler docs/SKIP_VOLUME_JAM_0153.md. Cascata de pulos só conta com timeout de
+  chave de áudio (PC: linha do librespot nos 10 s anteriores; Android:
+  `KEY_TIMEOUTS` do core vendorizado). Dois em 30 s reiniciam e retomam pela
+  primeira faixa pulada; faixa realmente indisponível não reinicia o motor.
+- Volume: só o valor inicial do motor (15 s após Ready, >10 pontos, aparelho
+  local) é reafirmado, uma vez. Não bloquear volume vindo de outro aparelho/app.
+- MediaButtonReceiver ignora teclas com o player fechado; não iniciar
+  reprodução por ele nem contornar a política de intenção/tela bloqueada.
+- Jam: avisos só dentro do app (sem overlay), fila de 8, nomes limitados;
+  convite por seletor/cópia escolhidos pelo usuário. Não atribuir autoria de
+  faixas. Consultas automáticas limitadas (Android 2 min, PC 5 min).
+- Validação 0.15.3: docs/release-0153-tests.json e docs/artifacts-0153.json,
+  código de produto f5bd00d. Smoke `tests/android/media_button_smoke.py` exige o
+  app Spotify na AVD. Commits documentais posteriores não significam rebuild.
