@@ -85,4 +85,16 @@ duas contas reais nesta entrega.
 
 ## Testes
 
-Ver [release-0153-tests.json](release-0153-tests.json).
+- Windows: CTest 10/10 (inclui cascata de pulos, volume inicial reafirmado,
+  mudo e saída do Jam), QML 24/6/3, temas 183, inicialização do pacote 3/3.
+- Android: política Java 47, APKs verificados (assinatura v2, 16 KB, sem tokens),
+  AVD `Tonal_Local_20261015` atualizada da 0.15.2 por cima: notificação 7,
+  repetição 8, tema sem fechar 6 e botão de mídia 5 (com o app Spotify instalado
+  na AVD: PLAY com o player parado e após o processo morrer não abre o Spotify
+  nem retoma o Tonal; a tecla chega ao `MediaButtonReceiver`).
+- Houve ANR do System UI na AVD logo após o boot; a suíte foi repetida depois.
+- Não testado: sessão Spotify real, Jam entre duas contas, fone/carro físico,
+  POCO físico e medição acústica de volume.
+
+Registro completo: [release-0153-tests.json](release-0153-tests.json);
+pacotes e hashes: [artifacts-0153.json](artifacts-0153.json).

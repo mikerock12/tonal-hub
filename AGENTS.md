@@ -327,3 +327,6 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
 - Jam: avisos só dentro do app (sem overlay), fila de 8, nomes limitados;
   convite por seletor/cópia escolhidos pelo usuário. Não atribuir autoria de
   faixas. Consultas automáticas limitadas (Android 2 min, PC 5 min).
+- Validação 0.15.3: docs/release-0153-tests.json e docs/artifacts-0153.json,
+  código de produto f5bd00d. Smoke `tests/android/media_button_smoke.py` exige o
+  app Spotify na AVD. Commits documentais posteriores não significam rebuild.
