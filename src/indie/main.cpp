@@ -1,5 +1,6 @@
 #include "CatalogService.h"
 #include "HubController.h"
+#include "ThemeCatalog.h"
 #include "audio/AudioEngine.hpp"
 #include "companion/MusicCompanion.h"
 #include <QCryptographicHash>
@@ -68,7 +69,9 @@ int main(int argc, char **argv) {
   if (audio)
     QObject::connect(&catalog, &CatalogService::playable, audio.get(),
                      &tonal::audio::AudioEngine::openStream);
+  ThemeCatalog theme;
   QQmlApplicationEngine engine;
+  engine.rootContext()->setContextProperty("indieTheme", &theme);
   engine.rootContext()->setContextProperty("catalog", &catalog);
   engine.rootContext()->setContextProperty("hub", &hub);
   engine.rootContext()->setContextProperty("music", &music);

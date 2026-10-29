@@ -25,6 +25,11 @@ Canvas {
             c.fillStyle = mode === "Bruxas" ? "#302042" : mode === "Monstros" ? "#182b20" : "#2d121e"; c.fillRect(0,0,w,h)
             c.fillStyle = mode === "Monstros" ? "#a5d881" : "#ffad63"; c.globalAlpha=.5; c.beginPath(); c.arc(w*.78,h*.18,Math.min(w,h)*.09,0,Math.PI*2); c.fill(); c.globalAlpha=1
             c.fillStyle = "#09090f"; for(let i=0;i<9;i++){let x=(i*97%101)*w/101, y=h*(.15+(i*37%55)/100)+Math.sin(p+i)*3; c.beginPath(); c.moveTo(x-12,y); c.lineTo(x-4,y-4); c.lineTo(x,y); c.lineTo(x+4,y-4); c.lineTo(x+12,y); c.lineTo(x+4,y+3); c.lineTo(x,y+1); c.lineTo(x-4,y+3); c.closePath(); c.fill()}
+            c.fillStyle="#09090f"; c.globalAlpha=.75; c.beginPath()
+            if(mode==="Bruxas"){c.moveTo(w*.16,h*.78);c.lineTo(w*.25,h*.47);c.lineTo(w*.34,h*.78);c.closePath();c.fill();c.fillRect(w*.12,h*.77,w*.27,h*.025)}
+            else if(mode==="Monstros"){c.arc(w*.18,h*.68,Math.min(w,h)*.035,0,Math.PI*2);c.moveTo(w*.31+Math.min(w,h)*.035,h*.68);c.arc(w*.31,h*.68,Math.min(w,h)*.035,0,Math.PI*2);c.fill()}
+            else if(mode==="Vampiros"){c.moveTo(w*.17,h*.7);c.lineTo(w*.22,h*.81);c.lineTo(w*.25,h*.7);c.moveTo(w*.29,h*.7);c.lineTo(w*.32,h*.81);c.lineTo(w*.37,h*.7);c.fill()}
+            else {c.fillStyle="#d46527";c.arc(w*.25,h*.73,Math.min(w,h)*.1,0,Math.PI*2);c.fill();c.fillStyle="#09090f";c.fillRect(w*.2,h*.71,w*.025,h*.02);c.fillRect(w*.28,h*.71,w*.025,h*.02)} c.globalAlpha=1
             c.strokeStyle=mode === "Monstros"?"#658c63":"#b96556"; c.globalAlpha=.35; c.lineWidth=1; for(let i=0;i<7;i++){c.beginPath();c.moveTo(0,0);c.lineTo(w*.4*Math.cos(i*Math.PI/12),h*.4*Math.sin(i*Math.PI/12));c.stroke()}
         }
         const data=mode==="Ondas"?metrics.waveform:metrics.spectrum

@@ -148,8 +148,9 @@ Pane {width:1000;height:800;padding:0;palette.button:"#263440";palette.buttonTex
    personalPanel.position=personal.seeks[0];compare(s.value,personal.seeks[0]);personalPanel.position=12345;tryCompare(s,"value",12345);personalPanel.close()
   }
   function test_theme_switch_restyles_seekbar(){
-   compare(Theme.themes.length,6);compare(themedSeek.style.thumbShape,"circle");verify(!themedSeek.thumbVisible);
+   compare(Theme.themes.length,7);compare(themedSeek.style.thumbShape,"circle");verify(!themedSeek.thumbVisible);
    App.theme.themeId="solar";compare(Theme.themeId,"solar");verify(Qt.colorEqual(Theme.accent,"#ff8a4c"));compare(themedSeek.style.thumbShape,"pill");verify(themedSeek.thumbVisible);compare(themedSeek.barHeight,5);
+   App.theme.themeId="halloween";compare(themedSeek.style.thumbShape,"drop");verify(themedSeek.thumbVisible);
    App.theme.themeId="tonal";verify(Qt.colorEqual(Theme.accent,"#0d80bf"));compare(themedSeek.style.thumbShape,"circle")
   }
   function test_theme_dialog_applies_choice(){

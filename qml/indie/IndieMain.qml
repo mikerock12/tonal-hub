@@ -8,10 +8,11 @@ ApplicationWindow {
     id: window
     width: 1180; height: 820; minimumWidth: 800; minimumHeight: 600
     visible: true; title: hubMode ? "Tonal Hub" : "IndieTonal"
-    color: "#101316"
-    palette.window: "#171c22"; palette.base: "#202731"; palette.text: "#f4f6f8"
-    palette.windowText: "#f4f6f8"; palette.button: "#263240"; palette.buttonText: "#f4f6f8"
-    palette.highlight: "#11afd1"; palette.highlightedText: "#081318"
+    readonly property bool halloween: indieTheme.themeId === "halloween"
+    color: halloween ? indieTheme.current.bg : "#101316"
+    palette.window: halloween ? indieTheme.current.panel : "#171c22"; palette.base: halloween ? indieTheme.current.card : "#202731"; palette.text: "#f4f6f8"
+    palette.windowText: "#f4f6f8"; palette.button: halloween ? indieTheme.current.card : "#263240"; palette.buttonText: "#f4f6f8"
+    palette.highlight: halloween ? indieTheme.current.accent : "#11afd1"; palette.highlightedText: "#081318"
     palette.placeholderText: "#9aaebb"
     property string selectedProvider: "all"
     property string selectedKind: "all"
@@ -24,6 +25,7 @@ ApplicationWindow {
     function openMusic(song=false,section=0){songRequested=song;if(musicLoader.item){if(song)musicLoader.item.showSong();else{musicLoader.item.section=section;musicLoader.item.open()}}else musicLoader.setSource("qrc:/companion/qml/companion/MusicPanel.qml",{controller:music,audioEngine:audio,section:song?2:section})}
     property bool backupRequested:false
     Loader { id: musicLoader; onLoaded: {if(window.songRequested)item.showSong();else item.open();if(window.backupRequested){item.showBackup();window.backupRequested=false}} }
+    Binding { target: musicLoader.item; property:"themeTokens"; value:indieTheme.current; when:!!musicLoader.item }
     Binding { target: musicLoader.item; property:"position"; value:audio ? audio.positionMs : 0; when:!!musicLoader.item }
     Binding { target: musicLoader.item; property:"playing"; value:audio ? audio.localPlaying : false; when:!!musicLoader.item }
     Connections { target: musicLoader.item; function onDiscover(artist){search.text=artist;catalog.search(artist,selectedProvider)} function onTogglePlayback(){audio.toggleLocalPlay()} function onPreviousRequested(){playAt(queueIndex-1)} function onNextRequested(){playAt(queueIndex+1)} }
@@ -66,6 +68,7 @@ ApplicationWindow {
             Label { text: hubMode ? "Tonal Hub" : "IndieTonal"; font.pixelSize: 28; font.bold: true; Layout.fillWidth: true }
             Button { text: "Tonalify"; onClicked: hub.spotify() }
             Button { text: hubMode ? "Abrir IndieTonal" : "Tonal Hub"; onClicked: hubMode ? hub.indie() : hub.hub() }
+            ComboBox { visible: !hubMode; model: indieTheme.themes; textRole: "name"; currentIndex: Math.max(0, model.findIndex(t => t.id === indieTheme.themeId)); onActivated: indieTheme.themeId = model[index].id; Accessible.name: "Tema do IndieTonal" }
             Button { text: "Conexões"; visible: !hubMode; onClicked: { config.populate(); config.open() } }
             Button { text: "Áudio"; visible: !hubMode; onClicked: effects.open() }
             Personal.ActionIcon {symbol:"chart";description:"Estatísticas";visible:!hubMode;onClicked:window.openMusic(false,1)}
@@ -150,12 +153,13 @@ ApplicationWindow {
             clip: true; spacing: 6; model: catalog.items.filter(entry => catalog.inDetail || window.kindMatches(entry, selectedKind)); ScrollBar.vertical: ScrollBar {}
             delegate: Rectangle {
                 required property var modelData
-                width: results.width; height: 94; color: "#1b222a"; radius: 8
+                width: results.width; height: 94; color: window.halloween ? indieTheme.current.card : "#1b222a"; radius: 8
                 RowLayout {
                     anchors.fill: parent; anchors.margins: 12; spacing: 12
                     Rectangle {
                         Layout.preferredWidth: 58; Layout.preferredHeight: 58; color: "#2a404f"; radius: 6
                         Image { id: coverImage; anchors.fill: parent; source: modelData.image || ""; sourceSize.width: 116; sourceSize.height: 116; fillMode: Image.PreserveAspectCrop; asynchronous: true }
+                        Canvas { anchors.fill: parent; visible: window.halloween && modelData.kind !== "artist"; onVisibleChanged: requestPaint(); onPaint: { const c=getContext("2d"); c.reset(); c.strokeStyle="#b8a3a4"; c.globalAlpha=.75; c.lineWidth=1; let size=Math.min(width,height)*.55; for(let i=0;i<=6;i++){let a=i*Math.PI/12;c.beginPath();c.moveTo(0,0);c.lineTo(Math.cos(a)*size,Math.sin(a)*size);c.stroke()} for(let r=.3;r<=1;r+=.3){c.beginPath();for(let i=0;i<=6;i++){let a=i*Math.PI/12,x=Math.cos(a)*size*r,y=Math.sin(a)*size*r;i?c.lineTo(x,y):c.moveTo(x,y)}c.stroke()} } }
                         Label { visible: coverImage.status !== Image.Ready; anchors.centerIn: parent; text: modelData.kind === "show" ? "LIVE" : modelData.kind === "artist" ? "ART" : "♪"; color: "#9fd8df" }
                     }
                     ColumnLayout {
@@ -189,7 +193,7 @@ ApplicationWindow {
             Button { text: "Carregar mais"; visible: catalog.hasMore; enabled: !catalog.busy && !catalog.canRetry; onClicked: catalog.more() }
         }
         Rectangle {
-            visible: !hubMode; Layout.fillWidth: true; height: 94; color: "#202b34"; radius: 10
+            visible: !hubMode; Layout.fillWidth: true; height: 94; color: window.halloween ? indieTheme.current.panel : "#202b34"; radius: 10
             ColumnLayout {
                 anchors.fill: parent; anchors.margins: 12; spacing: 4
                 RowLayout {
@@ -204,7 +208,13 @@ ApplicationWindow {
                     Slider { from: 0; to: 100; value: 60; Layout.preferredWidth: 110; onMoved: audio.setLocalVolume(Math.round(value)) }
                 }
                 Label { text: audio.diagnostics; color: "#9eaebc"; font.pixelSize: 11; elide: Text.ElideRight; Layout.fillWidth: true }
-                Slider { Layout.fillWidth: true; from: 0; to: Math.max(1,audio.durationMs); value: audio.positionMs; enabled: audio.localActive && audio.durationMs > 0; onMoved: audio.seekLocal(Math.round(value)) }
+                Slider { id: indieSeek; Layout.fillWidth: true; from: 0; to: Math.max(1,audio.durationMs); value: audio.positionMs; enabled: audio.localActive && audio.durationMs > 0; onMoved: audio.seekLocal(Math.round(value))
+                    background: Rectangle { x: indieSeek.leftPadding; y: indieSeek.topPadding + indieSeek.availableHeight/2-height/2; width: indieSeek.availableWidth; height: 6; radius: 3; color: window.halloween ? "#52313b" : "#506070"
+                        Rectangle { width: parent.width*indieSeek.visualPosition; height: parent.height; radius: 3; color: window.halloween ? "#db2838" : "#11afd1" }
+                        Repeater { model: window.halloween ? 7 : 0; Rectangle { x: parent.width*indieSeek.visualPosition*(index+1)/8; y: 3; width: 2; height: 4+index%3*2; radius: 1; color: "#db2838" } }
+                    }
+                    handle: Canvas { x: indieSeek.leftPadding + indieSeek.visualPosition*(indieSeek.availableWidth-width); y: indieSeek.topPadding+indieSeek.availableHeight/2-height/2; width: 18; height: 18; onPaint: {const c=getContext("2d");c.reset();c.fillStyle=window.halloween?"#c52232":"#f4f6f8";c.beginPath();if(window.halloween){c.moveTo(9,0);c.bezierCurveTo(6,6,0,10,3,15);c.bezierCurveTo(6,19,12,19,15,15);c.bezierCurveTo(18,10,12,6,9,0)}else c.arc(9,9,7,0,Math.PI*2);c.closePath();c.fill()} Connections {target:indieTheme;function onChanged(){parent.requestPaint()}} }
+                }
             }
         }
     }
