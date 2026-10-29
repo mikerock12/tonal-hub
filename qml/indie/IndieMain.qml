@@ -68,7 +68,7 @@ ApplicationWindow {
             Label { text: hubMode ? "Tonal Hub" : "IndieTonal"; font.pixelSize: 28; font.bold: true; Layout.fillWidth: true }
             Button { text: "Tonalify"; onClicked: hub.spotify() }
             Button { text: hubMode ? "Abrir IndieTonal" : "Tonal Hub"; onClicked: hubMode ? hub.indie() : hub.hub() }
-            ComboBox { visible: !hubMode; model: indieTheme.themes; textRole: "name"; currentIndex: Math.max(0, model.findIndex(t => t.id === indieTheme.themeId)); onActivated: indieTheme.themeId = model[index].id; Accessible.name: "Tema do IndieTonal" }
+            ComboBox { objectName:"indieThemeSelector";visible: !hubMode; model: indieTheme.themes; textRole: "name"; currentIndex: Math.max(0, model.findIndex(t => t.id === indieTheme.themeId)); onActivated: indieTheme.themeId = model[index].id; Accessible.name: "Tema do IndieTonal" }
             Button { text: "Conexões"; visible: !hubMode; onClicked: { config.populate(); config.open() } }
             Button { text: "Áudio"; visible: !hubMode; onClicked: effects.open() }
             Personal.ActionIcon {symbol:"chart";description:"Estatísticas";visible:!hubMode;onClicked:window.openMusic(false,1)}
@@ -201,19 +201,27 @@ ApplicationWindow {
                     Image { source:music.current.image || ""; Layout.preferredWidth:44; Layout.preferredHeight:44; fillMode:Image.PreserveAspectFit; asynchronous:true; sourceSize.width:88; sourceSize.height:88; MouseArea { anchors.fill:parent; onClicked:window.openMusic(true) } }
                     Label { text:music.current.title || "Escolha uma música"; elide:Text.ElideRight; Layout.fillWidth:true; MouseArea { anchors.fill:parent; cursorShape:Qt.PointingHandCursor; onClicked:window.openMusic(true) } }
                     Personal.ActionIcon {symbol:"heart";filled:{window.musicRevision;return music.liked(music.current)} description:filled?"Remover das favoritas":"Favoritar música"; enabled:!!music.current.title; onClicked:music.favorite(music.current) }
-                    Button { text: "Anterior"; enabled: queueIndex > 0; onClicked: playAt(queueIndex - 1) }
-                    Button { text: audio.sourceFailed ? "Tentar novamente" : audio.localPlaying ? "Pausar" : "Reproduzir"; enabled: audio.localActive; onClicked: { if (audio.sourceFailed) { if (queueIndex >= 0) catalog.resolve(playerItem); else filePicker.open() } else audio.toggleLocalPlay() } }
-                    Button { text: "Próxima"; enabled: queueIndex >= 0 && queueIndex + 1 < playQueue.length; onClicked: playAt(queueIndex + 1) }
+                    Personal.ActionIcon {symbol:"prev";description:"Anterior";accentInk:indieTheme.current.accent;enabled: queueIndex > 0; onClicked: playAt(queueIndex - 1) }
+                    Personal.ActionIcon {
+                        objectName:"indiePlayButton"
+                        symbol:audio.sourceFailed?"refresh":audio.localPlaying?"pause":"play"
+                        description:audio.sourceFailed?"Tentar novamente":audio.localPlaying?"Pausar":"Reproduzir"
+                        accentInk:indieTheme.current.accent;ink:window.halloween?indieTheme.current.accent:"#f4f6f8"
+                        background:Rectangle{radius:22;color:window.halloween?"#1b101d":"#263240";border.width:window.halloween?2:0;border.color:indieTheme.current.accent}
+                        enabled:audio.localActive
+                        onClicked:{if(audio.sourceFailed){if(queueIndex>=0)catalog.resolve(playerItem);else filePicker.open()}else audio.toggleLocalPlay()}
+                    }
+                    Personal.ActionIcon {symbol:"next";description:"Próxima";accentInk:indieTheme.current.accent;enabled: queueIndex >= 0 && queueIndex + 1 < playQueue.length; onClicked: playAt(queueIndex + 1) }
                     Button { text: "Parar"; enabled: audio.localActive; onClicked: stopPlayback() }
                     Slider { from: 0; to: 100; value: 60; Layout.preferredWidth: 110; onMoved: audio.setLocalVolume(Math.round(value)) }
                 }
                 Label { text: audio.diagnostics; color: "#9eaebc"; font.pixelSize: 11; elide: Text.ElideRight; Layout.fillWidth: true }
                 Slider { id: indieSeek; Layout.fillWidth: true; from: 0; to: Math.max(1,audio.durationMs); value: audio.positionMs; enabled: audio.localActive && audio.durationMs > 0; onMoved: audio.seekLocal(Math.round(value))
                     background: Rectangle { x: indieSeek.leftPadding; y: indieSeek.topPadding + indieSeek.availableHeight/2-height/2; width: indieSeek.availableWidth; height: 6; radius: 3; color: window.halloween ? "#52313b" : "#506070"
-                        Rectangle { width: parent.width*indieSeek.visualPosition; height: parent.height; radius: 3; color: window.halloween ? "#db2838" : "#11afd1" }
-                        Repeater { model: window.halloween ? 7 : 0; Rectangle { x: parent.width*indieSeek.visualPosition*(index+1)/8; y: 3; width: 2; height: 4+index%3*2; radius: 1; color: "#db2838" } }
+                        Rectangle { visible: !window.halloween;width: parent.width*indieSeek.visualPosition; height: parent.height; radius: 3; color: window.halloween ? "#db2838" : "#11afd1" }
+                        Personal.BloodSurface { x:-thumbSize/2;trackInset:thumbSize/2;width:parent.width+thumbSize;height:44;y:parent.height/2-height/2;visible:window.halloween;progress:indieSeek.visualPosition;barHeight:6;showThumb:indieSeek.enabled;playing:audio.localPlaying;fillColor:indieTheme.current.seek.fill[0];endColor:indieTheme.current.seek.fill[1] }
                     }
-                    handle: Canvas { x: indieSeek.leftPadding + indieSeek.visualPosition*(indieSeek.availableWidth-width); y: indieSeek.topPadding+indieSeek.availableHeight/2-height/2; width: 18; height: 18; onPaint: {const c=getContext("2d");c.reset();c.fillStyle=window.halloween?"#c52232":"#f4f6f8";c.beginPath();if(window.halloween){c.moveTo(9,0);c.bezierCurveTo(6,6,0,10,3,15);c.bezierCurveTo(6,19,12,19,15,15);c.bezierCurveTo(18,10,12,6,9,0)}else c.arc(9,9,7,0,Math.PI*2);c.closePath();c.fill()} Connections {target:indieTheme;function onChanged(){parent.requestPaint()}} }
+                    handle: Canvas { id:indieHandle;visible:!window.halloween;x: indieSeek.leftPadding + indieSeek.visualPosition*(indieSeek.availableWidth-width); y: indieSeek.topPadding+indieSeek.availableHeight/2-height/2; width: 18; height: 18; onPaint: {const c=getContext("2d");c.reset();c.fillStyle=window.halloween?"#c52232":"#f4f6f8";c.beginPath();if(window.halloween){c.moveTo(9,0);c.bezierCurveTo(6,6,0,10,3,15);c.bezierCurveTo(6,19,12,19,15,15);c.bezierCurveTo(18,10,12,6,9,0)}else c.arc(9,9,7,0,Math.PI*2);c.closePath();c.fill()} Connections {target:indieTheme;function onChanged(){indieHandle.requestPaint()}} }
                 }
             }
         }

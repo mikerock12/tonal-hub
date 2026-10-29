@@ -241,6 +241,7 @@ Item {
             }
             SeekBar {
                 id: seek
+                playing: root.player.isPlaying
                 width: parent.width - 96
                 anchors.verticalCenter: parent.verticalCenter
                 enabled: root.player.hasTrack

@@ -53,7 +53,7 @@ QtObject {
     readonly property int radiusCover: 4
 
     readonly property int gap: 8
-    readonly property int playerBarHeight: 80
+    readonly property int playerBarHeight: themeId === "halloween" ? 100 : 80
     readonly property int topBarHeight: 64
 
     function formatTime(ms) {

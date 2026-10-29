@@ -1,6 +1,17 @@
 # Contexto do Tonal Hub
 
-Atualizado em **27/10/2026**. Estado do produto: **Windows 0.15.3 / Android 0.15.3**. Leia também [AGENTS.md](AGENTS.md).
+Atualizado em **28/10/2026**. Entrega em validação: **Windows 0.15.4 / Android 0.15.4**. Leia também [AGENTS.md](AGENTS.md).
+
+## Halloween 0.15.4
+
+Referência: [HALLOWEEN.md](docs/HALLOWEEN.md). Continuação local Windows do PR22,
+base 4678641edfe64c6e2c0178b8c0988b924c8378b0. Novo tema compartilhado, teias,
+controles em brasa e quatro cenários de letras. Pedido de 28/10 acrescenta
+escorrimentos animados e gota com volume/reflexos. Desenho nativo limitado a
+15 fps e apenas durante reprodução com a barra visível; não envia comandos
+ao motor. Volume e prévias ficam estáticos. Não é simulação física de fluidos.
+Android usa código 24 e deve manter a identidade da assinatura 0.15.3.
+Validação/release/portal/backup finais em andamento; não declarar teste físico.
 
 ## 0.15.3 — faixas puladas, volume, botões de mídia e Jam
 

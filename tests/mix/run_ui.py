@@ -26,7 +26,7 @@ QtObject {
 ''',encoding='utf-8')
 for folder in ['qml/components','qml/companion']:
  for p in (ROOT/folder).glob('*.qml'):
-  text=p.read_text(encoding='utf-8');text=text.replace('import QtQuick','import MixHarness 1.0\nimport QtQuick',1);(OUT/p.name).write_text(text,encoding='utf-8')
+  text=p.read_text(encoding='utf-8').replace('import "qrc:/companion/qml/companion" as Personal','import "." as Personal');text=text.replace('import QtQuick','import MixHarness 1.0\nimport QtQuick',1);(OUT/p.name).write_text(text,encoding='utf-8')
 (OUT/'DevicePopup.qml').write_text('import MixHarness 1.0'+chr(10)+(ROOT/'qml/panels/DevicePopup.qml').read_text(encoding='utf-8'),encoding='utf-8')
 top=(ROOT/'qml/panels/TopBar.qml').read_text(encoding='utf-8').replace('import "qrc:/companion/qml/companion" as Personal','import "." as Personal')
 for key,value in {'Ready':'1','Starting':'2','NeedsLogin':'3','NotFound':'4','Crashed':'5'}.items():top=top.replace('Librespot.'+key,value)
@@ -201,6 +201,10 @@ Pane {width:1000;height:800;padding:0;palette.button:"#263440";palette.buttonTex
    App.player.volume=83;let mute=findChild(playerBar,"muteButton");verify(mute!==null);
    mouseClick(mute);compare(App.player.volume,0);mouseClick(mute);compare(App.player.volume,83);
   }
+  function test_halloween_player_bar_and_song_panel(){
+   App.theme.themeId="halloween";compare(Theme.playerBarHeight,100);playerBar.height=100;wait(120);grabImage(themedSeek.Window.window.contentItem).save("player-bar-halloween.png");playerBar.height=80;
+   personalPanel.showSong();wait(150);grabImage(themedSeek.Window.window.contentItem).save("song-panel-halloween.png");personalPanel.close();App.theme.themeId="tonal";
+  }
   function test_player_bar_has_all_controls(){
    let mix=App.listeningMix;let row=findChild(playerBar,"transportControls");verify(row!==null);
    let names=[];for(let i=0;i<row.children.length;i++)names.push(row.children[i].objectName||row.children[i].toString().split("_")[0]);
@@ -214,6 +218,9 @@ Pane {width:1000;height:800;padding:0;palette.button:"#263440";palette.buttonTex
   }
  }
 }''',encoding='utf-8')
-qt=Path(os.environ.get('QTDIR',ROOT/'out/tools/Qt/6.8.3/msvc2022_64'));env=os.environ.copy();env.update(QT_QPA_PLATFORM='offscreen',QT_QUICK_BACKEND='software',QT_QUICK_CONTROLS_STYLE='Basic',QT_PLUGIN_PATH=str(qt/'plugins'),QML_IMPORT_PATH=str(OUT),QT_QPA_FONTDIR=str(ROOT/'out/text-playlist-ui/fonts'))
-r=subprocess.run([str(qt/'bin/qmltestrunner.exe'),'-input',str(OUT/'tst_mix.qml'),'-o',str(OUT/'results.txt')+',txt'],cwd=OUT,env=env,capture_output=True,text=True,timeout=50,creationflags=subprocess.CREATE_NO_WINDOW)
+qt=Path(os.environ.get('QTDIR',ROOT/'out/tools/Qt/6.8.3/msvc2022_64'));env=os.environ.copy();env.update(QT_QPA_PLATFORM='offscreen',QT_QUICK_BACKEND='software',QSG_RENDER_LOOP='basic',QT_FORCE_STDERR_LOGGING='1',QT_QUICK_CONTROLS_STYLE='Basic',QT_PLUGIN_PATH=str(qt/'plugins'),QML_IMPORT_PATH=str(OUT),QT_QPA_FONTDIR=str(ROOT/'out/text-playlist-ui/fonts'))
+try:
+ r=subprocess.run([str(qt/'bin/qmltestrunner.exe'),'-input',str(OUT/'tst_mix.qml'),'-o',str(OUT/'results.txt')+',txt'],cwd=OUT,env=env,capture_output=True,text=True,timeout=50,creationflags=subprocess.CREATE_NO_WINDOW)
+except subprocess.TimeoutExpired as error:
+ (OUT/'timeout-stderr.log').write_bytes(error.stderr or b'');(OUT/'timeout-stdout.log').write_bytes(error.stdout or b'');raise
 (OUT/'stderr.log').write_text(r.stderr,encoding='utf-8');print((OUT/'results.txt').read_text(encoding='utf-8'));print(r.stderr[-4000:] if r.returncode else '');raise SystemExit(r.returncode)

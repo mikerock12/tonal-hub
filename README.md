@@ -10,7 +10,12 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
-**Build local: Windows 0.15.3 · Android 0.15.3. Documentação em 27/10/2026.**
+**Entrega 0.15.4 em validação no Windows e Android. Documentação em 28/10/2026.**
+
+Halloween traz teias nas capas, controles em brasa e quatro cenários de letras.
+A barra de música tem escorrimentos animados e gota com reflexos, limitados a
+15 fps enquanto a barra está visível e a música toca. Em pausa fica imóvel;
+volume e prévias são estáticos. [Uso e limites](docs/HALLOWEEN.md).
 
 [Pacotes e hashes 0.15.3](docs/artifacts-0153.json) · [Validação 0.15.3](docs/release-0153-tests.json) ·
 [Guia visual com capturas](docs/GUIA_VISUAL.md) ·

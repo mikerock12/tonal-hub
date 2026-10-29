@@ -5,7 +5,7 @@ afetada antes de alterar o produto. Estado documental: 25/10/2026, builds Window
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
-Estado atual: 27/10/2026, Windows/Android 0.15.3. As seções 0.15.0/0.15.1
+Estado atual: 28/10/2026, entrega Windows/Android 0.15.4 em validação. As seções 0.15.0/0.15.1
 abaixo são históricas; o contrato atual do leitor está na seção 0.15.2 e as
 correções de reprodução/Jam 0.15.3, ao final deste arquivo.
 
@@ -79,7 +79,9 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
   `tests/themes/check_themes.py` exige cópia idêntica, tokens e contraste AA.
   Novo tema: editar o JSON, copiar ao Android e rodar a verificação.
 - Trocar tema não pode recriar a Activity Android nem tocar motor/fila; o PC
-  troca ao vivo via `App.theme`. Sem animação contínua ou shader para temas.
+  troca ao vivo via `App.theme`. O usuário autorizou em 28/10 a animação da barra
+  Halloween: até 15 fps, apenas visível e tocando, sem alterar seek/áudio.
+  Restante dos controles do tema sem animação contínua ou shader personalizado.
 - Ícone por tema: Android activity-alias `HubIcon<Tema>` (gerar com
   `packaging/generate-theme-icons.py`; ativar o novo antes de desativar o antigo);
   PC `App::themedIcon`. Notificação: metadados/capa da música atual na MediaSession.
@@ -330,3 +332,16 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
 - Validação 0.15.3: docs/release-0153-tests.json e docs/artifacts-0153.json,
   código de produto f5bd00d. Smoke `tests/android/media_button_smoke.py` exige o
   app Spotify na AVD. Commits documentais posteriores não significam rebuild.
+
+## Halloween 0.15.4
+
+- Ler docs/HALLOWEEN.md. Catálogo compartilhado de sete temas; cenários de letras
+  independentes Halloween/Bruxas/Monstros/Vampiros. Capturas sintéticas devem ser identificadas.
+- BloodSurface QML é compartilhado pelas três barras Windows. Android usa
+  BloodTrail/BloodDrop nativos com objetos de desenho reutilizados. Até 15 fps;
+  pausa, ocultação, janela sem foco e outro tema encerram o relógio. Android
+  respeita ValueAnimator.areAnimatorsEnabled(). Volume/prévias são estáticos.
+- Essa animação foi explicitamente solicitada pelo usuário, sem promessa de
+  custo zero ou simulação física. Nenhum tick envia comandos de seek/áudio.
+- APK versionCode 24; conferir certificado da 0.15.3 e instalação de atualização
+  na AVD sem desinstalar. Nunca versionar/copiar/enviar credenciais de assinatura.
