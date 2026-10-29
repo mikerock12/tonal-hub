@@ -1,0 +1,50 @@
+name: Windows signed-out comparison 0.15.4
+on:
+  pull_request:
+    paths: ['.github/workflows/benchmark-windows-0154.yml','tests/benchmark/windows_signed_out_0154.py']
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: windows-2022
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install measurement tools
+        run: python -m pip install psutil==7.0.0 pillow==11.3.0
+      - name: Obtain release and official Spotify installer
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          New-Item -ItemType Directory -Force evidence | Out-Null
+          gh release download v0.15.4 --repo mikerock12/tonal-hub --dir evidence --pattern 'Tonal-Hub-0.15.4-local.zip' --pattern SHA256SUMS.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $line=Get-Content evidence/SHA256SUMS.txt | Where-Object {$_ -match 'Tonal-Hub-0.15.4-local.zip'}
+          if ((Get-FileHash evidence/Tonal-Hub-0.15.4-local.zip -Algorithm SHA256).Hash.ToLower() -ne ($line -split '\s+')[0].ToLower()) { throw 'Invalid release hash' }
+          Expand-Archive evidence/Tonal-Hub-0.15.4-local.zip -DestinationPath evidence/portable
+          Invoke-WebRequest https://download.scdn.co/SpotifySetup.exe -OutFile evidence/SpotifySetup.exe
+          $installer=Start-Process -FilePath (Resolve-Path evidence/SpotifySetup.exe).Path -ArgumentList '/silent' -PassThru
+          if (!$installer.WaitForExit(180000)) { $installer.Kill(); throw 'Spotify installer timed out' }
+          if ($installer.ExitCode -ne 0) { throw "Spotify installer exit $($installer.ExitCode)" }
+          $exe=Join-Path $env:APPDATA 'Spotify/Spotify.exe'
+          if (!(Test-Path $exe)) { throw 'Spotify executable not found after setup' }
+          (Get-Item $exe).VersionInfo | Select-Object FileVersion,ProductVersion | ConvertTo-Json | Set-Content evidence/spotify-version.json
+          (Get-FileHash evidence/SpotifySetup.exe -Algorithm SHA256).Hash.ToLower() | Set-Content evidence/spotify-setup-sha256.txt
+          Get-CimInstance Win32_Processor | Select-Object Name,NumberOfLogicalProcessors | ConvertTo-Json | Set-Content evidence/cpu-info.json
+          Get-CimInstance Win32_VideoController | Select-Object Name,DriverVersion | ConvertTo-Json | Set-Content evidence/gpu-info.json
+      - name: Measure fresh signed-out sessions
+        run: python tests/benchmark/windows_signed_out_0154.py
+      - name: Upload sanitized evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tonal-windows-signed-out-0154
+          path: |
+            evidence/*.json
+            evidence/*.png
+            evidence/*sha256.txt
+          if-no-files-found: warn
