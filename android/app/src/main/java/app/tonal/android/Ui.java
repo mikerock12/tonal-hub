@@ -58,6 +58,25 @@ final class Ui {
         GradientDrawable halo=new GradientDrawable();halo.setShape(GradientDrawable.OVAL);halo.setColor((THUMB_BORDER&0x00ffffff)|0x48000000);
         LayerDrawable glow=new LayerDrawable(new Drawable[]{halo,core});int outer=size+dp(10);glow.setLayerSize(0,outer,outer);glow.setLayerSize(1,size,size);glow.setLayerGravity(1,Gravity.CENTER);return glow;
     }
+    /** Animated ember ring for the primary player controls, confined to the visible view. */
+    void halloweenTransport(ImageButton button){if(HALLOWEEN)button.setBackground(new HalloweenTransport(button));}
+    static final class HalloweenTransport extends Drawable implements Runnable {
+        final View host;final Paint paint=new Paint(3);final Path path=new Path();final Rect visible=new Rect();
+        float phase;boolean scheduled;
+        HalloweenTransport(View host){this.host=host;}
+        boolean active(){return host.isAttachedToWindow()&&host.isShown()&&host.hasWindowFocus()&&android.animation.ValueAnimator.areAnimatorsEnabled()&&host.getGlobalVisibleRect(visible);}
+        public void run(){scheduled=false;if(active()){phase+=.16f;invalidateSelf();}}
+        public void draw(Canvas c){Rect b=getBounds();float cx=b.exactCenterX(),cy=b.exactCenterY(),r=Math.min(b.width(),b.height())*.46f;
+            paint.setStyle(Paint.Style.FILL);paint.setColor(0xff130d15);c.drawCircle(cx,cy,r,paint);
+            paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(Math.max(1,r*.10f));paint.setColor(0xff3e2933);c.drawCircle(cx,cy,r*.96f,paint);
+            float pulse=.5f+.5f*(float)Math.sin(phase);paint.setStrokeWidth(Math.max(1,r*.045f));paint.setColor(0xffff873e);paint.setAlpha((int)(155+100*pulse));c.drawCircle(cx,cy,r*.79f,paint);paint.setAlpha(255);
+            // Small flickering embers and blood trails, with fixed bounded geometry.
+            paint.setStyle(Paint.Style.FILL);for(int i=0;i<8;i++){double angle=(i*2*Math.PI/8)+.12;float x=cx+(float)Math.cos(angle)*r*.84f,y=cy+(float)Math.sin(angle)*r*.84f;paint.setColor((i%2==0)?0xfffa7135:0xffb22b25);paint.setAlpha((int)(100+120*(.5+.5*Math.sin(phase+i))));c.drawCircle(x,y,Math.max(1,r*.035f),paint);}paint.setAlpha(255);
+            paint.setColor(0xff9f1d23);for(int i=-1;i<=1;i++){float x=cx+i*r*.35f,y=cy+r*.76f,len=r*(.12f+.08f*(float)(.5+.5*Math.sin(phase+i)));c.drawRoundRect(x-r*.025f,y,x+r*.025f,y+len,r*.025f,r*.025f,paint);}
+            if(active()&&!scheduled){scheduled=true;scheduleSelf(this,android.os.SystemClock.uptimeMillis()+67);}else if(!active()&&scheduled){scheduled=false;unscheduleSelf(this);}
+        }
+        public void setAlpha(int a){}public void setColorFilter(ColorFilter f){}public int getOpacity(){return PixelFormat.TRANSLUCENT;}
+    }
     static final class BloodTrail extends Drawable implements Runnable {
         final SeekBar host;final java.util.function.BooleanSupplier playing;final float barHeight,density;
         final Paint paint=new Paint(3);final Path path=new Path();final Rect visibleArea=new Rect();Shader beam;float phase;boolean scheduled;
@@ -79,8 +98,8 @@ final class Ui {
     static final class BloodDrop extends Drawable {
         final int size, color, border; final Paint paint=new Paint(3); final Path path=new Path();Shader shine;
         BloodDrop(int size,int color,int border){this.size=size;this.color=color;this.border=border;}
-        protected void onBoundsChange(Rect b){shine=new LinearGradient(0,0,b.width(),b.height(),new int[]{0xffff8b7d,0xffe82a3c,0xffa50d24,0xff410712},new float[]{0,.25f,.6f,1},Shader.TileMode.CLAMP);}
-        public void draw(Canvas c){Rect b=getBounds();float w=b.width(),h=b.height();c.save();c.translate(b.left,b.top+size*2);c.scale(1,-1);h=size;path.rewind();path.moveTo(w*.5f,0);path.cubicTo(w*.44f,h*.25f,w*.05f,h*.52f,w*.12f,h*.76f);path.cubicTo(w*.21f,h*1.06f,w*.79f,h*1.06f,w*.88f,h*.76f);path.cubicTo(w*.95f,h*.52f,w*.56f,h*.25f,w*.5f,0);path.close();paint.setStyle(Paint.Style.FILL);paint.setShader(shine);c.drawPath(path,paint);paint.setShader(null);paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(Math.max(1,size*.035f));paint.setColor(0xffef6a64);c.drawPath(path,paint);paint.setStyle(Paint.Style.FILL);paint.setColor(0xadffc2b0);c.drawOval(w*.23f,h*.44f,w*.38f,h*.75f,paint);paint.setColor(0x66ff867b);c.drawOval(w*.42f,h*.81f,w*.72f,h*.865f,paint);c.restore();}
+        protected void onBoundsChange(Rect b){shine=new LinearGradient(0,0,b.width(),size,new int[]{SEEK_END,SEEK_START,0xff870c1a},new float[]{0,.55f,1},Shader.TileMode.CLAMP);}
+        public void draw(Canvas c){Rect b=getBounds();float w=b.width(),h=b.height();c.save();c.translate(b.left,b.top+size);h=size;path.rewind();path.moveTo(w*.5f,0);path.cubicTo(w*.44f,h*.25f,w*.05f,h*.52f,w*.12f,h*.76f);path.cubicTo(w*.21f,h*1.06f,w*.79f,h*1.06f,w*.88f,h*.76f);path.cubicTo(w*.95f,h*.52f,w*.56f,h*.25f,w*.5f,0);path.close();paint.setStyle(Paint.Style.FILL);paint.setShader(shine);c.drawPath(path,paint);paint.setShader(null);paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(Math.max(1,size*.035f));paint.setColor(SEEK_START);c.drawPath(path,paint);paint.setStyle(Paint.Style.FILL);paint.setColor(0x80ff9b87);c.drawOval(w*.23f,h*.44f,w*.38f,h*.75f,paint);paint.setColor(0x55ff867b);c.drawOval(w*.42f,h*.81f,w*.72f,h*.865f,paint);c.restore();}
         public int getIntrinsicWidth(){return size;}public int getIntrinsicHeight(){return size*2;}public void setAlpha(int a){}public void setColorFilter(ColorFilter f){}public int getOpacity(){return PixelFormat.TRANSLUCENT;}
     }
     static final class WebOverlay extends Drawable {

@@ -6,8 +6,8 @@ android {
         applicationId 'app.tonal.android'
         minSdk 28
         targetSdk 36
-        versionCode 25
-        versionName '0.15.5-local'
+        versionCode 26
+        versionName '0.15.6-local'
         if (project.hasProperty('tonalAbi')) {
             ndk { abiFilters project.property('tonalAbi').toString() }
         }

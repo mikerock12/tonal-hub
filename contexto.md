@@ -2,6 +2,10 @@
 
 Atualizado em **29/10/2026**. Entrega: **Windows 0.15.4 / Android 0.15.4**, com pendências Android abaixo. Leia também [AGENTS.md](AGENTS.md).
 
+## Android 0.15.6 — gota e play/pause em revisão
+
+Após teste do usuário no celular com a 0.15.5, a gota foi redesenhada com a ponta na barra e o corpo arredondado pendendo abaixo, nos mesmos vermelhos do rastro. O controle principal de reprodução recebe aro de brasa animado limitado a 15 fps enquanto visível, com foco e animações do sistema habilitadas. Teste visual sintético e aceite no telefone são distintos. Android avança para versionCode 26; o APK precisa da assinatura original e de instalação por cima antes da publicação. Detalhes: [HALLOWEEN.md](docs/HALLOWEEN.md).
+
 ## Android 0.15.5 — correção da barra em preparação
 
 Ver [HALLOWEEN.md](docs/HALLOWEEN.md): posição interpolada mais frequente na página da música, prioridade aos eventos recentes do motor e gota invertida abaixo da barra. O streaming real, a aparência em aparelho e a atualização assinada ainda precisam de validação. O código Android avança para versionCode 25; não substituir o APK instalado com outra chave.
