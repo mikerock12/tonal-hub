@@ -30,7 +30,7 @@ reutilizados; nenhuma inferência, rede ou banco participa desse desenho.
 O catálogo passou em 213 verificações. O teste QML dedicado captura os quatro
 cenários, confere troca/retorno do tema com arte já carregada, compara quadros
 dos escorrimentos e verifica a imobilidade em pausa/ocultação. O teste nativo
-Android verifica o relógio visível, pausa, ocultação e retorno em AVD dedicada.
+Android foi preparado para verificar o relógio visível, pausa, ocultação e retorno em AVD dedicada.
 Resultados finais, tentativas e limites devem ser registrados no manifesto de
 entrega. A validação física no POCO X7 Pro permanece pendente.
 
@@ -38,3 +38,11 @@ Android 0.15.4 usa versionCode 24 e a mesma identidade de assinatura da 0.15.3.
 A identidade é conferida por certificado dos APKs, sem copiar/publicar a chave.
 Atualize por cima, sem desinstalar, para preservar biblioteca, preferências e
 modelo local. Os pesos continuam opcionais e fora dos instaláveis/backups.
+
+Na sessão Windows de 29/10, o launcher do emulador encerrou com 0xC0000135.
+Uma cópia isolada das dependências existentes conseguiu iniciar o executável
+headless, mas não completou a verificação do hipervisor nem disponibilizou ADB.
+Por isso, capturas Android, relógio em execução e instalação `adb install -r`
+da 0.15.3 para a 0.15.4 permanecem pendentes. Certificado, pacote, versionCode,
+compilação e alinhamento dos APKs foram verificados; isso não equivale a teste
+de atualização instalado nem a validação física. Nenhuma outra VM foi encerrada.

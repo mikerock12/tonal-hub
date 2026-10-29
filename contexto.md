@@ -1,6 +1,6 @@
 # Contexto do Tonal Hub
 
-Atualizado em **28/10/2026**. Entrega em validação: **Windows 0.15.4 / Android 0.15.4**. Leia também [AGENTS.md](AGENTS.md).
+Atualizado em **29/10/2026**. Entrega: **Windows 0.15.4 / Android 0.15.4**, com pendências Android abaixo. Leia também [AGENTS.md](AGENTS.md).
 
 ## Halloween 0.15.4
 
@@ -10,8 +10,20 @@ controles em brasa e quatro cenários de letras. Pedido de 28/10 acrescenta
 escorrimentos animados e gota com volume/reflexos. Desenho nativo limitado a
 15 fps e apenas durante reprodução com a barra visível; não envia comandos
 ao motor. Volume e prévias ficam estáticos. Não é simulação física de fluidos.
-Android usa código 24 e deve manter a identidade da assinatura 0.15.3.
-Validação/release/portal/backup finais em andamento; não declarar teste físico.
+Android usa código 24 e mantém o certificado da 0.15.3, conferido nos dois APKs.
+Código Windows: 8e96297de2a3268fb14109ef372835546970e605; Android compilado em
+72d5c811ca270a3bec50f017c5e9cbe4d3bd4c3b, sem alteração da árvore Android no
+commit seguinte. Manifestos: docs/artifacts-0154.json e docs/release-0154-tests.json.
+Windows: QML 25/6/3 + Halloween 3, temas 213, inicialização dos três executáveis
+empacotados e CRC dos 1.444 arquivos passaram. Houve timeouts intermitentes de
+inicialização; manter tentativas e não atribuir causa sem prova.
+Android: builds e política de reprodução 47 passaram; assinatura v2 e alinhamento
+16 KiB conferidos. Emulador 37.2.12 falhou antes do ADB (launcher 0xC0000135;
+engine isolado parou na checagem do hipervisor). Teste visual, instalação por
+cima e POCO físico pendentes. Nenhuma outra VM foi encerrada. Apenas uma cópia
+local de dependências SDK/CRT existentes foi montada em out/tools para diagnóstico;
+nenhum aplicativo/ferramenta nova foi instalado ou baixado nesta tarefa.
+CI, release, portal e backup finais registrados no PR22 e recibos privados.
 
 ## 0.15.3 — faixas puladas, volume, botões de mídia e Jam
 

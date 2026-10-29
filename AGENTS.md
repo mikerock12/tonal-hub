@@ -5,7 +5,7 @@ afetada antes de alterar o produto. Estado documental: 25/10/2026, builds Window
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
-Estado atual: 28/10/2026, entrega Windows/Android 0.15.4 em validação. As seções 0.15.0/0.15.1
+Estado atual: 29/10/2026, entrega Windows/Android 0.15.4; validação Android em execução pendente. As seções 0.15.0/0.15.1
 abaixo são históricas; o contrato atual do leitor está na seção 0.15.2 e as
 correções de reprodução/Jam 0.15.3, ao final deste arquivo.
 
@@ -345,3 +345,11 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
   custo zero ou simulação física. Nenhum tick envia comandos de seek/áudio.
 - APK versionCode 24; conferir certificado da 0.15.3 e instalação de atualização
   na AVD sem desinstalar. Nunca versionar/copiar/enviar credenciais de assinatura.
+
+- Evidências 0.15.4: docs/release-0154-tests.json e docs/artifacts-0154.json.
+  Código Windows 8e96297; Android 72d5c81 com árvore idêntica no commit seguinte.
+  Assinatura da 0.15.3 e alinhamento 16 KiB verificados; instalação por cima,
+  execução visual Android e POCO físico pendentes. Emulador falhou antes do ADB;
+  cópia isolada de dependências existentes em out/tools, sem instalar/baixar apps.
+  Capturas públicas usam dados sintéticos. Preservar timeouts de UI e tentativas
+  de CI, sem declarar testes físicos, acústicos ou benchmark novo.

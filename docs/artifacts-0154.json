@@ -1,0 +1,76 @@
+{
+  "version": "0.15.4",
+  "productSourceCommit": "8e96297de2a3268fb14109ef372835546970e605",
+  "androidBuildCommit": "72d5c811ca270a3bec50f017c5e9cbe4d3bd4c3b",
+  "androidTreeUnchangedAtProductCommit": true,
+  "documentationCommitsDoNotImplyRebuild": true,
+  "windowsPackagingVersion": "0.15.4.0",
+  "androidVersionCode": 24,
+  "files": [
+    {
+      "file": "Tonal-Hub-0.15.4.0-Windows-x64-Setup.exe",
+      "localPath": "D:/PROJETOS/Tonal-Player-Matheus/out/release-local/Tonal-Hub-0.15.4.0-Windows-x64-Setup.exe",
+      "bytes": 84581544,
+      "sha256": "ae9cb8d4b32a35903c25f6d56cbf60cc8558119d5d3c5886f2731d82336ae564"
+    },
+    {
+      "file": "Tonal-Hub-0.15.4-local.zip",
+      "localPath": "D:/PROJETOS/Tonal-Player-Matheus/out/release-local/Tonal-Hub-0.15.4-local.zip",
+      "bytes": 119778700,
+      "sha256": "9b9bb08334b5af047327ae72e87c51126efb64efac556e63d08fd45b8f6cee5b"
+    },
+    {
+      "file": "Tonal-Android-0.15.4-local.apk",
+      "localPath": "D:/PROJETOS/Tonal-Player-Matheus/out/android/Tonal-Android-0.15.4-local.apk",
+      "bytes": 64126141,
+      "sha256": "59968dd69a786331d55a21d811fcc3ed7a364ad5a8324ba0331fbc862b0bde02"
+    },
+    {
+      "file": "Tonal-Android-0.15.4-arm64-v8a.apk",
+      "localPath": "D:/PROJETOS/Tonal-Player-Matheus/out/android/Tonal-Android-0.15.4-arm64-v8a.apk",
+      "bytes": 35957836,
+      "sha256": "6a9962bae0a5c8fb73b675e3e3250a6a32c994aeb1a0b9ffe22a726a9b0180bd"
+    }
+  ],
+  "windowsComponents": [
+    {
+      "file": "TonalHub.exe",
+      "localPath": "D:/PROJETOS/Tonal-Player-Matheus/out/release-local/Tonal-Hub-0.15.4-local/TonalHub.exe",
+      "bytes": 58880,
+      "sha256": "4f8cf73c72549183d1db58d69c26f883b8b5060cca6c9070a9780e98b1319651"
+    },
+    {
+      "file": "Tonalify.exe",
+      "localPath": "D:/PROJETOS/Tonal-Player-Matheus/out/release-local/Tonal-Hub-0.15.4-local/Tonalify.exe",
+      "bytes": 3632128,
+      "sha256": "15271065560a00d86930401763bfc4a5beb4604cb43b0f9d226e5471cd9089c5"
+    },
+    {
+      "file": "IndieTonal.exe",
+      "localPath": "D:/PROJETOS/Tonal-Player-Matheus/out/release-local/Tonal-Hub-0.15.4-local/IndieTonal.exe",
+      "bytes": 960512,
+      "sha256": "4390a9fb3cc7fdb69d468294fa4e801630ea57eda1a52e1b8d4a105746c51855"
+    },
+    {
+      "file": "TonalStories.exe",
+      "localPath": "D:/PROJETOS/Tonal-Player-Matheus/out/release-local/Tonal-Hub-0.15.4-local/TonalStories.exe",
+      "bytes": 4370432,
+      "sha256": "841915640427776ae8799b8a8fb4fa74cc2fde5a736e47252835ffa834bbc3ec"
+    },
+    {
+      "file": "TonalJam.exe",
+      "localPath": "D:/PROJETOS/Tonal-Player-Matheus/out/release-local/Tonal-Hub-0.15.4-local/TonalJam.exe",
+      "bytes": 5716992,
+      "sha256": "4649b94f843d21ca13c369ca49bb7e3fdde7d66c1231faaafe0fe7e48f629a52"
+    },
+    {
+      "file": "librespot.exe",
+      "localPath": "D:/PROJETOS/Tonal-Player-Matheus/out/release-local/Tonal-Hub-0.15.4-local/librespot.exe",
+      "bytes": 12834816,
+      "sha256": "bad3a71ef164fd59c7bedd026860b03c53e8ddf223d3d269b2ba09e6e2284287"
+    }
+  ],
+  "apkSignerCertificateSha256": "464ae7cf34f4f145541569db215f8fcdef5deda1be31921d8e366eed20aa22c2",
+  "sameSignerAs0153": true,
+  "actualInstallUpgradeTested": false
+}

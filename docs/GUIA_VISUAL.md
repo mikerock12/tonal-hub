@@ -296,3 +296,23 @@ a capa ausente é intencional. Não demonstram reprodução Spotify real, busca
 autenticada setlist.fm ou teste no telefone físico. Não houve envio a terceiros.
 Procedência e hashes no [manifesto](screenshots/manifest.json).
 [Funcionamento e limites](SONG_PAGES_SHARE_SETLISTS_0140.md).*
+
+## Halloween 0.15.4
+
+Escolha **Halloween** nos temas. A capa recebe teias; o controle de tocar usa
+brasa e a barra musical desenha escorrimentos e uma gota com reflexos. O relógio
+funciona até 15 fps, visível e durante reprodução; pausa/ocultação o interrompem.
+Em Letras, escolha separadamente Halloween, Bruxas, Monstros ou Vampiros.
+
+![IndieTonal: página da música, controles e capa sintética com teias](screenshots/desktop-halloween-musica-0154.png)
+![Barra do Tonalify: sangue e gota vetoriais](screenshots/desktop-halloween-barra-0154.png)
+![Cenário Halloween](screenshots/desktop-halloween-halloween-0154.png)
+![Cenário Bruxas](screenshots/desktop-halloween-bruxas-0154.png)
+![Cenário Monstros](screenshots/desktop-halloween-monstros-0154.png)
+![Cenário Vampiros](screenshots/desktop-halloween-vampiros-0154.png)
+
+Capturas Windows reais do app e de componentes de produção em harness, com
+arte e versos originais sintéticos. Não são teste de streaming/áudio físico.
+A imagem estática não demonstra o movimento: o teste compara dois quadros e
+confere que o relógio para em pausa/ocultação. Capturas Android estão pendentes
+porque o emulador deste PC não iniciou; não há tela Android fabricada.

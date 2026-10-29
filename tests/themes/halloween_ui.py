@@ -48,7 +48,7 @@ Pane {
  TestCase {
   name:"HalloweenVisual";when:windowShown
   function test_switch_cover_controls_and_modes(){
-   Theme.setTheme("tonal");tryCompare(cover,"ready",true,15000);wait(150)
+   Theme.setTheme("tonal");tryCompare(cover,"ready",true,15000);wait(350)
    grabImage(cover).save("cover-tonal.png")
    Theme.setTheme("halloween");compare(Theme.seek.thumbShape,"drop");wait(180)
    grabImage(cover).save("cover-halloween.png")
@@ -64,9 +64,9 @@ Pane {
    let phase=stage.phase;wait(160);compare(stage.phase,phase)
    stage.active=false;stage.playing=true;wait(160);compare(stage.phase,phase)
    stage.playing=false;stage.active=true
-   cover.round=true;wait(160);grabImage(cover).save("artist-halloween.png")
-   cover.round=false;Theme.setTheme("tonal");wait(160);grabImage(cover).save("cover-restored.png")
-   Theme.setTheme("halloween");wait(160);grabImage(cover).save("cover-halloween-again.png")
+   Theme.setTheme("tonal");wait(350);grabImage(cover).save("cover-restored.png")
+   Theme.setTheme("halloween");wait(350);grabImage(cover).save("cover-halloween-again.png")
+   cover.round=true;wait(350);grabImage(cover).save("artist-halloween.png")
   }
  }
 }''', encoding='utf-8')
