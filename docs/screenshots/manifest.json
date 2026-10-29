@@ -1,6 +1,6 @@
 {
-  "documented_on": "2026-10-25",
-  "scope": "Real app/test screenshots with version and fixture provenance per image. Historical captures preserved; two new 0.12.0 native Android queue captures; four 0.13.0 theme captures without personal data; four 0.13.1 control/repeat captures without personal data.",
+  "documented_on": "2026-10-29",
+  "scope": "Real app/test screenshots with version and fixture provenance per image. Historical captures preserved; two new 0.12.0 native Android queue captures; four 0.13.0 theme captures without personal data; four 0.13.1 control/repeat captures without personal data. Halloween 0.15.4: seis capturas Windows com dados sintéticos; capturas Android pendentes por falha de inicialização do emulador.",
   "captures": [
     {
       "file": "desktop-modos.png",
@@ -445,6 +445,78 @@
       "height": 1200,
       "bytes": 92785,
       "sha256": "e355aeeb7786df5729a0e901a8456822ac4b40de9abdbfab67723cca7eea0545"
+    },
+    {
+      "file": "desktop-halloween-musica-0154.png",
+      "source": "out/halloween-0154/indie-windows-song-fixed.png",
+      "platform": "Windows",
+      "capture_context": "0.15.4: IndieTonal real via --smoke-test, fixture própria; captura da página da música",
+      "note": "Arte, títulos e versos originais sintéticos; não é streaming Spotify nem teste de áudio físico.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 1180,
+      "height": 820,
+      "bytes": 53708,
+      "sha256": "cf36a0935bb2c15771dcbd9c9acfb4f715b1ec19331f9ae858087c9fb1759d46"
+    },
+    {
+      "file": "desktop-halloween-barra-0154.png",
+      "source": "out/mix-ui/player-bar-halloween.png",
+      "platform": "Windows",
+      "capture_context": "0.15.4: Barra de produção Qt/QML em harness isolado",
+      "note": "Arte, títulos e versos originais sintéticos; não é streaming Spotify nem teste de áudio físico.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 1000,
+      "height": 800,
+      "bytes": 68719,
+      "sha256": "a5fb5c15cd9df24d55b8cdc88ad4bfaa8ff2ed54a58bb92b3edd40b9b12e6d38"
+    },
+    {
+      "file": "desktop-halloween-halloween-0154.png",
+      "source": "out/halloween-ui/player-Halloween.png",
+      "platform": "Windows",
+      "capture_context": "0.15.4: Componentes de produção Qt/QML em harness isolado",
+      "note": "Arte, títulos e versos originais sintéticos; não é streaming Spotify nem teste de áudio físico.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 1000,
+      "height": 780,
+      "bytes": 74099,
+      "sha256": "3871961c469639a4cb3b2c329092dc21920c6bb0cd21f86d5174f4f5873914b2"
+    },
+    {
+      "file": "desktop-halloween-bruxas-0154.png",
+      "source": "out/halloween-ui/player-Bruxas.png",
+      "platform": "Windows",
+      "capture_context": "0.15.4: Componentes de produção Qt/QML em harness isolado",
+      "note": "Arte, títulos e versos originais sintéticos; não é streaming Spotify nem teste de áudio físico.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 1000,
+      "height": 780,
+      "bytes": 74078,
+      "sha256": "69c9b78e76c1d92ff9c82b54a0a05bc938bad023b6557dece1a642bcba8a4f8b"
+    },
+    {
+      "file": "desktop-halloween-monstros-0154.png",
+      "source": "out/halloween-ui/player-Monstros.png",
+      "platform": "Windows",
+      "capture_context": "0.15.4: Componentes de produção Qt/QML em harness isolado",
+      "note": "Arte, títulos e versos originais sintéticos; não é streaming Spotify nem teste de áudio físico.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 1000,
+      "height": 780,
+      "bytes": 73826,
+      "sha256": "78bd472938c79df5a45d5e3e51cfd52f771cac1d01ecfefa970e7cd70499b986"
+    },
+    {
+      "file": "desktop-halloween-vampiros-0154.png",
+      "source": "out/halloween-ui/player-Vampiros.png",
+      "platform": "Windows",
+      "capture_context": "0.15.4: Componentes de produção Qt/QML em harness isolado",
+      "note": "Arte, títulos e versos originais sintéticos; não é streaming Spotify nem teste de áudio físico.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 1000,
+      "height": 780,
+      "bytes": 73945,
+      "sha256": "1fbb25bcb3d538e630d723db9c81ecaa969fcd0720625e6826a0ed3866fffa6b"
     }
   ]
 }

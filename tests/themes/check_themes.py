@@ -10,7 +10,7 @@ ANDROID = ROOT / 'android/app/src/main/assets/themes.json'
 COLORS = ['bg', 'panel', 'card', 'cardHover', 'text', 'textSecondary', 'textMuted',
           'accent', 'accentHover', 'accentText', 'accentDeep', 'onAccent', 'divider']
 SEEK_COLORS = ['track', 'thumb', 'thumbBorder']
-SHAPES = {'circle', 'ring', 'pill', 'diamond'}
+SHAPES = {'circle', 'ring', 'pill', 'diamond', 'drop'}
 HEX = re.compile(r'^#[0-9a-fA-F]{6}$')
 
 

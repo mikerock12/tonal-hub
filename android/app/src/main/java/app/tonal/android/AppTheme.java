@@ -75,6 +75,7 @@ final class AppTheme {
         try{return value.isEmpty()?fallback:Color.parseColor(value);}catch(IllegalArgumentException e){return fallback;}
     }
     static void load(JSONObject t){
+        Ui.HALLOWEEN="halloween".equals(t.optString("id"));
         Ui.BG=color(t,"bg",Ui.BG);Ui.PANEL=color(t,"panel",Ui.PANEL);Ui.CARD=color(t,"card",Ui.CARD);Ui.TEXT=color(t,"text",Ui.TEXT);
         Ui.MUTED=color(t,"textSecondary",Ui.MUTED);Ui.BLUE=color(t,"accent",Ui.BLUE);Ui.ACCENT_SOFT=color(t,"accentText",Ui.ACCENT_SOFT);
         Ui.TINT=color(t,"accentDeep",Ui.TINT);Ui.ON_ACCENT=color(t,"onAccent",Ui.ON_ACCENT);

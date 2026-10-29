@@ -270,6 +270,12 @@ Dialog {
                         visible:songArt.status!==Image.Ready
                     }
                     Image {id:songArt;anchors.fill:parent;source:panel.controller.current.image||"";fillMode:Image.PreserveAspectFit;asynchronous:true;sourceSize.width:800;sourceSize.height:800}
+                    Canvas {
+                        anchors.centerIn:parent;width:songArt.paintedWidth;height:songArt.paintedHeight
+                        visible:panel.tone.id==="halloween"&&songArt.status===Image.Ready
+                        onVisibleChanged:requestPaint();onWidthChanged:requestPaint();onHeightChanged:requestPaint()
+                        onPaint:{const c=getContext("2d");c.reset();c.strokeStyle="#b8a3a4";c.globalAlpha=.65;c.lineWidth=1;const size=Math.min(width,height)*.43;for(let i=0;i<=6;i++){let a=i*Math.PI/12;c.beginPath();c.moveTo(0,0);c.lineTo(Math.cos(a)*size,Math.sin(a)*size);c.stroke()}for(let r=.25;r<=1;r+=.25){c.beginPath();for(let i=0;i<=6;i++){let a=i*Math.PI/12,x=Math.cos(a)*size*r,y=Math.sin(a)*size*r;i?c.lineTo(x,y):c.moveTo(x,y)}c.stroke()}}
+                    }
                 }
                 Label {text:panel.controller.current.title||"Escolha uma música";textFormat:Text.PlainText;font.pixelSize:28;font.bold:true;Layout.fillWidth:true;wrapMode:Text.Wrap;maximumLineCount:2;elide:Text.ElideRight}
                 Label {text:(panel.controller.current.artist||"")+" · "+(panel.controller.current.album||"");textFormat:Text.PlainText;color:panel.tone.textSecondary;Layout.fillWidth:true;elide:Text.ElideRight}
@@ -283,7 +289,10 @@ Dialog {
                     ActionIcon{accentInk:panel.tone.accent;objectName:"songShake";visible:panel.quickModes;enabled:!panel.mixController||!panel.mixController.busy;symbol:"shake";description:"Shake: sortear outra ordem da fila agora";onClicked:panel.applySongMode(0)}
                     ActionIcon{accentInk:panel.tone.accent;objectName:"songRandom";visible:panel.quickModes;enabled:!panel.mixController||!panel.mixController.busy;symbol:"random";description:"Aleatório: tocar a fila em ordem aleatória / voltar à ordem";filled:!!panel.mixController&&panel.mixController.randomEnabled;onClicked:panel.applySongMode(1)}
                     ActionIcon { accentInk:panel.tone.accent;symbol:"prev";description:"Anterior"; enabled:!!panel.controller.current.title; onClicked:panel.previousRequested() }
-                    ActionIcon { implicitWidth:64;implicitHeight:64;background:Rectangle{radius:32;color:panel.tone.accent}accentInk:panel.tone.accent;symbol:panel.playing?"pause":"play";description:panel.playing?"Pausar":"Reproduzir"; enabled:!!panel.controller.current.title; onClicked:panel.togglePlayback() }
+                    ActionIcon { id:songPlay;objectName:"songPlayButton";implicitWidth:64;implicitHeight:64
+                        background:Rectangle{radius:32;color:panel.tone.id==="halloween"?"#1b101d":panel.tone.accent;border.width:panel.tone.id==="halloween"?2:0;border.color:panel.tone.accent}
+                        scale:panel.tone.id==="halloween"&&down?.92:1;Behavior on scale{NumberAnimation{duration:100}}
+                        ink:panel.tone.id==="halloween"?panel.tone.accent:"#f5f5f5";accentInk:panel.tone.accent;symbol:panel.playing?"pause":"play";description:panel.playing?"Pausar":"Reproduzir"; enabled:!!panel.controller.current.title; onClicked:panel.togglePlayback() }
                     ActionIcon { accentInk:panel.tone.accent;symbol:"next";description:"Próxima"; enabled:!!panel.controller.current.title; onClicked:panel.nextRequested() }
                     ActionIcon{accentInk:panel.tone.accent;objectName:"songRepeat";visible:!!panel.transportPlayer&&typeof panel.transportPlayer.cycleRepeat==="function";symbol:panel.transportPlayer&&panel.transportPlayer.repeatMode==="track"?"repeat1":"repeat";filled:!!panel.transportPlayer&&panel.transportPlayer.repeatMode!=="off";description:!panel.transportPlayer||panel.transportPlayer.repeatMode==="off"?"Repetir a fila":panel.transportPlayer.repeatMode==="context"?"Repetindo a fila: repetir só esta música":"Repetindo esta música: desligar repetição";onClicked:panel.transportPlayer.cycleRepeat()}
                     ActionIcon{accentInk:panel.tone.accent;objectName:"songDiscovery";visible:panel.quickModes;enabled:!panel.mixController||!panel.mixController.busy;symbol:"discover";description:panel.mixController&&panel.mixController.busy?panel.mixController.status:"Descoberta 2+1: duas da fila, uma descoberta / desligar";filled:!!panel.mixController&&panel.mixController.discoveryEnabled;onClicked:panel.applySongMode(2)}
@@ -300,10 +309,14 @@ Dialog {
                         onMoved:{if(pressed)dragTarget=value;else panel.controller.seek(Math.round(value))}
                         onPressedChanged:if(!pressed&&dragTarget>=0){panel.controller.seek(Math.round(dragTarget));dragTarget=-1}
                         background:Rectangle{x:songSeek.leftPadding;y:songSeek.topPadding+songSeek.availableHeight/2-height/2;width:songSeek.availableWidth;height:songSeek.active?songSeek.look.activeHeight:songSeek.look.height;radius:height/2;color:songSeek.look.track
-                            Rectangle{width:Math.max(parent.height,songSeek.visualPosition*parent.width);height:parent.height;radius:height/2;gradient:Gradient{orientation:Gradient.Horizontal;GradientStop{position:0;color:(songSeek.active?songSeek.look.activeFill:songSeek.look.fill)[0]}GradientStop{position:1;color:(songSeek.active?songSeek.look.activeFill:songSeek.look.fill)[1]}}}}
+                            Rectangle{width:Math.max(parent.height,songSeek.visualPosition*parent.width);height:parent.height;radius:height/2;gradient:Gradient{orientation:Gradient.Horizontal;GradientStop{position:0;color:(songSeek.active?songSeek.look.activeFill:songSeek.look.fill)[0]}GradientStop{position:1;color:(songSeek.active?songSeek.look.activeFill:songSeek.look.fill)[1]}}}
+                            BloodSurface { x:-thumbSize/2;trackInset:thumbSize/2;width:parent.width+thumbSize;height:44;y:parent.height/2-height/2;visible:songSeek.look.thumbShape==="drop";progress:songSeek.visualPosition;barHeight:parent.height;thumbSize:songSeek.look.thumbSize;showThumb:songSeek.enabled;playing:panel.playing;animationAllowed:panel.visible&&songPages.currentIndex===0;fillColor:songSeek.look.fill[0];endColor:songSeek.look.fill[1] }
+                        }
                         handle:Item{x:songSeek.leftPadding+songSeek.visualPosition*songSeek.availableWidth-width/2;y:songSeek.topPadding+songSeek.availableHeight/2-height/2;readonly property int size:songSeek.look.thumbSize+(songSeek.pressed?2:0);width:songSeek.look.thumbShape==="pill"?Math.round(size*1.6):size;height:songSeek.look.thumbShape==="pill"?Math.round(size*0.8):size;visible:songSeek.enabled&&(songSeek.look.thumbAlways||songSeek.active)
                             Rectangle{visible:songSeek.look.glow;anchors.centerIn:parent;width:parent.width+10;height:parent.height+10;radius:height/2;color:songSeek.look.thumbBorder;opacity:songSeek.pressed?0.45:0.28}
-                            Rectangle{anchors.centerIn:parent;width:songSeek.look.thumbShape==="diamond"?Math.round(parent.width*0.75):parent.width;height:songSeek.look.thumbShape==="diamond"?Math.round(parent.height*0.75):parent.height;rotation:songSeek.look.thumbShape==="diamond"?45:0;radius:songSeek.look.thumbShape==="diamond"?2:height/2;color:songSeek.look.thumb;border.width:songSeek.look.thumbShape==="ring"?3:(songSeek.look.thumbBorder!==songSeek.look.thumb?2:0);border.color:songSeek.look.thumbBorder}}
+                            Rectangle{visible:songSeek.look.thumbShape!=="drop";anchors.centerIn:parent;width:songSeek.look.thumbShape==="diamond"?Math.round(parent.width*0.75):parent.width;height:songSeek.look.thumbShape==="diamond"?Math.round(parent.height*0.75):parent.height;rotation:songSeek.look.thumbShape==="diamond"?45:0;radius:songSeek.look.thumbShape==="diamond"?2:height/2;color:songSeek.look.thumb;border.width:songSeek.look.thumbShape==="ring"?3:(songSeek.look.thumbBorder!==songSeek.look.thumb?2:0);border.color:songSeek.look.thumbBorder}
+
+                        }
                     }
                     Label { text:panel.formatClock(panel.controller.current.durationMs||0); color:panel.tone.textSecondary; font.pixelSize:12; font.features:({"tnum":1}) }
                 }
@@ -337,11 +350,13 @@ Dialog {
                         id: lyrics; anchors.fill: parent; anchors.margins: 18; model: panel.controller.lines; clip: true; spacing: 20; ScrollBar.vertical: ScrollBar {}
                         header: Item { height: 24 }
                         footer: Item { height: 100 }
-                        delegate: Column {
+                        delegate: Item {
                             required property var modelData; required property int index
-                            width: lyrics.width-18; spacing: 6
-                            StyledVerse{width:parent.width;text:modelData.text;appearance:panel.controller.lyricStyle;playing:panel.playing&&panel.visible}
-                            StyledVerse{width:parent.width;text:modelData.translation || "";visible:text.length>0;translation:true;appearance:panel.controller.lyricStyle;playing:panel.playing&&panel.visible}
+                            width: lyrics.width-18;height:versePair.implicitHeight
+                            Column {id:versePair;width:parent.width;spacing:6
+                                StyledVerse{width:parent.width;text:modelData.text;appearance:panel.controller.lyricStyle;playing:panel.playing&&panel.visible}
+                                StyledVerse{width:parent.width;text:modelData.translation || "";visible:text.length>0;translation:true;appearance:panel.controller.lyricStyle;playing:panel.playing&&panel.visible}
+                            }
                             MouseArea{anchors.fill:parent;onClicked:panel.controller.alignLyrics(index,panel.position)}
 
                         }

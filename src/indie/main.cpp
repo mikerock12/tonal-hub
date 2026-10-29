@@ -1,5 +1,6 @@
 #include "CatalogService.h"
 #include "HubController.h"
+#include "ThemeCatalog.h"
 #include "audio/AudioEngine.hpp"
 #include "companion/MusicCompanion.h"
 #include <QCryptographicHash>
@@ -36,6 +37,8 @@ int main(int argc, char **argv) {
   int index = args.indexOf("--query");
   QString query = index >= 0 ? args.value(index + 1).left(160) : QString();
   const bool smoke = args.contains("--smoke-test");
+  if (smoke)
+    QCoreApplication::setOrganizationName("TonalSmokeTests");
   auto userHash = QCryptographicHash::hash(QDir::homePath().toUtf8(),
                                            QCryptographicHash::Sha256)
                       .toHex()
@@ -68,7 +71,24 @@ int main(int argc, char **argv) {
   if (audio)
     QObject::connect(&catalog, &CatalogService::playable, audio.get(),
                      &tonal::audio::AudioEngine::openStream);
+  ThemeCatalog theme;
+  if (smoke) {
+    const int themeArg = args.indexOf("--theme");
+    if (themeArg >= 0) theme.setThemeId(args.value(themeArg + 1));
+    const int fixtureArt = args.indexOf("--fixture-art");
+    if (fixtureArt >= 0) {
+      music.selectTrack({{"provider", "Fixture"}, {"id", "halloween-ui"},
+                         {"uri", "fixture:halloween-ui"},
+                         {"title", QString::fromUtf8("Música de teste · dados sintéticos")},
+                         {"artist", "Artista de teste"}, {"album", "Album de demonstracao"},
+                         {"durationMs", 180000},
+                         {"image", QUrl::fromLocalFile(args.value(fixtureArt + 1)).toString()}});
+      music.importLyrics(QString::fromUtf8("A noite abre outro caminho.\nAmanhã traz novas cores.\nVersos originais para este teste."));
+      music.setBackground("Halloween");
+    }
+  }
   QQmlApplicationEngine engine;
+  engine.rootContext()->setContextProperty("indieTheme", &theme);
   engine.rootContext()->setContextProperty("catalog", &catalog);
   engine.rootContext()->setContextProperty("hub", &hub);
   engine.rootContext()->setContextProperty("music", &music);

@@ -6,91 +6,269 @@
       "id": "tonal",
       "name": "Tonal Azul",
       "description": "Preto e azul, o visual original do Tonal.",
-      "bg": "#000000", "panel": "#121212", "card": "#1f1f1f", "cardHover": "#2a2a2a",
-      "text": "#ffffff", "textSecondary": "#b3b3b3", "textMuted": "#8a8a8a",
-      "accent": "#0d80bf", "accentHover": "#3193c9", "accentText": "#4aa0cf",
-      "accentDeep": "#0a3d5c", "onAccent": "#000000", "divider": "#2a2a2a",
-      "android": { "bg": "#101112", "panel": "#18191b", "card": "#202224", "text": "#f5f5f5", "textSecondary": "#a5a8ad", "accent": "#009bd6", "accentText": "#7ddbff", "accentDeep": "#263748" },
+      "bg": "#000000",
+      "panel": "#121212",
+      "card": "#1f1f1f",
+      "cardHover": "#2a2a2a",
+      "text": "#ffffff",
+      "textSecondary": "#b3b3b3",
+      "textMuted": "#8a8a8a",
+      "accent": "#0d80bf",
+      "accentHover": "#3193c9",
+      "accentText": "#4aa0cf",
+      "accentDeep": "#0a3d5c",
+      "onAccent": "#000000",
+      "divider": "#2a2a2a",
+      "android": {
+        "bg": "#101112",
+        "panel": "#18191b",
+        "card": "#202224",
+        "text": "#f5f5f5",
+        "textSecondary": "#a5a8ad",
+        "accent": "#009bd6",
+        "accentText": "#7ddbff",
+        "accentDeep": "#263748"
+      },
       "seek": {
-        "height": 4, "activeHeight": 6, "track": "#4d4d4d",
-        "fill": ["#ffffff", "#ffffff"], "activeFill": ["#0d80bf", "#3193c9"],
-        "thumb": "#ffffff", "thumbBorder": "#ffffff", "thumbSize": 12,
-        "thumbShape": "circle", "thumbAlways": false, "glow": false
+        "height": 4,
+        "activeHeight": 6,
+        "track": "#4d4d4d",
+        "fill": [
+          "#ffffff",
+          "#ffffff"
+        ],
+        "activeFill": [
+          "#0d80bf",
+          "#3193c9"
+        ],
+        "thumb": "#ffffff",
+        "thumbBorder": "#ffffff",
+        "thumbSize": 12,
+        "thumbShape": "circle",
+        "thumbAlways": false,
+        "glow": false
       }
     },
     {
       "id": "aurora",
       "name": "Aurora",
       "description": "Verde-água sobre noite polar, com anel no marcador.",
-      "bg": "#06110f", "panel": "#0d1c19", "card": "#152925", "cardHover": "#1d3631",
-      "text": "#f2fffb", "textSecondary": "#a9c9c0", "textMuted": "#7c9a92",
-      "accent": "#2fd6a3", "accentHover": "#5fe3bb", "accentText": "#63e6be",
-      "accentDeep": "#0f4a3c", "onAccent": "#00140e", "divider": "#1f3a34",
+      "bg": "#06110f",
+      "panel": "#0d1c19",
+      "card": "#152925",
+      "cardHover": "#1d3631",
+      "text": "#f2fffb",
+      "textSecondary": "#a9c9c0",
+      "textMuted": "#7c9a92",
+      "accent": "#2fd6a3",
+      "accentHover": "#5fe3bb",
+      "accentText": "#63e6be",
+      "accentDeep": "#0f4a3c",
+      "onAccent": "#00140e",
+      "divider": "#1f3a34",
       "seek": {
-        "height": 4, "activeHeight": 6, "track": "#2b4740",
-        "fill": ["#2fd6a3", "#8be9ff"], "activeFill": ["#5fe3bb", "#a8f0ff"],
-        "thumb": "#06110f", "thumbBorder": "#63e6be", "thumbSize": 14,
-        "thumbShape": "ring", "thumbAlways": true, "glow": false
+        "height": 4,
+        "activeHeight": 6,
+        "track": "#2b4740",
+        "fill": [
+          "#2fd6a3",
+          "#8be9ff"
+        ],
+        "activeFill": [
+          "#5fe3bb",
+          "#a8f0ff"
+        ],
+        "thumb": "#06110f",
+        "thumbBorder": "#63e6be",
+        "thumbSize": 14,
+        "thumbShape": "ring",
+        "thumbAlways": true,
+        "glow": false
       }
     },
     {
       "id": "solar",
       "name": "Pôr do sol",
       "description": "Tons quentes de laranja e coral, marcador em pílula.",
-      "bg": "#120a08", "panel": "#1d120e", "card": "#2a1a14", "cardHover": "#36231b",
-      "text": "#fff6f0", "textSecondary": "#d4b5a6", "textMuted": "#a08578",
-      "accent": "#ff8a4c", "accentHover": "#ffa673", "accentText": "#ffad80",
-      "accentDeep": "#5a2614", "onAccent": "#1a0800", "divider": "#3a261d",
+      "bg": "#120a08",
+      "panel": "#1d120e",
+      "card": "#2a1a14",
+      "cardHover": "#36231b",
+      "text": "#fff6f0",
+      "textSecondary": "#d4b5a6",
+      "textMuted": "#a08578",
+      "accent": "#ff8a4c",
+      "accentHover": "#ffa673",
+      "accentText": "#ffad80",
+      "accentDeep": "#5a2614",
+      "onAccent": "#1a0800",
+      "divider": "#3a261d",
       "seek": {
-        "height": 5, "activeHeight": 7, "track": "#4a3229",
-        "fill": ["#ff5f6d", "#ffc371"], "activeFill": ["#ff7a85", "#ffd38f"],
-        "thumb": "#fff1e6", "thumbBorder": "#ff8a4c", "thumbSize": 14,
-        "thumbShape": "pill", "thumbAlways": true, "glow": false
+        "height": 5,
+        "activeHeight": 7,
+        "track": "#4a3229",
+        "fill": [
+          "#ff5f6d",
+          "#ffc371"
+        ],
+        "activeFill": [
+          "#ff7a85",
+          "#ffd38f"
+        ],
+        "thumb": "#fff1e6",
+        "thumbBorder": "#ff8a4c",
+        "thumbSize": 14,
+        "thumbShape": "pill",
+        "thumbAlways": true,
+        "glow": false
       }
     },
     {
       "id": "neon",
       "name": "Neon",
       "description": "Roxo profundo com rosa e ciano luminosos.",
-      "bg": "#0b0614", "panel": "#140c22", "card": "#1e1431", "cardHover": "#2a1c43",
-      "text": "#f7f0ff", "textSecondary": "#c3b2dd", "textMuted": "#8f7fab",
-      "accent": "#c56bff", "accentHover": "#d68fff", "accentText": "#d79bff",
-      "accentDeep": "#3e1a63", "onAccent": "#12001f", "divider": "#2f2147",
+      "bg": "#0b0614",
+      "panel": "#140c22",
+      "card": "#1e1431",
+      "cardHover": "#2a1c43",
+      "text": "#f7f0ff",
+      "textSecondary": "#c3b2dd",
+      "textMuted": "#8f7fab",
+      "accent": "#c56bff",
+      "accentHover": "#d68fff",
+      "accentText": "#d79bff",
+      "accentDeep": "#3e1a63",
+      "onAccent": "#12001f",
+      "divider": "#2f2147",
       "seek": {
-        "height": 4, "activeHeight": 6, "track": "#3a2b52",
-        "fill": ["#ff3cac", "#2bd2ff"], "activeFill": ["#ff6cc1", "#6fe0ff"],
-        "thumb": "#ffffff", "thumbBorder": "#ff3cac", "thumbSize": 14,
-        "thumbShape": "circle", "thumbAlways": true, "glow": true
+        "height": 4,
+        "activeHeight": 6,
+        "track": "#3a2b52",
+        "fill": [
+          "#ff3cac",
+          "#2bd2ff"
+        ],
+        "activeFill": [
+          "#ff6cc1",
+          "#6fe0ff"
+        ],
+        "thumb": "#ffffff",
+        "thumbBorder": "#ff3cac",
+        "thumbSize": 14,
+        "thumbShape": "circle",
+        "thumbAlways": true,
+        "glow": true
       }
     },
     {
       "id": "oceano",
       "name": "Oceano",
       "description": "Azul-marinho e ciano, marcador em losango.",
-      "bg": "#04101c", "panel": "#0a1a2b", "card": "#12263b", "cardHover": "#1a3350",
-      "text": "#eef7ff", "textSecondary": "#a8c2d9", "textMuted": "#7590a8",
-      "accent": "#3db8ff", "accentHover": "#6ccaff", "accentText": "#7fd0ff",
-      "accentDeep": "#0c3a5c", "onAccent": "#001424", "divider": "#1b3550",
+      "bg": "#04101c",
+      "panel": "#0a1a2b",
+      "card": "#12263b",
+      "cardHover": "#1a3350",
+      "text": "#eef7ff",
+      "textSecondary": "#a8c2d9",
+      "textMuted": "#7590a8",
+      "accent": "#3db8ff",
+      "accentHover": "#6ccaff",
+      "accentText": "#7fd0ff",
+      "accentDeep": "#0c3a5c",
+      "onAccent": "#001424",
+      "divider": "#1b3550",
       "seek": {
-        "height": 4, "activeHeight": 6, "track": "#27405a",
-        "fill": ["#00c6ff", "#0072ff"], "activeFill": ["#3fd6ff", "#3b93ff"],
-        "thumb": "#eef7ff", "thumbBorder": "#3db8ff", "thumbSize": 13,
-        "thumbShape": "diamond", "thumbAlways": true, "glow": false
+        "height": 4,
+        "activeHeight": 6,
+        "track": "#27405a",
+        "fill": [
+          "#00c6ff",
+          "#0072ff"
+        ],
+        "activeFill": [
+          "#3fd6ff",
+          "#3b93ff"
+        ],
+        "thumb": "#eef7ff",
+        "thumbBorder": "#3db8ff",
+        "thumbSize": 13,
+        "thumbShape": "diamond",
+        "thumbAlways": true,
+        "glow": false
       }
     },
     {
       "id": "grafite",
       "name": "Grafite suave",
       "description": "Cinza confortável com âmbar; barra e marcador maiores para o toque.",
-      "bg": "#1b1d21", "panel": "#23262b", "card": "#2d3137", "cardHover": "#383d44",
-      "text": "#f4f5f7", "textSecondary": "#c0c5cc", "textMuted": "#969ca5",
-      "accent": "#f5c542", "accentHover": "#f8d36e", "accentText": "#f7d26a",
-      "accentDeep": "#4d3f12", "onAccent": "#1d1600", "divider": "#3a3f46",
+      "bg": "#1b1d21",
+      "panel": "#23262b",
+      "card": "#2d3137",
+      "cardHover": "#383d44",
+      "text": "#f4f5f7",
+      "textSecondary": "#c0c5cc",
+      "textMuted": "#969ca5",
+      "accent": "#f5c542",
+      "accentHover": "#f8d36e",
+      "accentText": "#f7d26a",
+      "accentDeep": "#4d3f12",
+      "onAccent": "#1d1600",
+      "divider": "#3a3f46",
       "seek": {
-        "height": 6, "activeHeight": 8, "track": "#4a4f57",
-        "fill": ["#f5c542", "#f5c542"], "activeFill": ["#f8d36e", "#f8d36e"],
-        "thumb": "#f4f5f7", "thumbBorder": "#f5c542", "thumbSize": 18,
-        "thumbShape": "circle", "thumbAlways": true, "glow": false
+        "height": 6,
+        "activeHeight": 8,
+        "track": "#4a4f57",
+        "fill": [
+          "#f5c542",
+          "#f5c542"
+        ],
+        "activeFill": [
+          "#f8d36e",
+          "#f8d36e"
+        ],
+        "thumb": "#f4f5f7",
+        "thumbBorder": "#f5c542",
+        "thumbSize": 18,
+        "thumbShape": "circle",
+        "thumbAlways": true,
+        "glow": false
+      }
+    },
+    {
+      "id": "halloween",
+      "name": "Halloween",
+      "description": "Noite roxa, brasa e sangue para a temporada das sombras.",
+      "bg": "#0d0810",
+      "panel": "#19111d",
+      "card": "#291b2b",
+      "cardHover": "#3b293a",
+      "text": "#fff4e9",
+      "textSecondary": "#d6bfc5",
+      "textMuted": "#ad929e",
+      "accent": "#ff954e",
+      "accentHover": "#ffb276",
+      "accentText": "#ffb276",
+      "accentDeep": "#542214",
+      "onAccent": "#1a0904",
+      "divider": "#49303d",
+      "seek": {
+        "height": 6,
+        "activeHeight": 8,
+        "track": "#52313b",
+        "fill": [
+          "#c52132",
+          "#f04b3c"
+        ],
+        "activeFill": [
+          "#e82a3c",
+          "#ff7053"
+        ],
+        "thumb": "#bd182a",
+        "thumbBorder": "#ffb276",
+        "thumbSize": 18,
+        "thumbShape": "drop",
+        "thumbAlways": true,
+        "glow": false
       }
     }
   ]

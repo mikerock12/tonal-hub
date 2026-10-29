@@ -48,7 +48,7 @@ jobs:
       - name: Install Qt 6.8.3
         shell: pwsh
         run: |
-          python -m pip install aqtinstall==3.3.0
+          python -m pip install aqtinstall==3.3.0 Pillow
           python -m aqt install-qt windows desktop 6.8.3 win64_msvc2022_64 --outputdir "$env:RUNNER_TEMP/Qt"
       - name: Build and test actual C++ library
         shell: pwsh
@@ -72,6 +72,8 @@ jobs:
           python tests/themes/check_themes.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python tests/mix/run_ui.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tests/themes/halloween_ui.py
   android-java:
     runs-on: ubuntu-latest
     timeout-minutes: 20

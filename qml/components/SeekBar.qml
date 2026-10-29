@@ -1,4 +1,5 @@
 import QtQuick
+import "qrc:/companion/qml/companion" as Personal
 
 // Barra fina de progresso e volume. Trilho, preenchimento (degradê) e marcador
 // seguem o tema escolhido (Theme.seek). Enquanto arrasta, mostra só a posição
@@ -20,6 +21,8 @@ Item {
     readonly property var style: styleOverride || Theme.seek
     readonly property int barHeight: active ? style.activeHeight : style.height
     readonly property var fillStops: active ? style.activeFill : style.fill
+    property bool playing: false
+    property bool animationAllowed: true
     property bool showThumb: false        // força o marcador (pré-visualização)
     readonly property bool thumbVisible: enabled && (style.thumbAlways || active || showThumb)
     readonly property int thumbSize: style.thumbSize + (dragging ? 2 : 0)
@@ -27,7 +30,7 @@ Item {
     signal moving(real v)   // enquanto arrasta
     signal moved(real v)    // ao soltar
 
-    implicitHeight: Math.max(16, style.thumbSize + 6)
+    implicitHeight: style.thumbShape === "drop" ? 44 : Math.max(16, style.thumbSize + 6)
 
     Rectangle {
         id: track
@@ -39,7 +42,7 @@ Item {
 
         Rectangle {
             width: Math.max(height, parent.width * root.shownValue)
-            visible: root.shownValue > 0
+            visible: root.shownValue > 0 && root.style.thumbShape !== "drop"
             height: parent.height
             radius: height / 2
             gradient: Gradient {
@@ -50,9 +53,17 @@ Item {
         }
     }
 
+    Personal.BloodSurface {
+        objectName: "bloodSurface"
+        anchors.fill: parent;anchors.leftMargin:-root.thumbSize/2;anchors.rightMargin:-root.thumbSize/2;trackInset:root.thumbSize/2;visible: root.style.thumbShape === "drop"
+        progress: root.shownValue;barHeight:root.barHeight;thumbSize:root.thumbSize
+        showThumb:root.thumbVisible;playing:root.playing;animationAllowed:root.animationAllowed
+        fillColor:root.fillStops[0];endColor:root.fillStops[root.fillStops.length-1]
+    }
+
     Item {
         id: thumb
-        visible: root.thumbVisible
+        visible: root.thumbVisible && root.style.thumbShape !== "drop"
         width: root.style.thumbShape === "pill" ? Math.round(root.thumbSize * 1.6) : root.thumbSize
         height: root.style.thumbShape === "pill" ? Math.round(root.thumbSize * 0.8) : root.thumbSize
         anchors.verticalCenter: parent.verticalCenter
@@ -69,6 +80,7 @@ Item {
             opacity: root.dragging ? 0.45 : 0.28
         }
         Rectangle {
+            visible: root.style.thumbShape !== "drop"
             anchors.centerIn: parent
             width: root.style.thumbShape === "diamond" ? Math.round(parent.width * 0.75) : parent.width
             height: root.style.thumbShape === "diamond" ? Math.round(parent.height * 0.75) : parent.height

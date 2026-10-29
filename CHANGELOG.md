@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.15.4 — 29/10/2026
+
+- Tema Halloween no Windows/Android: roxo escuro, laranja, teias nas capas e controles em brasa.
+- Barra musical com sete escorrimentos, gotas que se desprendem e thumb com gradação/reflexos; até 15 fps, somente visível e tocando. Volume e prévias estáticos.
+- Cenários de letras Halloween, Bruxas, Monstros e Vampiros; seletor de tema também no IndieTonal Windows.
+- Correção de ícones Canvas após layout tardio e do posicionamento das linhas clicáveis da letra no Windows.
+- APKs com a mesma assinatura da 0.15.3, versionCode 24. Execução visual/atualização instalada Android pendentes pela inicialização do emulador; detalhes em docs/release-0154-tests.json.
+
 ## 0.15.3 — 27/10/2026
 
 - Interrompe a cascata de músicas puladas quando o Spotify deixa de entregar chaves de áudio (PC e Android): reconecta e retoma pela primeira faixa pulada.

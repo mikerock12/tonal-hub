@@ -19,6 +19,10 @@ AbstractButton {
     onFilledChanged: drawing.requestPaint()
     contentItem: Canvas {
         id: drawing
+        onAvailableChanged: if(available)requestPaint()
+        onVisibleChanged: if(visible)requestPaint()
+        onWidthChanged: requestPaint()
+        onHeightChanged: requestPaint()
         onPaint: {
             const c=getContext("2d");c.reset();c.save();c.translate((width-24)/2,(height-24)/2)
             c.strokeStyle=button.ink;c.fillStyle=button.ink;c.lineWidth=1.8;c.lineCap="round";c.lineJoin="round";c.beginPath()

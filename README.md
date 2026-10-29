@@ -10,13 +10,24 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
-**Build local: Windows 0.15.3 · Android 0.15.3. Documentação em 27/10/2026.**
+**Entrega 0.15.4 — Halloween. Documentação em 29/10/2026.**
 
-[Pacotes e hashes 0.15.3](docs/artifacts-0153.json) · [Validação 0.15.3](docs/release-0153-tests.json) ·
+Halloween traz teias nas capas, controles em brasa e quatro cenários de letras.
+A barra de música tem escorrimentos animados e gota com reflexos, limitados a
+15 fps enquanto a barra está visível e a música toca. Em pausa fica imóvel;
+volume e prévias são estáticos. [Uso e limites](docs/HALLOWEEN.md).
+
+[Pacotes e hashes 0.15.4](docs/artifacts-0154.json) · [Validação e pendências 0.15.4](docs/release-0154-tests.json) ·
 [Guia visual com capturas](docs/GUIA_VISUAL.md) ·
 [Regras da Descoberta 2+1](docs/DESCOBERTA_2_MAIS_1.md) ·
 [Benchmarks realizados](docs/BENCHMARKS.md) ·
 [Contexto do projeto](contexto.md) · [Instruções de manutenção](AGENTS.md).
+
+Windows foi conferido com capturas de componentes e do IndieTonal, pacote
+isolado e áudio local sintético. Android compilou para ARM64 e universal,
+com assinatura da 0.15.3 e alinhamento de 16 KiB verificados. A execução visual
+Android e a instalação por cima ainda aguardam um emulador operacional ou
+teste físico: o emulador deste PC não iniciou. Não houve novo benchmark.
 
 ## Atualização 0.15.3 — reprodução estável e Jam com avisos
 
