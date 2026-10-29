@@ -1,7 +1,7 @@
 name: Encrypted Spotify login screen
 on:
   pull_request:
-    paths: ['.github/workflows/spotify-live-qr.yml','tests/benchmark/encrypted_screen.py','tests/benchmark/live-spotify-public.pem']
+    paths: ['.github/workflows/spotify-live-qr.yml','tests/benchmark/encrypted_screen.py','tests/benchmark/live-spotify-public.pem','tests/benchmark/spotify_live_resources.py']
 permissions:
   contents: read
 jobs:
@@ -14,7 +14,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Prepare capture tools
-        run: python -m pip install pillow==11.3.0 cryptography==45.0.7
+        run: python -m pip install pillow==11.3.0 cryptography==45.0.7 psutil==7.0.0
       - name: Start official Spotify on isolated Windows VM
         shell: pwsh
         run: |
@@ -45,6 +45,16 @@ jobs:
           name: spotify-live-screen-2
           path: ${{ runner.temp }}/qr2.enc
           retention-days: 1
+      - name: Collect Spotify process resources
+        run: python tests/benchmark/spotify_live_resources.py
+      - name: Deliver sanitized resource samples
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spotify-live-resources
+          path: live-spotify-resources.json
+          retention-days: 1
+          if-no-files-found: warn
       - name: Keep session available
         shell: pwsh
-        run: Start-Sleep -Seconds 360
+        run: Start-Sleep -Seconds 180
