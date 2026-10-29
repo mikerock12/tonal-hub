@@ -47,12 +47,13 @@ jobs:
           api-level: 35
           target: google_apis
           arch: x86_64
+          emulator-boot-timeout: 180
           disable-animations: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
             adb install android/app/build/outputs/apk/benchmark/app-benchmark.apk
             adb shell pm grant app.tonal.android.benchmark android.permission.POST_NOTIFICATIONS
-            adb shell am instrument -w -e action halloweenTests app.tonal.android.benchmark/app.tonal.android.DeviceInstrumentation | tee /tmp/result.txt
+            timeout 120 adb shell am instrument -w -e action halloweenTests app.tonal.android.benchmark/app.tonal.android.DeviceInstrumentation | tee /tmp/result.txt
             adb logcat -d -s AndroidRuntime:E | tail -100
             adb pull /sdcard/Android/data/app.tonal.android.benchmark/files/halloween-0154 evidence || true
             grep -q '"passed":true' /tmp/result.txt
