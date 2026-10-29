@@ -32,6 +32,7 @@ Pane {
  Label{x:30;y:448;text:"Artista sintético · Álbum de teste";color:Theme.textSecondary}
  SeekBar{id:seek;x:30;y:490;width:310;value:.61;showThumb:true}
  PlayButton{id:play;x:155;y:550;diameter:64;tooltip:""}
+ ActionIcon{id:delayedIcon;x:250;y:550;width:0;height:0;visible:false;symbol:"play";ink:"#ff954e";background:Rectangle{color:"#1b101d"}}
  Rectangle{x:375;y:70;width:595;height:660;radius:20;color:Theme.panel
   LyricBackdrop{id:stage;anchors.fill:parent;active:true;playing:false;mode:"Halloween"}
   Label{id:modeLabel;x:25;y:18;text:stage.mode; color:Theme.textPrimary;font.pixelSize:22}
@@ -51,6 +52,7 @@ Pane {
    grabImage(cover).save("cover-tonal.png")
    Theme.setTheme("halloween");compare(Theme.seek.thumbShape,"drop");wait(180)
    grabImage(cover).save("cover-halloween.png")
+   delayedIcon.width=64;delayedIcon.height=64;delayedIcon.visible=true;wait(120);grabImage(delayedIcon).save("late-icon.png");delayedIcon.visible=false
    mouseClick(play);mouseMove(root,5,5);wait(420);verify(seek.thumbVisible)
    const flow=findChild(seek,"bloodSurface");verify(flow!==null);compare(flow.animationRunning,false)
    flow.phase=.15;wait(80);grabImage(seek).save("blood-frame-a.png")
@@ -89,5 +91,7 @@ assert not ImageChops.difference(original, Image.open(OUT / 'cover-restored.png'
 assert not ImageChops.difference(themed, Image.open(OUT / 'cover-halloween-again.png').convert('RGB')).getbbox(), 'Decoration failed after switching back'
 images = [Image.open(OUT / ('backdrop-' + mode + '.png')).tobytes() for mode in ('Halloween', 'Bruxas', 'Monstros', 'Vampiros')]
 assert len(set(images)) == 4, 'The four scenes must render differently'
+icon = Image.open(OUT / 'late-icon.png').convert('RGB').crop((22, 22, 44, 44))
+assert sum(1 for r,g,b in icon.getdata() if r > 200 and 70 < g < 200 and b < 140) > 30, 'The icon stayed blank after delayed layout'
 assert Image.open(OUT / 'blood-frame-a.png').tobytes() != Image.open(OUT / 'blood-frame-b.png').tobytes(), 'The blood streams did not evolve between phases'
 print('HALLOWEEN_VISUAL_PASS: loaded art, live switch/restore, controls, four distinct scenes; paused/hidden stages remain still')

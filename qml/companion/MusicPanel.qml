@@ -350,11 +350,13 @@ Dialog {
                         id: lyrics; anchors.fill: parent; anchors.margins: 18; model: panel.controller.lines; clip: true; spacing: 20; ScrollBar.vertical: ScrollBar {}
                         header: Item { height: 24 }
                         footer: Item { height: 100 }
-                        delegate: Column {
+                        delegate: Item {
                             required property var modelData; required property int index
-                            width: lyrics.width-18; spacing: 6
-                            StyledVerse{width:parent.width;text:modelData.text;appearance:panel.controller.lyricStyle;playing:panel.playing&&panel.visible}
-                            StyledVerse{width:parent.width;text:modelData.translation || "";visible:text.length>0;translation:true;appearance:panel.controller.lyricStyle;playing:panel.playing&&panel.visible}
+                            width: lyrics.width-18;height:versePair.implicitHeight
+                            Column {id:versePair;width:parent.width;spacing:6
+                                StyledVerse{width:parent.width;text:modelData.text;appearance:panel.controller.lyricStyle;playing:panel.playing&&panel.visible}
+                                StyledVerse{width:parent.width;text:modelData.translation || "";visible:text.length>0;translation:true;appearance:panel.controller.lyricStyle;playing:panel.playing&&panel.visible}
+                            }
                             MouseArea{anchors.fill:parent;onClicked:panel.controller.alignLyrics(index,panel.position)}
 
                         }
