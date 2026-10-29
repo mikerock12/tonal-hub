@@ -1,0 +1,42 @@
+name: Benchmark Android AVD 0.15.4
+on:
+  pull_request:
+    paths: ['.github/workflows/benchmark-avd-0154.yml','tests/benchmark/avd_0154.py']
+permissions:
+  contents: read
+jobs:
+  android-avd:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download and verify release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p evidence
+          gh release download v0.15.4 --repo mikerock12/tonal-hub --dir evidence --pattern 'Tonal-Android-0.15.4-local.apk' --pattern SHA256SUMS.txt
+          cd evidence
+          grep 'Tonal-Android-0.15.4-local.apk' SHA256SUMS.txt | sha256sum -c -
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-tonal-kvm.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          test -r /dev/kvm && test -w /dev/kvm
+      - name: Collect signed-out Tonalify and IndieTonal baseline
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          disable-animations: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: python3 tests/benchmark/avd_0154.py
+      - name: Upload sanitized measurements
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tonal-android-avd-benchmark-0154
+          path: evidence/*.json
+          if-no-files-found: warn
