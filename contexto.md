@@ -2,6 +2,10 @@
 
 Atualizado em **29/10/2026**. Entrega: **Windows 0.15.4 / Android 0.15.4**, com pendências Android abaixo. Leia também [AGENTS.md](AGENTS.md).
 
+## Android 0.15.5 — correção da barra em preparação
+
+Ver [HALLOWEEN.md](docs/HALLOWEEN.md): posição interpolada mais frequente na página da música, prioridade aos eventos recentes do motor e gota invertida abaixo da barra. O streaming real, a aparência em aparelho e a atualização assinada ainda precisam de validação. O código Android avança para versionCode 25; não substituir o APK instalado com outra chave.
+
 ## Halloween 0.15.4
 
 Referência: [HALLOWEEN.md](docs/HALLOWEEN.md). Continuação local Windows do PR22,

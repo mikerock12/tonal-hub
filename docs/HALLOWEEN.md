@@ -46,3 +46,9 @@ Por isso, capturas Android, relógio em execução e instalação `adb install -
 da 0.15.3 para a 0.15.4 permanecem pendentes. Certificado, pacote, versionCode,
 compilação e alinhamento dos APKs foram verificados; isso não equivale a teste
 de atualização instalado nem a validação física. Nenhuma outra VM foi encerrada.
+
+## Correção Android 0.15.5 em preparação
+
+Na página da música, a barra atualiza a posição interpolada até 20 vezes por segundo durante a reprodução, sem emitir comandos adicionais de seek. Eventos recentes do motor têm prioridade sobre consultas de estado potencialmente atrasadas; pequenas correções para trás são absorvidas, enquanto saltos maiores e seeks explícitos continuam possíveis. A gota fica abaixo da barra, com o corpo junto à trilha e a ponta voltada para baixo. O efeito não altera o som.
+
+A compilação Java e testes de política não equivalem a teste de streaming autenticado ou validação em aparelho físico. Um APK de atualização precisa ser assinado com a mesma chave da versão instalada; não desinstale o aplicativo para contornar diferenças de assinatura.
