@@ -34,7 +34,7 @@ jobs:
           $target=Join-Path $env:RUNNER_TEMP 'Tonal-Halloween-Test'
           $install=Start-Process -FilePath $setup -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',"/DIR=$target",'/LOG=install.log') -Wait -PassThru
           if ($install.ExitCode -ne 0) { throw "Installer exit: $($install.ExitCode)" }
-          $env:QT_QPA_PLATFORM='offscreen'; $env:QT_QUICK_BACKEND='software'; $env:ALSOFT_DRIVERS='null'
+          $env:QT_QPA_PLATFORM='offscreen'; $env:QT_QUICK_BACKEND='software'; $env:ALSOFT_DRIVERS='null'; $env:QT_QPA_FONTDIR=Join-Path $env:WINDIR 'Fonts'
           $report=@()
           foreach ($case in @(@('TonalHub.exe','hub',@()), @('IndieTonal.exe','indie',@()), @('IndieTonal.exe','indie-audio',@('--panel','effects')), @('IndieTonal.exe','indie-song',@('--panel','song')))) {
             $exe=Join-Path $target $case[0]
@@ -45,6 +45,12 @@ jobs:
             if ($p.ExitCode -ne 0 -or !(Test-Path $shot)) { throw "Smoke failed: $($case[1]), exit $($p.ExitCode)" }
             $report+=@{screen=$case[1]; exit=$p.ExitCode; bytes=(Get-Item $shot).Length}
           }
+          $wav=Join-Path (Resolve-Path evidence).Path 'synthetic.wav'
+          python -c "import wave,sys; w=wave.open(sys.argv[1],'wb'); w.setnchannels(2); w.setsampwidth(2); w.setframerate(48000); w.writeframes(bytes(48000*4*3)); w.close()" $wav
+          if ($LASTEXITCODE -ne 0) { throw 'Could not create synthetic audio' }
+          $player=Start-Process -FilePath (Join-Path $target 'Tonalify.exe') -ArgumentList @('--audio-smoke-test','--local-only','--audio-settings','--local-file',$wav) -WorkingDirectory $target -Wait -PassThru
+          if ($player.ExitCode -ne 0) { throw "Tonalify smoke exit: $($player.ExitCode)" }
+          $report+=@{screen='tonalify-local-audio'; exit=$player.ExitCode; synthetic=$true}
           $report | ConvertTo-Json | Set-Content evidence/results.json
       - name: Upload evidence
         if: always()
