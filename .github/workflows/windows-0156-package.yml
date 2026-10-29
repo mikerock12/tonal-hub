@@ -31,7 +31,7 @@ jobs:
       - uses: ilammy/msvc-dev-cmd@v1
       - name: Generate ephemeral certificate for the verified FFmpeg archive
         shell: bash
-        run: openssl req -x509 -newkey rsa:3072 -nodes -keyout "$RUNNER_TEMP/relay.key" -out "$RUNNER_TEMP/relay.pem" -days 1 -subj '/CN=tonal-ffmpeg-relay' >/dev/null 2>&1
+        run: MSYS_NO_PATHCONV=1 openssl req -x509 -newkey rsa:3072 -nodes -keyout "$RUNNER_TEMP/relay.key" -out "$RUNNER_TEMP/relay.pem" -days 1 -subj '/CN=tonal-ffmpeg-relay'
       - uses: actions/upload-artifact@v4
         with:
           name: ffmpeg-relay-certificate
