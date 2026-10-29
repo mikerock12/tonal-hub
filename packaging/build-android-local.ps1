@@ -63,6 +63,6 @@ if($PhoneOnly){$gradleArgs+='-PtonalAbi=arm64-v8a'}
 if($LASTEXITCODE -ne 0){throw 'Build APK falhou'}
 $outputPath=Join-Path $root 'out\android'
 New-Item -ItemType Directory -Force $outputPath | Out-Null
-$apkName=if($PhoneOnly){'Tonal-Android-0.15.4-arm64-v8a.apk'}else{'Tonal-Android-0.15.4-local.apk'}
+$apkName=if($PhoneOnly){'Tonal-Android-0.15.5-arm64-v8a.apk'}else{'Tonal-Android-0.15.5-local.apk'}
 Copy-Item -LiteralPath (Join-Path $root 'android\app\build\outputs\apk\release\app-release.apk') -Destination (Join-Path $outputPath $apkName) -Force
 Write-Host "APK local: $outputPath\$apkName"

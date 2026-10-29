@@ -6,6 +6,10 @@ public final class PlaybackSafetyChecks {
     private static void check(boolean value,String message){if(!value)throw new AssertionError(message);checks++;}
     private static String source(String path){try{return new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(path)),java.nio.charset.StandardCharsets.UTF_8);}catch(java.io.IOException e){throw new AssertionError("missing "+path);}}
     public static void main(String[] args){
+        check(PositionSync.reconcile(12000,11500,true)==12000,"small stale progress cannot rewind playback");
+        check(PositionSync.reconcile(12000,9000,true)==9000,"large external seeks remain possible");
+        check(PositionSync.reconcile(12000,11500,false)==11500,"paused correction is respected");
+        check(PositionSync.reconcile(12000,12500,true)==12500,"forward progress is accepted");
         PlaybackIntent state=new PlaybackIntent();
         check(!state.desired&&!state.canRecover(1000),"cold launch must be silent");
         check(!state.allowMediaPlay(false,true),"media play without a selected session is rejected");
