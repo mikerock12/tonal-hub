@@ -52,3 +52,9 @@ de atualização instalado nem a validação física. Nenhuma outra VM foi encer
 Na página da música, a barra atualiza a posição interpolada até 20 vezes por segundo durante a reprodução, sem emitir comandos adicionais de seek. Eventos recentes do motor têm prioridade sobre consultas de estado potencialmente atrasadas; pequenas correções para trás são absorvidas, enquanto saltos maiores e seeks explícitos continuam possíveis. A gota fica abaixo da barra, com o corpo junto à trilha e a ponta voltada para baixo. O efeito não altera o som.
 
 A compilação Java e testes de política não equivalem a teste de streaming autenticado ou validação em aparelho físico. Um APK de atualização precisa ser assinado com a mesma chave da versão instalada; não desinstale o aplicativo para contornar diferenças de assinatura.
+
+## Android 0.15.6 — gota e controles em revisão
+
+Após a avaliação no telefone, a gota foi desenhada com a ponta junto à barra e o corpo arredondado abaixo, usando os vermelhos do próprio rastro. Os botões principais de reprodução nos players recebem aro de brasa e partículas animadas; o desenho é vetorial e estilizado, não os GIFs originais. A animação limita-se a cerca de 15 fps enquanto o botão está visível e tem foco; respeita a opção do sistema que desativa animações. Não altera a reprodução nem os comandos de seek.
+
+O build assinado deve usar o certificado já existente, com versionCode 26, para permitir atualização sobre 0.15.5. Validação visual sintética de componentes não substitui confirmação da aparência e reprodução no aparelho; não publicar o APK antes das verificações de assinatura, alinhamento, atualização e aceitação visual.
