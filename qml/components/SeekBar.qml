@@ -71,6 +71,7 @@ Item {
         Canvas {
             anchors.fill: parent
             visible: root.style.thumbShape === "drop"
+            onVisibleChanged: requestPaint()
             onWidthChanged: requestPaint()
             onHeightChanged: requestPaint()
             onPaint: {

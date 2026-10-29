@@ -29,6 +29,11 @@ Item {
         scale: mouse.pressed ? 0.95 : (mouse.containsMouse ? 1.04 : 1)
         Behavior on scale { NumberAnimation { duration: 90 } }
 
+        Rectangle {
+            anchors.centerIn: parent; width: parent.width - 6; height: width; radius: width/2
+            color: "transparent"; border.width: 2; border.color: "#ffb35a"; opacity: 0
+            NumberAnimation on opacity { id: emberFlash; from: .9; to: 0; duration: 380; running: false }
+        }
         Icon {
             anchors.centerIn: parent
             // o triângulo de play fica opticamente centralizado com 1px à direita
@@ -44,7 +49,7 @@ Item {
         anchors.fill: parent
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
-        onClicked: root.clicked()
+        onClicked: { if (Theme.themeId === "halloween") emberFlash.restart(); root.clicked() }
     }
 
     ToolTip.visible: tooltip !== "" && mouse.containsMouse
