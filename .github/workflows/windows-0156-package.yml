@@ -1,0 +1,79 @@
+name: Windows 0.15.6 package validation
+on:
+  pull_request:
+    paths:
+      - 'qml/**'
+      - 'src/**'
+      - 'CMakeLists.txt'
+      - 'packaging/**'
+      - 'tests/**'
+      - '.github/workflows/windows-0156-package.yml'
+permissions:
+  contents: read
+jobs:
+  windows-package:
+    runs-on: windows-2022
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned build tools and Qt
+        shell: pwsh
+        run: |
+          python -m pip install aqtinstall==3.3.0 Pillow ninja cmake==3.31.10
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python -m aqt install-qt windows desktop 6.8.3 win64_msvc2022_64 --outputdir "$env:RUNNER_TEMP/Qt"
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          "QTDIR=$env:RUNNER_TEMP/Qt/6.8.3/msvc2022_64" >> $env:GITHUB_ENV
+          "$env:RUNNER_TEMP/Qt/6.8.3/msvc2022_64/bin" >> $env:GITHUB_PATH
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Fetch and compile pinned audio dependencies including IAMF
+        shell: pwsh
+        run: |
+          ./packaging/setup-audio-local.ps1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Build the real Windows programs and tests
+        shell: pwsh
+        run: |
+          cmake --preset release -DTONAL_ENABLE_IAMF=ON -DBUILD_TESTING=ON -DALSOFT_ENABLE_MODULES=OFF
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          cmake --build --preset release --parallel 4
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python tests/audio/generate_fixtures.py
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          ctest --test-dir out/build/release --output-on-failure
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Restore unchanged helper executables from verified 0.15.4 release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download v0.15.4 --repo mikerock12/tonal-hub --pattern Tonal-Hub-0.15.4-local.zip --dir "$env:RUNNER_TEMP"
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          $archive = "$env:RUNNER_TEMP/Tonal-Hub-0.15.4-local.zip"
+          if ((Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne '9b9bb08334b5af047327ae72e87c51126efb64efac556e63d08fd45b8f6cee5b') { throw 'Previous release hash mismatch' }
+          Expand-Archive -LiteralPath $archive -DestinationPath "$env:RUNNER_TEMP/tonal-old"
+          foreach ($name in @('TonalStories.exe','TonalJam.exe','librespot.exe')) { Copy-Item "$env:RUNNER_TEMP/tonal-old/$name" out/build/release/ }
+          $redist = Get-ChildItem -LiteralPath (Join-Path $env:VCToolsRedistDir 'x64') -Directory -Filter 'Microsoft.VC*.CRT' | Select-Object -First 1
+          if (-not $redist) { throw 'MSVC runtime not found' }
+          Get-ChildItem -LiteralPath $redist.FullName -Filter '*.dll' | Copy-Item -Destination out/build/release/
+      - name: Package, install and smoke test in an isolated VM
+        shell: pwsh
+        run: |
+          $iscc = Get-Command iscc.exe -ErrorAction SilentlyContinue
+          if (-not $iscc -and -not (Test-Path "${env:ProgramFiles(x86)}/Inno Setup 6/ISCC.exe")) { choco install innosetup --yes --no-progress; if ($LASTEXITCODE) { exit $LASTEXITCODE } }
+          ./packaging/package-hub-local.ps1 -Zip
+          ./packaging/build-hub-installer.ps1
+          python tests/lyrics/installer_smoke.py
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tonal-windows-0156-validated
+          path: |
+            out/release-local/Tonal-Hub-0.15.6.0-Windows-x64-Setup.exe
+            out/release-local/Tonal-Hub-0.15.6-local.zip
+            out/installer-smoke-01560/result.json
+          if-no-files-found: error
+          retention-days: 7
