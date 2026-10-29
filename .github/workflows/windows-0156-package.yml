@@ -64,6 +64,7 @@ jobs:
       - name: Fetch and compile pinned audio dependencies including IAMF
         shell: pwsh
         run: |
+          $env:PATH = (($env:PATH -split ';') | Where-Object { $_ -notmatch '(?i)^C:\\mingw64\\bin\\?$' }) -join ';'
           ./packaging/setup-audio-local.ps1
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Build the real Windows programs and tests
