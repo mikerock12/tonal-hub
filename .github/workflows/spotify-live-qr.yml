@@ -1,0 +1,50 @@
+name: Encrypted Spotify login screen
+on:
+  pull_request:
+    paths: ['.github/workflows/spotify-live-qr.yml','tests/benchmark/encrypted_screen.py','tests/benchmark/live-spotify-public.pem']
+permissions:
+  contents: read
+jobs:
+  live-login:
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prepare capture tools
+        run: python -m pip install pillow==11.3.0 cryptography==45.0.7
+      - name: Start official Spotify on isolated Windows VM
+        shell: pwsh
+        run: |
+          Invoke-WebRequest https://download.scdn.co/SpotifySetup.exe -OutFile "$env:RUNNER_TEMP/SpotifySetup.exe"
+          $p=Start-Process -FilePath "$env:RUNNER_TEMP/SpotifySetup.exe" -ArgumentList '/silent' -PassThru
+          if (!$p.WaitForExit(180000) -or $p.ExitCode -ne 0) { throw 'Spotify installer failed or timed out' }
+          $exe=Join-Path $env:APPDATA 'Spotify/Spotify.exe'
+          if (!(Test-Path $exe)) { throw 'Spotify executable missing' }
+          if (!(Get-Process -Name Spotify -ErrorAction SilentlyContinue)) { Start-Process $exe }
+          Start-Sleep -Seconds 35
+          python tests/benchmark/encrypted_screen.py "$env:RUNNER_TEMP/qr1.enc"
+          if ($LASTEXITCODE -ne 0) { throw 'Screen encryption failed' }
+      - name: Deliver encrypted first screen
+        uses: actions/upload-artifact@v4
+        with:
+          name: spotify-live-screen-1
+          path: ${{ runner.temp }}/qr1.enc
+          retention-days: 1
+      - name: Keep session open and capture again
+        shell: pwsh
+        run: |
+          Start-Sleep -Seconds 90
+          python tests/benchmark/encrypted_screen.py "$env:RUNNER_TEMP/qr2.enc"
+          if ($LASTEXITCODE -ne 0) { throw 'Screen encryption failed' }
+      - name: Deliver encrypted second screen
+        uses: actions/upload-artifact@v4
+        with:
+          name: spotify-live-screen-2
+          path: ${{ runner.temp }}/qr2.enc
+          retention-days: 1
+      - name: Keep session available
+        shell: pwsh
+        run: Start-Sleep -Seconds 360
