@@ -1,0 +1,32 @@
+name: Authenticated benchmark infrastructure preflight
+on:
+  pull_request:
+    paths: ['.github/workflows/auth-benchmark-preflight.yml']
+permissions:
+  contents: read
+jobs:
+  windows-audio:
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check VM rendering and audio endpoint
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force evidence | Out-Null
+          $audio=Get-Service Audiosrv -ErrorAction SilentlyContinue
+          $gpu=Get-CimInstance Win32_VideoController | Select-Object Name,DriverVersion
+          $cpu=Get-CimInstance Win32_Processor | Select-Object Name,NumberOfLogicalProcessors
+          $result=@{os='Windows Server 2022 GitHub-hosted VM';audioService=if($audio){$audio.Status.ToString()}else{'missing'};gpu=$gpu;cpu=$cpu;defaultAudioEndpoint=$false;audioProbeError=$null}
+          try {
+            $payload=& powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests/benchmark/windows_audio.ps1 2>&1
+            if($LASTEXITCODE -eq 0){$parsed=$payload | ConvertFrom-Json;$result.defaultAudioEndpoint=$true;$result.probeAvailable=$true}
+            else {$result.audioProbeError='Probe failed; default endpoint unavailable or inaccessible'}
+          } catch {$result.audioProbeError='Probe failed; default endpoint unavailable or inaccessible'}
+          $result | ConvertTo-Json -Depth 5 | Set-Content evidence/preflight.json
+          Get-Content evidence/preflight.json
+      - name: Upload infrastructure result
+        uses: actions/upload-artifact@v4
+        with:
+          name: authenticated-benchmark-preflight
+          path: evidence/preflight.json
