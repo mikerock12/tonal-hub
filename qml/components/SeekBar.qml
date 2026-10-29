@@ -50,6 +50,16 @@ Item {
         }
     }
 
+    Repeater {
+        model: root.style.thumbShape === "drop" && root.shownValue > 0 ? 7 : 0
+        Rectangle {
+            x: track.width * root.shownValue * (index + 1) / 8
+            y: track.y + track.height / 2
+            width: 2 + index % 2; height: 4 + (index * 7 % 8)
+            radius: width / 2; color: root.fillStops[0]
+        }
+    }
+
     Item {
         id: thumb
         visible: root.thumbVisible
@@ -58,6 +68,16 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         x: Math.max(-width / 2, Math.min(track.width - width / 2, track.width * root.shownValue - width / 2))
 
+        Canvas {
+            anchors.fill: parent
+            visible: root.style.thumbShape === "drop"
+            onWidthChanged: requestPaint()
+            onHeightChanged: requestPaint()
+            onPaint: {
+                const c=getContext("2d"); c.reset(); c.fillStyle=root.style.thumb; c.strokeStyle=root.style.thumbBorder; c.lineWidth=1.5
+                c.beginPath(); c.moveTo(width/2,0); c.bezierCurveTo(width*.35,height*.3,0,height*.55,width*.13,height*.77); c.bezierCurveTo(width*.28,height*1.08,width*.72,height*1.08,width*.87,height*.77); c.bezierCurveTo(width,height*.55,width*.65,height*.3,width/2,0); c.closePath(); c.fill(); c.stroke()
+            }
+        }
         // Halo do tema Neon: um retângulo translúcido, sem efeito de shader.
         Rectangle {
             visible: root.style.glow
@@ -69,6 +89,7 @@ Item {
             opacity: root.dragging ? 0.45 : 0.28
         }
         Rectangle {
+            visible: root.style.thumbShape !== "drop"
             anchors.centerIn: parent
             width: root.style.thumbShape === "diamond" ? Math.round(parent.width * 0.75) : parent.width
             height: root.style.thumbShape === "diamond" ? Math.round(parent.height * 0.75) : parent.height

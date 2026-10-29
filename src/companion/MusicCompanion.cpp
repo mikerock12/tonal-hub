@@ -92,7 +92,7 @@ void MusicCompanion::removeFromPlaylist(const QString &id,int row){auto list=m_d
 QVariantList MusicCompanion::playlistTracks(const QString &id) const{auto tracks=m_data["tracks"].toObject();QVariantList r;for(auto value:m_data["playlists"].toArray()){auto p=value.toObject();if(p["id"]==id)for(auto k:p["tracks"].toArray())if(tracks.contains(k.toString()))r<<tracks[k.toString()].toObject().toVariantMap();}return r;}
 void MusicCompanion::setHistoryEnabled(bool on){checkpoint();m_data["history"]=on;m_clock.restart();save();}
 void MusicCompanion::clearHistory(){m_data["historyEpoch"]=QUuid::createUuid().toString();m_pendingMs=0;m_sessionMs=0;m_counted=false;m_data["events"]=QJsonArray();save();}
-void MusicCompanion::setBackground(const QString &s){if(QStringList{"Aurora","Ondas","Espectro","Capa","Foto","Sem animação","Estrelas","Chuva","Orbitas","Pulso","Grade"}.contains(s)){m_data["background"]=s;save();}}
+void MusicCompanion::setBackground(const QString &s){if(QStringList{"Aurora","Ondas","Espectro","Capa","Foto","Sem animação","Estrelas","Chuva","Orbitas","Pulso","Grade","Halloween","Bruxas","Monstros","Vampiros"}.contains(s)){m_data["background"]=s;save();}}
 void MusicCompanion::setPhoto(const QString &s){QUrl u(s);if(u.isLocalFile()||u.scheme()=="https"){m_data["photo"]=s;save();}}
 void MusicCompanion::setGenre(const QString &g){auto t=m_current;t["genre"]=shortText(g,80);selectTrack(t);updateTone();}
 void MusicCompanion::editMetadata(const QString &title,const QString &artist){auto t=m_current;t["title"]=shortText(title);t["artist"]=shortText(artist);selectTrack(t);m_generation++;m_lines.clear();m_busy=false;emit lyricsChanged();}

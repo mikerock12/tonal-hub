@@ -6,7 +6,7 @@ import android.widget.*;
 import org.json.*;
 
 final class LyricAppearance {
-    static final String[] MODES={"Aurora","Ondas","Espectro","Capa","Foto","Estrelas","Chuva","Orbitas","Pulso","Grade","Sem animação"};
+    static final String[] MODES={"Aurora","Ondas","Espectro","Capa","Foto","Estrelas","Chuva","Orbitas","Pulso","Grade","Halloween","Bruxas","Monstros","Vampiros","Sem animação"};
     static Typeface font(String name){return Typeface.create(name.equals("Serif")?"serif":name.equals("Mono")?"monospace":name.equals("Rounded")?"sans-serif-rounded":"sans-serif",Typeface.NORMAL);}
     static final class Verse extends TextView {
         String effect="Normal";int outline=0xff101722;boolean outlinePass;

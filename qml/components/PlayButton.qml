@@ -23,7 +23,9 @@ Item {
         width: root.diameter
         height: root.diameter
         radius: width / 2
-        color: mouse.containsMouse ? root.hoverColor : root.color
+        color: Theme.themeId === "halloween" ? (mouse.containsMouse ? "#542116" : "#1b101d") : (mouse.containsMouse ? root.hoverColor : root.color)
+        border.width: Theme.themeId === "halloween" ? 2 : 0
+        border.color: "#f07732"
         scale: mouse.pressed ? 0.95 : (mouse.containsMouse ? 1.04 : 1)
         Behavior on scale { NumberAnimation { duration: 90 } }
 
@@ -33,7 +35,7 @@ Item {
             anchors.horizontalCenterOffset: root.playing ? 0 : root.diameter * 0.02
             size: root.diameter * 0.42
             fillPath: root.playing ? Icons.pauseF : Icons.playF
-            color: root.iconColor
+            color: Theme.themeId === "halloween" ? "#ff9b4a" : root.iconColor
         }
     }
 
