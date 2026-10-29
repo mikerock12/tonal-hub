@@ -1,0 +1,58 @@
+name: Windows VM release validation
+on:
+  pull_request:
+    paths: ['.github/workflows/windows-vm-validation.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  release-smoke:
+    runs-on: windows-2022
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download and verify release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          New-Item -ItemType Directory -Force evidence | Out-Null
+          gh release download v0.15.4 --repo mikerock12/tonal-hub --dir evidence --pattern 'Tonal-Hub-0.15.4-local.zip' --pattern 'Tonal-Hub-0.15.4.0-Windows-x64-Setup.exe' --pattern 'SHA256SUMS.txt'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $lines = Get-Content evidence/SHA256SUMS.txt
+          foreach ($name in @('Tonal-Hub-0.15.4-local.zip','Tonal-Hub-0.15.4.0-Windows-x64-Setup.exe')) {
+            $line = $lines | Where-Object { $_ -match [regex]::Escape($name) }
+            if (!$line -or (Get-FileHash "evidence/$name" -Algorithm SHA256).Hash.ToLower() -ne ($line -split '\s+')[0].ToLower()) { throw "Checksum mismatch: $name" }
+          }
+          Expand-Archive evidence/Tonal-Hub-0.15.4-local.zip -DestinationPath evidence/portable
+      - name: Install and run Windows applications
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $stage=(Resolve-Path evidence/portable).Path
+          $setup=(Resolve-Path evidence/Tonal-Hub-0.15.4.0-Windows-x64-Setup.exe).Path
+          $target=Join-Path $env:RUNNER_TEMP 'Tonal-Halloween-Test'
+          $install=Start-Process -FilePath $setup -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',"/DIR=$target",'/LOG=install.log') -Wait -PassThru
+          if ($install.ExitCode -ne 0) { throw "Installer exit: $($install.ExitCode)" }
+          $env:QT_QPA_PLATFORM='offscreen'; $env:QT_QUICK_BACKEND='software'; $env:ALSOFT_DRIVERS='null'
+          $report=@()
+          foreach ($case in @(@('TonalHub.exe','hub',@()), @('IndieTonal.exe','indie',@()), @('IndieTonal.exe','indie-audio',@('--panel','effects')), @('IndieTonal.exe','indie-song',@('--panel','song')))) {
+            $exe=Join-Path $target $case[0]
+            if (!(Test-Path $exe)) { throw "Missing installed executable: $exe" }
+            $shot=Join-Path (Resolve-Path evidence).Path ($case[1]+'.png')
+            $arg=@('--smoke-test','--hold-ms','4000','--screenshot',$shot)+$case[2]
+            $p=Start-Process -FilePath $exe -ArgumentList $arg -WorkingDirectory $target -Wait -PassThru
+            if ($p.ExitCode -ne 0 -or !(Test-Path $shot)) { throw "Smoke failed: $($case[1]), exit $($p.ExitCode)" }
+            $report+=@{screen=$case[1]; exit=$p.ExitCode; bytes=(Get-Item $shot).Length}
+          }
+          $report | ConvertTo-Json | Set-Content evidence/results.json
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tonal-windows-vm-evidence
+          path: |
+            evidence/*.png
+            evidence/results.json
+            install.log
+          if-no-files-found: warn
