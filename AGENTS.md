@@ -353,3 +353,10 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
   cópia isolada de dependências existentes em out/tools, sem instalar/baixar apps.
   Capturas públicas usam dados sintéticos. Preservar timeouts de UI e tentativas
   de CI, sem declarar testes físicos, acústicos ou benchmark novo.
+
+## Entrega Halloween 0.15.6 — 30/10/2026
+
+- Android: APKs assinados pelo certificado existente, versionCode 26 e alinhamento 16 KiB conferidos; teste em aparelho relatado pelo usuário. SHA-256 na release. Não alegar que o teste visual valida reprodução autenticada no desktop.
+- Windows: código de produto da árvore do merge a133e12; CI Windows 40996835093 compilou com IAMF, executou 10 grupos de testes e instalou, iniciou, reinstalou preservando arquivo de teste e removeu a cópia isolada. Também há testes QML sintéticos; teste acústico/hardware físico não foi feito.
+- O FFmpeg exato de versions.lock deixou de estar disponível no endereço original. Uma cópia privada fornecida pelo usuário foi verificada pelo SHA-256 fixado. Para um build futuro, disponibilizar o pacote original em out/audio-deps/ffmpeg-pinned.zip; não substituir por outro build sem revisão.
+- O workflow de empacotamento era específico desta release, dependia de uma transferência temporária e foi removido após a conclusão para não bloquear PRs futuros. A release e o resultado do CI permanecem registrados no GitHub.
