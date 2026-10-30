@@ -493,3 +493,7 @@ pacotes e hashes em docs/artifacts-0151.json. O CI do produto d2bc7cb passou
 no run 40253559819. O estado final do merge e dos checks está no PR #19.
 O manifesto privado do backup registra uploads e verificações; não inclui
 credenciais, pesos opcionais nem dados do telefone físico.
+
+## Publicação 0.15.6 — 30/10/2026
+
+Release v0.15.6 publicada com APKs ARM64 e universal assinados, instalador e ZIP Windows e SHA256SUMS.txt. Código integrado em a133e12f1df279bbf591e0be90f079823b391a4d; a árvore é a mesma testada no CI e a pasta Android coincide com o merge 17ca481 dos APKs. Usuário relatou teste Android físico. CI geral 40996835088 e Windows 40996835093 passaram; no Windows, 10 grupos, instalação isolada, inicialização, reinstalação preservando arquivo e desinstalação. QML de demonstração usou dados sintéticos; sem teste acústico ou streaming autenticado Windows. FFmpeg fixado recuperado de cópia privada do usuário e conferido por SHA-256; fornecedor retornava 404. Workflow temporário específico da release removido após publicação. Responsável: Codex.

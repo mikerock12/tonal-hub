@@ -64,3 +64,7 @@ O build assinado deve usar o certificado já existente, com versionCode 26, para
 O Tonalify e o IndieTonal compartilham o desenho de gota com ponta na barra e corpo pendente e o aro de brasa animado nos controles principais. A superfície usa animação vetorial limitada a 15 fps em janela ativa; pausar/ocultar a tela suspende a animação da barra, enquanto o aro visível continua animado. Atualizações do relógio Spotify ocorrem a cada 100 ms durante reprodução; correções pequenas para trás são absorvidas, mas seeks explícitos e recuos maiores permanecem possíveis. Custo visual não foi medido.
 
 As cenas de letras e recursos da versão 0.15.4 permanecem disponíveis. Verificações Qt offscreen são sintéticas; o instalador e a reprodução real exigem validação separada, e o teste físico do usuário no Android não confirma o Windows.
+
+## Publicação 0.15.6 — 30/10/2026
+
+O usuário relatou teste do APK no celular e autorizou a publicação. Os dois APKs foram conferidos quanto a versão, certificado e alinhamento; seus hashes, os do instalador e do ZIP Windows constam da release v0.15.6. O Windows foi compilado e testado na VM do CI 40996835093: dez grupos de testes, instalação, inicialização com áudio local sintético, reinstalação preservando arquivo e remoção da cópia isolada. Testes QML usam dados sintéticos; não demonstram Spotify autenticado nem hardware físico Windows.
