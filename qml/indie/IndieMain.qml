@@ -207,7 +207,7 @@ ApplicationWindow {
                         symbol:audio.sourceFailed?"refresh":audio.localPlaying?"pause":"play"
                         description:audio.sourceFailed?"Tentar novamente":audio.localPlaying?"Pausar":"Reproduzir"
                         accentInk:indieTheme.current.accent;ink:window.halloween?indieTheme.current.accent:"#f4f6f8"
-                        background:Rectangle{radius:22;color:window.halloween?"#1b101d":"#263240";border.width:window.halloween?2:0;border.color:indieTheme.current.accent}
+                        background:Item{Rectangle{anchors.fill:parent;radius:22;color:"#263240";visible:!window.halloween} Personal.EmberRing{anchors.fill:parent;visible:window.halloween}}
                         enabled:audio.localActive
                         onClicked:{if(audio.sourceFailed){if(queueIndex>=0)catalog.resolve(playerItem);else filePicker.open()}else audio.toggleLocalPlay()}
                     }

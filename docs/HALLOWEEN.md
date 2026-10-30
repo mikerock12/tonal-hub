@@ -58,3 +58,9 @@ A compilação Java e testes de política não equivalem a teste de streaming au
 Após a avaliação no telefone, a gota foi desenhada com a ponta junto à barra e o corpo arredondado abaixo, usando os vermelhos do próprio rastro. Os botões principais de reprodução nos players recebem aro de brasa e partículas animadas; o desenho é vetorial e estilizado, não os GIFs originais. A animação limita-se a cerca de 15 fps enquanto o botão está visível e tem foco; respeita a opção do sistema que desativa animações. Não altera a reprodução nem os comandos de seek.
 
 O build assinado deve usar o certificado já existente, com versionCode 26, para permitir atualização sobre 0.15.5. Validação visual sintética de componentes não substitui confirmação da aparência e reprodução no aparelho; não publicar o APK antes das verificações de assinatura, alinhamento, atualização e aceitação visual.
+
+## Windows 0.15.6 — correção em validação
+
+O Tonalify e o IndieTonal compartilham o desenho de gota com ponta na barra e corpo pendente e o aro de brasa animado nos controles principais. A superfície usa animação vetorial limitada a 15 fps em janela ativa; pausar/ocultar a tela suspende a animação da barra, enquanto o aro visível continua animado. Atualizações do relógio Spotify ocorrem a cada 100 ms durante reprodução; correções pequenas para trás são absorvidas, mas seeks explícitos e recuos maiores permanecem possíveis. Custo visual não foi medido.
+
+As cenas de letras e recursos da versão 0.15.4 permanecem disponíveis. Verificações Qt offscreen são sintéticas; o instalador e a reprodução real exigem validação separada, e o teste físico do usuário no Android não confirma o Windows.

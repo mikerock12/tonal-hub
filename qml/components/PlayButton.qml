@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import "qrc:/companion/qml/companion" as Personal
 
 // Botão redondo grande de play/pause na cor de destaque.
 Item {
@@ -28,6 +29,8 @@ Item {
         border.color: "#f07732"
         scale: mouse.pressed ? 0.95 : (mouse.containsMouse ? 1.04 : 1)
         Behavior on scale { NumberAnimation { duration: 90 } }
+
+        Personal.EmberRing { objectName: "emberRing"; anchors.fill: parent; visible: Theme.themeId === "halloween"; animationAllowed: root.visible; z: 0 }
 
         Rectangle {
             anchors.centerIn: parent; width: parent.width - 6; height: width; radius: width/2

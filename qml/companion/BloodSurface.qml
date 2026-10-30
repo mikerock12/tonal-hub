@@ -34,8 +34,8 @@ Canvas {
         c.bezierCurveTo(size*.44,size*.25,size*.05,size*.52,size*.12,size*.76)
         c.bezierCurveTo(size*.21,size*1.06,size*.79,size*1.06,size*.88,size*.76)
         c.bezierCurveTo(size*.95,size*.52,size*.56,size*.25,size*.5,0);c.closePath()
-        const g=c.createLinearGradient(0,0,size,size);g.addColorStop(0,"#ff8b7d");g.addColorStop(.25,"#e82a3c");g.addColorStop(.6,"#a50d24");g.addColorStop(1,"#410712")
-        c.fillStyle=g;c.fill();c.strokeStyle="#ef6a64";c.lineWidth=.7;c.stroke()
+        const g=c.createLinearGradient(0,0,size,size);g.addColorStop(0,endColor);g.addColorStop(.55,fillColor);g.addColorStop(1,"#870c1a")
+        c.fillStyle=g;c.fill();c.strokeStyle=fillColor;c.lineWidth=.7;c.stroke()
         c.beginPath();c.ellipse(size*.23,size*.44,size*.15,size*.31);c.fillStyle="#ffc2b0";c.globalAlpha=opacity*.68;c.fill()
         c.beginPath();c.ellipse(size*.42,size*.81,size*.3,size*.055);c.fillStyle="#ff867b";c.globalAlpha=opacity*.4;c.fill();c.restore()
     }
@@ -53,6 +53,6 @@ Canvas {
                 if(cycle>.76)drop(c,x,bottom+(cycle-.76)*22,3.5+(i%2),1-(cycle-.76)/.24)
             }
         }
-        if(showThumb)drop(c,edge,cy,thumbSize,enabled?1:.45)
+        if(showThumb)drop(c,edge,cy+thumbSize/2,thumbSize,enabled?1:.45)
     }
 }

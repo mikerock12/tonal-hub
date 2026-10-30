@@ -9,7 +9,7 @@ import time
 import winreg
 
 ROOT = Path(__file__).resolve().parents[2]
-VERSION=re.search(r'project\(Tonal VERSION ([0-9.]+)',(ROOT/'CMakeLists.txt').read_text()).group(1)
+VERSION=re.search(r'project\(Tonal VERSION ([0-9.]+)',(ROOT/'CMakeLists.txt').read_text(encoding='utf-8')).group(1)
 OUT = ROOT / ('out/installer-smoke-'+VERSION.replace('.','')+'0'+os.environ.get('TONAL_INSTALLER_TEST_SUFFIX',''))
 TARGET = OUT / 'app'
 SETUP = ROOT / f'out/release-local/Tonal-Hub-{VERSION}.0-Windows-x64-Setup.exe'

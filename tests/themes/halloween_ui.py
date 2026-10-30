@@ -54,6 +54,11 @@ Pane {
    grabImage(cover).save("cover-halloween.png")
    delayedIcon.width=64;delayedIcon.height=64;delayedIcon.visible=true;wait(120);grabImage(delayedIcon).save("late-icon.png");delayedIcon.visible=false
    mouseClick(play);mouseMove(root,5,5);wait(420);verify(seek.thumbVisible)
+   const ember=findChild(play,"emberRing");verify(ember!==null);verify(ember.visible)
+   if(ember.animationRunning){let before=ember.phase;wait(180);verify(ember.phase>before)}
+   ember.animationAllowed=false;let emberPhase=ember.phase;wait(170);compare(ember.phase,emberPhase)
+   ember.phase=.2;wait(80);grabImage(play).save("ember-frame-a.png")
+   ember.phase=1.7;wait(80);grabImage(play).save("ember-frame-b.png");ember.animationAllowed=true
    const flow=findChild(seek,"bloodSurface");verify(flow!==null);compare(flow.animationRunning,false)
    flow.phase=.15;wait(80);grabImage(seek).save("blood-frame-a.png")
    flow.phase=1.4;wait(80);grabImage(seek).save("blood-frame-b.png")
@@ -94,4 +99,5 @@ assert len(set(images)) == 4, 'The four scenes must render differently'
 icon = Image.open(OUT / 'late-icon.png').convert('RGB').crop((22, 22, 44, 44))
 assert sum(1 for r,g,b in icon.getdata() if r > 200 and 70 < g < 200 and b < 140) > 30, 'The icon stayed blank after delayed layout'
 assert Image.open(OUT / 'blood-frame-a.png').tobytes() != Image.open(OUT / 'blood-frame-b.png').tobytes(), 'The blood streams did not evolve between phases'
+assert Image.open(OUT / 'ember-frame-a.png').tobytes() != Image.open(OUT / 'ember-frame-b.png').tobytes(), 'The ember ring did not change between phases'
 print('HALLOWEEN_VISUAL_PASS: loaded art, live switch/restore, controls, four distinct scenes; paused/hidden stages remain still')

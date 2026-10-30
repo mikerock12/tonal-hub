@@ -2,6 +2,10 @@
 
 Atualizado em **29/10/2026**. Entrega: **Windows 0.15.4 / Android 0.15.4**, com pendências Android abaixo. Leia também [AGENTS.md](AGENTS.md).
 
+## Windows 0.15.6 — Halloween em validação
+
+Tonalify e IndieTonal receberam a gota conectada abaixo do ponto da barra e aro de brasa animado nos controles principais, com até 15 fps em janela ativa e visível. A atualização da posição Spotify passa a 100 ms durante reprodução, e pequenos recuos de polling são absorvidos sem impedir saltos maiores ou seeks explícitos. O código Android do merge 17ca481 permanece igual ao dos APKs 0.15.6 enviados pelo usuário. QML local com dados sintéticos não representa reprodução Spotify, teste físico nem validação acústica. Compilação e instalação Windows devem ser validadas no CI antes da release. Detalhes: [HALLOWEEN.md](docs/HALLOWEEN.md).
+
 ## Android 0.15.6 — gota e play/pause em revisão
 
 Após teste do usuário no celular com a 0.15.5, a gota foi redesenhada com a ponta na barra e o corpo arredondado pendendo abaixo, nos mesmos vermelhos do rastro. O controle principal de reprodução recebe aro de brasa animado limitado a 15 fps enquanto visível, com foco e animações do sistema habilitadas. Teste visual sintético e aceite no telefone são distintos. Android avança para versionCode 26; o APK precisa da assinatura original e de instalação por cima antes da publicação. Detalhes: [HALLOWEEN.md](docs/HALLOWEEN.md).

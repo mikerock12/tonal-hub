@@ -81,7 +81,7 @@ Player::Player(SpotifyApi *api, LibrespotProcess *librespot, AuthManager *auth,
   connect(&m_pollTimer, &QTimer::timeout, this, &Player::refresh);
 
   // Só redesenha a barra de progresso enquanto toca.
-  m_tickTimer.setInterval(500);
+  m_tickTimer.setInterval(100);
   connect(&m_tickTimer, &QTimer::timeout, this, [this] {
     emit positionChanged();
     if (m_durationMs > 0 && positionMs() >= m_durationMs)
@@ -247,6 +247,9 @@ void Player::applyState(const QJsonObject &obj, bool acceptVolume) {
   const QJsonObject item = obj.value(QStringLiteral("item")).toObject();
   const QString uri = item.value(QStringLiteral("uri")).toString();
 
+  const bool sameTrack = uri == m_trackUri;
+  const bool wasPlaying = m_isPlaying;
+  const int displayedPosition = positionMs();
   if (uri != m_trackUri) {
     cancelSeek();
     m_trackUri = uri;
@@ -334,8 +337,10 @@ void Player::applyState(const QJsonObject &obj, bool acceptVolume) {
   }
 
   const int remote = obj.value(QStringLiteral("progress_ms")).toInt();
-  if (!seekSettling(remote))
-    setPositionBase(remote);
+  if (!seekSettling(remote)) {
+    const bool smallBackward = sameTrack && wasPlaying && m_isPlaying && remote < displayedPosition && displayedPosition - remote <= 1500;
+    setPositionBase(smallBackward ? displayedPosition : remote);
+  }
   if (m_isPlaying)
     m_tickTimer.start();
   else

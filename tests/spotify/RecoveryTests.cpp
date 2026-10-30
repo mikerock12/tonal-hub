@@ -906,6 +906,12 @@ public:
       {"device",QJsonObject{{"id","local-device"}}},
       {"item",QJsonObject{{"uri","spotify:track:fixture"},{"duration_ms",200000}}}};
     player.applyState(state);
+    const int beforeStale=player.positionMs();
+    state["progress_ms"]=29500;player.applyState(state);
+    require(player.positionMs()>=beforeStale,"small stale poll rewound a playing track");
+    state["progress_ms"]=20000;player.applyState(state);
+    require(qAbs(player.positionMs()-20000)<250,"large external backward seek was ignored");
+    state["progress_ms"]=30000;player.applyState(state);
     QList<int> seeks;QByteArray playBody;
     network.respond=[&](const QNetworkRequest &req,const QByteArray &body){
       if(req.url().path().endsWith("/seek"))seeks<<QUrlQuery(req.url()).queryItemValue("position_ms").toInt();

@@ -290,7 +290,7 @@ Dialog {
                     ActionIcon{accentInk:panel.tone.accent;objectName:"songRandom";visible:panel.quickModes;enabled:!panel.mixController||!panel.mixController.busy;symbol:"random";description:"Aleatório: tocar a fila em ordem aleatória / voltar à ordem";filled:!!panel.mixController&&panel.mixController.randomEnabled;onClicked:panel.applySongMode(1)}
                     ActionIcon { accentInk:panel.tone.accent;symbol:"prev";description:"Anterior"; enabled:!!panel.controller.current.title; onClicked:panel.previousRequested() }
                     ActionIcon { id:songPlay;objectName:"songPlayButton";implicitWidth:64;implicitHeight:64
-                        background:Rectangle{radius:32;color:panel.tone.id==="halloween"?"#1b101d":panel.tone.accent;border.width:panel.tone.id==="halloween"?2:0;border.color:panel.tone.accent}
+                        background:Item{Rectangle{anchors.fill:parent;radius:32;color:panel.tone.accent;visible:panel.tone.id!=="halloween"} EmberRing{anchors.fill:parent;visible:panel.tone.id==="halloween";animationAllowed:panel.visible&&songPages.currentIndex===0}}
                         scale:panel.tone.id==="halloween"&&down?.92:1;Behavior on scale{NumberAnimation{duration:100}}
                         ink:panel.tone.id==="halloween"?panel.tone.accent:"#f5f5f5";accentInk:panel.tone.accent;symbol:panel.playing?"pause":"play";description:panel.playing?"Pausar":"Reproduzir"; enabled:!!panel.controller.current.title; onClicked:panel.togglePlayback() }
                     ActionIcon { accentInk:panel.tone.accent;symbol:"next";description:"Próxima"; enabled:!!panel.controller.current.title; onClicked:panel.nextRequested() }
