@@ -102,6 +102,16 @@ jobs:
           ./packaging/build-hub-installer.ps1
           python tests/lyrics/installer_smoke.py
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Preserve packages for diagnosis if validation fails
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tonal-windows-0156-unvalidated
+          path: |
+            out/release-local/Tonal-Hub-0.15.6.0-Windows-x64-Setup.exe
+            out/release-local/Tonal-Hub-0.15.6-local.zip
+          if-no-files-found: ignore
+          retention-days: 2
       - uses: actions/upload-artifact@v4
         with:
           name: tonal-windows-0156-validated
