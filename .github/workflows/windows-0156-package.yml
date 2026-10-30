@@ -76,6 +76,7 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           python tests/audio/generate_fixtures.py
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          New-Item -ItemType Directory -Force -Path out/research | Out-Null
           ctest --test-dir out/build/release --output-on-failure
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Restore unchanged helper executables from verified 0.15.4 release
