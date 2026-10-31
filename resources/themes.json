@@ -270,6 +270,43 @@
         "thumbAlways": true,
         "glow": false
       }
+    },
+    {
+      "id": "natal",
+      "name": "Natal",
+      "description": "Verde-pinheiro, vermelho e dourado, com luzes festivas e estrela no marcador.",
+      "bg": "#07130f",
+      "panel": "#10241c",
+      "card": "#193429",
+      "cardHover": "#254738",
+      "text": "#fffdf4",
+      "textSecondary": "#d3e4d5",
+      "textMuted": "#9fb9a8",
+      "accent": "#e33f4f",
+      "accentHover": "#f26470",
+      "accentText": "#ff9aa5",
+      "accentDeep": "#5b1720",
+      "onAccent": "#160508",
+      "divider": "#315444",
+      "seek": {
+        "height": 6,
+        "activeHeight": 8,
+        "track": "#284b3a",
+        "fill": [
+          "#d93446",
+          "#ffd369"
+        ],
+        "activeFill": [
+          "#ff5964",
+          "#ffe39c"
+        ],
+        "thumb": "#ffd45e",
+        "thumbBorder": "#fff4c2",
+        "thumbSize": 22,
+        "thumbShape": "star",
+        "thumbAlways": true,
+        "glow": true
+      }
     }
   ]
 }

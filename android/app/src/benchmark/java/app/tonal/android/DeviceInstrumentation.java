@@ -12,6 +12,7 @@ public final class DeviceInstrumentation extends Instrumentation {
         Bundle result=new Bundle();
         try{
             if(args.getString("action","").equals("halloweenTests")){result.putString("result",HalloweenTests.run(this));finish(0,result);return;}
+            if(args.getString("action","").equals("seasonalTests")){result.putString("result",SeasonalTests.run(this));finish(0,result);return;}
             if(args.getString("action","").equals("readerResumeTests")){result.putString("result",ReaderResumeTests.run(this));finish(0,result);return;}
             if(args.getString("action","").equals("historyStoryTests")){result.putString("result",HistoryStoryTests.run(this,args.getString("nativeModel","").equals("true")));finish(0,result);return;}
             if(args.getString("action","").equals("companionImport")){final String[] text={""};runOnMainSync(()->{try{MusicStore store=new MusicStore(getTargetContext(),"interop-library.json");store.restoreBackup(new String(java.nio.file.Files.readAllBytes(new java.io.File(getTargetContext().getFilesDir(),"companion-cpp-backup.json").toPath()),java.nio.charset.StandardCharsets.UTF_8));if(store.favorites().length()==0)throw new AssertionError("Missing imported favorite");text[0]="CPP_BACKUP_IMPORT_PASS";}catch(Exception e){throw new RuntimeException(e);}});result.putString("result",text[0]);finish(0,result);return;}

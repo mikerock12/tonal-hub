@@ -1,0 +1,33 @@
+{
+  "version": "0.15.7",
+  "final": {
+    "themes": {"themes": 8, "checks": 243, "passed": true},
+    "qml": {"mix": 25, "lyrics": 6, "playlist": 3, "seasonalExecution": 3, "passed": true},
+    "ctest": {"passed": 10, "total": 10},
+    "androidCompile": {"release": true, "benchmark": true},
+    "seasonalTests": {"passed": true, "morphBothDirections": true, "starAndWire": true, "coverLights": true, "christmasScenes": 3},
+    "halloweenTests": {"passedOnIsolatedRetry": true, "maxFps": 15},
+    "seasonalSmoke": {"passed": true, "checks": ["portrait_player_and_standard_header", "landscape_player_left_lyrics_right_with_header", "portrait_page_restored_after_rotation", "no_fatal_exception"]},
+    "textReviewSmoke": {"passed": true, "checks": ["filter_only_missing_reference_and_edit_available", "checkbox_preserves_visible_rows_after_scrolling", "no_fatal_exception"], "realSpotifyWrites": 0},
+    "portableWindows": {"tonalifyAudioSmoke": true, "hubStartup": true, "indieStartup": true, "themeUndefinedErrorsAfterFix": 0},
+    "apkValidation": {"universal": true, "arm64": true, "alignment": 16384, "certificateMatches0156": true, "productionBenchmarkClassesAbsent": true}
+  },
+  "attempts": [
+    "Initial CTest: 4/10 passed; five UI/recovery timeouts and one audio producer-exit failure. Affected tests passed 6/6 after the dedicated AVD was closed; next full suite passed 10/10.",
+    "HalloweenTests first run failed the timed assertion 'visible blood did not resume'; isolated rerun passed. This was an assertion failure, not an application exception.",
+    "After the final QML packaging fix, one full CTest run had 9/10 with 'seek resumes from target'; isolated audio_integration passed and the following full suite passed 10/10.",
+    "The isolated installer test refused to run because a Hub installation already exists. It was not uninstalled or modified. Portable packaged executables were started instead; interactive installation was not verified locally.",
+    "Initial seasonal landscape capture had the primary controls below the viewport. The player was compacted and the final rotation flow and captures passed.",
+    "Initial UI scripts encountered ADB coordinate, XML timing and stale-log issues. They were corrected without weakening product assertions; final flows passed."
+  ],
+  "limits": {
+    "syntheticArtAndLyrics": true,
+    "physicalPhoneTested": false,
+    "authenticatedSpotifyStreamingTested": false,
+    "realPlaylistWritten": false,
+    "interactiveWindowsInstallTested": false,
+    "acousticOrBluetoothTested": false,
+    "newBenchmark": false,
+    "causalityForTimingFailuresProven": false
+  }
+}

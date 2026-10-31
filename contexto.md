@@ -1,6 +1,10 @@
 # Contexto do Tonal Hub
 
-Atualizado em **29/10/2026**. Entrega: **Windows 0.15.4 / Android 0.15.4**, com pendências Android abaixo. Leia também [AGENTS.md](AGENTS.md).
+Atualizado em **31/10/2026**. Entrega: **Windows 0.15.7 / Android 0.15.7**, versionCode 27. Leia também [AGENTS.md](AGENTS.md).
+
+## 0.15.7 — Natal, Halloween e revisão do player
+
+Referência: [NATAL_PLAYER_0157.md](docs/NATAL_PLAYER_0157.md). Oito temas compartilhados; Natal tem luzes nas capas, fio de luzinhas/estrela no seek e transição play/pause. Halloween recebe a mesma transição, aranha/teias detalhadas, sangue mais vívido e correção do botão das coleções. Há 18 cenários de letras, incluindo Natal, Neve e Lareira. Corações ficam junto das músicas; a rotação Android apresenta player e letra lado a lado sem recriar motor/fila. Text to Tonalify filtra não encontradas e preserva a rolagem ao marcar. Testes locais: temas 243, QML 25/6/3, CTest final 10/10, componentes e fluxos sintéticos na AVD. Sem teste físico, streaming autenticado, escrita real de playlist ou benchmark novo. Tentativas e timeouts anteriores estão documentados.
 
 ## Windows 0.15.6 — Halloween em validação
 
@@ -132,7 +136,7 @@ Branches de trabalho usam `codex/`. Conferir `git status` antes de agir.
 | Estatísticas | Tempo realmente ouvido, escutas qualificadas, faixas distintas, músicas/álbuns/artistas/estilos/dias; barras e detalhes clicáveis; resumos nas listas |
 | Repertório | TonalMuse Tiny local, temas de letras e regras editoriais de gêneros, cobertura e abstenção; sem diagnóstico pessoal |
 | Letras | LRCLIB/importação TXT/LRC; acompanhamento opcional, alinhamento manual local, exportar ajuste, tradução pt-BR com idioma automático |
-| Apresentação | 11 cenários; fontes/cores/tamanhos independentes da letra/tradução, contorno, brilho, neon, piscante, negrito, itálico e sublinhado |
+| Apresentação | 18 cenários; fontes/cores/tamanhos independentes da letra/tradução, contorno, brilho, neon, piscante, negrito, itálico e sublinhado |
 | Áudio | EQ 10 bandas, presets, graves, compressor, limiter, normalização, HRTF; IAMF somente com fonte compatível; perfis de saída no Android |
 | Backup | Exportar/importar biblioteca pessoal; backup consistente SQLite/DSP/preferências no PC; pacote privado no Drive sem credenciais |
 

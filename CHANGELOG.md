@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.15.7 — 31/10/2026
+
+- Novo tema Natal no Windows/Android: luzes sobre capas, fio de luzinhas no seek, estrela e grinalda; transição play/pause nos dois sentidos.
+- Halloween: mesma transição de transporte, teias detalhadas com aranha animada, sangue mais vívido e correção do play invisível nas coleções.
+- Cenários Halloween/Bruxas/Monstros/Vampiros redesenhados; novos cenários Natal, Neve e Lareira.
+- Coração junto das músicas em álbuns/playlists e layout paisagem com player e letra lado a lado no Android.
+- Text to Tonalify: filtro de referências não encontradas e marcação sem mover a rolagem.
+- Detalhes e limites em docs/NATAL_PLAYER_0157.md e docs/release-0157-tests.json.
+
 ## 0.15.4 — 29/10/2026
 
 - Tema Halloween no Windows/Android: roxo escuro, laranja, teias nas capas e controles em brasa.

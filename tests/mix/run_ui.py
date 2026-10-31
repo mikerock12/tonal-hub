@@ -15,7 +15,7 @@ QtObject {
  property QtObject theme:QtObject{property string themeId:"tonal";property var themes:('''+themes_json+''').themes;property var current:themes.filter(t=>t.id===themeId)[0]}
  function dominantColor(url,callback){callback("#344455")}
  property QtObject auth:QtObject{property bool authenticated:true;property string userId:"user"}
- property QtObject music:QtObject{property var homeAlbums:[];function requestHomeAlbums(){}signal changed();function summary(k,v){return {ms:0,plays:0,tracks:[]}}}
+ property QtObject music:QtObject{property var homeAlbums:[];property var favoriteRows:[];function requestHomeAlbums(){}signal changed();function summary(k,v){return {ms:0,plays:0,tracks:[]}}function liked(t){return favoriteRows.indexOf(t.uri)>=0}function favorite(t){let i=favoriteRows.indexOf(t.uri);if(i>=0)favoriteRows.splice(i,1);else favoriteRows.push(t.uri);changed()}}
  property QtObject player:QtObject{property int volume:60;function setVolume(v){volume=Math.max(0,Math.min(100,v))}property int volumeBeforeMute:30;function toggleMute(){if(volume>0){volumeBeforeMute=volume;setVolume(0)}else setVolume(volumeBeforeMute)}property string contextUri:"";property string trackUri:"";property bool hasTrack:false;property string repeatMode:"off";property int repeatCycles:0;function cycleRepeat(){repeatCycles++;repeatMode=repeatMode==="off"?"context":repeatMode==="context"?"track":"off"}property bool isPlaying:false;property bool shuffle:false;property var queue:[{uri:"spotify:track:next",name:"Next song",artists:"Next artist",durationMs:180000}];property bool delayQueue:false;property int refreshes:0;signal queueRefreshFinished(int status);function refreshQueue(){refreshes++;if(!delayQueue){queueChanged();queueRefreshFinished(200)}}signal playbackRequested();function togglePlay(){}function playContext(a,b,c){}function playUris(a,b){}}
  property QtObject listeningMix:QtObject{property bool busy:false;property string status:"";property var received:({});property var previewQueue:[];property var committedRows:[];property bool discoveryEnabled:false;property bool randomEnabled:false;property bool enrichmentEnabled:false;property string enrichmentStatus:"";function queueFor(uri){return committedRows}property var applied:null;function applyModes(rows,shake,random,discovery){applied={rows:rows,shake:shake,random:random,discovery:discovery}}property int appliedPosition:-1;signal changed();signal previewReady();function preview(rows,index,random,discovery,album){received={rows:rows,index:index,random:random,discover:discovery,album:album};previewQueue=rows.slice();previewReady();changed()}function applyPreview(position){appliedPosition=position}function cancel(){}function order(n,seed){let a=[];for(let i=1;i<n;i++)a.push(i);a.push(0);return a}function play(rows,index,random,discover,album){received={rows:rows,index:index,random:random,discover:discover,album:album}}}
  property QtObject api:QtObject{
@@ -148,9 +148,10 @@ Pane {width:1000;height:800;padding:0;palette.button:"#263440";palette.buttonTex
    personalPanel.position=personal.seeks[0];compare(s.value,personal.seeks[0]);personalPanel.position=12345;tryCompare(s,"value",12345);personalPanel.close()
   }
   function test_theme_switch_restyles_seekbar(){
-   compare(Theme.themes.length,7);compare(themedSeek.style.thumbShape,"circle");verify(!themedSeek.thumbVisible);
+   compare(Theme.themes.length,8);compare(themedSeek.style.thumbShape,"circle");verify(!themedSeek.thumbVisible);
    App.theme.themeId="solar";compare(Theme.themeId,"solar");verify(Qt.colorEqual(Theme.accent,"#ff8a4c"));compare(themedSeek.style.thumbShape,"pill");verify(themedSeek.thumbVisible);compare(themedSeek.barHeight,5);
    App.theme.themeId="halloween";compare(themedSeek.style.thumbShape,"drop");verify(themedSeek.thumbVisible);
+   App.theme.themeId="natal";compare(themedSeek.style.thumbShape,"star");verify(themedSeek.thumbVisible);verify(findChild(themedSeek,"christmasSurface").visible);
    App.theme.themeId="tonal";verify(Qt.colorEqual(Theme.accent,"#0d80bf"));compare(themedSeek.style.thumbShape,"circle")
   }
   function test_theme_dialog_applies_choice(){

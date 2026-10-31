@@ -110,3 +110,7 @@ nesta entrega. As medições 0.12 continuam no [índice de benchmarks](BENCHMARK
 Instaláveis 0.14.0: Setup Windows x64, APK ARM64 e APK universal (ARM64+x86_64),
 versionCode 19. Atualize por cima para preservar dados e mantenha uma exportação
 da biblioteca. Créditos originais de **Matheus Nunes (natheus)** e MIT preservados.
+
+## Revisão 0.15.7
+
+Corações ficam visíveis junto das músicas nas coleções. Em paisagem, o Android apresenta player à esquerda e letra à direita, com capa/metadados compactos e uma faixa rolável para os modos; ao voltar a retrato, restaura a página anterior sem recriar Activity, motor ou fila. Detalhes: [NATAL_PLAYER_0157.md](NATAL_PLAYER_0157.md).

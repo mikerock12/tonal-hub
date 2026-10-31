@@ -13,7 +13,7 @@ final class Ui {
     static int BG=0xff101112,CARD=0xff202224,PANEL=0xff18191b,TEXT=0xfff5f5f5,MUTED=0xffa5a8ad,BLUE=0xff009bd6,ACCENT_SOFT=0xff7ddbff,TINT=0xff263748,ON_ACCENT=0xff000000;
     // Progress bar and thumb of the active theme.
     static int SEEK_TRACK=0xff404040,SEEK_START=0xff009bd6,SEEK_END=0xff009bd6,THUMB=0xfff5f5f5,THUMB_BORDER=0xfff5f5f5,SEEK_HEIGHT=4,THUMB_SIZE=14;
-    static boolean HALLOWEEN;
+    static boolean HALLOWEEN,CHRISTMAS;
     static String THUMB_SHAPE="circle";static boolean THUMB_GLOW;
     final Context context;
     Ui(Context context){this.context=context;}
@@ -32,21 +32,27 @@ final class Ui {
     void clickable(View v,Runnable click){v.setOnClickListener(w->click.run());v.setFocusable(true);v.setBackground(new RippleDrawable(android.content.res.ColorStateList.valueOf(0x335fffff),v.getBackground(),background(0xffffffff,8)));}
     TextView pill(String text,boolean active,Runnable click){TextView v=text(text,13,active?BG:TEXT);v.setGravity(Gravity.CENTER);pad(v,16,11);rounded(v,active?TEXT:CARD,24);clickable(v,click);return v;}
     TextView action(String text,Runnable click){TextView v=text(text,14,TEXT);v.setGravity(Gravity.CENTER);pad(v,16,13);rounded(v,CARD,8);clickable(v,click);return v;}
-    ImageButton icon(String name,String description,Runnable click){ImageButton b=new ImageButton(context);b.setImageDrawable(new Symbol(name,HALLOWEEN&&(name.equals("play")||name.equals("pause"))?BLUE:TEXT));b.setScaleType(ImageView.ScaleType.CENTER_INSIDE);b.setContentDescription(description);b.setTooltipText(description);b.setBackground(background(0x00000000,24));b.setPadding(dp(12),dp(12),dp(12),dp(12));b.setMinimumWidth(dp(48));b.setMinimumHeight(dp(48));clickable(b,()->{if(HALLOWEEN&&(name.equals("play")||name.equals("pause"))){b.animate().cancel();b.setScaleX(.88f);b.setScaleY(.88f);b.animate().scaleX(1f).scaleY(1f).setDuration(220).start();}click.run();});return b;}
+    boolean seasonal(){return HALLOWEEN||CHRISTMAS;}
+    ImageButton icon(String name,String description,Runnable click){ImageButton b=new ImageButton(context);boolean transport=seasonal()&&(name.equals("play")||name.equals("pause"));b.setImageDrawable(transport?new SeasonalDrawables.TransportGlyph(name.equals("pause"),CHRISTMAS?0xffffe39c:BLUE):new Symbol(name,TEXT));b.setScaleType(ImageView.ScaleType.CENTER_INSIDE);b.setContentDescription(description);b.setTooltipText(description);b.setBackground(background(0x00000000,24));b.setPadding(dp(12),dp(12),dp(12),dp(12));b.setMinimumWidth(dp(48));b.setMinimumHeight(dp(48));clickable(b,()->{if(transport){b.animate().cancel();b.setScaleX(.88f);b.setScaleY(.88f);b.animate().scaleX(1f).scaleY(1f).setDuration(220).start();}click.run();});return b;}
+    void setTransport(ImageButton button,boolean playing){if(seasonal()){if(button.getDrawable() instanceof SeasonalDrawables.TransportGlyph)((SeasonalDrawables.TransportGlyph)button.getDrawable()).setPlaying(playing);else button.setImageDrawable(new SeasonalDrawables.TransportGlyph(playing,CHRISTMAS?0xffffe39c:BLUE));}else button.setImageDrawable(new Symbol(playing?"pause":"play",TEXT));}
     /** Themed track, gradient fill and thumb shape; the touch target stays 40 dp tall. */
     void seek(SeekBar bar){seek(bar,()->false);}
     void seek(SeekBar bar,java.util.function.BooleanSupplier playing){
         int height=dp(SEEK_HEIGHT);
         GradientDrawable track=new GradientDrawable();track.setColor(SEEK_TRACK);track.setCornerRadius(height);
         GradientDrawable fill=new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,new int[]{SEEK_START,SEEK_END});fill.setCornerRadius(height);
-        LayerDrawable layers=new LayerDrawable(new Drawable[]{track,new ClipDrawable(THUMB_SHAPE.equals("drop")?new BloodTrail(bar,playing,height):fill,Gravity.START,ClipDrawable.HORIZONTAL)});
+        Drawable trackDrawable=THUMB_SHAPE.equals("star")?new SeasonalDrawables.Track(context,height):track;
+        Drawable fillDrawable=THUMB_SHAPE.equals("drop")?new BloodTrail(bar,playing,height):THUMB_SHAPE.equals("star")?new SeasonalDrawables.Trail(bar,playing,height):fill;
+        LayerDrawable layers=new LayerDrawable(new Drawable[]{trackDrawable,new ClipDrawable(fillDrawable,Gravity.START,ClipDrawable.HORIZONTAL)});
         layers.setId(0,android.R.id.background);layers.setId(1,android.R.id.progress);
         for(int i=0;i<2;i++){layers.setLayerHeight(i,height);layers.setLayerGravity(i,Gravity.CENTER_VERTICAL|Gravity.FILL_HORIZONTAL);}
         if(THUMB_SHAPE.equals("drop")){layers.setLayerHeight(1,height+dp(32));bar.setMinimumHeight(dp(48));}
+        if(THUMB_SHAPE.equals("star")){for(int i=0;i<2;i++)layers.setLayerHeight(i,height+dp(28));bar.setMinimumHeight(dp(48));}
         bar.setProgressDrawable(layers);bar.setThumb(thumb());bar.setSplitTrack(false);bar.setBackground(null);
     }
     Drawable thumb(){
         if(THUMB_SHAPE.equals("drop"))return new BloodDrop(dp(THUMB_SIZE),THUMB,THUMB_BORDER);
+        if(THUMB_SHAPE.equals("star"))return new SeasonalDrawables.Star(dp(THUMB_SIZE));
         int size=dp(THUMB_SIZE);boolean pill=THUMB_SHAPE.equals("pill");
         GradientDrawable core=new GradientDrawable();core.setColor(THUMB);
         if(THUMB_SHAPE.equals("ring"))core.setStroke(dp(3),THUMB_BORDER);else if(THUMB_BORDER!=THUMB)core.setStroke(dp(2),THUMB_BORDER);
@@ -58,8 +64,8 @@ final class Ui {
         GradientDrawable halo=new GradientDrawable();halo.setShape(GradientDrawable.OVAL);halo.setColor((THUMB_BORDER&0x00ffffff)|0x48000000);
         LayerDrawable glow=new LayerDrawable(new Drawable[]{halo,core});int outer=size+dp(10);glow.setLayerSize(0,outer,outer);glow.setLayerSize(1,size,size);glow.setLayerGravity(1,Gravity.CENTER);return glow;
     }
-    /** Animated ember ring for the primary player controls, confined to the visible view. */
-    void halloweenTransport(ImageButton button){if(HALLOWEEN)button.setBackground(new HalloweenTransport(button));}
+    /** Animated seasonal ring for the primary player controls, confined to the visible view. */
+    void halloweenTransport(ImageButton button){if(HALLOWEEN)button.setBackground(new HalloweenTransport(button));else if(CHRISTMAS)button.setBackground(new SeasonalDrawables.ChristmasRing(button));}
     static final class HalloweenTransport extends Drawable implements Runnable {
         final View host;final Paint paint=new Paint(3);final Path path=new Path();final Rect visible=new Rect();
         float phase;boolean scheduled;
@@ -81,7 +87,7 @@ final class Ui {
         final SeekBar host;final java.util.function.BooleanSupplier playing;final float barHeight,density;
         final Paint paint=new Paint(3);final Path path=new Path();final Rect visibleArea=new Rect();Shader beam;float phase;boolean scheduled;
         BloodTrail(SeekBar host,java.util.function.BooleanSupplier playing,float height){this.host=host;this.playing=playing;barHeight=height;density=host.getResources().getDisplayMetrics().density;}
-        protected void onBoundsChange(Rect b){float cy=b.exactCenterY();beam=new LinearGradient(0,cy-barHeight/2,0,cy+barHeight/2,new int[]{0xfff8756a,SEEK_END,SEEK_START,0xff620b1c},new float[]{0,.28f,.7f,1},Shader.TileMode.CLAMP);}
+        protected void onBoundsChange(Rect b){float cy=b.exactCenterY();beam=new LinearGradient(0,cy-barHeight/2,0,cy+barHeight/2,new int[]{0xffff8b7c,0xffff3f45,SEEK_START,0xff4d040f},new float[]{0,.18f,.72f,1},Shader.TileMode.CLAMP);}
         boolean animationActive(){return host.isEnabled()&&host.isAttachedToWindow()&&host.isShown()&&host.hasWindowFocus()&&host.getProgress()>0&&playing.getAsBoolean()&&android.animation.ValueAnimator.areAnimatorsEnabled()&&host.getGlobalVisibleRect(visibleArea);}
         public void run(){scheduled=false;if(animationActive()){phase+=.075f;invalidateSelf();}}
         public void draw(Canvas c){Rect b=getBounds();float cy=b.exactCenterY(),top=cy+barHeight*.28f;paint.setStyle(Paint.Style.FILL);paint.setAlpha(255);paint.setShader(beam);c.drawRoundRect(b.left,cy-barHeight/2,b.right,cy+barHeight/2,barHeight/2,barHeight/2,paint);paint.setShader(null);
@@ -98,7 +104,7 @@ final class Ui {
     static final class BloodDrop extends Drawable {
         final int size, color, border; final Paint paint=new Paint(3); final Path path=new Path();Shader shine;
         BloodDrop(int size,int color,int border){this.size=size;this.color=color;this.border=border;}
-        protected void onBoundsChange(Rect b){shine=new LinearGradient(0,0,b.width(),size,new int[]{SEEK_END,SEEK_START,0xff870c1a},new float[]{0,.55f,1},Shader.TileMode.CLAMP);}
+        protected void onBoundsChange(Rect b){shine=new LinearGradient(0,0,b.width(),size,new int[]{0xffff6264,SEEK_END,SEEK_START,0xff4d040f},new float[]{0,.32f,.72f,1},Shader.TileMode.CLAMP);}
         public void draw(Canvas c){Rect b=getBounds();float w=b.width(),h=b.height();c.save();c.translate(b.left,b.top+size);h=size;path.rewind();path.moveTo(w*.5f,0);path.cubicTo(w*.44f,h*.25f,w*.05f,h*.52f,w*.12f,h*.76f);path.cubicTo(w*.21f,h*1.06f,w*.79f,h*1.06f,w*.88f,h*.76f);path.cubicTo(w*.95f,h*.52f,w*.56f,h*.25f,w*.5f,0);path.close();paint.setStyle(Paint.Style.FILL);paint.setColor(Color.WHITE);paint.setShader(shine);c.drawPath(path,paint);paint.setShader(null);paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(Math.max(1,size*.035f));paint.setColor(SEEK_START);c.drawPath(path,paint);paint.setStyle(Paint.Style.FILL);paint.setColor(0x80ff9b87);c.drawOval(w*.23f,h*.44f,w*.38f,h*.75f,paint);paint.setColor(0x55ff867b);c.drawOval(w*.42f,h*.81f,w*.72f,h*.865f,paint);c.restore();}
         public int getIntrinsicWidth(){return size;}public int getIntrinsicHeight(){return size*2;}public void setAlpha(int a){}public void setColorFilter(ColorFilter f){}public int getOpacity(){return PixelFormat.TRANSLUCENT;}
     }

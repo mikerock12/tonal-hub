@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Effects
+import "qrc:/companion/qml/companion" as Personal
 
 // Capa de álbum/playlist/artista com placeholder e (opcional) recorte redondo.
 // sourceSize limita a imagem decodificada ao tamanho exibido: economia de RAM.
@@ -72,17 +73,12 @@ Item {
             }
         }
     }
-    Canvas {
+    Personal.CoverEffects {
+        objectName: "coverEffects"
         anchors.fill: parent
-        visible: Theme.themeId === "halloween" && !root.round
-        onWidthChanged: requestPaint()
-        onHeightChanged: requestPaint()
-        onPaint: {
-            const c = getContext("2d"); c.reset(); c.strokeStyle = "#b8a3a4"; c.globalAlpha = .65; c.lineWidth = 1
-            const size = Math.min(width, height) * .43
-            for (let i = 0; i <= 6; i++) { let a = i * Math.PI / 12; c.beginPath(); c.moveTo(0, 0); c.lineTo(Math.cos(a)*size, Math.sin(a)*size); c.stroke() }
-            for (let r = .25; r <= 1; r += .25) { c.beginPath(); for (let i = 0; i <= 6; i++) { let a=i*Math.PI/12, x=Math.cos(a)*size*r, y=Math.sin(a)*size*r; if (i===0) c.moveTo(x,y); else c.lineTo(x,y) } c.stroke() }
-        }
+        visible: !root.round && (Theme.themeId === "halloween" || Theme.themeId === "natal")
+        themeId: Theme.themeId
+        animationAllowed: root.visible
     }
 
 }

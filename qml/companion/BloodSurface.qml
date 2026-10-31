@@ -34,16 +34,17 @@ Canvas {
         c.bezierCurveTo(size*.44,size*.25,size*.05,size*.52,size*.12,size*.76)
         c.bezierCurveTo(size*.21,size*1.06,size*.79,size*1.06,size*.88,size*.76)
         c.bezierCurveTo(size*.95,size*.52,size*.56,size*.25,size*.5,0);c.closePath()
-        const g=c.createLinearGradient(0,0,size,size);g.addColorStop(0,endColor);g.addColorStop(.55,fillColor);g.addColorStop(1,"#870c1a")
-        c.fillStyle=g;c.fill();c.strokeStyle=fillColor;c.lineWidth=.7;c.stroke()
-        c.beginPath();c.ellipse(size*.23,size*.44,size*.15,size*.31);c.fillStyle="#ffc2b0";c.globalAlpha=opacity*.68;c.fill()
-        c.beginPath();c.ellipse(size*.42,size*.81,size*.3,size*.055);c.fillStyle="#ff867b";c.globalAlpha=opacity*.4;c.fill();c.restore()
+        const g=c.createLinearGradient(0,0,size,size);g.addColorStop(0,"#ff6264");g.addColorStop(.32,endColor);g.addColorStop(.68,fillColor);g.addColorStop(1,"#4d040f")
+        c.fillStyle=g;c.fill();c.strokeStyle="#5c0712";c.lineWidth=1.1;c.stroke()
+        c.beginPath();c.ellipse(size*.23,size*.42,size*.13,size*.29);c.fillStyle="#ffe0d2";c.globalAlpha=opacity*.74;c.fill()
+        c.beginPath();c.ellipse(size*.42,size*.81,size*.3,size*.055);c.fillStyle="#ff9b8d";c.globalAlpha=opacity*.48;c.fill()
+        c.beginPath();c.arc(size*.67,size*.58,size*.065,0,Math.PI*2);c.fillStyle="#fff1df";c.globalAlpha=opacity*.7;c.fill();c.restore()
     }
     onPaint: {
         const c=getContext("2d");c.reset();c.translate(trackInset,0);const cy=height/2,amount=Math.max(0,Math.min(1,progress)),edge=(width-2*trackInset)*amount
         if(edge>0){
             const g=c.createLinearGradient(0,cy-barHeight/2,0,cy+barHeight/2)
-            g.addColorStop(0,"#f8756a");g.addColorStop(.28,endColor);g.addColorStop(.7,fillColor);g.addColorStop(1,"#620b1c")
+            g.addColorStop(0,"#ff9a86");g.addColorStop(.16,"#ff3f45");g.addColorStop(.55,endColor);g.addColorStop(.82,fillColor);g.addColorStop(1,"#4d040f")
             c.fillStyle=g;c.beginPath();c.roundedRect(0,cy-barHeight/2,edge,barHeight,barHeight/2,barHeight/2);c.fill()
             for(let i=0;i<7;i++){
                 const cycle=(phase*(.35+(i%3)*.08)+i*.173)%1,x=edge*(i+1)/8,neck=1.3+(i%3)*.5

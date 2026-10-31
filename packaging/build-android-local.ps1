@@ -46,6 +46,7 @@ $gradlePath=Join-Path $env:USERPROFILE '.gradle\wrapper\dists\gradle-8.14.3-all\
 $assets=Join-Path $root 'android/app/src/main/assets'
 Copy-Item -LiteralPath (Join-Path $root 'packaging/licenses/llama.cpp-MIT.txt'),(Join-Path $root 'packaging/licenses/Qwen-Apache-2.0.txt') -Destination (Join-Path $assets 'licenses') -Force
 Copy-Item -LiteralPath (Join-Path $root 'docs/SONG_PAGES_SHARE_SETLISTS_0140.md') -Destination (Join-Path $assets 'SONG_PAGES_SHARE_SETLISTS_0140.md') -Force
+Copy-Item -LiteralPath (Join-Path $root 'docs/NATAL_PLAYER_0157.md') -Destination (Join-Path $assets 'NATAL_PLAYER_0157.md') -Force
 Copy-Item -LiteralPath (Join-Path $root 'CREDITS.md') -Destination (Join-Path $assets 'licenses/CREDITS.md') -Force
 Copy-Item -LiteralPath (Join-Path $root 'third_party/PLAYLISTSPOTIFY-PORT.md') -Destination (Join-Path $assets 'licenses/PLAYLISTSPOTIFY-PORT.md') -Force
 Copy-Item -LiteralPath (Join-Path $root 'docs/TEXT_TO_TONALIFY_090.md') -Destination (Join-Path $assets 'TEXT_TO_TONALIFY_090.md') -Force
@@ -63,6 +64,6 @@ if($PhoneOnly){$gradleArgs+='-PtonalAbi=arm64-v8a'}
 if($LASTEXITCODE -ne 0){throw 'Build APK falhou'}
 $outputPath=Join-Path $root 'out\android'
 New-Item -ItemType Directory -Force $outputPath | Out-Null
-$apkName=if($PhoneOnly){'Tonal-Android-0.15.6-arm64-v8a.apk'}else{'Tonal-Android-0.15.6-local.apk'}
+$apkName=if($PhoneOnly){'Tonal-Android-0.15.7-arm64-v8a.apk'}else{'Tonal-Android-0.15.7-local.apk'}
 Copy-Item -LiteralPath (Join-Path $root 'android\app\build\outputs\apk\release\app-release.apk') -Destination (Join-Path $outputPath $apkName) -Force
 Write-Host "APK local: $outputPath\$apkName"
