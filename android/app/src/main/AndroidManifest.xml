@@ -31,6 +31,9 @@
         <activity-alias android:name=".HubIconHalloween" android:targetActivity=".HubActivity" android:icon="@drawable/ic_tonal_halloween" android:exported="true" android:enabled="false">
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
         </activity-alias>
+        <activity-alias android:name=".HubIconNatal" android:targetActivity=".HubActivity" android:icon="@drawable/ic_tonal_natal" android:exported="true" android:enabled="false">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity-alias>
         <activity android:name=".MainActivity" android:label="Tonalify" android:exported="true" android:launchMode="singleTop" android:taskAffinity="${applicationId}.tonalify" android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity android:name=".IndieActivity" android:label="IndieTonal" android:process=":indie" android:exported="false" android:launchMode="singleTop" android:taskAffinity="${applicationId}.indie" android:configChanges="orientation|screenSize|keyboardHidden" />
         <provider android:name=".ShareCardProvider" android:authorities="${applicationId}.sharecard" android:exported="false" android:grantUriPermissions="true" />

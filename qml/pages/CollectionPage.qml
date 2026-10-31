@@ -16,6 +16,9 @@ Item {
     property int mixSeed:Math.floor(Math.random()*2147483647)
     function rawRows(){let rows=[];for(let i=0;i<trackModel.count;i++)rows.push(JSON.parse(JSON.stringify(trackModel.get(i))));return rows}
     function mixRows(){return rawRows().map(t=>({provider:"Spotify",id:t.uri,uri:t.uri,title:t.name,artist:t.artistsText,artistId:t.artistId,album:t.album,albumId:t.albumId,image:t.coverUrl,durationMs:t.durationMs,year:t.releaseYear||parseInt(root.year)||0}))}
+    function personalRow(index){const t=trackModel.get(index);if(!t)return{};return{provider:"Spotify",id:t.uri,uri:t.uri,title:t.name,artist:t.artistsText,artistId:t.artistId,album:t.album,albumId:t.albumId,image:t.coverUrl,durationMs:t.durationMs,year:t.releaseYear||parseInt(root.year)||0}}
+    function likedAt(index){const t=personalRow(index);return!!t.uri&&App.music.liked(t)}
+    function favoriteAt(index){const t=personalRow(index);if(t.uri)App.music.favorite(t)}
     function ensureMix(action){if(loading||loadingMix){Nav.toast("Aguarde o carregamento da seleção.");return}if(nextUrl!==""&&trackModel.count<500){pendingMix=action;loadingMix=true;loadMore()}else action()}
     // Quando esta coleção é a que toca, os modos valem na hora para a fila
     // atual, a partir da música que toca; senão, valem no próximo Reproduzir.
@@ -617,6 +620,9 @@ Item {
             showCover: root.kind !== "album"
             showAlbum: root.kind !== "album" && width > 640
             showAdded: root.kind !== "album"
+            showFavorite: true
+            liked: {root.journalRevision;return root.likedAt(index)}
+            onFavoriteRequested: root.favoriteAt(index)
             isCurrent: App.player.trackUri === uri
             isPlaying: App.player.isPlaying
             selected: list.currentIndex === index
@@ -853,25 +859,25 @@ Item {
         height: 40
         readonly property bool showAlbum: root.kind !== "album" && width > 640
         readonly property bool showAdded: root.kind !== "album" && width > 820
-        readonly property real albumWidth: showAlbum ? Math.max(0, (width - 48 - 76 - (root.kind !== "album" ? 150 : 0)) * 0.38) : 0
+        readonly property real albumWidth: showAlbum ? Math.max(0, (width - 48 - 112 - (root.kind !== "album" ? 150 : 0)) * 0.38) : 0
 
         Label { x: 0; width: 48; horizontalAlignment: Text.AlignHCenter; anchors.verticalCenter: parent.verticalCenter; text: "#"; color: Theme.textSecondary; font.pixelSize: 14 }
         Label { x: 48; anchors.verticalCenter: parent.verticalCenter; text: qsTr("Título"); color: Theme.textSecondary; font.pixelSize: 14 }
         Label {
             visible: parent.showAlbum
-            x: parent.width - 76 - (parent.showAdded ? 150 : 0) - parent.albumWidth
+            x: parent.width - 112 - (parent.showAdded ? 150 : 0) - parent.albumWidth
             anchors.verticalCenter: parent.verticalCenter
             text: qsTr("Álbum"); color: Theme.textSecondary; font.pixelSize: 14
         }
         Label {
             visible: parent.showAdded
-            x: parent.width - 76 - 150
+            x: parent.width - 112 - 150
             anchors.verticalCenter: parent.verticalCenter
             text: qsTr("Adicionada em"); color: Theme.textSecondary; font.pixelSize: 14
         }
         Icon {
             anchors.right: parent.right
-            anchors.rightMargin: 48
+            anchors.rightMargin: 76
             anchors.verticalCenter: parent.verticalCenter
             size: 16
             strokePath: Icons.clockS

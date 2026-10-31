@@ -10,24 +10,17 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
-**Entrega 0.15.4 — Halloween. Documentação em 29/10/2026.**
+**Entrega 0.15.7 — Natal, Halloween e revisão do player. Documentação em 31/10/2026.**
 
-Halloween traz teias nas capas, controles em brasa e quatro cenários de letras.
-A barra de música tem escorrimentos animados e gota com reflexos, limitados a
-15 fps enquanto a barra está visível e a música toca. Em pausa fica imóvel;
-volume e prévias são estáticos. [Uso e limites](docs/HALLOWEEN.md).
+Natal traz luzes sobre as capas, fio de luzinhas e estrela no seek, grinalda e transição play/pause. Halloween recebe a mesma transição, aranha/teias detalhadas, sangue mais vívido e correção do play das coleções. Os cenários de letras foram ampliados com Natal, Neve e Lareira. Álbuns e playlists têm coração junto das músicas; no telefone em paisagem, player e letra ficam lado a lado. O Text to Tonalify filtra referências não encontradas sem mover a rolagem ao marcar.
 
-[Pacotes e hashes 0.15.4](docs/artifacts-0154.json) · [Validação e pendências 0.15.4](docs/release-0154-tests.json) ·
+[Recursos e validação](docs/NATAL_PLAYER_0157.md) · [Pacotes e hashes](docs/artifacts-0157.json) · [Relatório de testes](docs/release-0157-tests.json) ·
 [Guia visual com capturas](docs/GUIA_VISUAL.md) ·
 [Regras da Descoberta 2+1](docs/DESCOBERTA_2_MAIS_1.md) ·
 [Benchmarks realizados](docs/BENCHMARKS.md) ·
 [Contexto do projeto](contexto.md) · [Instruções de manutenção](AGENTS.md).
 
-Windows foi conferido com capturas de componentes e do IndieTonal, pacote
-isolado e áudio local sintético. Android compilou para ARM64 e universal,
-com assinatura da 0.15.3 e alinhamento de 16 KiB verificados. A execução visual
-Android e a instalação por cima ainda aguardam um emulador operacional ou
-teste físico: o emulador deste PC não iniciou. Não houve novo benchmark.
+A validação inclui CTest 10/10, QML 25/6/3, catálogo com 243 checagens e testes sintéticos na AVD dedicada. Não houve teste físico, streaming autenticado, escrita real de playlist ou novo benchmark.
 
 ## Atualização 0.15.3 — reprodução estável e Jam com avisos
 
@@ -194,8 +187,8 @@ com versão e origem de cada imagem.
 | **Estatísticas** | Tempo realmente ouvido, escutas qualificadas e músicas distintas por artista, faixa, álbum, estilo e dia; barras clicáveis e resumos nas listas |
 | **Clima do repertório** | Temas experimentais de letras, estilos, cobertura e sugestões editoriais; classificador local pequeno, sem diagnóstico emocional |
 | **Letras e tradução** | Busca automática enquanto a página está aberta, tradução pt-BR com detecção de idioma, original/tradução juntos, TXT/LRC, sincronia opcional e alinhamento manual |
-| **Temas** | Seis temas no PC e no Android, com barra de progresso e marcador próprios; Conta → Temas |
-| **Personalização** | 11 cenários; fontes, cores e tamanhos independentes, contorno, brilho, neon, piscante, negrito, itálico, sublinhado e tela cheia |
+| **Temas** | Oito temas no PC e no Android, com barra de progresso e marcador próprios; Conta → Temas |
+| **Personalização** | 18 cenários; fontes, cores e tamanhos independentes, contorno, brilho, neon, piscante, negrito, itálico, sublinhado e tela cheia |
 | **Áudio** | Streaming Spotify 96/160/320 kbps, EQ 10 bandas e presets, graves, compressor, limiter, normalização, HRTF e arquivos IAMF compatíveis; perfis de saída/buffer no Android |
 | **Continuidade** | Buffer/cache temporário, recuperação limitada de conexão/saída, preservação de posição e respeito à pausa; não equivale a downloads offline garantidos |
 | **Dados e backup** | SQLite pessoal por aparelho/player; exportar/restaurar favoritos, playlists, preferências e histórico; backup privado de fontes/instaláveis/documentos |

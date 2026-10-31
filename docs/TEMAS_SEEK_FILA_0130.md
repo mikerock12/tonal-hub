@@ -117,3 +117,7 @@ do usuário em outro aparelho sem autorização para isso. O comportamento com
 Bluetooth físico nem novo benchmark.
 
 Base original: Matheus Nunes (natheus), [Tonal](https://github.com/natheus/tonal-player), MIT.
+
+## Temas atuais em 0.15.7
+
+São oito temas com Halloween e Natal. Natal usa fio de luzinhas e estrela no seek; apenas as lâmpadas até a posição atual ficam acesas. As animações não emitem seek nem comandos de áudio. O catálogo passou em 243 checagens. Consulte [NATAL_PLAYER_0157.md](NATAL_PLAYER_0157.md).

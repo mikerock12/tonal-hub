@@ -68,3 +68,7 @@ As cenas de letras e recursos da versão 0.15.4 permanecem disponíveis. Verific
 ## Publicação 0.15.6 — 30/10/2026
 
 O usuário relatou teste do APK no celular e autorizou a publicação. Os dois APKs foram conferidos quanto a versão, certificado e alinhamento; seus hashes, os do instalador e do ZIP Windows constam da release v0.15.6. O Windows foi compilado e testado na VM do CI 40996835093: dez grupos de testes, instalação, inicialização com áudio local sintético, reinstalação preservando arquivo e remoção da cópia isolada. Testes QML usam dados sintéticos; não demonstram Spotify autenticado nem hardware físico Windows.
+
+## Revisão 0.15.7
+
+Play/pause passa a ter transição vetorial nos dois sentidos, acompanhando o estado real do player. O botão das coleções usa ícone contrastante com o fundo. As teias ganham raios/anéis curvos e aranha com ciclo de descida, tecelagem e subida, apenas em capas grandes visíveis. Sangue e gota recebem vermelhos mais vivos e reflexos adicionais. Os quatro cenários de letras foram refeitos com composições mais detalhadas. Não há simulação física nem alegação de aparência fotográfica. Detalhes e validação: [NATAL_PLAYER_0157.md](NATAL_PLAYER_0157.md).

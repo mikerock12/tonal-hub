@@ -24,13 +24,14 @@ Item {
         width: root.diameter
         height: root.diameter
         radius: width / 2
-        color: Theme.themeId === "halloween" ? (mouse.containsMouse ? "#542116" : "#1b101d") : (mouse.containsMouse ? root.hoverColor : root.color)
-        border.width: Theme.themeId === "halloween" ? 2 : 0
-        border.color: "#f07732"
+        color: Theme.themeId === "halloween" ? (mouse.containsMouse ? "#542116" : "#1b101d") : Theme.themeId === "natal" ? "#0c2118" : (mouse.containsMouse ? root.hoverColor : root.color)
+        border.width: Theme.themeId === "halloween" || Theme.themeId === "natal" ? 2 : 0
+        border.color: Theme.themeId === "natal" ? "#b88a35" : "#f07732"
         scale: mouse.pressed ? 0.95 : (mouse.containsMouse ? 1.04 : 1)
         Behavior on scale { NumberAnimation { duration: 90 } }
 
         Personal.EmberRing { objectName: "emberRing"; anchors.fill: parent; visible: Theme.themeId === "halloween"; animationAllowed: root.visible; z: 0 }
+        Personal.ChristmasRing { objectName: "christmasRing"; anchors.fill: parent; visible: Theme.themeId === "natal"; animationAllowed: root.visible; z: 0 }
 
         Rectangle {
             anchors.centerIn: parent; width: parent.width - 6; height: width; radius: width/2
@@ -39,11 +40,20 @@ Item {
         }
         Icon {
             anchors.centerIn: parent
-            // o triângulo de play fica opticamente centralizado com 1px à direita
             anchors.horizontalCenterOffset: root.playing ? 0 : root.diameter * 0.02
             size: root.diameter * 0.42
             fillPath: root.playing ? Icons.pauseF : Icons.playF
             color: Theme.themeId === "halloween" ? "#ff9b4a" : root.iconColor
+            visible: Theme.themeId !== "halloween" && Theme.themeId !== "natal"
+        }
+        Personal.TransportGlyph {
+            objectName: "transportGlyph"
+            anchors.centerIn: parent
+            width: root.diameter * .58; height: width
+            playing: root.playing
+            ink: Theme.themeId === "halloween" ? "#ff9b4a" : "#ffe39c"
+            animationAllowed: root.visible
+            visible: Theme.themeId === "halloween" || Theme.themeId === "natal"
         }
     }
 

@@ -75,3 +75,7 @@ Resultados finais: `text-playlist-090-tests.json`.
 
 O projeto Tonal original é de **Matheus Nunes (natheus)**. Os créditos originais
 e os da adaptação PlaylistSpotify estão em `CREDITS.md`.
+
+## Revisão 0.15.7
+
+A etapa Revisar ganhou **Só não encontradas**, com contagem e opção de editar a referência filtrada. Marcar uma música ou trocar a gravação escolhida atualiza somente seu cartão e não recria a lista, preservando a posição rolada. O comportamento foi verificado no QML e na AVD com 30 entradas sintéticas, uma ausente; nenhuma playlist real foi escrita.

@@ -51,9 +51,11 @@ Pane {
    Theme.setTheme("tonal");tryCompare(cover,"ready",true,15000);wait(350)
    grabImage(cover).save("cover-tonal.png")
    Theme.setTheme("halloween");compare(Theme.seek.thumbShape,"drop");wait(180)
+   let effects=findChild(cover,"coverEffects");verify(effects!==null);effects.animationAllowed=false;effects.phase=0;wait(80)
    grabImage(cover).save("cover-halloween.png")
    delayedIcon.width=64;delayedIcon.height=64;delayedIcon.visible=true;wait(120);grabImage(delayedIcon).save("late-icon.png");delayedIcon.visible=false
    mouseClick(play);mouseMove(root,5,5);wait(420);verify(seek.thumbVisible)
+   const glyph=findChild(play,"transportGlyph");verify(glyph!==null&&glyph.visible);play.playing=true;wait(420);compare(glyph.mix,1);play.playing=false;wait(420);compare(glyph.mix,0)
    const ember=findChild(play,"emberRing");verify(ember!==null);verify(ember.visible)
    if(ember.animationRunning){let before=ember.phase;wait(180);verify(ember.phase>before)}
    ember.animationAllowed=false;let emberPhase=ember.phase;wait(170);compare(ember.phase,emberPhase)
@@ -70,8 +72,13 @@ Pane {
    stage.active=false;stage.playing=true;wait(160);compare(stage.phase,phase)
    stage.playing=false;stage.active=true
    Theme.setTheme("tonal");wait(350);grabImage(cover).save("cover-restored.png")
-   Theme.setTheme("halloween");wait(350);grabImage(cover).save("cover-halloween-again.png")
-   cover.round=true;wait(350);grabImage(cover).save("artist-halloween.png")
+   Theme.setTheme("halloween");effects.animationAllowed=false;effects.phase=0;wait(350);grabImage(cover).save("cover-halloween-again.png")
+   cover.round=true;wait(350);grabImage(cover).save("artist-halloween.png");cover.round=false
+   effects.phase=2;wait(80);grabImage(cover).save("spider-frame-a.png");effects.phase=6.2;wait(80);grabImage(cover).save("spider-frame-b.png")
+   Theme.setTheme("natal");compare(Theme.seek.thumbShape,"star");effects.animationAllowed=false;effects.phase=0;wait(350);grabImage(cover).save("cover-natal.png")
+   const lights=findChild(seek,"christmasSurface");verify(lights!==null&&lights.visible);lights.phase=.2;wait(80);grabImage(seek).save("christmas-frame-a.png");lights.phase=1.4;wait(80);grabImage(seek).save("christmas-frame-b.png")
+   for(let m of ["Natal","Neve","Lareira"]){stage.mode=m;stage.phase=1;wait(120);grabImage(stage).save("backdrop-"+m+".png");grabImage(stage.parent.parent).save("player-"+m+".png")}
+   Theme.setTheme("tonal");wait(180)
   }
  }
 }''', encoding='utf-8')
@@ -100,4 +107,9 @@ icon = Image.open(OUT / 'late-icon.png').convert('RGB').crop((22, 22, 44, 44))
 assert sum(1 for r,g,b in icon.getdata() if r > 200 and 70 < g < 200 and b < 140) > 30, 'The icon stayed blank after delayed layout'
 assert Image.open(OUT / 'blood-frame-a.png').tobytes() != Image.open(OUT / 'blood-frame-b.png').tobytes(), 'The blood streams did not evolve between phases'
 assert Image.open(OUT / 'ember-frame-a.png').tobytes() != Image.open(OUT / 'ember-frame-b.png').tobytes(), 'The ember ring did not change between phases'
-print('HALLOWEEN_VISUAL_PASS: loaded art, live switch/restore, controls, four distinct scenes; paused/hidden stages remain still')
+assert Image.open(OUT / 'spider-frame-a.png').tobytes() != Image.open(OUT / 'spider-frame-b.png').tobytes(), 'The spider did not descend and weave'
+assert Image.open(OUT / 'christmas-frame-a.png').tobytes() != Image.open(OUT / 'christmas-frame-b.png').tobytes(), 'The Christmas lights did not change color'
+assert ImageChops.difference(original, Image.open(OUT / 'cover-natal.png').convert('RGB')).getbbox(), 'Christmas lights did not decorate the cover'
+christmas = [Image.open(OUT / ('backdrop-' + mode + '.png')).tobytes() for mode in ('Natal', 'Neve', 'Lareira')]
+assert len(set(christmas)) == 3, 'The three Christmas scenes must render differently'
+print('SEASONAL_VISUAL_PASS: Halloween and Christmas covers, animated transport, moving spider, colored lights, seven distinct scenes; paused/hidden stages remain still')

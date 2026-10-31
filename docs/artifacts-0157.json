@@ -1,0 +1,35 @@
+{
+  "version": "0.15.7",
+  "androidVersionCode": 27,
+  "certificateSha256": "464ae7cf34f4f145541569db215f8fcdef5deda1be31921d8e366eed20aa22c2",
+  "artifacts": [
+    {
+      "path": "out/android/Tonal-Android-0.15.7-arm64-v8a.apk",
+      "bytes": 35994253,
+      "sha256": "b0a2090c0ef1fa29b7d81d6cec0d5547b302b3d8457168a1536b1e2e4975db3d",
+      "abis": ["arm64-v8a"],
+      "alignment": 16384
+    },
+    {
+      "path": "out/android/Tonal-Android-0.15.7-local.apk",
+      "bytes": 64162558,
+      "sha256": "576ac50454e868615cf77ccaebbdb90b6236705539455bd925998e26f7742e69",
+      "abis": ["arm64-v8a", "x86_64"],
+      "alignment": 16384
+    },
+    {
+      "path": "out/release-local/Tonal-Hub-0.15.7.0-Windows-x64-Setup.exe",
+      "bytes": 84612984,
+      "sha256": "8f5a766d225a3f007390cfb6b034c7c60278c9189b9664db8d1b9383e9580f00"
+    },
+    {
+      "path": "out/release-local/Tonal-Hub-0.15.7-local.zip",
+      "bytes": 116568290,
+      "sha256": "3d888d71d3b8b392a72e2091f0a2c18013d53a75d3fe0465a16375714ad33a05",
+      "zipCrcVerified": true
+    }
+  ],
+  "productionBenchmarkClassesAbsent": true,
+  "privateSeedOrSessionTokensAbsent": true,
+  "optionalModelWeightsBundled": false
+}

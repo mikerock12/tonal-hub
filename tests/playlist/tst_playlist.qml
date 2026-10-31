@@ -18,9 +18,9 @@ Item {
         property var details:({})
         property int spotifyWrites:0
         function cancel(){}
-        function parse(text,format,artist){rows=[{artist:"Veruca Salt",title:"Seether",status:"Encontrada",choice:0,selected:true,candidates:[{title:"Seether",artist:"Veruca Salt",album:"American Thighs"}]},{artist:"L7",title:"Shove",status:"Revisar versão",choice:0,selected:false,candidates:[{title:"Shove",artist:"L7",album:"Smell the Magic"}]}];selectedCount=1}
+        function parse(text,format,artist){let generated=[];for(let i=0;i<30;i++){let missing=i%7===3;generated.push({artist:i===0?"Veruca Salt":"Banda "+i,title:i===0?"Seether":"Música "+i,status:missing?"Não encontrada":"Encontrada",choice:missing?-1:0,selected:!missing,candidates:missing?[]:[{title:"Música "+i,artist:"Banda "+i,album:"Álbum sintético"}]})}rows=generated;selectedCount=26}
         function search(){status="Revise as gravações antes de salvar."}
-        function choose(row,candidate,on){}
+        function choose(row,candidate,on){let updated=rows.slice();updated[row]=Object.assign({},updated[row],{choice:candidate,selected:on,status:on?"Revisada":"Ignorada"});rows=updated;selectedCount=updated.filter(r=>r.selected&&r.choice>=0).length}
         function edit(row,artist,title){}
         function move(row,direction){}
         function clearCover(){cover=""}
@@ -36,6 +36,9 @@ Item {
             const input=findChild(host,"playlistTextInput"),next=findChild(host,"playlistContinue")
             verify(input!==null);input.text="Veruca Salt - Seether\nL7 - Shove"
             mouseClick(next);tryCompare(wizard,"step",1);compare(mock.spotifyWrites,0)
+            const filter=findChild(host,"missingFilter"),list=findChild(host,"reviewList");verify(filter!==null&&list!==null);tryCompare(list,"count",30);compare(filter.text,"Só não encontradas (4)")
+            mouseClick(filter);tryCompare(list,"count",4);mouseClick(filter);tryCompare(list,"count",30)
+            list.contentY=480;wait(60);const beforeY=list.contentY;wizard.chooseReview(1,0,false);wait(80);compare(list.contentY,beforeY);compare(mock.selectedCount,25)
             grabImage(host).save("review.png")
             mouseClick(next);tryCompare(wizard,"step",2)
             findChild(host,"importPlaylistName").text="Guitarras de hoje"

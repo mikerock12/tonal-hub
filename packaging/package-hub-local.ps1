@@ -1,4 +1,4 @@
-param([switch]$Zip,[ValidatePattern('^[A-Za-z0-9._-]+$')][string]$PackageName='Tonal-Hub-0.15.6-local')
+param([switch]$Zip,[ValidatePattern('^[A-Za-z0-9._-]+$')][string]$PackageName='Tonal-Hub-0.15.7-local')
 $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot -Parent
 $build=Join-Path $root 'out\build\release'
@@ -29,7 +29,7 @@ Copy-Item -LiteralPath (Join-Path $root 'LICENSE') -Destination (Join-Path $stag
 Copy-Item -LiteralPath (Join-Path $root 'CREDITS.md') -Destination $stage -Force
 Copy-Item -LiteralPath (Join-Path $root 'third_party/PLAYLISTSPOTIFY-PORT.md') -Destination (Join-Path $stage 'licenses/PLAYLISTSPOTIFY-PORT.md') -Force
 Copy-Item -LiteralPath (Join-Path $root 'native/jam-transport/LICENSE') -Destination (Join-Path $stage 'licenses/JAM-TRANSPORT-LICENSE.txt') -Force
-foreach($docName in @('HALLOWEEN.md','READER_RESUME_0152.md','HOME_QUEUE_AUDIO_0151.md','LOCAL_STORIES_QUALITY_0151.md','JAM_RESEARCH.md')){Copy-Item -LiteralPath (Join-Path $root ('docs/'+$docName)) -Destination $stage -Force}
+foreach($docName in @('NATAL_PLAYER_0157.md','HALLOWEEN.md','READER_RESUME_0152.md','HOME_QUEUE_AUDIO_0151.md','LOCAL_STORIES_QUALITY_0151.md','JAM_RESEARCH.md')){Copy-Item -LiteralPath (Join-Path $root ('docs/'+$docName)) -Destination $stage -Force}
 foreach($docName in @('STATISTICS_STORIES_0150.md','VOLUME_WINDOWS_0141.md','SONG_PAGES_SHARE_SETLISTS_0140.md','PERSONAL_LIBRARY_050.md','RARE_RECORDINGS_LOCAL.md','WINDOWS_INSTALLER_LOCAL.md','SONG_PAGE_060.md','TONAL_MUSE_070.md','PLAYER_POLISH_080.md')){Copy-Item -LiteralPath (Join-Path $root ('docs/'+$docName)) -Destination $stage -Force}
 & (Join-Path $PSScriptRoot 'collect-audio-notices.ps1') -Destination (Join-Path $stage 'licenses\audio')
 Copy-Item -LiteralPath (Join-Path $root 'docs\TONAL_HUB_LOCAL.md') -Destination $stage -Force

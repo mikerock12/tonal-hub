@@ -30,7 +30,7 @@ Item {
     signal moving(real v)   // enquanto arrasta
     signal moved(real v)    // ao soltar
 
-    implicitHeight: style.thumbShape === "drop" ? 44 : Math.max(16, style.thumbSize + 6)
+    implicitHeight: style.thumbShape === "drop" || style.thumbShape === "star" ? 44 : Math.max(16, style.thumbSize + 6)
 
     Rectangle {
         id: track
@@ -42,7 +42,7 @@ Item {
 
         Rectangle {
             width: Math.max(height, parent.width * root.shownValue)
-            visible: root.shownValue > 0 && root.style.thumbShape !== "drop"
+            visible: root.shownValue > 0 && root.style.thumbShape !== "drop" && root.style.thumbShape !== "star"
             height: parent.height
             radius: height / 2
             gradient: Gradient {
@@ -60,10 +60,16 @@ Item {
         showThumb:root.thumbVisible;playing:root.playing;animationAllowed:root.animationAllowed
         fillColor:root.fillStops[0];endColor:root.fillStops[root.fillStops.length-1]
     }
+    Personal.ChristmasSurface {
+        objectName: "christmasSurface"
+        anchors.fill: parent;anchors.leftMargin:-root.thumbSize/2;anchors.rightMargin:-root.thumbSize/2;trackInset:root.thumbSize/2;visible: root.style.thumbShape === "star"
+        progress: root.shownValue;barHeight:root.barHeight;thumbSize:root.thumbSize
+        showThumb:root.thumbVisible;playing:root.playing;animationAllowed:root.animationAllowed
+    }
 
     Item {
         id: thumb
-        visible: root.thumbVisible && root.style.thumbShape !== "drop"
+        visible: root.thumbVisible && root.style.thumbShape !== "drop" && root.style.thumbShape !== "star"
         width: root.style.thumbShape === "pill" ? Math.round(root.thumbSize * 1.6) : root.thumbSize
         height: root.style.thumbShape === "pill" ? Math.round(root.thumbSize * 0.8) : root.thumbSize
         anchors.verticalCenter: parent.verticalCenter

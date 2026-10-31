@@ -19,6 +19,8 @@ Item {
     property bool showCover: true
     property bool showAlbum: width > 640
     property bool showAdded: false
+    property bool showFavorite: false
+    property bool liked: false
     property bool showNumber: true
     property bool isCurrent: false
     property bool isPlaying: false
@@ -36,10 +38,11 @@ Item {
     signal menuRequested(real x, real y)
     signal artistClicked()
     signal albumClicked()
+    signal favoriteRequested()
 
     implicitHeight: showStats ? 74 : 56
     readonly property bool hovered: hover.hovered
-    readonly property real albumWidth: showAlbum ? Math.max(0, (width - 48 - 76 - (showAdded ? 150 : 0)) * 0.38) : 0
+    readonly property real albumWidth: showAlbum ? Math.max(0, (width - 48 - (showFavorite ? 112 : 76) - (showAdded ? 150 : 0)) * 0.38) : 0
     readonly property real addedWidth: showAdded && width > 820 ? 150 : 0
 
     Rectangle {
@@ -228,12 +231,12 @@ Item {
     Item {
         id: durationCell
         anchors.right: parent.right
-        width: 76
+        width: root.showFavorite ? 112 : 76
         height: parent.height
 
         Label {
             anchors.right: parent.right
-            anchors.rightMargin: 40
+            anchors.rightMargin: root.showFavorite ? 76 : 40
             anchors.verticalCenter: parent.verticalCenter
             text: Theme.formatTime(root.durationMs)
             color: Theme.textSecondary
@@ -244,6 +247,20 @@ Item {
         IconButton {
             anchors.right: parent.right
             anchors.rightMargin: 4
+            anchors.verticalCenter: parent.verticalCenter
+            visible: root.showFavorite
+            iconSize: 17
+            fillPath: root.liked ? Icons.heart : ""
+            strokePath: root.liked ? "" : Icons.heart
+            strokeWidth: 1.8
+            active: root.liked
+            tooltip: root.liked ? qsTr("Remover das favoritas") : qsTr("Favoritar música")
+            onClicked: root.favoriteRequested()
+        }
+
+        IconButton {
+            anchors.right: parent.right
+            anchors.rightMargin: root.showFavorite ? 36 : 4
             anchors.verticalCenter: parent.verticalCenter
             visible: root.hovered
             iconSize: 16

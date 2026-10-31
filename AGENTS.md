@@ -5,9 +5,7 @@ afetada antes de alterar o produto. Estado documental: 25/10/2026, builds Window
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
-Estado atual: 29/10/2026, entrega Windows/Android 0.15.4; validação Android em execução pendente. As seções 0.15.0/0.15.1
-abaixo são históricas; o contrato atual do leitor está na seção 0.15.2 e as
-correções de reprodução/Jam 0.15.3, ao final deste arquivo.
+Estado atual: 31/10/2026, entrega Windows/Android 0.15.7. As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
 
 ## Autoria, Git e privacidade
 
@@ -360,3 +358,12 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
 - Windows: código de produto da árvore do merge a133e12; CI Windows 40996835093 compilou com IAMF, executou 10 grupos de testes e instalou, iniciou, reinstalou preservando arquivo de teste e removeu a cópia isolada. Também há testes QML sintéticos; teste acústico/hardware físico não foi feito.
 - O FFmpeg exato de versions.lock deixou de estar disponível no endereço original. Uma cópia privada fornecida pelo usuário foi verificada pelo SHA-256 fixado. Para um build futuro, disponibilizar o pacote original em out/audio-deps/ffmpeg-pinned.zip; não substituir por outro build sem revisão.
 - O workflow de empacotamento era específico desta release, dependia de uma transferência temporária e foi removido após a conclusão para não bloquear PRs futuros. A release e o resultado do CI permanecem registrados no GitHub.
+
+## Natal e player 0.15.7 — 31/10/2026
+
+- Ler docs/NATAL_PLAYER_0157.md. Oito temas compartilhados; Natal tem luzes sobre capas, seek com fio/lâmpadas/estrela e grinalda. Capa/seek/aros ficam limitados a cerca de 15 fps quando visíveis; respeitar foco, ocultação e animações do sistema. Nenhum tick emite seek/áudio.
+- Play/pause usa transição nos dois sentidos e segue o estado real do player. Halloween compartilha o comportamento; o botão das coleções deve manter contraste entre ícone e fundo.
+- Teias/aranha e sangue são vetoriais estilizados, não fotografia nem simulação física. A aranha desce, tece e sobe apenas em capas grandes visíveis. Há 18 cenários de letras; Halloween/Bruxas/Monstros/Vampiros e Natal/Neve/Lareira permanecem independentes do tema.
+- Corações junto das faixas atualizam biblioteca local/Spotify sem reconstruir a coleção. Em paisagem Android, player à esquerda e letra à direita; preservar cabeçalho, página ao retornar, motor e fila. Modos secundários podem usar rolagem horizontal.
+- Text to Tonalify filtra apenas status Não encontrada e atualiza somente o cartão marcado, sem mover a rolagem. Busca/revisão não escreve na conta.
+- Evidências locais: temas 243, QML 25/6/3, CTest final 10/10, componentes nativos e fluxos sintéticos na AVD. Preservar a falha intermitente de Halloween e a suíte CTest inicial 4/10 com repetições posteriores. Não declarar teste físico, Spotify autenticado, escrita real de playlist, acústica ou benchmark novo.

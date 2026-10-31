@@ -7,6 +7,10 @@ Dialog {
     id: root
     required property var controller
     property int step: 0
+    property bool onlyMissing: false
+    function missingCount(){let count=0;for(let i=0;i<controller.rows.length;i++)if(controller.rows[i].status==="Não encontrada")count++;return count}
+    function reviewRows(){const result=[];for(let i=0;i<controller.rows.length;i++)if(!onlyMissing||controller.rows[i].status==="Não encontrada")result.push(Object.assign({},controller.rows[i],{reviewIndex:i}));return result}
+    function chooseReview(row,candidate,selected){const y=review.contentY;controller.choose(row,candidate,selected);Qt.callLater(()=>review.contentY=Math.min(y,Math.max(0,review.contentHeight-review.height)))}
     signal authorizationRequested()
     signal localPlaylistRequested(string playlistId)
     parent: Overlay.overlay
@@ -42,22 +46,23 @@ Dialog {
         ColumnLayout {visible:root.step===1;Layout.fillWidth:true;Layout.fillHeight:true
             RowLayout {Layout.fillWidth:true
                 Label {text:root.controller.selectedCount+" músicas selecionadas";color:"#f5f5f5";Layout.fillWidth:true}
+                Button {objectName:"missingFilter";text:root.onlyMissing?"Mostrar todas":"Só não encontradas ("+root.missingCount()+")";enabled:!root.controller.busy;onClicked:{root.onlyMissing=!root.onlyMissing;review.positionViewAtBeginning()}}
                 BusyIndicator {running:root.controller.busy;visible:running;implicitWidth:30;implicitHeight:30}
                 Button {text:root.controller.busy?"Interromper busca":"Buscar / tentar pendentes";onClicked:root.controller.busy?root.controller.cancel():root.controller.search()}
             }
-            ListView {id:review;Layout.fillWidth:true;Layout.fillHeight:true;clip:true;spacing:8;model:root.controller.rows;cacheBuffer:180
-                delegate: Rectangle {required property var modelData;required property int index;width:review.width;height:116;color:index%2?"#1b2025":"#20262c";radius:10
+            ListView {id:review;objectName:"reviewList";Layout.fillWidth:true;Layout.fillHeight:true;clip:true;spacing:8;model:root.reviewRows();cacheBuffer:180
+                delegate: Rectangle {required property var modelData;required property int index;readonly property int sourceIndex:modelData.reviewIndex;width:review.width;height:116;color:index%2?"#1b2025":"#20262c";radius:10
                     ColumnLayout {anchors.fill:parent;anchors.margins:10;spacing:4
                         RowLayout {Layout.fillWidth:true
-                            CheckBox {checked:modelData.selected;enabled:!root.controller.busy&&modelData.choice>=0;onClicked:root.controller.choose(index,modelData.choice,checked)}
-                            Label {text:(index+1)+". "+modelData.artist+" — "+modelData.title;textFormat:Text.PlainText;elide:Text.ElideRight;color:"white";font.bold:true;Layout.fillWidth:true}
-                            ToolButton {text:"↑";enabled:!root.controller.busy&&index>0;onClicked:root.controller.move(index,-1);ToolTip.text:"Mover para cima";ToolTip.visible:hovered}
-                            ToolButton {text:"↓";enabled:!root.controller.busy&&index+1<root.controller.rows.length;onClicked:root.controller.move(index,1);ToolTip.text:"Mover para baixo";ToolTip.visible:hovered}
-                            Button {text:"Editar busca";enabled:!root.controller.busy;onClicked:{editDialog.row=index;editArtist.text=modelData.artist;editTitle.text=modelData.title;editDialog.open()}}
+                            CheckBox {checked:modelData.selected;enabled:!root.controller.busy&&modelData.choice>=0;onClicked:root.chooseReview(sourceIndex,modelData.choice,checked)}
+                            Label {text:(sourceIndex+1)+". "+modelData.artist+" — "+modelData.title;textFormat:Text.PlainText;elide:Text.ElideRight;color:"white";font.bold:true;Layout.fillWidth:true}
+                            ToolButton {text:"↑";enabled:!root.controller.busy&&sourceIndex>0;onClicked:root.controller.move(sourceIndex,-1);ToolTip.text:"Mover para cima";ToolTip.visible:hovered}
+                            ToolButton {text:"↓";enabled:!root.controller.busy&&sourceIndex+1<root.controller.rows.length;onClicked:root.controller.move(sourceIndex,1);ToolTip.text:"Mover para baixo";ToolTip.visible:hovered}
+                            Button {text:"Editar busca";enabled:!root.controller.busy;onClicked:{editDialog.row=sourceIndex;editArtist.text=modelData.artist;editTitle.text=modelData.title;editDialog.open()}}
                         }
                         RowLayout {Layout.fillWidth:true
                             Label {text:modelData.status;textFormat:Text.PlainText;color:modelData.selected?"#5ed1fa":"#f3c98a";Layout.preferredWidth:150;elide:Text.ElideRight}
-                            ComboBox {Layout.fillWidth:true;enabled:!root.controller.busy;model:modelData.candidates.map(t=>t.title+" • "+t.artist+" • "+t.album);currentIndex:modelData.choice;onActivated:root.controller.choose(index,currentIndex,true)}
+                            ComboBox {Layout.fillWidth:true;enabled:!root.controller.busy;model:modelData.candidates.map(t=>t.title+" • "+t.artist+" • "+t.album);currentIndex:modelData.choice;onActivated:root.chooseReview(sourceIndex,currentIndex,true)}
                         }
                     }
                 }
