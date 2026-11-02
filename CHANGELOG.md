@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.15.8 — 01/11/2026
+
+- Text to Tonalify: o filtro **Só não encontradas** passa a listar todas as referências não selecionadas, incluindo **Revisar versão** e faixas desmarcadas; antes uma playlist de 100 músicas com 89 correspondências mostrava zero.
+- Cartões de revisão e o diálogo **Versão** agora mostram música, artista, álbum e miniatura da capa no Windows e no Android.
+- Detalhes e limites em docs/TEXT_REVIEW_0158.md e docs/release-0158-tests.json.
+
 ## 0.15.7 — 31/10/2026
 
 - Novo tema Natal no Windows/Android: luzes sobre capas, fio de luzinhas no seek, estrela e grinalda; transição play/pause nos dois sentidos.

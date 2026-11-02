@@ -4,7 +4,7 @@ import json,re,sys,time
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'tests/playlist'))
 import android_ui as ui
-OUT=ROOT/'out/android/text-review-0157';OUT.mkdir(parents=True,exist_ok=True)
+OUT=ROOT/'out/android/text-review-0158';OUT.mkdir(parents=True,exist_ok=True)
 
 def visible_titles(nodes):return [n.get('text','') for n in nodes if re.match(r'^\d+\. ',n.get('text',''))]
 def main():
@@ -13,12 +13,12 @@ def main():
     ui.adb('logcat','-c')
     try:
         ui.adb('shell','am','force-stop',package)
-        ui.adb('shell','am','start','-W','-n',package+'/app.tonal.android.MainActivity','--ez','openTextPlaylist','true','--ez','textPlaylistFixture','true','--ez','textPlaylistMissing','true','--ez','textPlaylistMany','true')
+        ui.adb('shell','am','start','-W','-n',package+'/app.tonal.android.MainActivity','--ez','openTextPlaylist','true','--ez','textPlaylistFixture','true','--ez','textPlaylistMissing','true','--ez','textPlaylistMany','true','--ez','textPlaylistUncertain','true')
         ui.wait_for('Interpretar e buscar');ui.click('Interpretar e buscar');ui.wait_for('Revisão pronta',timeout=45)
-        ui.click('Só não encontradas (1)');time.sleep(.4);nodes=ui.dump();text=[n.get('text','') for n in nodes]
-        assert any('Shove' in value for value in text) and not any('Seether' in value for value in text),text
+        ui.click('Só não encontradas (2)');time.sleep(.4);nodes=ui.dump();text=[n.get('text','') for n in nodes]
+        assert any('Shove' in value for value in text) and any('Música 2' in value for value in text) and not any('Seether' in value for value in text),text
         assert any('Editar busca' in value for value in text)
-        checks.append('filter_only_missing_reference_and_edit_available')
+        checks.append('filter_lists_missing_and_review_unselected_rows')
         ui.click('Mostrar todas as referências')
         target=None
         for _ in range(10):

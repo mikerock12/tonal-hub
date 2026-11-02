@@ -1,6 +1,10 @@
 # Contexto do Tonal Hub
 
-Atualizado em **31/10/2026**. Entrega: **Windows 0.15.7 / Android 0.15.7**, versionCode 27. Leia também [AGENTS.md](AGENTS.md).
+Atualizado em **01/11/2026**. Entrega: **Windows 0.15.8 / Android 0.15.8**, versionCode 28. Leia também [AGENTS.md](AGENTS.md).
+
+## 0.15.8 — filtro e revisão do Text to Tonalify
+
+Referência: [TEXT_REVIEW_0158.md](docs/TEXT_REVIEW_0158.md). O filtro **Só não encontradas** lista todas as referências não selecionadas (incluindo Revisar versão e desmarcadas), corrigindo o caso de 100 músicas com 89 correspondências em que o filtro mostrava zero. Os cartões de revisão e o diálogo Versão exibem música, artista, álbum e miniatura da capa nas duas plataformas. Testes sintéticos no QML e na AVD dedicada; sem teste físico, streaming autenticado, escrita real de playlist ou benchmark novo.
 
 ## 0.15.7 — Natal, Halloween e revisão do player
 
