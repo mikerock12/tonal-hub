@@ -8,8 +8,8 @@ Dialog {
     required property var controller
     property int step: 0
     property bool onlyMissing: false
-    function missingCount(){let count=0;for(let i=0;i<controller.rows.length;i++)if(controller.rows[i].status==="Não encontrada")count++;return count}
-    function reviewRows(){const result=[];for(let i=0;i<controller.rows.length;i++)if(!onlyMissing||controller.rows[i].status==="Não encontrada")result.push(Object.assign({},controller.rows[i],{reviewIndex:i}));return result}
+    function missingCount(){let count=0;for(let i=0;i<controller.rows.length;i++)if(!controller.rows[i].selected)count++;return count}
+    function reviewRows(){const result=[];for(let i=0;i<controller.rows.length;i++)if(!onlyMissing||!controller.rows[i].selected)result.push(Object.assign({},controller.rows[i],{reviewIndex:i}));return result}
     function chooseReview(row,candidate,selected){const y=review.contentY;controller.choose(row,candidate,selected);Qt.callLater(()=>review.contentY=Math.min(y,Math.max(0,review.contentHeight-review.height)))}
     signal authorizationRequested()
     signal localPlaylistRequested(string playlistId)
@@ -51,18 +51,28 @@ Dialog {
                 Button {text:root.controller.busy?"Interromper busca":"Buscar / tentar pendentes";onClicked:root.controller.busy?root.controller.cancel():root.controller.search()}
             }
             ListView {id:review;objectName:"reviewList";Layout.fillWidth:true;Layout.fillHeight:true;clip:true;spacing:8;model:root.reviewRows();cacheBuffer:180
-                delegate: Rectangle {required property var modelData;required property int index;readonly property int sourceIndex:modelData.reviewIndex;width:review.width;height:116;color:index%2?"#1b2025":"#20262c";radius:10
-                    ColumnLayout {anchors.fill:parent;anchors.margins:10;spacing:4
+                delegate: Rectangle {id:reviewCard;required property var modelData;required property int index;readonly property int sourceIndex:modelData.reviewIndex;readonly property var selectedTrack:modelData.choice>=0&&modelData.choice<modelData.candidates.length?modelData.candidates[modelData.choice]:({title:"",artist:"",album:"",image:""});width:review.width;height:148;color:index%2?"#1b2025":"#20262c";radius:10
+                    ColumnLayout {anchors.fill:parent;anchors.margins:10;spacing:6
                         RowLayout {Layout.fillWidth:true
                             CheckBox {checked:modelData.selected;enabled:!root.controller.busy&&modelData.choice>=0;onClicked:root.chooseReview(sourceIndex,modelData.choice,checked)}
-                            Label {text:(sourceIndex+1)+". "+modelData.artist+" — "+modelData.title;textFormat:Text.PlainText;elide:Text.ElideRight;color:"white";font.bold:true;Layout.fillWidth:true}
+                            Rectangle {width:56;height:56;radius:8;color:"#303842"
+                                Image {id:reviewArt;anchors.fill:parent;source:reviewCard.selectedTrack.image || "";asynchronous:true;fillMode:Image.PreserveAspectCrop;sourceSize.width:112;sourceSize.height:112}
+                                Label {anchors.centerIn:parent;visible:reviewArt.status!==Image.Ready;text:"♪";font.pixelSize:24;color:"#a8b0b7"}
+                            }
+                            ColumnLayout {Layout.fillWidth:true
+                                Label {text:(sourceIndex+1)+". "+modelData.title;textFormat:Text.PlainText;elide:Text.ElideRight;color:"white";font.bold:true;Layout.fillWidth:true}
+                                Label {text:modelData.artist+" • "+modelData.status;textFormat:Text.PlainText;color:modelData.selected?"#5ed1fa":"#f3c98a";Layout.fillWidth:true;elide:Text.ElideRight}
+                            }
                             ToolButton {text:"↑";enabled:!root.controller.busy&&sourceIndex>0;onClicked:root.controller.move(sourceIndex,-1);ToolTip.text:"Mover para cima";ToolTip.visible:hovered}
                             ToolButton {text:"↓";enabled:!root.controller.busy&&sourceIndex+1<root.controller.rows.length;onClicked:root.controller.move(sourceIndex,1);ToolTip.text:"Mover para baixo";ToolTip.visible:hovered}
                             Button {text:"Editar busca";enabled:!root.controller.busy;onClicked:{editDialog.row=sourceIndex;editArtist.text=modelData.artist;editTitle.text=modelData.title;editDialog.open()}}
                         }
                         RowLayout {Layout.fillWidth:true
-                            Label {text:modelData.status;textFormat:Text.PlainText;color:modelData.selected?"#5ed1fa":"#f3c98a";Layout.preferredWidth:150;elide:Text.ElideRight}
-                            ComboBox {Layout.fillWidth:true;enabled:!root.controller.busy;model:modelData.candidates.map(t=>t.title+" • "+t.artist+" • "+t.album);currentIndex:modelData.choice;onActivated:root.chooseReview(sourceIndex,currentIndex,true)}
+                            ColumnLayout {Layout.fillWidth:true;Layout.leftMargin:66
+                                Label {visible:!!selectedTrack.title;text:selectedTrack.title+" · "+selectedTrack.artist;textFormat:Text.PlainText;color:"white";Layout.fillWidth:true;elide:Text.ElideRight}
+                                Label {visible:!!selectedTrack.album;text:selectedTrack.album;textFormat:Text.PlainText;color:"#a8b0b7";Layout.fillWidth:true;elide:Text.ElideRight}
+                            }
+                            Button {text:"Versão";enabled:!root.controller.busy&&modelData.candidates.length>0;onClicked:{versionDialog.row=sourceIndex;versionDialog.currentChoice=modelData.choice;versionDialog.candidates=modelData.candidates;versionDialog.open()}}
                         }
                     }
                 }
@@ -110,6 +120,30 @@ Dialog {
         }
     }
     FileDialog {id:coverFile;title:"Capa da playlist";nameFilters:["Imagens (*.jpg *.jpeg *.png *.webp)"];onAccepted:root.controller.setCover(selectedFile)}
+    Dialog {id:versionDialog;objectName:"versionDialog";property int row:-1;property int currentChoice:-1;property var candidates:[];parent:Overlay.overlay;anchors.centerIn:parent;modal:true;title:"Escolher gravação";width:Math.min(720,parent.width-32);height:Math.min(620,parent.height-48);standardButtons:Dialog.Close
+        palette.window:"#151719";palette.windowText:"#f5f5f5";palette.text:"#f5f5f5";palette.button:"#263440";palette.buttonText:"#f5f5f5"
+        background:Rectangle{color:"#151719";radius:18;border.color:"#343a42"}
+        ColumnLayout{anchors.fill:parent;spacing:10
+            Label{text:"Compare música, artista, álbum e capa antes de escolher.";color:"#a8b0b7";wrapMode:Text.WordWrap;Layout.fillWidth:true}
+            ListView{Layout.fillWidth:true;Layout.fillHeight:true;clip:true;spacing:8;model:versionDialog.candidates
+                delegate:Rectangle{required property var modelData;required property int index;width:ListView.view.width;height:78;radius:10;color:index===versionDialog.currentChoice?"#29424d":"#20262c"
+                    RowLayout{anchors.fill:parent;anchors.margins:10;spacing:12
+                        Rectangle{width:56;height:56;radius:8;color:"#303842"
+                            Image{id:candidateArt;anchors.fill:parent;source:modelData.image || "";asynchronous:true;fillMode:Image.PreserveAspectCrop;sourceSize.width:112;sourceSize.height:112}
+                            Label{anchors.centerIn:parent;visible:candidateArt.status!==Image.Ready;text:"♪";font.pixelSize:24;color:"#a8b0b7"}
+                        }
+                        ColumnLayout{Layout.fillWidth:true
+                            Label{text:modelData.title;textFormat:Text.PlainText;color:"white";font.bold:true;Layout.fillWidth:true;elide:Text.ElideRight}
+                            Label{text:modelData.artist;textFormat:Text.PlainText;color:"#8ed7f2";Layout.fillWidth:true;elide:Text.ElideRight}
+                            Label{text:modelData.album;textFormat:Text.PlainText;color:"#a8b0b7";Layout.fillWidth:true;elide:Text.ElideRight}
+                        }
+                        Label{visible:index===versionDialog.currentChoice;text:"✓";font.pixelSize:24;color:"#63d5ff"}
+                    }
+                    MouseArea{anchors.fill:parent;cursorShape:Qt.PointingHandCursor;onClicked:{root.chooseReview(versionDialog.row,index,true);versionDialog.close()}}
+                }
+            }
+        }
+    }
     Dialog {id:editDialog;property int row:-1;parent:Overlay.overlay;anchors.centerIn:parent;modal:true;title:"Corrigir busca";standardButtons:Dialog.Ok|Dialog.Cancel
         ColumnLayout {TextField {id:editArtist;placeholderText:"Artista";maximumLength:300;Layout.preferredWidth:500}TextField {id:editTitle;placeholderText:"Música";maximumLength:300;Layout.preferredWidth:500}}
         onAccepted:root.controller.edit(row,editArtist.text,editTitle.text)

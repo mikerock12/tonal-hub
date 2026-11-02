@@ -10,17 +10,17 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
-**Entrega 0.15.7 — Natal, Halloween e revisão do player. Documentação em 31/10/2026.**
+**Entrega 0.15.8 — revisão do Text to Tonalify. Documentação em 01/11/2026.**
 
-Natal traz luzes sobre as capas, fio de luzinhas e estrela no seek, grinalda e transição play/pause. Halloween recebe a mesma transição, aranha/teias detalhadas, sangue mais vívido e correção do play das coleções. Os cenários de letras foram ampliados com Natal, Neve e Lareira. Álbuns e playlists têm coração junto das músicas; no telefone em paisagem, player e letra ficam lado a lado. O Text to Tonalify filtra referências não encontradas sem mover a rolagem ao marcar.
+O filtro **Só não encontradas** do Text to Tonalify passa a listar todas as referências não selecionadas — incluindo as marcadas como Revisar versão — e os cartões de revisão e o diálogo Versão mostram música, artista, álbum e miniatura da capa no Windows e no Android.
 
-[Recursos e validação](docs/NATAL_PLAYER_0157.md) · [Pacotes e hashes](docs/artifacts-0157.json) · [Relatório de testes](docs/release-0157-tests.json) ·
+[Recursos e validação](docs/TEXT_REVIEW_0158.md) · [Pacotes e hashes](docs/artifacts-0158.json) · [Relatório de testes](docs/release-0158-tests.json) ·
 [Guia visual com capturas](docs/GUIA_VISUAL.md) ·
 [Regras da Descoberta 2+1](docs/DESCOBERTA_2_MAIS_1.md) ·
 [Benchmarks realizados](docs/BENCHMARKS.md) ·
 [Contexto do projeto](contexto.md) · [Instruções de manutenção](AGENTS.md).
 
-A validação inclui CTest 10/10, QML 25/6/3, catálogo com 243 checagens e testes sintéticos na AVD dedicada. Não houve teste físico, streaming autenticado, escrita real de playlist ou novo benchmark.
+A validação 0.15.8 inclui QML do assistente, catálogo com 243 checagens, smoke sintético na AVD dedicada e CTest; números finais em docs/release-0158-tests.json. Não houve teste físico, streaming autenticado, escrita real de playlist ou novo benchmark.
 
 ## Atualização 0.15.3 — reprodução estável e Jam com avisos
 

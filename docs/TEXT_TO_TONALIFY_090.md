@@ -79,3 +79,7 @@ e os da adaptação PlaylistSpotify estão em `CREDITS.md`.
 ## Revisão 0.15.7
 
 A etapa Revisar ganhou **Só não encontradas**, com contagem e opção de editar a referência filtrada. Marcar uma música ou trocar a gravação escolhida atualiza somente seu cartão e não recria a lista, preservando a posição rolada. O comportamento foi verificado no QML e na AVD com 30 entradas sintéticas, uma ausente; nenhuma playlist real foi escrita.
+
+## Revisão 0.15.8
+
+**Só não encontradas** passa a listar todas as referências não selecionadas: além de **Não encontrada**, entram **Revisar versão** e qualquer faixa desmarcada. Antes, uma playlist de 100 músicas com 89 correspondências podia mostrar zero no filtro porque as 11 restantes estavam em Revisar versão. Os cartões da revisão e o diálogo **Versão** passam a mostrar música, artista, álbum e miniatura da capa no Android e no Windows. Verificado no QML e na AVD com entradas sintéticas; nenhuma playlist real foi escrita.

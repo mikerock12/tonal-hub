@@ -1,0 +1,25 @@
+{
+  "version": "0.15.8",
+  "final": {
+    "themes": {"themes": 8, "checks": 243, "passed": true},
+    "qml": {"playlist": 3, "passed": true, "mockRows": 30, "filteredMissing": 5, "scrollPreserved": true},
+    "ctest": {"passed": 10, "total": 10},
+    "androidCompile": {"release": true, "benchmark": true},
+    "textReviewSmoke": {"passed": true, "checks": ["filter_lists_missing_and_review_unselected_rows", "checkbox_preserves_visible_rows_after_scrolling", "no_fatal_exception"], "realSpotifyWrites": 0, "extra": "textPlaylistUncertain"},
+    "portableWindows": {"tonalifyStartup": true, "hubStartup": true, "indieStartup": true, "offscreen": true},
+    "apkValidation": {"universal": true, "arm64": true, "alignment": 16384, "certificateMatches0157": true, "productionBenchmarkClassesAbsent": true}
+  },
+  "attempts": [
+    "First QML run passed 3/3 with warnings: cover image read via parent.parent and undefined album text. Fixed by id-based access and a default empty track object; rerun clean.",
+    "Android Java failed to compile: missing imports android.view.View and android.view.ViewGroup for the custom ArrayAdapter. Imports added; benchmark and release compile tasks passed.",
+    "The dedicated AVD ANRed repeatedly (System UI, Photos and Dialer in the background) under host I/O pressure after booting with a swiftshader override. Cold boot with the AVD default host GPU and no snapshot stabilized it; the final smoke passed without product changes."
+  ],
+  "limits": {
+    "syntheticData": true,
+    "physicalPhoneTested": false,
+    "authenticatedSpotifyStreamingTested": false,
+    "realPlaylistWritten": false,
+    "interactiveWindowsInstallTested": false,
+    "newBenchmark": false
+  }
+}

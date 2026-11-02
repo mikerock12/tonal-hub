@@ -5,7 +5,7 @@ afetada antes de alterar o produto. Estado documental: 25/10/2026, builds Window
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
-Estado atual: 31/10/2026, entrega Windows/Android 0.15.7. As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
+Estado atual: 01/11/2026, entrega Windows/Android 0.15.8. As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
 
 ## Autoria, Git e privacidade
 
@@ -365,5 +365,11 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
 - Play/pause usa transição nos dois sentidos e segue o estado real do player. Halloween compartilha o comportamento; o botão das coleções deve manter contraste entre ícone e fundo.
 - Teias/aranha e sangue são vetoriais estilizados, não fotografia nem simulação física. A aranha desce, tece e sobe apenas em capas grandes visíveis. Há 18 cenários de letras; Halloween/Bruxas/Monstros/Vampiros e Natal/Neve/Lareira permanecem independentes do tema.
 - Corações junto das faixas atualizam biblioteca local/Spotify sem reconstruir a coleção. Em paisagem Android, player à esquerda e letra à direita; preservar cabeçalho, página ao retornar, motor e fila. Modos secundários podem usar rolagem horizontal.
-- Text to Tonalify filtra apenas status Não encontrada e atualiza somente o cartão marcado, sem mover a rolagem. Busca/revisão não escreve na conta.
+- Text to Tonalify filtrava apenas status Não encontrada e atualizava somente o cartão marcado, sem mover a rolagem. Desde a 0.15.8 o filtro lista todas as não selecionadas. Busca/revisão não escreve na conta.
 - Evidências locais: temas 243, QML 25/6/3, CTest final 10/10, componentes nativos e fluxos sintéticos na AVD. Preservar a falha intermitente de Halloween e a suíte CTest inicial 4/10 com repetições posteriores. Não declarar teste físico, Spotify autenticado, escrita real de playlist, acústica ou benchmark novo.
+
+## Text to Tonalify 0.15.8 — 01/11/2026
+
+- Ler docs/TEXT_REVIEW_0158.md. O filtro **Só não encontradas** lista todas as referências não selecionadas (Não encontrada, Revisar versão e desmarcadas), corrigindo a contagem zero em playlists com correspondências duvidosas. A regra é `!selected` nas duas plataformas.
+- Cartões de revisão e diálogo Versão mostram música, artista, álbum e miniatura da capa no Android (tags review-check/status/track/album/cover, Artwork fechado no dismiss) e no Windows (versionDialog QML, chooseReview preserva rolagem).
+- Evidências locais: QML 3/3, temas 243, CTest 10/10, smoke sintético na AVD dedicada com o extra textPlaylistUncertain. Sem teste físico, streaming autenticado, escrita real de playlist ou benchmark novo.
