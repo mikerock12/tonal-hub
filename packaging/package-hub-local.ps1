@@ -9,6 +9,8 @@ foreach($name in @('TonalHub.exe','IndieTonal.exe','Tonal.exe','TonalStories.exe
 New-Item -ItemType Directory -Force -Path $stage | Out-Null
 Get-ChildItem -LiteralPath $build -File | Where-Object { $_.Extension -eq '.dll' -or $_.Name -in @('TonalHub.exe','IndieTonal.exe','TonalStories.exe','TonalJam.exe','librespot.exe') } | Copy-Item -Destination $stage -Force
 Copy-Item -LiteralPath (Join-Path $build 'Tonal.exe') -Destination (Join-Path $stage 'Tonalify.exe') -Force
+# WebP comes from the optional qtimageformats module; without it the Christmas theme is blank.
+if(-not (Test-Path -LiteralPath (Join-Path $build 'imageformats\qwebp.dll'))){throw 'Falta imageformats\qwebp.dll (módulo qtimageformats do Qt)'}
 foreach($name in @('qml','platforms','imageformats','iconengines','networkinformation','sqldrivers','tls','generic','licenses')){
     $source=Join-Path $build $name
     if(Test-Path -LiteralPath $source){Copy-Item -LiteralPath $source -Destination $stage -Recurse -Force}

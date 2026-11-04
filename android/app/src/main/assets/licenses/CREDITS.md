@@ -38,3 +38,7 @@ fontes. Gravações e metadados pertencem aos respectivos autores e titulares.
 sem ajuste fino neste fork. **ggml-org e contribuidores**: llama.cpp/ggml, MIT.
 Detalhes e licenças em [third_party/LOCAL-STORIES.md](third_party/LOCAL-STORIES.md).
 O TonalMuse Tiny sintético permanece identificado separadamente.
+
+## Animação do tema Natal
+
+A cena do Papai Noel em `resources/seasonal/santa.webp` deriva de um clipe fornecido pelo mantenedor deste fork para uso neste projeto. Fios, lâmpadas e estrela são renderizados por `packaging/generate-christmas-assets.py`.
