@@ -241,6 +241,7 @@ Item {
             }
             SeekBar {
                 id: seek
+                compact: true
                 playing: root.player.isPlaying
                 width: parent.width - 96
                 anchors.verticalCenter: parent.verticalCenter
@@ -327,6 +328,7 @@ Item {
         }
         SeekBar {
             objectName: "volumeSlider"
+            compact: true
             width: 96
             anchors.verticalCenter: parent.verticalCenter
             wheelEnabled: true

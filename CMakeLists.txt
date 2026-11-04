@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(Tonal VERSION 0.15.9 LANGUAGES C CXX)
+project(Tonal VERSION 0.15.10 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -220,6 +220,10 @@ if(BUILD_TESTING)
     add_executable(TonalMixChecks tests/mix/CoreChecks.cpp)
     target_link_libraries(TonalMixChecks PRIVATE tonal_playlist_core)
     add_test(NAME listening_mix_core COMMAND TonalMixChecks)
+    qt_add_executable(TonalSeasonalResources tests/themes/seasonal_resources.cpp)
+    qt_add_resources(TonalSeasonalResources "seasonal_check" PREFIX "/companion" BASE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${TONAL_SEASONAL_ASSETS})
+    target_link_libraries(TonalSeasonalResources PRIVATE Qt6::Qml Qt6::Quick)
+    add_test(NAME seasonal_resources COMMAND TonalSeasonalResources)
     add_executable(TonalTextPlaylistTests tests/playlist/ImportChecks.cpp)
     target_link_libraries(TonalTextPlaylistTests PRIVATE tonal_text_playlist)
     if(MSVC)

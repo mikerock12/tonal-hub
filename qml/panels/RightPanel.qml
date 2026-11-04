@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import "qrc:/companion/qml/companion" as Personal
 
 // Painel direito: "Tocando agora" (capa grande) ou "Fila".
 Rectangle {
@@ -56,12 +57,45 @@ Rectangle {
             x: 16
             width: root.width - 32
             spacing: 16
+            topPadding: nowCover.christmas ? 20 : 0   // room for the strand above the cover
 
-            Cover {
-                width: parent.width
+            // "Tocando agora" shows one cover, the current song: same stage as the song page.
+            Item {
+                id: nowCover
+                // The panel clips, so the cover steps in to leave the strands room.
+                readonly property real inset: Theme.themeId === "natal" ? 16 : 0
+                x: inset
+                width: parent.width - 2 * inset
                 height: width
-                radius: 8
-                source: root.player.coverUrlLarge
+                readonly property bool christmas: Theme.themeId === "natal" && nowArt.ready
+                readonly property bool animated: root.visible && Nav.rightPanel === "nowplaying"
+                Personal.ChristmasGarland {
+                    objectName: "nowGarlandBack"; plane: "back"; ownClock: false; phase: nowFront.phase
+                    anchors.centerIn: parent; visible: nowCover.christmas
+                    coverWidth: nowCover.width; coverHeight: nowCover.height
+                    playing: root.player.isPlaying; animationAllowed: nowCover.animated
+                }
+                Cover {
+                    id: nowArt
+                    anchors.fill: parent
+                    radius: 8
+                    decorated: Theme.themeId !== "natal"
+                    source: root.player.coverUrlLarge
+                }
+                Personal.ChristmasGarland {
+                    id: nowFront
+                    objectName: "nowGarlandFront"; plane: "front"
+                    anchors.centerIn: parent; visible: nowCover.christmas
+                    coverWidth: nowCover.width; coverHeight: nowCover.height
+                    playing: root.player.isPlaying; animationAllowed: nowCover.animated
+                }
+                Personal.ChristmasSanta {
+                    objectName: "nowSanta"; visible: nowCover.christmas
+                    width: nowCover.width * .46; height: width
+                    x: nowCover.width - width + nowCover.width * .008
+                    y: nowCover.height - height + nowCover.width * .006
+                    musicPlaying: root.player.isPlaying; animationAllowed: nowCover.animated
+                }
             }
 
             Item {

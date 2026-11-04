@@ -11,6 +11,7 @@ Item {
     property bool round: false
     property real radius: Theme.radiusCover
     property string placeholderIcon: round ? Icons.personS : Icons.noteS
+    property bool decorated: true         // false quando a capa já tem fios próprios em volta
 
     property int retries:0
     onSourceChanged:{retries=0;retry.stop();img.source=root.source}
@@ -76,7 +77,7 @@ Item {
     Personal.CoverEffects {
         objectName: "coverEffects"
         anchors.fill: parent
-        visible: !root.round && (Theme.themeId === "halloween" || Theme.themeId === "natal")
+        visible: !root.round && root.decorated && (Theme.themeId === "halloween" || Theme.themeId === "natal")
         themeId: Theme.themeId
         animationAllowed: root.visible
     }

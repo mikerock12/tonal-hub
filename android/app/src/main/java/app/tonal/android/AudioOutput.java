@@ -19,6 +19,9 @@ final class AudioOutput {
     // Set while suspended when the queued tail stopped belonging to what plays next.
     private boolean staleTail;
     private int staleFlushes;private long staleFrames;
+    private volatile long lastTransition;
+    /** When the output last paused, resumed or opened; gaps right after that are expected. */
+    long lastTransition(){return lastTransition;}
     private final Handler main=new Handler(Looper.getMainLooper());
     private int transition,rate=44100,channels=2,lastUnderruns,previousUnderruns,bufferFrames,recoveries,minimumStableFrames;
     private long lastAdapt;
@@ -100,7 +103,7 @@ final class AudioOutput {
             .setBufferSizeInBytes(Math.max(minimum,rate*8*350/1000)).setTransferMode(AudioTrack.MODE_STREAM);
         if(config.buffer==2&&route!=null&&!bluetooth(route))builder.setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY);
         AudioTrack next=builder.build();if(next.getState()!=AudioTrack.STATE_INITIALIZED){next.release();throw new IllegalStateException("Falha ao abrir saída de áudio");}
-        track=next;writtenFrames=0;lastUnderruns=0;next.addOnRoutingChangedListener(router->refreshRoute(),main);
+        track=next;writtenFrames=0;lastUnderruns=0;lastTransition=SystemClock.elapsedRealtime();next.addOnRoutingChangedListener(router->refreshRoute(),main);
         if(preferred!=null)next.setPreferredDevice(preferred);
         if(control==null){HandlerThread worker=new HandlerThread("TonalAudioControl",android.os.Process.THREAD_PRIORITY_AUDIO);worker.start();control=new Handler(worker.getLooper());}
         setBuffer(true);shaper=next.createVolumeShaper(envelope(true,30));
@@ -136,7 +139,7 @@ final class AudioOutput {
         }
     }
     synchronized void pause(){
-        if(track==null||paused)return;paused=true;int serial=++transition;
+        if(track==null||paused)return;paused=true;int serial=++transition;lastTransition=SystemClock.elapsedRealtime();
         pauseQueuedFrames=queuedFrames(track);lastPauseFadeMs=30;
         shaper.apply(VolumeShaper.Operation.REVERSE);
         control.postDelayed(()->{synchronized(AudioOutput.this){if(track!=null&&serial==transition&&paused)track.pause();}},50);
@@ -151,7 +154,7 @@ final class AudioOutput {
      */
     synchronized void discontinuity(){if(paused)staleTail=true;}
     synchronized void resume(){
-        if(track==null||!paused)return;paused=false;++transition;
+        if(track==null||!paused)return;paused=false;++transition;lastTransition=SystemClock.elapsedRealtime();
         if(staleTail){
             staleTail=false;staleFrames+=queuedFrames(track);staleFlushes++;
             // flush() is ignored unless the track is paused; the delayed pause may not have run yet.

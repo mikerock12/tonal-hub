@@ -4,7 +4,7 @@ ROOT=Path(__file__).resolve().parents[2];OUT=ROOT/'out/mix-ui';OUT.mkdir(parents
 module=OUT/'MixHarness';module.mkdir(exist_ok=True)
 (module/'qmldir').write_text('module MixHarness\nsingleton App 1.0 App.qml\nsingleton Theme 1.0 Theme.qml\nsingleton Icons 1.0 Icons.qml\nsingleton Nav 1.0 Nav.qml\nsingleton Playlists 1.0 Playlists.qml\n')
 for n in ['Theme','Icons']:shutil.copyfile(ROOT/f'qml/{n}.qml',module/f'{n}.qml')
-(module/'Nav.qml').write_text('pragma Singleton\nimport QtQuick\nQtObject{property bool canBack:false;property bool canForward:false;property var current:({page:"home"});function back(){}function forward(){}property var me:({id:"user"});function toast(t){}function go(a,b){}function likedSongsUri(){return ""}}')
+(module/'Nav.qml').write_text('pragma Singleton\nimport QtQuick\nQtObject{property string rightPanel:"";property bool canBack:false;property bool canForward:false;property var current:({page:"home"});function back(){}function forward(){}property var me:({id:"user"});function toast(t){}function go(a,b){}function likedSongsUri(){return ""}}')
 (module/'Playlists.qml').write_text('pragma Singleton\nimport QtQuick\nQtObject{property var editable:[];function createWithTracks(a){}}')
 themes_json=(ROOT/'resources/themes.json').read_text(encoding='utf-8')
 (module/'App.qml').write_text('''pragma Singleton
@@ -16,7 +16,7 @@ QtObject {
  function dominantColor(url,callback){callback("#344455")}
  property QtObject auth:QtObject{property bool authenticated:true;property string userId:"user"}
  property QtObject music:QtObject{property var homeAlbums:[];property var favoriteRows:[];function requestHomeAlbums(){}signal changed();function summary(k,v){return {ms:0,plays:0,tracks:[]}}function liked(t){return favoriteRows.indexOf(t.uri)>=0}function favorite(t){let i=favoriteRows.indexOf(t.uri);if(i>=0)favoriteRows.splice(i,1);else favoriteRows.push(t.uri);changed()}}
- property QtObject player:QtObject{property int volume:60;function setVolume(v){volume=Math.max(0,Math.min(100,v))}property int volumeBeforeMute:30;function toggleMute(){if(volume>0){volumeBeforeMute=volume;setVolume(0)}else setVolume(volumeBeforeMute)}property string contextUri:"";property string trackUri:"";property bool hasTrack:false;property string repeatMode:"off";property int repeatCycles:0;function cycleRepeat(){repeatCycles++;repeatMode=repeatMode==="off"?"context":repeatMode==="context"?"track":"off"}property bool isPlaying:false;property bool shuffle:false;property var queue:[{uri:"spotify:track:next",name:"Next song",artists:"Next artist",durationMs:180000}];property bool delayQueue:false;property int refreshes:0;signal queueRefreshFinished(int status);function refreshQueue(){refreshes++;if(!delayQueue){queueChanged();queueRefreshFinished(200)}}signal playbackRequested();function togglePlay(){}function playContext(a,b,c){}function playUris(a,b){}}
+ property QtObject player:QtObject{property int volume:60;property string coverUrlLarge:"";function setVolume(v){volume=Math.max(0,Math.min(100,v))}property int volumeBeforeMute:30;function toggleMute(){if(volume>0){volumeBeforeMute=volume;setVolume(0)}else setVolume(volumeBeforeMute)}property string contextUri:"";property string trackUri:"";property bool hasTrack:false;property string repeatMode:"off";property int repeatCycles:0;function cycleRepeat(){repeatCycles++;repeatMode=repeatMode==="off"?"context":repeatMode==="context"?"track":"off"}property bool isPlaying:false;property bool shuffle:false;property var queue:[{uri:"spotify:track:next",name:"Next song",artists:"Next artist",durationMs:180000}];property bool delayQueue:false;property int refreshes:0;signal queueRefreshFinished(int status);function refreshQueue(){refreshes++;if(!delayQueue){queueChanged();queueRefreshFinished(200)}}signal playbackRequested();function togglePlay(){}function playContext(a,b,c){}function playUris(a,b){}}
  property QtObject listeningMix:QtObject{property bool busy:false;property string status:"";property var received:({});property var previewQueue:[];property var committedRows:[];property bool discoveryEnabled:false;property bool randomEnabled:false;property bool enrichmentEnabled:false;property string enrichmentStatus:"";function queueFor(uri){return committedRows}property var applied:null;function applyModes(rows,shake,random,discovery){applied={rows:rows,shake:shake,random:random,discovery:discovery}}property int appliedPosition:-1;signal changed();signal previewReady();function preview(rows,index,random,discovery,album){received={rows:rows,index:index,random:random,discover:discovery,album:album};previewQueue=rows.slice();previewReady();changed()}function applyPreview(position){appliedPosition=position}function cancel(){}function order(n,seed){let a=[];for(let i=1;i<n;i++)a.push(i);a.push(0);return a}function play(rows,index,random,discover,album){received={rows:rows,index:index,random:random,discover:discover,album:album}}}
  property QtObject api:QtObject{
   property int writes:0
@@ -25,6 +25,7 @@ QtObject {
 }
 ''',encoding='utf-8')
 shutil.copy2(ROOT/'qml/companion/ChristmasGarlandData.js',OUT/'ChristmasGarlandData.js')
+(OUT/'RightPanel.qml').write_text('import MixHarness 1.0'+chr(10)+(ROOT/'qml/panels/RightPanel.qml').read_text(encoding='utf-8').replace('import "qrc:/companion/qml/companion" as Personal','import "." as Personal'),encoding='utf-8')
 for folder in ['qml/components','qml/companion']:
  for p in (ROOT/folder).glob('*.qml'):
   text=p.read_text(encoding='utf-8').replace('import "qrc:/companion/qml/companion" as Personal','import "." as Personal').replace('qrc:/companion/resources/seasonal/',(ROOT/'resources/seasonal').as_uri()+'/');text=text.replace('import QtQuick','import MixHarness 1.0\nimport QtQuick',1);(OUT/p.name).write_text(text,encoding='utf-8')
@@ -202,6 +203,15 @@ Pane {width:1000;height:800;padding:0;palette.button:"#263440";palette.buttonTex
   function test_mute_restores_last_volume(){
    App.player.volume=83;let mute=findChild(playerBar,"muteButton");verify(mute!==null);
    mouseClick(mute);compare(App.player.volume,0);mouseClick(mute);compare(App.player.volume,83);
+  }
+  function test_christmas_player_bar_fits_and_song_panel_has_santa(){
+   App.theme.themeId="natal";compare(Theme.playerBarHeight,104);playerBar.height=104;playerBar.y=676;App.player.hasTrack=true;wait(200);
+   const bar=findChild(playerBar,"transportControls").parent;const surface=findChild(themedSeek.parent===null?playerBar:playerBar,"christmasSurface");verify(surface!==null);
+   const seekRow=surface.parent;const bottom=seekRow.mapToItem(playerBar,0,surface.y+surface.height).y;verify(bottom<=104,"seek must stay inside the bar: "+bottom);
+   grabImage(playerBar.Window.window.contentItem).save("player-bar-natal.png");playerBar.height=80;playerBar.y=700;
+   personal.current=Object.assign({},personal.current,{image:Qt.resolvedUrl("../halloween-ui/cover.png")});personalPanel.showSong();wait(700);
+   const santa=findChild(personalPanel.contentItem||personalPanel,"christmasSanta");verify(santa!==null,"song page has Santa");
+   console.log("SANTA",santa.visible,santa.status,santa.width,santa.frameCount);grabImage(playerBar.Window.window.contentItem).save("song-panel-natal.png");personalPanel.close();App.theme.themeId="tonal";
   }
   function test_halloween_player_bar_and_song_panel(){
    App.theme.themeId="halloween";compare(Theme.playerBarHeight,100);playerBar.height=100;wait(120);grabImage(themedSeek.Window.window.contentItem).save("player-bar-halloween.png");playerBar.height=80;

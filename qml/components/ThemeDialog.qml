@@ -76,6 +76,7 @@ ModalDialog {
                         width: parent.width
                         value: 0.62
                         showThumb: true
+                        compact: true
                         styleOverride: card.modelData.seek
                     }
                 }

@@ -29,9 +29,10 @@ import QtTest
 import MixHarness 1.0
 import "../mix-ui"
 Pane {
- id:root;width:760;height:900;padding:0
+ id:root;width:1110;height:900;padding:0
  background:Rectangle{color:"#0c1f18"}
  property bool playing:false
+ RightPanel{id:nowPanel;x:760;y:0;width:340;height:640}
  Rectangle{id:card;x:40;y:30;width:680;height:840;radius:24;color:"#11291f"
   Item{id:box;x:40;y:40;width:600;height:600
    ChristmasGarland{id:back;plane:"back";anchors.centerIn:parent;coverWidth:600;coverHeight:600;playing:root.playing}
@@ -68,6 +69,15 @@ Pane {
    for(let i=0;i<90&&!wrapped;i++){wait(50);if(santa.currentFrame<last)wrapped=true;last=santa.currentFrame}
    verify(wrapped,"loop must return to its first frame")
    root.playing=false;wait(120);const paused=santa.currentFrame;const phase=front.phase;wait(300);compare(santa.currentFrame,paused);compare(front.phase,phase);verify(!front.animationRunning)
+  }
+  function test_now_playing_panel_has_the_scene(){
+   Theme.setTheme("natal");Nav.rightPanel="nowplaying";App.player.hasTrack=true;App.player.isPlaying=true;App.player.coverUrlLarge=Qt.resolvedUrl("cover.png");wait(400)
+   const santa=findChild(nowPanel,"nowSanta");verify(santa!==null,"Tocando agora needs Santa");tryVerify(()=>santa.visible&&santa.status===AnimatedImage.Ready,5000);compare(santa.frameCount,81)
+   const baked=findChild(findChild(nowPanel,"nowGarlandFront"),"garlandImage");tryVerify(()=>baked.status===Image.Ready,5000)
+   const first=santa.currentFrame;tryVerify(()=>santa.currentFrame!==first,2000)
+   grabImage(nowPanel).save("now-playing.png")
+   App.player.isPlaying=false;wait(150);const held=santa.currentFrame;wait(300);compare(santa.currentFrame,held)
+   Nav.rightPanel=""
   }
   function test_album_covers_stay_still(){
    Theme.setTheme("natal");wait(100)

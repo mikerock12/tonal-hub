@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.15.10 — 04/11/2026
+
+- Android: as animações do Natal não param mais ao trocar de música. A proteção de áudio confundia o atraso da música nova na rede com um problema causado pela tela.
+- Windows: a seekbar do Natal cabe na barra inferior e na página da música, sem passar da janela.
+- Windows: fios e Papai Noel também na capa de **Tocando agora**. Início, álbuns e listas seguem sem animação.
+- Detalhes e limites em docs/NATAL_PLAYER_0159.md.
+
 ## 0.15.9 — 04/11/2026
 
 - Tema Natal refeito: fios com lâmpadas C9 que passam pela frente e por trás da capa, com sombras coerentes; 65 lâmpadas em quatro padrões de pisca-pisca.

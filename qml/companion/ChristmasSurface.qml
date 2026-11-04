@@ -14,14 +14,15 @@ Item {
     property bool animationAllowed: true
     property real phase: 0
     property bool ownClock: true   // false when a page drives phase, so surfaces tick together
+    property bool compact: false   // short bars: everything must fit inside implicitHeight
     readonly property bool animationRunning: visible && enabled && playing && animationAllowed && (!Window.window || Window.window.active)
     readonly property real trackWidth: Math.max(0, width - 2 * trackInset)
     readonly property real edge: trackWidth * Math.max(0, Math.min(1, progress))
-    readonly property int count: Math.max(6, Math.floor(trackWidth / 28))
+    readonly property int count: Math.max(compact ? 3 : 6, Math.floor(trackWidth / (compact ? 24 : 28)))
     readonly property real wireY: height / 2
-    readonly property real bulbLength: Math.max(14, Math.min(19, thumbSize * .8))
+    readonly property real bulbLength: compact ? 11 : Math.max(14, Math.min(19, thumbSize * .8))
     readonly property var colors: ["red", "gold", "green", "blue"]
-    implicitHeight: 68
+    implicitHeight: compact ? 48 : 68
     Timer { interval: 67; repeat: true; running: lights.ownClock && lights.animationRunning; onTriggered: lights.phase += .067 }
 
     function twinkle(i, t) {
@@ -90,7 +91,7 @@ Item {
         readonly property real pulse: .5 + .5 * Math.sin(lights.phase * 2.7)
         Image {
             anchors.centerIn: parent
-            width: lights.thumbSize * 6.4; height: width
+            width: lights.thumbSize * (lights.compact ? 2.6 : 6.4); height: width
             source: "qrc:/companion/resources/seasonal/star_glow.webp"
             smooth: true
             rotation: lights.phase * 9
@@ -99,7 +100,7 @@ Item {
         }
         Image {
             anchors.centerIn: parent
-            width: lights.thumbSize * 3.8; height: width
+            width: lights.thumbSize * (lights.compact ? 1.9 : 3.8); height: width
             source: "qrc:/companion/resources/seasonal/star.webp"
             smooth: true
         }
