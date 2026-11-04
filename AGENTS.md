@@ -386,3 +386,10 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
 - Entrega: PR34 merge ab75378, release v0.15.9, portal PR45 merge d098c78, Worker bd47e92f. Backup privado 1rPWbcrsvQ0WYOJtb9HKGkeEMxsREokSl inclui o clipe original do Papai Noel, que não vai ao Git. `history_stories` falhou uma vez no CI sem relação com a entrega e passou na repetição; causa não estabelecida.
 - 0.15.10: testes de decoração precisam incluir falta real de áudio; sem ela a AVD não mostra a parada ao trocar de faixa. Barras novas no Windows: conferir a altura real em PlayerBar, MusicPanel e prévias de tema. CTest seasonal_resources prova recursos compilados; o harness QML lê do disco.
 - Entrega 0.15.10: PR36 merge e56f127, código de produto 74a5080, release v0.15.10, portal PR47 merge 0cf5b3f, Worker 8b3cf6eb. Backup privado 1YGceS2ZdSVEYzUj2LLSpHt8XFarnFUzV. Pendente: confirmar em aparelho físico com Spotify real a correção das animações e o apito do carro.
+
+## Discografia 0.15.11 — publicação em preparação (04/11/2026)
+
+- Ler docs/CATALOG_RATE_LIMITS.md. HTTP 429 na captura Android comprova limitação de consultas; o prazo Retry-After daquele caso não foi capturado. Não declarar queda geral do Spotify nem catálogo real corrigido sem teste autenticado.
+- Windows mantém categorias visíveis e carrega por seleção; Android serializa as três seções. Cache de sessão: 10 min, 32 páginas, limitado a discografia pública; limpa em mudança de conta e ignora cache tardio da conta anterior.
+- Cooldown comum da Web API conserva Retry-After completo; esperas até 30 s admitem recuperação limitada. Não limpar por respostas antigas bem-sucedidas nem repetir volume superado. Não altera callback PCM/motor.
+- Nova versão 0.15.11, Android versionCode 31. Candidatos 0.15.10-discografia-teste são históricos locais, não os pacotes da nova release. Preservar certificado e alinhamento 16 KiB.

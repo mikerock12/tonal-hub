@@ -20,7 +20,13 @@ QtObject {
  property QtObject listeningMix:QtObject{property bool busy:false;property string status:"";property var received:({});property var previewQueue:[];property var committedRows:[];property bool discoveryEnabled:false;property bool randomEnabled:false;property bool enrichmentEnabled:false;property string enrichmentStatus:"";function queueFor(uri){return committedRows}property var applied:null;function applyModes(rows,shake,random,discovery){applied={rows:rows,shake:shake,random:random,discovery:discovery}}property int appliedPosition:-1;signal changed();signal previewReady();function preview(rows,index,random,discovery,album){received={rows:rows,index:index,random:random,discover:discovery,album:album};previewQueue=rows.slice();previewReady();changed()}function applyPreview(position){appliedPosition=position}function cancel(){}function order(n,seed){let a=[];for(let i=1;i<n;i++)a.push(i);a.push(0);return a}function play(rows,index,random,discover,album){received={rows:rows,index:index,random:random,discover:discover,album:album}}}
  property QtObject api:QtObject{
   property int writes:0
-  function call(method,path,query,body,callback){if(method!=="GET")writes++;let items=[];for(let i=0;i<6;i++)items.push({uri:"spotify:track:fixture"+i,id:"fixture"+i,name:"Fixture song "+i,duration_ms:180000,artists:[{id:"artist",name:"Test Band"}],album:{id:"album",name:"Test Album",images:[]}});if(path.indexOf("/albums/")===0)callback(200,{id:"album",uri:"spotify:album:album",name:"Test Album",release_date:"1994-01-01",artists:[{id:"artist",name:"Test Band"}],images:[],total_tracks:6,tracks:{items:items,next:null}});else callback(200,{items:[],next:null});}
+  property int catalogStatus:200
+  property int catalogReads:0
+  property string catalogNext:""
+  property var catalogPending:[]
+  property bool catalogDeferred:false
+  function catalogReply(callback, group){if(catalogStatus!==200){callback(catalogStatus,{error:{message:"Aguarde 7200 s"},retry_after:7200});return}callback(200,{items:[{id:group,uri:"spotify:album:"+group,name:"Synthetic "+group,album_type:group,release_date:"2026",images:[]}],next:catalogNext||null})}
+  function call(method,path,query,body,callback){if(path.indexOf("/artists/")>=0&&path.indexOf("/albums")>0){catalogReads++;if(catalogDeferred)catalogPending=catalogPending.concat([{callback:callback,group:query.include_groups}]);else catalogReply(callback,query.include_groups||"album");return}if(path.indexOf("/artists/")===0){callback(200,{name:"Fixture Band",uri:"spotify:artist:test",images:[],genres:[]});return}if(path==="/search"&&query.type==="track"){callback(200,{tracks:{items:[]}});return}if(method!=="GET")writes++;let items=[];for(let i=0;i<6;i++)items.push({uri:"spotify:track:fixture"+i,id:"fixture"+i,name:"Fixture song "+i,duration_ms:180000,artists:[{id:"artist",name:"Test Band"}],album:{id:"album",name:"Test Album",images:[]}});if(path.indexOf("/albums/")===0)callback(200,{id:"album",uri:"spotify:album:album",name:"Test Album",release_date:"1994-01-01",artists:[{id:"artist",name:"Test Band"}],images:[],total_tracks:6,tracks:{items:items,next:null}});else callback(200,{items:[],next:null});}
  }
 }
 ''',encoding='utf-8')
@@ -35,6 +41,7 @@ for key,value in {'Ready':'1','Starting':'2','NeedsLogin':'3','NotFound':'4','Cr
 (OUT/'TopBar.qml').write_text('import MixHarness 1.0\n'+top,encoding='utf-8')
 bar=(ROOT/'qml/panels/PlayerBar.qml').read_text(encoding='utf-8').replace('import "qrc:/companion/qml/companion" as Personal','import "." as Personal');(OUT/'PlayerBar.qml').write_text('import MixHarness 1.0'+chr(10)+bar,encoding='utf-8')
 text=(ROOT/'qml/pages/CollectionPage.qml').read_text(encoding='utf-8').replace('import "qrc:/companion/qml/companion" as Personal','import "." as Personal');(OUT/'CollectionPage.qml').write_text('import MixHarness 1.0\n'+text,encoding='utf-8')
+(OUT/'ArtistPage.qml').write_text('import MixHarness 1.0\n'+(ROOT/'qml/pages/ArtistPage.qml').read_text(encoding='utf-8').replace('import "qrc:/companion/qml/companion" as Personal','import "." as Personal'),encoding='utf-8')
 (OUT/'HomePage.qml').write_text('import MixHarness 1.0\n'+(ROOT/'qml/pages/HomePage.qml').read_text(encoding='utf-8'),encoding='utf-8')
 (OUT/'tst_mix.qml').write_text('''import QtQuick
 import QtQuick.Controls
@@ -55,8 +62,31 @@ Pane {width:1000;height:800;padding:0;palette.button:"#263440";palette.buttonTex
  PlayerBar{id:playerBar;x:0;y:700;z:10;width:1000;height:80}
  CollectionPage{id:page;anchors.fill:parent;route:({page:"album",params:{id:"album"}})}
  HomePage{id:home;visible:false;width:900;height:700}
+ ArtistPage{id:artistPage;visible:false;width:900;height:700}
  TestCase{name:"CollectionMix";when:windowShown
   function captureSong(item,file){let done=false;item.grabToImage(function(image){image.saveToFile(file);done=true});tryVerify(function(){return done},3000)}
+  function test_artist_discography_error_retry_and_lazy_categories(){
+   App.api.catalogStatus=429;App.api.catalogReads=0;artistPage.visible=true;artistPage.route={page:"artist",params:{id:"fixture"}};wait(30);
+   compare(App.api.catalogReads,1);compare(artistPage.releaseStatus.album,"error");verify(findChild(artistPage,"artistDiscography").visible);
+   verify(findChild(artistPage,"discographyStatus").text.indexOf("7200")>=0);verify(findChild(artistPage,"discographyRetry").visible);
+   App.api.catalogStatus=200;artistPage.loadReleaseGroup("album");compare(artistPage.releases.length,1);compare(artistPage.releaseStatus.album,"ready");
+   artistPage.releaseFilter="single";compare(artistPage.releases.length,2);compare(artistPage.releaseStatus.single,"ready");
+   artistPage.releaseFilter="compilation";compare(artistPage.releases.length,3);compare(artistPage.releases[2].type,"compilation");
+   let calls=App.api.catalogReads;artistPage.releaseFilter="album";compare(App.api.catalogReads,calls);artistPage.visible=false;
+  }
+  function test_artist_discography_ignores_late_previous_artist(){
+   App.api.catalogDeferred=true;App.api.catalogPending=[];artistPage.route={page:"artist",params:{id:"old"}};wait(30);
+   let old=App.api.catalogPending[0];artistPage.route={page:"artist",params:{id:"new"}};wait(30);
+   App.api.catalogReply(old.callback,"old");compare(artistPage.releases.length,0);
+   App.api.catalogReply(App.api.catalogPending[1].callback,"album");compare(artistPage.releases.length,1);compare(artistPage.releases[0].id,"album");App.api.catalogDeferred=false;App.api.catalogPending=[];
+  }
+  function test_artist_discography_manual_paging_keeps_cards_and_failed_link(){
+   App.api.catalogStatus=200;App.api.catalogReads=0;App.api.catalogNext="https://api.spotify.com/v1/artists/pages/albums?include_groups=album&offset=10&limit=10";
+   artistPage.route={page:"artist",params:{id:"pages"}};wait(30);compare(App.api.catalogReads,1);compare(artistPage.releases.length,1);
+   artistPage.showAllReleases=true;artistPage.loadMoreReleases();compare(App.api.catalogReads,2);compare(artistPage.releases.length,1);compare(artistPage.releaseStatus.album,"ready");
+   App.api.catalogStatus=429;artistPage.loadMoreReleases();compare(artistPage.releaseStatus.album,"error");compare(artistPage.releaseNext.album,App.api.catalogNext);compare(artistPage.releases.length,1);
+   App.api.catalogStatus=200;artistPage.loadMoreReleases();compare(artistPage.releaseStatus.album,"ready");compare(artistPage.releases.length,1);App.api.catalogNext="";
+  }
   function test_jam_dialog_and_bounded_plain_text_notices(){
    let before=jam.reads;jamDialog.present();compare(jam.reads,before+1);verify(jamDialog.visible);jamDialog.close();
    jam.notice("<b>Synthetic participant</b> entrou no Jam");compare(jamToast.message,"<b>Synthetic participant</b> entrou no Jam");verify(jamToast.showing);

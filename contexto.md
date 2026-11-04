@@ -1,6 +1,16 @@
 # Contexto do Tonal Hub
 
-Atualizado em **01/11/2026**. Entrega: **Windows 0.15.8 / Android 0.15.8**, versionCode 28. Leia também [AGENTS.md](AGENTS.md).
+Atualizado em **04/11/2026**. Preparação: **Windows 0.15.11 / Android 0.15.11**, versionCode 31. Última entrega publicada: 0.15.10. Leia também [AGENTS.md](AGENTS.md).
+
+## Discografia 0.15.11 — 04/11/2026 (publicação em preparação)
+
+A captura Android revelou HTTP 429 nas categorias do artista; o Windows ocultava
+Discografia quando todas falhavam. Correção em [CATALOG_RATE_LIMITS.md](docs/CATALOG_RATE_LIMITS.md):
+cache de sessão limitado, cooldown comum sem encurtar Retry-After, recuperação
+limitada e estados visíveis. Windows carrega categorias por seleção; Android
+serializa as três seções. Bloqueio ativo do Spotify ainda precisa expirar.
+Testes sintéticos/compilação não equivalem a catálogo autenticado ou teste físico.
+Não altera a identificação dos binários 0.15.10 já entregues.
 
 ## 0.15.8 — filtro e revisão do Text to Tonalify
 

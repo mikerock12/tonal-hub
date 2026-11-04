@@ -5,6 +5,7 @@ on:
       - 'android/app/src/**'
       - 'android/app/build.gradle'
       - '.github/workflows/android-halloween-visual.yml'
+      - '.github/scripts/**'
 permissions:
   contents: read
 jobs:
@@ -39,10 +40,13 @@ jobs:
       - name: Enable KVM
         run: |
           ls -l /dev/kvm || { echo '::error::This runner has no /dev/kvm, so the emulator cannot start'; exit 1; }
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-tonal-kvm.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
+          test -c /dev/kvm
+          # This device already exists on the ephemeral runner. Avoid racing
+          # udev's asynchronous rule application before the access assertion.
+          sudo chmod 0666 /dev/kvm
           test -r /dev/kvm && test -w /dev/kvm
+      - name: Check bounded cleanup selection
+        run: python3 .github/scripts/stop-ci-emulator.py --self-test
       - uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -50,17 +54,17 @@ jobs:
           arch: x86_64
           emulator-boot-timeout: 180
           disable-animations: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           script: |
-            adb install android/app/build/outputs/apk/benchmark/app-benchmark.apk
-            adb shell pm grant app.tonal.android.benchmark android.permission.POST_NOTIFICATIONS
-            timeout 120 adb shell am instrument -w -e action halloweenTests app.tonal.android.benchmark/app.tonal.android.DeviceInstrumentation | tee /tmp/result.txt
-            adb logcat -d -s AndroidRuntime:E | tail -100
-            adb pull /sdcard/Android/data/app.tonal.android.benchmark/files/halloween-0154 evidence || true
-            grep -q '"passed":true' /tmp/result.txt
+            bash .github/scripts/android-halloween-ci.sh
+      - name: Preserve emulator teardown diagnostics
+        if: always()
+        run: |
+          mkdir -p evidence
+          cp /tmp/tonal-emulator-cleanup.log evidence/ci-emulator-cleanup.log || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: android-halloween-0156-synthetic
-          path: evidence/*.png
+          path: evidence/*
           if-no-files-found: warn

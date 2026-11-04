@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QJSEngine>
+#include <QDeadlineTimer>
 #include <QJSValue>
 #include <QJsonDocument>
 #include <QObject>
@@ -82,4 +83,8 @@ private:
   QPointer<QJSEngine> m_engine;
   QList<Pending> m_waiting; // aguardando refresh do token
   bool m_rateLimited = false;
+  QDeadlineTimer m_cooldown{0};
+  struct CatalogPage { QUrl url; QJsonDocument doc; QDeadlineTimer expires; };
+  QList<CatalogPage> m_catalogPages; // only public artist discography, 32 pages / 10 min
+  int m_catalogEpoch = 0;
 };

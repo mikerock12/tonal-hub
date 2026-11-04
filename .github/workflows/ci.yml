@@ -105,7 +105,12 @@ jobs:
           mkdir -p out/ci-playback
           javac -d out/ci-playback android/app/src/main/java/app/tonal/android/PlaybackIntent.java android/app/src/main/java/app/tonal/android/RepeatMode.java android/app/src/main/java/app/tonal/android/PositionSync.java tests/android/PlaybackSafetyChecks.java
           java -cp out/ci-playback app.tonal.android.PlaybackSafetyChecks
-      - name: Compile both Android variants without account credentials
+      - name: Test Spotify catalog cooldown and cache without credentials
+        # Public catalog cooldown/cache can be exercised without Android or credentials.
+        run: |
+          javac -d out/ci-playback android/app/src/main/java/app/tonal/android/SpotifyCatalogPolicy.java tests/android/SpotifyCatalogPolicyChecks.java
+          java -cp out/ci-playback app.tonal.android.SpotifyCatalogPolicyChecks
+      - name: Compile Android variants
         run: gradle -p android compileReleaseJavaWithJavac compileBenchmarkJavaWithJavac compileComparisonJavaWithJavac :automation:compileDebugJavaWithJavac --console=plain
       - name: Cross-compile the baseline and guarded accelerated ARM64 readers
         run: |
