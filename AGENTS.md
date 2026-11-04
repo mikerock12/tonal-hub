@@ -381,4 +381,5 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
 - 24 fps só para a animação pedida. Decorações Android num relógio único de 15 fps (ChristmasLights.join): relógios separados redesenhavam a janela fora de fase. Não criar timers próprios por componente.
 - Parar com pausa, ocultação, sem foco, economia de bateria, RAM baixa e animações desligadas; underrun novo silencia decorações por 30 s. Nada no callback PCM.
 - Troca de faixa descarta a sobra da fila: SinkStatus::TemporarilyClosed + PlaybackIntent.movesAudio. Pausa simples, requeue e editqueue preservam. A sobra de 74 ms foi medida em AudioTrack real, mas não está confirmado que era o apito do carro.
-- Na AVD o Natal custa 43% de um núcleo contra 4% do tema Tonal, 0 underruns; GPU emulada, não é benchmark de celular. Não declarar custo no aparelho, bateria, Spotify real, Bluetooth, carro ou acústica sem evidência.
+- Na AVD o Natal custa 36–43% de um núcleo contra 4–5% do tema Tonal, 0 underruns; GPU emulada, não é benchmark de celular. Não declarar custo no aparelho, bateria, Spotify real, Bluetooth, carro ou acústica sem evidência.
+- Evidências: docs/release-0159-tests.json e docs/artifacts-0159.json. Código de produto 6f3c4a3; commits posteriores de CI/documentação não são rebuild. O CI precisa do módulo Qt qtimageformats para WebP.

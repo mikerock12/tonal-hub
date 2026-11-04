@@ -34,8 +34,8 @@ Medição na AVD dedicada, 60 s por rodada, tom sintético numa `AudioTrack` rea
 
 | Tema | CPU (% de um núcleo) | PSS | Quadros/s | Underruns |
 |---|---|---|---|---|
-| Tonal | 4,0–4,6 | 78–79 MiB | 0 | 0 |
-| Natal | 42,6–43,1 | 96–97 MiB | 33 | 0 |
+| Tonal | 4,0–5,4 | 75–79 MiB | 0 | 0 |
+| Natal | 36–43 | 96–97 MiB | 32–34 | 0 |
 
 Antes do relógio único o Natal media 44–50% a 41 quadros/s, mesmo sem Papai Noel nem lâmpadas da capa. Parte do custo vem da GPU emulada: isto compara temas, não é benchmark de celular. O consumo real no aparelho e o impacto na bateria não foram medidos. O custo existe e é maior que o de um tema comum; por isso o tema Natal não é padrão e as proteções acima existem.
 
