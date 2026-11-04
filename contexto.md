@@ -519,3 +519,5 @@ Publicação 0.15.9: PR34 mesclado em ab75378e34bdeb29c4d09f35951404c6b1a8acbc, 
 ## Correções 0.15.10 — 04/11/2026
 
 O usuário relatou que as animações paravam ao trocar de música no Android, que a seek do Natal passava da janela no Windows e que não via o Papai Noel lá. A primeira era defeito da proteção de áudio da 0.15.9, reproduzido com falta real de áudio depois do pulo. A segunda vinha da altura da barra. A terceira, de o painel Tocando agora não ter recebido a cena. Correções em docs/NATAL_PLAYER_0159.md; sem teste físico nem Spotify real.
+
+Publicação 0.15.10: PR36 mesclado em e56f127217a757f4fab304a08209eb1e9298468f, release v0.15.10. Portal PR47 em 0cf5b3f, Worker 8b3cf6eb, downloads ao vivo na v0.15.10 e APK baixado pelo site com hash igual ao validado. Backup privado em https://drive.google.com/drive/folders/1YGceS2ZdSVEYzUj2LLSpHt8XFarnFUzV. Responsável: Claude.
