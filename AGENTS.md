@@ -406,3 +406,11 @@ por limite de upload do Drive. Sem Spotify autenticado/aparelho físico,
 instalação interativa Windows, acústica ou benchmark novo. Commits documentais
 posteriores não significam rebuild dos binários. Evidências em
 docs/release-01511-tests.json e docs/artifacts-01511.json.
+
+## Coleções 0.15.12 — limite por rota (04/11/2026)
+
+- Ler docs/COLLECTIONS_ROUTING_01512.md. A 0.15.11 generalizou indevidamente um 429 da discografia e bloqueou álbuns/playlists que o servidor permitia acessar. Não repetir essa política global.
+- Cooldown por método/família, normalizando IDs e ignorando query para não permitir repetir o endpoint limitado por paginação/categoria/mercado. Respeitar Retry-After integral; no máximo 64 famílias + excesso, sem evicção de espera ativa.
+- Erros de coleção têm estado persistente e nova tentativa. Paginação falha preserva linhas/link e cancela mix pendente; navegar/repetir consulta não inicia áudio ou muda fila.
+- Leitura autenticada real: álbum, faixas, playlist e itens HTTP 200 com bloqueio da discografia ativo; nenhum novo pedido desse endpoint. Sem streaming, teste físico Android ou benchmark novo. Não publicar credenciais, nomes/IDs de playlist ou corpos dos diagnósticos.
+- Preparação 0.15.12/versionCode 32, com certificado anterior.

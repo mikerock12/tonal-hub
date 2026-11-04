@@ -1,6 +1,16 @@
 # Contexto do Tonal Hub
 
-Atualizado em **04/11/2026**. Entrega: **Windows 0.15.11 / Android 0.15.11**, versionCode 31. Leia também [AGENTS.md](AGENTS.md).
+Atualizado em **04/11/2026**. Preparação: **Windows 0.15.12 / Android 0.15.12**, versionCode 32. Última publicada: 0.15.11. Leia também [AGENTS.md](AGENTS.md).
+
+## Coleções 0.15.12 — correção em preparação
+
+A 0.15.11 generalizou a espera da discografia para toda a API e impediu abrir
+álbuns/playlists que respondiam 200 no servidor. Corrigido para método/família de
+rota, com IDs e query normalizados para preservar a espera. Página Windows tem
+erro persistente e nova tentativa, preservando dados já carregados e pausa/fila.
+Leitura autenticada confirmou álbum/faixas e playlist/itens 200 com a espera da
+discografia ativa no cliente; zero novos pedidos de discografia ao servidor.
+Sem streaming ou Android físico. Ver docs/COLLECTIONS_ROUTING_01512.md.
 
 ## Discografia 0.15.11 — 04/11/2026 (publicada)
 

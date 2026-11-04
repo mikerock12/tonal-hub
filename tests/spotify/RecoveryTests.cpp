@@ -104,8 +104,92 @@ protected:
   }
 };
 
+class CatalogReadNetwork : public QNetworkAccessManager {
+public:
+  int requests = 0;
+protected:
+  QNetworkReply *createRequest(Operation op, const QNetworkRequest &request, QIODevice *body) override {
+    if (request.url().host() == "api.spotify.com") ++requests;
+    return QNetworkAccessManager::createRequest(op,request,body);
+  }
+};
+
 class SpotifyRecoveryTests {
 public:
+  // One request per route for diagnosis. No engine, playback commands, names,
+  // playlist IDs, response bodies or credentials are written to the report.
+  static QJsonObject catalogReadOnly() {
+    QJsonObject report{{"read_only",true},{"playback_commands",0},{"credentials_logged",false}};
+    CatalogReadNetwork network;
+    AuthManager auth(&network);
+    if (!auth.isAuthenticated()) { report["skipped"]="No saved Web API session"; return report; }
+    if (!spin([&]{return auth.hasValidAccessToken() || !auth.isRefreshing();},25000) || !auth.hasValidAccessToken()) {
+      report["skipped"]="Saved session could not be refreshed"; return report;
+    }
+    QJsonArray probes;
+    SpotifyApi api(&network,&auth);
+    const bool scoped=QCoreApplication::arguments().contains("--seed-discography-limit");
+    if(scoped)api.m_cooldowns.insert("GET /v1/artists/:id/albums",QDeadlineTimer(17848000,Qt::PreciseTimer));
+    bool albumOk=false,playlistOk=false,artistLocal=false;
+    auto read = [&](const QString &path,const QVariantMap &query,const QString &family) {
+      if(scoped) {
+        int status=-1;QJsonObject result;const int before=network.requests;
+        api.get("/"+path,query,[&](int s,const QJsonDocument &d){status=s;result=d.object();});
+        spin([&]{return status>=0;},20000);
+        probes.append(QJsonObject{{"endpoint_family",family},{"http",status},
+          {"rate_limit_source",result["rate_limit_source"].toString("spotify")},
+          {"retry_after",result["retry_after"]},{"requests_sent",network.requests-before}});
+        if(family=="album_detail")albumOk=status==200;
+        if(family=="playlist_detail")playlistOk=status==200;
+        if(family=="artist_albums")artistLocal=status==429&&network.requests==before&&result["rate_limit_source"]=="local";
+        return result;
+      }
+      QUrl url("https://api.spotify.com/v1/"+path);QUrlQuery q;
+      for(auto it=query.cbegin();it!=query.cend();++it)q.addQueryItem(it.key(),it.value().toString());
+      url.setQuery(q);QNetworkRequest request(url);
+      request.setAttribute(QNetworkRequest::RedirectPolicyAttribute,QNetworkRequest::ManualRedirectPolicy);
+      request.setRawHeader("Authorization","Bearer "+auth.accessToken().toUtf8());
+      request.setTransferTimeout(12000);
+      auto *reply=network.get(request);bool done=false;
+      QObject::connect(reply,&QNetworkReply::finished,&network,[&]{done=true;});
+      QTimer::singleShot(15000,reply,&QNetworkReply::abort);
+      QObject::connect(reply,&QNetworkReply::readyRead,reply,[reply]{if(reply->bytesAvailable()>1024*1024)reply->abort();});
+      spin([&]{return done;},16000);
+      const int status=reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+      probes.append(QJsonObject{{"endpoint_family",family},{"http",status},{"retry_after",QString::fromLatin1(reply->rawHeader("Retry-After"))}});
+      const auto doc=QJsonDocument::fromJson(reply->readAll()).object();reply->deleteLater();return doc;
+    };
+    const auto search=read("search",{{"q","artist:Hole"},{"type","track"},{"limit",1}},"search");
+    const auto lists=read("me/playlists",{{"limit",1}},"my_playlists");
+    const auto tracks=search["tracks"].toObject()["items"].toArray();
+    if(!tracks.isEmpty()) {
+      const auto track=tracks.first().toObject();
+      const auto album=track["album"].toObject()["id"].toString();
+      if(album.size()==22) {
+        read("albums/"+album,{},"album_detail");
+        if(scoped)read("albums/"+album+"/tracks",{{"limit",50}},"album_tracks");
+      }
+    }
+    const auto playlists=lists["items"].toArray();
+    if(!playlists.isEmpty()) {
+      const auto id=playlists.first().toObject()["id"].toString();
+      if(id.size()==22) {
+        read("playlists/"+id,{},"playlist_detail");
+        if(scoped)read("playlists/"+id+"/items",{{"limit",50}},"playlist_items");
+      }
+    }
+    if(!tracks.isEmpty()) {
+      const auto artists=tracks.first().toObject()["artists"].toArray();
+      if(!artists.isEmpty()) {
+        const auto id=artists.first().toObject()["id"].toString();
+        if(id.size()==22)read("artists/"+id+"/albums",{{"include_groups","album"},{"limit",1}},"artist_albums");
+      }
+    }
+    report["probes"]=probes;report["completed"]=true;
+    report["production_client_with_replayed_artist_wait"]=scoped;
+    if(scoped){report["collections_opened"]=albumOk&&playlistOk;report["artist_blocked_locally_without_request"]=artistLocal;}
+    return report;
+  }
   // Catalog and queue reads only. Never starts an engine or changes playback.
   static QJsonObject discoveryReadOnly() {
     QJsonObject report{{"passed", false}, {"read_only", true},
@@ -603,14 +687,21 @@ public:
     network.respond = [](const auto &, const auto &) { return Response{429, "{}", false, 0, "7200"}; };
     status = -1; api.get(path, {{"include_groups", "single"}}, done);
     require(spin([&]{return status == 429;}), "long rate limit callback stuck");
-    require(result.object()["retry_after"].toInteger() == 7200 && api.m_cooldown.remainingTime() > 7190000,
+    require(result.object()["retry_after"].toInteger() == 7200 && api.m_cooldowns.cbegin().value().remainingTime() > 7190000,
             "Retry-After was shortened");
     const int sent = network.sent.size();
-    status = -1; api.get("/search", {}, done);
-    require(status == 429 && network.sent.size() == sent, "cooldown still sent a Web API request");
+    network.respond = [](const auto &,const auto &){return Response{200,R"({"items":[]})"};};
+    for(const auto *route : {"/search","/albums/record","/playlists/list","/me/player"}) {
+      status=-1;api.get(route,{},done);
+      require(spin([&]{return status==200;}),"artist 429 blocked an unrelated endpoint");
+    }
+    require(network.sent.size()==sent+4 && api.isRateLimited(),"successful other routes cleared artist cooldown");
+    const int sentAfterOthers=network.sent.size();
+    status=-1;api.get("/artists/another/albums",{{"include_groups","compilation"},{"offset",10}},done);
+    require(status==429 && network.sent.size()==sentAfterOthers && result.object()["rate_limit_source"]=="local","artist ID/category/page bypassed wait");
     status = -1; api.get(path, albums, done);
-    require(status == 200 && network.sent.size() == sent && api.isRateLimited(), "cached album lost during cooldown");
-    api.m_cooldown = QDeadlineTimer(0);
+    require(status == 200 && network.sent.size() == sentAfterOthers && api.isRateLimited(), "cached album lost during cooldown");
+    api.m_cooldowns.clear();
     api.m_catalogPages.first().expires = QDeadlineTimer(0);
     int attempts = 0;
     network.respond = [&](const auto &, const auto &) { return ++attempts == 1 ? Response{429, "{}"} : Response{200, R"({"items":[]})"}; };
@@ -618,12 +709,12 @@ public:
     const bool recovered = spin([&]{return status == 200;}, 2000);
     if (!recovered || attempts != 2)
       std::cerr << "catalog short retry: status=" << status << " attempts=" << attempts
-                << " wait_ms=" << api.m_cooldown.remainingTime() << '\n';
+                << " wait_ms=" << (api.m_cooldowns.isEmpty()?0:api.m_cooldowns.cbegin().value().remainingTime()) << '\n';
     require(recovered && attempts == 2, "short 429 did not recover after wait / cache did not expire");
     require(!api.isRateLimited(), "cooldown remained active after expiration");
     emit auth.authenticatedChanged();
     require(api.m_catalogPages.isEmpty(), "discography cache survived account change");
-    std::cout << "PASS catalog cache, full Retry-After, shared cooldown, short recovery and account clear\n";
+    std::cout << "PASS catalog cache, full Retry-After, independent endpoint waits, short recovery and account clear\n";
   }
   static void networkAndResume() {
     QTemporaryDir storage;
@@ -1306,7 +1397,8 @@ int main(int argc, char **argv) {
   QCoreApplication app(argc, argv);
   const bool live = app.arguments().contains("--live-session") ||
                     app.arguments().contains("--ready-only") ||
-                    app.arguments().contains("--discovery-readonly");
+                    app.arguments().contains("--discovery-readonly") ||
+                    app.arguments().contains("--catalog-readonly");
   app.setOrganizationName(live ? "Tonal" : "TonalRecoveryTests");
   app.setApplicationName(live ? "Tonal" : "Playback");
   if (app.arguments().contains("--name"))
@@ -1317,7 +1409,9 @@ int main(int argc, char **argv) {
   if (!live)
     qputenv("RUST_LOG", "warn");
   QJsonObject report;
-  if (app.arguments().contains("--discovery-readonly"))
+  if (app.arguments().contains("--catalog-readonly"))
+    report = SpotifyRecoveryTests::catalogReadOnly();
+  else if (app.arguments().contains("--discovery-readonly"))
     report = SpotifyRecoveryTests::discoveryReadOnly();
   else if (live)
     report = SpotifyRecoveryTests::liveSession(
@@ -1386,5 +1480,9 @@ int main(int argc, char **argv) {
     file.write(QJsonDocument(report).toJson());
   }
   std::cout << QJsonDocument(report).toJson().constData();
+  if(app.arguments().contains("--catalog-readonly")) {
+    if(app.arguments().contains("--seed-discography-limit"))return report["collections_opened"].toBool()&&report["artist_blocked_locally_without_request"].toBool()?0:1;
+    return report["completed"].toBool()?0:3;
+  }
   return report["passed"].toBool() ? 0 : report.contains("skipped") ? 3 : 1;
 }

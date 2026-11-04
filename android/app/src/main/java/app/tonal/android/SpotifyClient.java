@@ -114,10 +114,10 @@ final class SpotifyClient {
         }});
     }
     private JSONObject catalogRequest(String url,String method,String body,String token,String mime) throws Exception {
-        int remaining=catalogPolicy.remaining();
+        int remaining=catalogPolicy.remaining(method,url);
         if(remaining>0)throw rateLimit(remaining);
         try{return requestContent(url,method,body,token,mime);}
-        catch(ApiFailure error){if(error.status==429){catalogPolicy.limited(error.retryAfter);throw rateLimit(catalogPolicy.remaining());}throw error;}
+        catch(ApiFailure error){if(error.status==429){catalogPolicy.limited(method,url,error.retryAfter);throw rateLimit(catalogPolicy.remaining(method,url));}throw error;}
     }
     private static ApiFailure rateLimit(int seconds){return new ApiFailure(429,seconds,"Spotify HTTP 429: consultas temporariamente limitadas. Aguarde "+seconds+" s para tentar novamente.");}
     // Paging links come from Spotify. Never send a bearer token to another origin.
