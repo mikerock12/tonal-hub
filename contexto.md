@@ -513,3 +513,5 @@ Pedido do usuário: fios mais reais passando pela frente e por trás da capa, se
 Fio, soquetes e sombras são pré-renderizados; em execução mudam só as opacidades das lâmpadas. O clipe dele era opaco, com xadrez gravado, câmera à deriva e sem loop: foi recortado, estabilizado e fechado em 81 quadros. Medição por partes mostrou que o custo vinha de relógios separados, não do Papai Noel nem das lâmpadas: relógio único aplicado. Na AVD o Natal segue bem mais caro que um tema comum, com 0 underruns; não é medição de aparelho.
 
 Apito: no Android a troca de faixa pausava sem descartar a fila, e 74 ms da música anterior tocavam antes da nova; o Windows já descartava. Corrigido, sobra medida em 0. Não foi possível confirmar no carro que era esse o som. Detalhes em docs/NATAL_PLAYER_0159.md e docs/release-0159-tests.json.
+
+Publicação 0.15.9: PR34 mesclado em ab75378e34bdeb29c4d09f35951404c6b1a8acbc, release v0.15.9 com APKs, instalador, ZIP e SHA256SUMS. Portal PR45 em d098c78, Worker bd47e92f, downloads ao vivo redirecionando para a v0.15.9. Backup privado em https://drive.google.com/drive/folders/1rPWbcrsvQ0WYOJtb9HKGkeEMxsREokSl. Responsável: Claude.

@@ -69,6 +69,25 @@
       "fatalExceptions": 0,
       "alignment": 16384,
       "certificateMatches0158": true
+    },
+    "ci": {
+      "pr": 34,
+      "checks": {
+        "passed": 5,
+        "total": 5
+      },
+      "rerunsNeeded": [
+        "android-components",
+        "personal-library"
+      ]
+    },
+    "portal": {
+      "tests": {
+        "passed": 59,
+        "total": 59
+      },
+      "liveDownloadsPointToV0159": true,
+      "workerVersion": "bd47e92f-2ef4-4098-8fb6-36c1cd6c9389"
     }
   },
   "avdCost": {
@@ -100,8 +119,9 @@
     "First QML render showed only lit bulbs: a garland.layer leftover resolved to the Item layer property and produced an invalid image URL. Fixed, and the test now requires both baked layers to load.",
     "First Android seasonal run failed on a test that sampled outside the painted cover. Test corrected; the product was not at fault.",
     "CI personal-library failed: its Qt lacked the optional qtimageformats module, so WebP did not decode. CI now installs it and Windows packaging refuses to run without qwebp.dll.",
-    "CI android-components failed at Enable KVM before any project test ran: /dev/kvm was unavailable on the runner. The same halloweenTests action passed on the dedicated AVD.",
-    "First seam candidates showed a double Santa or a double mug. Pose matching alone was not enough; the final seam sits at a slow part of the motion and uses DIS optical flow."
+    "CI android-components failed three times at Enable KVM before any project test ran. The step now reports /dev/kvm explicitly; on the next run the device was available and halloweenTests passed on the CI emulator. The same action had also passed on the dedicated AVD.",
+    "First seam candidates showed a double Santa or a double mug. Pose matching alone was not enough; the final seam sits at a slow part of the motion and uses DIS optical flow.",
+    "CI personal-library failed once on history_stories (stage: lyric evidence bound) at e76adf7, whose only difference from the passing 627070c was one workflow line. The failed job passed on rerun. This reader test is unrelated to this delivery; it was not changed or relaxed, and the intermittent failure remains unexplained."
   ],
   "limits": {
     "syntheticData": true,
