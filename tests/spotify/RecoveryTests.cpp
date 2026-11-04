@@ -36,6 +36,7 @@ struct Response {
   QByteArray body;
   bool hang = false;
   int delay = 0;
+  QByteArray retryAfter = "1";
 };
 class FakeReply : public QNetworkReply {
 public:
@@ -44,6 +45,7 @@ public:
     setRequest(request);
     setUrl(request.url());
     setAttribute(QNetworkRequest::HttpStatusCodeAttribute, response.status);
+    if (response.status == 429) setRawHeader("Retry-After", response.retryAfter);
     if (response.status >= 400 || response.status == 0)
       setError(ConnectionRefusedError, "simulated response");
     open(QIODevice::ReadOnly);
@@ -587,6 +589,41 @@ public:
     auth.m_refreshToken = "local-test-refresh";
     auth.m_accessToken = "local-test-access";
     auth.m_expiresAt = QDateTime::currentDateTimeUtc().addSecs(600);
+  }
+  static void catalogRateLimit() {
+    FakeNetwork network; AuthManager auth(&network); SpotifyApi api(&network, &auth); fakeAuth(auth);
+    const QString path = "/artists/test/albums";
+    const QVariantMap albums{{"include_groups", "album"}, {"limit", 10}};
+    int status = -1; QJsonDocument result;
+    auto done = [&](int s, const QJsonDocument &d) { status = s; result = d; };
+    network.respond = [](const auto &, const auto &) { return Response{200, R"({"items":[{"id":"album"}],"next":null})"}; };
+    api.get(path, albums, done); require(spin([&]{return status == 200;}), "discography response missing");
+    status = -1; api.get(path, albums, done);
+    require(status == 200 && network.sent.size() == 1, "discography revisit did not use cache");
+    network.respond = [](const auto &, const auto &) { return Response{429, "{}", false, 0, "7200"}; };
+    status = -1; api.get(path, {{"include_groups", "single"}}, done);
+    require(spin([&]{return status == 429;}), "long rate limit callback stuck");
+    require(result.object()["retry_after"].toInteger() == 7200 && api.m_cooldown.remainingTime() > 7190000,
+            "Retry-After was shortened");
+    const int sent = network.sent.size();
+    status = -1; api.get("/search", {}, done);
+    require(status == 429 && network.sent.size() == sent, "cooldown still sent a Web API request");
+    status = -1; api.get(path, albums, done);
+    require(status == 200 && network.sent.size() == sent && api.isRateLimited(), "cached album lost during cooldown");
+    api.m_cooldown = QDeadlineTimer(0);
+    api.m_catalogPages.first().expires = QDeadlineTimer(0);
+    int attempts = 0;
+    network.respond = [&](const auto &, const auto &) { return ++attempts == 1 ? Response{429, "{}"} : Response{200, R"({"items":[]})"}; };
+    status = -1; api.get(path, albums, done);
+    const bool recovered = spin([&]{return status == 200;}, 2000);
+    if (!recovered || attempts != 2)
+      std::cerr << "catalog short retry: status=" << status << " attempts=" << attempts
+                << " wait_ms=" << api.m_cooldown.remainingTime() << '\n';
+    require(recovered && attempts == 2, "short 429 did not recover after wait / cache did not expire");
+    require(!api.isRateLimited(), "cooldown remained active after expiration");
+    emit auth.authenticatedChanged();
+    require(api.m_catalogPages.isEmpty(), "discography cache survived account change");
+    std::cout << "PASS catalog cache, full Retry-After, shared cooldown, short recovery and account clear\n";
   }
   static void networkAndResume() {
     QTemporaryDir storage;
@@ -1289,6 +1326,7 @@ int main(int argc, char **argv) {
     try {
       SpotifyRecoveryTests::volumeControl();
       if (!app.arguments().contains("--volume-only")) {
+        SpotifyRecoveryTests::catalogRateLimit();
         SpotifyRecoveryTests::skipCascade();
         SpotifyRecoveryTests::networkAndResume();
         SpotifyRecoveryTests::remoteTransport();

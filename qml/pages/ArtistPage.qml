@@ -20,6 +20,8 @@ Flickable {
     property var popular: []
     property var releases: []
     property var releaseNext: ({})   // próxima página de cada tipo ("album" | "single" | "compilation")
+    property var releaseStatus: ({})
+    property var releaseErrors: ({})
     property string releaseFilter: "album"
     property bool showAllPopular: false
     property bool showAllReleases: false
@@ -41,11 +43,11 @@ Flickable {
     onRouteChanged: Qt.callLater(load)
 
     function load() {
+        const s = ++serial
         // Rotas de outro tipo podem chegar aqui durante a troca de página (ver CollectionPage.load).
         if (!route || route.page !== "artist" || artistId === "") return
-        const s = ++serial
         contentY = 0
-        name = ""; imageUrl = ""; uri = ""; genres = ""; popular = []; releases = []; releaseNext = ({})
+        name = ""; imageUrl = ""; uri = ""; genres = ""; popular = []; releases = []; releaseNext = ({}); releaseStatus = ({}); releaseErrors = ({})
         showAllPopular = false; showAllReleases = false; following = false; tint = "#404040"
         releaseFilter = "album"   // o filtro do artista anterior não vale para este
 
@@ -59,31 +61,38 @@ Flickable {
             root.loadPopular(s)
         })
 
-        // Fev/2026: neste endpoint o limit vai até 10 ("Invalid limit" acima disso). Um pedido por tipo
-        // traz os 10 mais recentes de cada um, sem que os álbuns ocupem o espaço dos singles.
-        const groups = ["album", "single", "compilation"]
-        let pending = groups.length
-        for (const group of groups) {
-            App.api.call("GET", "/artists/" + artistId + "/albums", { include_groups: group, limit: 10 }, null,
-                         function(status, data) {
-                if (s !== root.serial) return
-                if (status === 200)
-                    root.addReleases(group, data)
-                // Sem álbuns, abre no primeiro tipo que tiver lançamentos (depois de todas as respostas).
-                if (--pending === 0 && !root.releases.some(r => r.type === "album")) {
-                    const other = root.releases.find(r => r.type !== "album")
-                    if (other) root.releaseFilter = other.type
-                }
-            })
-        }
+        // Other categories are loaded only when selected; revisits use the API cache.
+        loadReleaseGroup("album")
 
         App.api.call("GET", "/me/library/contains", { uris: "spotify:artist:" + artistId }, null, function(status, data) {
             if (s === root.serial && status === 200 && data && data.length > 0) root.following = data[0]
         })
     }
 
+    function setReleaseState(group, state, error) {
+        const states = Object.assign({}, releaseStatus)
+        const errors = Object.assign({}, releaseErrors)
+        states[group] = state; errors[group] = error || ""
+        releaseStatus = states; releaseErrors = errors
+    }
+
+    function loadReleaseGroup(group) {
+        if (!route || route.page !== "artist" || !artistId || releaseStatus[group] === "loading" || releaseStatus[group] === "ready" || releases.some(r => r.type === group)) return
+        const s = serial
+        setReleaseState(group, "loading", "")
+        App.api.call("GET", "/artists/" + artistId + "/albums", {include_groups: group, limit: 10}, null, function(status, data) {
+            if (s !== root.serial) return
+            if (status === 200 && data && Array.isArray(data.items)) {
+                root.addReleases(group, data)
+                root.setReleaseState(group, "ready", "")
+            } else {
+                root.setReleaseState(group, "error", data && data.error && data.error.message ? data.error.message : qsTr("Não foi possível carregar os lançamentos (HTTP %1).").arg(status))
+            }
+        })
+    }
+
     function addReleases(group, page) {
-        root.releases = root.releases.concat(page.items.filter(al => al !== null).map(function(al) {
+        root.releases = root.releases.concat(page.items.filter(al => al && !root.releases.some(r => r.id === al.id && r.type === group)).slice(0, Math.max(0, 50 - root.releases.filter(r => r.type === group).length)).map(function(al) {
             return { kind: "album", id: al.id, uri: al.uri, title: al.name, type: group,
                      subtitle: (al.release_date || "").substring(0, 4) + " • " +
                                (al.album_type === "single" ? qsTr("Single") : al.album_type === "compilation" ? qsTr("Compilação") : qsTr("Álbum")),
@@ -99,7 +108,8 @@ Flickable {
     function loadMoreReleases() {
         const group = releaseFilter
         const url = releaseNext[group]
-        if (!url || releases.filter(r => r.type === group).length >= 50) return
+        if (!url || releaseStatus[group] === "loading" || releases.filter(r => r.type === group).length >= 50) return
+        setReleaseState(group, "loading", "")
         const s = serial
         const n = Object.assign({}, releaseNext)
         n[group] = ""   // evita pedir a mesma página duas vezes
@@ -110,15 +120,15 @@ Flickable {
                 const back = Object.assign({}, root.releaseNext)
                 back[group] = url
                 root.releaseNext = back
+                root.setReleaseState(group, "error", data && data.error ? data.error.message : qsTr("Falha ao carregar mais lançamentos."))
                 return
             }
             root.addReleases(group, data)
-            if (root.showAllReleases && root.releaseFilter === group)
-                root.loadMoreReleases()
+            root.setReleaseState(group, "ready", "")
         })
     }
 
-    onReleaseFilterChanged: if (showAllReleases) loadMoreReleases()
+    onReleaseFilterChanged: { showAllReleases = false; loadReleaseGroup(releaseFilter) }
 
     // O endpoint de "top tracks" saiu do modo de desenvolvimento em fev/2026.
     // A busca por artist:"Nome" devolve as faixas mais relevantes do artista, o que dá um resultado parecido.
@@ -297,7 +307,7 @@ Flickable {
 
         // Discografia
         Column {
-            visible: root.releases.length > 0
+            objectName: "artistDiscography"
             width: parent.width
             spacing: 12
             SectionHeader { width: parent.width; title: qsTr("Discografia") }
@@ -306,11 +316,27 @@ Flickable {
                 Chip { text: qsTr("Álbuns"); checked: root.releaseFilter === "album"; onClicked: root.releaseFilter = "album" }
                 Chip { text: qsTr("Singles e EPs"); checked: root.releaseFilter === "single"; onClicked: root.releaseFilter = "single" }
                 Chip {
-                    visible: root.releases.some(r => r.type === "compilation")
-                    text: qsTr("Compilações"); checked: root.releaseFilter === "compilation"; onClicked: root.releaseFilter = "compilation"
+                    text: qsTr("Coletâneas"); checked: root.releaseFilter === "compilation"; onClicked: root.releaseFilter = "compilation"
                 }
             }
+            Label {
+                objectName: "discographyStatus"
+                width: parent.width
+                wrapMode: Text.WordWrap
+                color: Theme.textSecondary
+                visible: text !== ""
+                text: root.releaseStatus[root.releaseFilter] === "loading" ? qsTr("Carregando lançamentos…") :
+                      root.releaseStatus[root.releaseFilter] === "error" ? root.releaseErrors[root.releaseFilter] :
+                      root.releaseStatus[root.releaseFilter] === "ready" && !root.releases.some(r => r.type === root.releaseFilter) ? qsTr("Nenhum lançamento nesta categoria.") : ""
+            }
+            Button {
+                objectName: "discographyRetry"
+                visible: root.releaseStatus[root.releaseFilter] === "error"
+                text: qsTr("Tentar novamente")
+                onClicked: { if (root.releaseNext[root.releaseFilter]) root.loadMoreReleases(); else root.loadReleaseGroup(root.releaseFilter) }
+            }
             HorizontalShelf {
+                visible: model.length > 0
                 width: parent.width
                 title: ""
                 showAll: root.showAllReleases
@@ -318,6 +344,11 @@ Flickable {
                 onShowAllClicked: { root.showAllReleases = true; root.loadMoreReleases() }
                 onItemClicked: (c) => Nav.go("album", { id: c.id })
                 onItemPlayClicked: (c) => App.player.playContext(c.uri)
+            }
+            Button {
+                visible: !!root.releaseNext[root.releaseFilter] && root.releaseStatus[root.releaseFilter] === "ready" && root.releases.filter(r => r.type === root.releaseFilter).length < 50
+                text: qsTr("Carregar mais")
+                onClicked: { root.showAllReleases = true; root.loadMoreReleases() }
             }
         }
     }

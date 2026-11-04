@@ -23,6 +23,7 @@ final class SpotifyClient {
     final ExecutorService worker=Executors.newFixedThreadPool(2);
     private final Activity activity;
     private volatile boolean closed;
+    private final SpotifyCatalogPolicy catalogPolicy=new SpotifyCatalogPolicy();
     private static final ScheduledExecutorService deadlines=Executors.newSingleThreadScheduledExecutor(r->{Thread t=new Thread(r,"spotify-deadlines");t.setDaemon(true);return t;});
     private final Secrets secrets;
     private final boolean engine;
@@ -34,7 +35,7 @@ final class SpotifyClient {
     static String encode(String s){try{return java.net.URLEncoder.encode(s,"UTF-8");}catch(java.io.UnsupportedEncodingException impossible){throw new AssertionError(impossible);}}
     private static String random(){byte[] bytes=new byte[32];new SecureRandom().nextBytes(bytes);return Base64.encodeToString(bytes,Base64.URL_SAFE|Base64.NO_WRAP|Base64.NO_PADDING);}
     private String clientId(){return engine?ENGINE_CLIENT_ID:activity.getSharedPreferences("settings",0).getString("clientId","");}
-    void logout(){tokens=null;secrets.clear();}
+    void logout(){tokens=null;secrets.clear();catalogPolicy.clear();}
     private void deliver(Consumer<String> listener,String value){activity.runOnUiThread(()->{if(!closed)listener.accept(value);});}
     void login(String id,Consumer<String> result){
         if(!id.matches("[0-9a-fA-F]{32}")){deliver(result,"Client ID inválido (32 caracteres hexadecimais).");return;}
@@ -70,7 +71,7 @@ final class SpotifyClient {
                 }
                 server.close();callback=null;
                 JSONObject value=request("https://accounts.spotify.com/api/token","POST","grant_type=authorization_code&code="+encode(code)+"&redirect_uri="+encode(redirect)+"&client_id="+encode(id)+"&code_verifier="+encode(verifier),null);
-                store(value,null);deliver(result,"Login concluído");
+                catalogPolicy.clear();store(value,null);deliver(result,"Login concluído");
             }catch(Exception error){deliver(result,"Login: "+error.getMessage());}
             finally{ServerSocket server=callback;if(server!=null){try{server.close();}catch(IOException ignored){}callback=null;}}
         });
@@ -91,8 +92,34 @@ final class SpotifyClient {
         return tokens.getString("access_token");
     }
     void get(String path,Consumer<JSONObject> result,Consumer<String> failure){
-        worker.execute(()->{try{JSONObject json=request(apiUrl(path),"GET",null,accessToken());activity.runOnUiThread(()->{if(!closed)result.accept(json);});}catch(Exception error){deliver(failure,error.getMessage());}});
+        get(path,result,failure,()->!closed);
     }
+    void get(String path,Consumer<JSONObject> result,Consumer<String> failure,BooleanSupplier valid){
+        get(path,result,failure,valid,0);
+    }
+    private void get(String path,Consumer<JSONObject> result,Consumer<String> failure,BooleanSupplier valid,int attempt){
+        if(closed||!valid.getAsBoolean())return;
+        worker.execute(()->{if(closed||!valid.getAsBoolean())return;try{
+            int epoch=catalogPolicy.epoch();String url=apiUrl(path);String token=accessToken();
+            String cached=catalogPolicy.cached(url);
+            JSONObject json=cached!=null?new JSONObject(cached):catalogRequest(url,"GET",null,token,"application/json");
+            if(cached==null&&json.optJSONArray("items")!=null)catalogPolicy.remember(url,json.toString(),epoch);
+            activity.runOnUiThread(()->{if(!closed&&valid.getAsBoolean())result.accept(json);});
+        }catch(Exception error){
+            if(error instanceof ApiFailure){ApiFailure api=(ApiFailure)error;
+                if(api.status==401&&attempt<1){synchronized(this){if(tokens!=null)MusicStore.put(tokens,"expires_at",0);}get(path,result,failure,valid,attempt+1);return;}
+                if(api.status==429&&api.retryAfter<=30&&attempt<2){deadlines.schedule(()->get(path,result,failure,valid,attempt+1),Math.max(1,api.retryAfter),TimeUnit.SECONDS);return;}
+            }
+            activity.runOnUiThread(()->{if(!closed&&valid.getAsBoolean())failure.accept(error.getMessage());});
+        }});
+    }
+    private JSONObject catalogRequest(String url,String method,String body,String token,String mime) throws Exception {
+        int remaining=catalogPolicy.remaining();
+        if(remaining>0)throw rateLimit(remaining);
+        try{return requestContent(url,method,body,token,mime);}
+        catch(ApiFailure error){if(error.status==429){catalogPolicy.limited(error.retryAfter);throw rateLimit(catalogPolicy.remaining());}throw error;}
+    }
+    private static ApiFailure rateLimit(int seconds){return new ApiFailure(429,seconds,"Spotify HTTP 429: consultas temporariamente limitadas. Aguarde "+seconds+" s para tentar novamente.");}
     // Paging links come from Spotify. Never send a bearer token to another origin.
     static String apiUrl(String path) throws IOException {
         URI uri=URI.create(path.contains("://")?path:"https://api.spotify.com/v1/"+path);
@@ -100,7 +127,7 @@ final class SpotifyClient {
         return uri.toString();
     }
     void mutate(String method,String path,JSONObject body,Consumer<JSONObject> result,Consumer<String> failure){
-        worker.execute(()->{try{JSONObject json=request(apiUrl(path),method,body==null?null:body.toString(),accessToken(),true);activity.runOnUiThread(()->{if(!closed)result.accept(json);});}catch(Exception error){deliver(failure,error.getMessage());}});
+        worker.execute(()->{try{JSONObject json=catalogRequest(apiUrl(path),method,body==null?null:body.toString(),accessToken(),"application/json");activity.runOnUiThread(()->{if(!closed)result.accept(json);});}catch(Exception error){deliver(failure,error.getMessage());}});
     }
     static final class ApiFailure extends IOException {
         final int status,retryAfter;
@@ -110,12 +137,12 @@ final class SpotifyClient {
     private void importCall(String method,String path,String payload,String mime,Consumer<JSONObject> result,Consumer<String> failure,BooleanSupplier valid,int attempt){
         if(closed||!valid.getAsBoolean())return;
         worker.execute(()->{if(!valid.getAsBoolean())return;try{
-            JSONObject value=requestContent(apiUrl(path),method,payload,accessToken(),mime);
+            JSONObject value=catalogRequest(apiUrl(path),method,payload,accessToken(),mime);
             activity.runOnUiThread(()->{if(!closed&&valid.getAsBoolean())result.accept(value);});
         }catch(Exception error){
             if(error instanceof ApiFailure){ApiFailure api=(ApiFailure)error;
                 if(api.status==401&&attempt<1){synchronized(this){if(tokens!=null)MusicStore.put(tokens,"expires_at",0);}new android.os.Handler(android.os.Looper.getMainLooper()).post(()->importCall(method,path,payload,mime,result,failure,valid,attempt+1));return;}
-                if(api.status==429&&attempt<3){new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(()->importCall(method,path,payload,mime,result,failure,valid,attempt+1),Math.max(1,Math.min(60,api.retryAfter))*1000L);return;}
+                if(api.status==429&&api.retryAfter<=30&&attempt<3){new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(()->importCall(method,path,payload,mime,result,failure,valid,attempt+1),Math.max(1,api.retryAfter)*1000L);return;}
             }
             activity.runOnUiThread(()->{if(!closed&&valid.getAsBoolean())failure.accept(error.getMessage());});
         }});
@@ -132,7 +159,7 @@ final class SpotifyClient {
             int code=connection.getResponseCode();InputStream input=code<400?connection.getInputStream():connection.getErrorStream();
             ByteArrayOutputStream bytes=new ByteArrayOutputStream();if(input!=null){try(input){byte[] block=new byte[8192];int count;while((count=input.read(block))!=-1){if(bytes.size()+count>4*1024*1024)throw new IOException("Resposta muito grande");bytes.write(block,0,count);}}}
             String body=new String(bytes.toByteArray(),StandardCharsets.UTF_8);
-            if(code>=400){String detail="";try{JSONObject error=new JSONObject(body);Object e=error.opt("error");detail=e instanceof JSONObject?((JSONObject)e).optString("message"):error.optString("error_description");}catch(JSONException ignored){}throw new ApiFailure(code,connection.getHeaderFieldInt("Retry-After",1),"Spotify HTTP "+code+(detail.isEmpty()?"":": "+detail));}
+            if(code>=400){String detail="";try{JSONObject error=new JSONObject(body);Object e=error.opt("error");detail=e instanceof JSONObject?((JSONObject)e).optString("message"):error.optString("error_description");}catch(JSONException ignored){}throw new ApiFailure(code,Math.max(1,connection.getHeaderFieldInt("Retry-After",30)),"Spotify HTTP "+code+(detail.isEmpty()?"":": "+detail));}
             if(body.trim().isEmpty())return new JSONObject();Object parsed=new JSONTokener(body).nextValue();return parsed instanceof JSONArray?new JSONObject().put("items",parsed):(JSONObject)parsed;
         }finally{deadline.cancel(false);connection.disconnect();}
     }

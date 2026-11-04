@@ -1,0 +1,20 @@
+{
+  "date": "2026-11-04",
+  "purpose": "local discography correction test candidates, not released 0.15.10 binaries",
+  "sourceBase": "23a4a81cfa2c67377bc76600b70b4b5beb1f72a8",
+  "sourceState": "uncommitted working tree; source hashes in catalog-rate-limits-tests.json",
+  "windowsRuntime": "Tonal.exe must run inside out/build/release with its existing DLLs and plugins",
+  "android": "Same versionCode 30 and signing certificate as delivered 0.15.10; no automatic installation or release update",
+  "artifacts": [
+    {
+      "path": "out/build/release/Tonal.exe",
+      "bytes": 5950464,
+      "sha256": "e9c867029e39e6a5838d0a0a9f7df63dd489e6c6b5dd952330c23e3a8492ee3d"
+    },
+    {
+      "path": "out/catalog-fix-20261104/Tonal-Android-0.15.10-discografia-teste-arm64-v8a.apk",
+      "bytes": 38249420,
+      "sha256": "89ee44bcd08a8634e4993191253b151a10f325879e383952b443aab14f4bc237"
+    }
+  ]
+}

@@ -19,8 +19,8 @@ final class CatalogScreen {
     private final LinearLayout container;
     private LinearLayout content;
     private ScrollView scroll;
-    private int generation;
-    private TextView albumSummary;private boolean closed;private boolean showStats;private final ArrayList<View> statViews=new ArrayList<>();
+    private volatile int generation;
+    private TextView albumSummary;private volatile boolean closed;private boolean showStats;private final ArrayList<View> statViews=new ArrayList<>();
     private Route route=new Route("home","","","","");
     private final ArrayDeque<Route> history=new ArrayDeque<>();
     private static final String[] TYPES={"all","track","artist","album","playlist"};
@@ -52,7 +52,7 @@ final class CatalogScreen {
     private void heading(LinearLayout parent,String text){ui.space(parent,18);parent.addView(ui.title(text,21));ui.space(parent,10);}
     private TextView message(LinearLayout parent,String text){TextView v=ui.text(text,14,Ui.MUTED);ui.pad(v,0,12);parent.addView(v);return v;}
     private void signedOut(){title("Sua música no Tonal");message(content,"Entre para buscar músicas, explorar artistas e ouvir sua biblioteca Spotify.");content.addView(ui.action("Entrar com Spotify",host::login));}
-    private void request(String path,Consumer<JSONObject> success,Consumer<String> failure){int ticket=generation;api.get(path,json->{if(!closed&&ticket==generation)success.accept(json);},error->{if(!closed&&ticket==generation)failure.accept(error);});}
+    private void request(String path,Consumer<JSONObject> success,Consumer<String> failure){int ticket=generation;api.get(path,json->{if(!closed&&ticket==generation)success.accept(json);},error->{if(!closed&&ticket==generation)failure.accept(error);},()->!closed&&ticket==generation);}
     private void problem(LinearLayout target,String error,Runnable retry){
         target.removeAllViews();message(target,error.contains("403")?"O Spotify não permitiu este acesso. Atualize a autorização da biblioteca em Conta.":error);
         target.addView(ui.action(error.contains("403")?"Atualizar autorização":"Tentar novamente",error.contains("403")?host::login:retry));
@@ -153,7 +153,12 @@ final class CatalogScreen {
         statsToggle("artist",route.name);
         LinearLayout tracks=section("Músicas");String q="artist:\""+route.name.replace("\"","")+"\"";
         Pager songs=new Pager(tracks,"search?type=track&limit=10&q="+SpotifyClient.encode(q),"track","",true,"");songs.artistId=route.id;songs.load();
-        for(String group:new String[]{"album","single","compilation"}){LinearLayout albums=section(group.equals("album")?"Álbuns":group.equals("single")?"Singles e EPs":"Coletâneas");new Pager(albums,"artists/"+route.id+"/albums?include_groups="+group+"&limit=10","album","",false,"").load();}
+        // Serialize categories: no burst of three identical endpoint requests.
+        ArrayList<Pager> discography=new ArrayList<>();
+        for(String group:new String[]{"album","single","compilation"}){LinearLayout albums=section(group.equals("album")?"Álbuns":group.equals("single")?"Singles e EPs":"Coletâneas");discography.add(new Pager(albums,"artists/"+route.id+"/albums?include_groups="+group+"&limit=10","album","",false,""));}
+        int ticket=generation;
+        for(int i=0;i<discography.size()-1;i++){Pager next=discography.get(i+1);discography.get(i).settled=()->new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(()->{if(!closed&&ticket==generation)next.load();},1250);}
+        discography.get(0).load();
     }
     static JSONObject albumMetadata(JSONObject full){JSONObject small=new JSONObject();for(String key:new String[]{"id","name","images","artists","release_date","total_tracks"})if(full.has(key))MusicStore.put(small,key,full.opt(key));return small;}
     private void renderCollection(){
@@ -181,8 +186,10 @@ final class CatalogScreen {
             if(!next.isEmpty()&&!capped){control=ui.action("Carregar mais",this::load);target.addView(control);if(route.shaken||route.random||route.discovery||route.touched)load();}}
 
         Pager(LinearLayout target,String url,String kind,String wrapper,boolean search,String context){this.target=target;next=url;this.kind=kind;this.wrapper=wrapper;this.search=search;this.context=context;}
+        Runnable settled;
+        void settle(){Runnable done=settled;settled=null;if(done!=null)done.run();}
         void load(){if(busy||next.isEmpty())return;busy=true;if(control!=null)target.removeView(control);control=message(target,"Carregando…");String path=next;
-            request(path,json->{busy=false;target.removeView(control);JSONObject group=search?json.optJSONObject(kind+"s"):kind.equals("artist")&&json.optJSONObject("artists")!=null?json.optJSONObject("artists"):json;JSONArray array=group==null?null:group.optJSONArray("items");if(array!=null)for(int i=0;i<array.length();i++){int sourceIndex=sourceOffset++;JSONObject item=array.optJSONObject(i);if(item==null)continue;if(modeButtons!=null&&original.size()>=500){capped=true;break;}if(!wrapper.isEmpty()){JSONObject nested=item.optJSONObject(wrapper);if(nested==null&&kind.equals("track"))nested=item.optJSONObject("track");if(nested==null)nested=item.optJSONObject("item");if(nested==null)continue;item=nested;}if(!artistId.isEmpty()&&!hasArtist(item,artistId))continue;if(albumContext!=null&&!item.has("album"))MusicStore.put(item,"album",albumContext);String key=item.optString("uri",item.optString("id"));if((context.isEmpty()||!kind.equals("track"))&&!seen.add(key))continue;if(!context.isEmpty())try{item.put("_contextIndex",sourceIndex);}catch(JSONException ignored){}int index=items.size();items.add(item);if(modeButtons!=null)original.add(item);if(kind.equals("track"))song(target,item,items,context,index,fallbackImage);else entityRow(target,item,kind);}next=group==null?"":safe(group,"next");if(modeButtons!=null){capped=capped||(original.size()>=500&&!next.isEmpty());if(!capped&&!next.isEmpty()&&(route.shaken||route.random||route.discovery||route.touched)){load();return;}refreshRows();return;}if(items.isEmpty())message(target,"Nenhum item disponível.");if(!next.isEmpty()){control=ui.action("Carregar mais",this::load);target.addView(control);}},error->{busy=false;target.removeView(control);control=ui.action(error.contains("403")?"Atualizar autorização da biblioteca":error+" • Tentar novamente",error.contains("403")?host::login:this::load);target.addView(control);});
+            request(path,json->{busy=false;target.removeView(control);JSONObject group=search?json.optJSONObject(kind+"s"):kind.equals("artist")&&json.optJSONObject("artists")!=null?json.optJSONObject("artists"):json;JSONArray array=group==null?null:group.optJSONArray("items");if(array!=null)for(int i=0;i<array.length();i++){int sourceIndex=sourceOffset++;JSONObject item=array.optJSONObject(i);if(item==null)continue;if(modeButtons!=null&&original.size()>=500){capped=true;break;}if(!wrapper.isEmpty()){JSONObject nested=item.optJSONObject(wrapper);if(nested==null&&kind.equals("track"))nested=item.optJSONObject("track");if(nested==null)nested=item.optJSONObject("item");if(nested==null)continue;item=nested;}if(!artistId.isEmpty()&&!hasArtist(item,artistId))continue;if(albumContext!=null&&!item.has("album"))MusicStore.put(item,"album",albumContext);String key=item.optString("uri",item.optString("id"));if((context.isEmpty()||!kind.equals("track"))&&!seen.add(key))continue;if(!context.isEmpty())try{item.put("_contextIndex",sourceIndex);}catch(JSONException ignored){}int index=items.size();items.add(item);if(modeButtons!=null)original.add(item);if(kind.equals("track"))song(target,item,items,context,index,fallbackImage);else entityRow(target,item,kind);}next=group==null?"":safe(group,"next");if(modeButtons!=null){capped=capped||(original.size()>=500&&!next.isEmpty());if(!capped&&!next.isEmpty()&&(route.shaken||route.random||route.discovery||route.touched)){load();return;}refreshRows();return;}if(items.isEmpty())message(target,"Nenhum item disponível.");if(!next.isEmpty()){control=ui.action("Carregar mais",this::load);target.addView(control);}settle();},error->{busy=false;target.removeView(control);control=ui.action(error.contains("403")?"Atualizar autorização da biblioteca":error+" • Tentar novamente",error.contains("403")?host::login:this::load);target.addView(control);settle();});
         }
     }
     private static boolean hasArtist(JSONObject track,String id){JSONArray list=track.optJSONArray("artists");if(list!=null)for(int i=0;i<list.length();i++){JSONObject a=list.optJSONObject(i);if(a!=null&&id.equals(a.optString("id")))return true;}return false;}

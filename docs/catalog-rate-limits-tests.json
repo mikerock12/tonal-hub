@@ -1,0 +1,105 @@
+{
+  "date": "2026-11-04",
+  "type": "local working tree validation, not a published release",
+  "sourceBase": "23a4a81cfa2c67377bc76600b70b4b5beb1f72a8",
+  "sourceState": "uncommitted corrections on top of sourceBase; delivered 0.15.10 artifacts unchanged",
+  "sourceSha256": {
+    "src/SpotifyApi.cpp": "6ce3034fd716542d9c202c400326db8202d0115e162a9e9581f69da65352ac9e",
+    "src/SpotifyApi.h": "e4f4be61f32be5c72d3823d21e46ffa5998795db0e7c908489607e918b02b85b",
+    "qml/pages/ArtistPage.qml": "a600457fd2d5e5471707c41aa2a8f50f5269ee07374d92f7bd7221c8853a11fd",
+    "android/app/src/main/java/app/tonal/android/SpotifyClient.java": "aa749b67703af8d836d7323dd373be57aefedf58cfcb94dc627f55671cbb3ad7",
+    "android/app/src/main/java/app/tonal/android/SpotifyCatalogPolicy.java": "91e1d96cdb42a75a7ae08162278eca5b284201d16d3d0c05a3ca9d20b3c61af2",
+    "android/app/src/main/java/app/tonal/android/CatalogScreen.java": "8f80cdcd06ae8a79ee6e0ca4e11d50e7ef793c79ae9a471df6abca2da1528a81"
+  },
+  "checks": {
+    "windowsReleaseBuild": {
+      "passed": true,
+      "targets": [
+        "Tonal",
+        "TonalSpotifyRecoveryTests",
+        "TonalSeasonalResources"
+      ],
+      "iamf": true
+    },
+    "ctest": {
+      "passed": 2,
+      "failed": 0,
+      "seconds": 20.9,
+      "tests": {
+        "seasonal_resources": 0.23,
+        "spotify_recovery": 20.66
+      },
+      "report": "out/catalog-ctest-verified.log"
+    },
+    "qml": {
+      "passed": 29,
+      "failed": 0,
+      "seconds": 5.744,
+      "artistCases": [
+        "error_visible_and_retry",
+        "album_single_compilation_lazy_categories",
+        "late_previous_artist_ignored",
+        "manual_paging_no_automatic_chain",
+        "deduplication_and_failed_next_preserved"
+      ],
+      "synthetic": true,
+      "existingStubWarnings": true,
+      "report": "out/catalog-qml-tests-final.log"
+    },
+    "androidJava": {
+      "variants": [
+        "release",
+        "benchmark",
+        "comparison"
+      ],
+      "passed": true,
+      "offline": true
+    },
+    "androidPolicy": {
+      "passed": 13,
+      "failed": 0,
+      "checks": [
+        "full_7200s_wait",
+        "remaining_time_rounded_up",
+        "short_limit_cannot_shorten_active_wait",
+        "cache_during_cooldown",
+        "logout_clear_preserves_cooldown",
+        "late_old_account_not_cached",
+        "10min_TTL",
+        "32page_bound",
+        "oversize_rejected",
+        "category_keys",
+        "private_data_excluded"
+      ]
+    },
+    "androidApk": {
+      "built": true,
+      "abi": "arm64-v8a",
+      "versionCode": 30,
+      "versionName": "0.15.10-local",
+      "localTestCandidate": true,
+      "signatureV2": true,
+      "sameCertificateAsDelivered01510": true,
+      "certificateSha256": "464ae7cf34f4f145541569db215f8fcdef5deda1be31921d8e366eed20aa22c2",
+      "zipalign16KiB": true
+    }
+  },
+  "attempts": [
+    "Initial sandbox Gradle failed to load native-platform.dll; offline compilation outside restrictive sandbox passed.",
+    "CMake import scanner walked the workspace and its caches; interrupted own build attempts. Set NO_IMPORT_SCAN on the seasonal resource test, matching existing resource-only targets; compiled resource test passed.",
+    "Initial restricted CTest and volume-only diagnostic failed to restore pre-mute volume. This test writes QSettings outside the workspace; volume scenario passed outside the restricted sandbox. No product volume code was changed.",
+    "First unrestricted transport run exposed a short-429 retry edge case. Scheduled retries now wait out any remaining deadline, with a precise cooldown clock. Final two CTest groups passed.",
+    "Initial QML run 28/28, final pagination coverage 29/29; policy coverage grew from 12 to 13 checks."
+  ],
+  "limits": {
+    "authenticatedSpotifyTested": false,
+    "physicalPhoneTested": false,
+    "appInstalled": false,
+    "publishedRelease": false,
+    "newBenchmark": false,
+    "serverOutageConfirmed": false,
+    "screenshotRetryAfterKnown": false,
+    "activeSpotifyBlockBypassed": false
+  },
+  "toolsInstalledOrDownloaded": []
+}
