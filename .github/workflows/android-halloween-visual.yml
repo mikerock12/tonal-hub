@@ -38,6 +38,7 @@ jobs:
         run: gradle -p android :app:assembleBenchmark --console=plain
       - name: Enable KVM
         run: |
+          ls -l /dev/kvm || { echo '::error::This runner has no /dev/kvm, so the emulator cannot start'; exit 1; }
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-tonal-kvm.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
