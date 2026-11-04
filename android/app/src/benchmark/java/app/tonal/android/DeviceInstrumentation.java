@@ -12,6 +12,7 @@ public final class DeviceInstrumentation extends Instrumentation {
         Bundle result=new Bundle();
         try{
             if(args.getString("action","").equals("halloweenTests")){result.putString("result",HalloweenTests.run(this));finish(0,result);return;}
+            if(args.getString("action","").equals("audioTailTests")){result.putString("result",AudioTailTests.run(getTargetContext()));finish(0,result);return;}
             if(args.getString("action","").equals("seasonalTests")){result.putString("result",SeasonalTests.run(this));finish(0,result);return;}
             if(args.getString("action","").equals("readerResumeTests")){result.putString("result",ReaderResumeTests.run(this));finish(0,result);return;}
             if(args.getString("action","").equals("historyStoryTests")){result.putString("result",HistoryStoryTests.run(this,args.getString("nativeModel","").equals("true")));finish(0,result);return;}

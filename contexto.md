@@ -505,3 +505,11 @@ credenciais, pesos opcionais nem dados do telefone físico.
 ## Publicação 0.15.6 — 30/10/2026
 
 Release v0.15.6 publicada com APKs ARM64 e universal assinados, instalador e ZIP Windows e SHA256SUMS.txt. Código integrado em a133e12f1df279bbf591e0be90f079823b391a4d; a árvore é a mesma testada no CI e a pasta Android coincide com o merge 17ca481 dos APKs. Usuário relatou teste Android físico. CI geral 40996835088 e Windows 40996835093 passaram; no Windows, 10 grupos, instalação isolada, inicialização, reinstalação preservando arquivo e desinstalação. QML de demonstração usou dados sintéticos; sem teste acústico ou streaming autenticado Windows. FFmpeg fixado recuperado de cópia privada do usuário e conferido por SHA-256; fornecedor retornava 404. Workflow temporário específico da release removido após publicação. Responsável: Codex.
+
+## Natal, seek e início de faixa 0.15.9 — 04/11/2026
+
+Pedido do usuário: fios mais reais passando pela frente e por trás da capa, seek que acende conforme a estrela passa, Papai Noel com renas, brinquedos e árvore em loop perfeito no canto da capa, sem comprometer a música, e investigar um apito no início de músicas ouvido no carro. O usuário restringiu depois a animação à página da música.
+
+Fio, soquetes e sombras são pré-renderizados; em execução mudam só as opacidades das lâmpadas. O clipe dele era opaco, com xadrez gravado, câmera à deriva e sem loop: foi recortado, estabilizado e fechado em 81 quadros. Medição por partes mostrou que o custo vinha de relógios separados, não do Papai Noel nem das lâmpadas: relógio único aplicado. Na AVD o Natal segue bem mais caro que um tema comum, com 0 underruns; não é medição de aparelho.
+
+Apito: no Android a troca de faixa pausava sem descartar a fila, e 74 ms da música anterior tocavam antes da nova; o Windows já descartava. Corrigido, sobra medida em 0. Não foi possível confirmar no carro que era esse o som. Detalhes em docs/NATAL_PLAYER_0159.md e docs/release-0159-tests.json.

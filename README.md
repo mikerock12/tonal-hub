@@ -10,17 +10,17 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
-**Entrega 0.15.8 — revisão do Text to Tonalify. Documentação em 01/11/2026.**
+**Entrega 0.15.9 — Natal com fios ao redor da capa, seek que acende com a estrela, Papai Noel na página da música e correção de áudio no início das faixas. Documentação em 04/11/2026.**
 
-O filtro **Só não encontradas** do Text to Tonalify passa a listar todas as referências não selecionadas — incluindo as marcadas como Revisar versão — e os cartões de revisão e o diálogo Versão mostram música, artista, álbum e miniatura da capa no Windows e no Android.
+No tema Natal os fios contornam a capa pela frente e por trás, com sombras, lâmpadas C9 e quatro padrões de pisca-pisca. A seek acende lâmpada por lâmpada conforme a estrela passa. Na página da música, um Papai Noel com renas, brinquedos e árvore piscando dança no canto da capa em loop contínuo, só enquanto a música toca. O Android também deixa de tocar uma sobra da música anterior no início da faixa seguinte.
 
-[Recursos e validação](docs/TEXT_REVIEW_0158.md) · [Pacotes e hashes](docs/artifacts-0158.json) · [Relatório de testes](docs/release-0158-tests.json) ·
+[Recursos e validação](docs/NATAL_PLAYER_0159.md) · [Pacotes e hashes](docs/artifacts-0159.json) · [Relatório de testes](docs/release-0159-tests.json) ·
 [Guia visual com capturas](docs/GUIA_VISUAL.md) ·
 [Regras da Descoberta 2+1](docs/DESCOBERTA_2_MAIS_1.md) ·
 [Benchmarks realizados](docs/BENCHMARKS.md) ·
 [Contexto do projeto](contexto.md) · [Instruções de manutenção](AGENTS.md).
 
-A validação 0.15.8 inclui QML do assistente, catálogo com 243 checagens, smoke sintético na AVD dedicada e CTest; números finais em docs/release-0158-tests.json. Não houve teste físico, streaming autenticado, escrita real de playlist ou novo benchmark.
+A validação 0.15.9 usa dados sintéticos, QML, AVD dedicada com `AudioTrack` real e CTest; números e custo medido em docs/release-0159-tests.json. Não houve teste físico, streaming Spotify autenticado, Bluetooth, carro nem medição acústica.
 
 ## Atualização 0.15.3 — reprodução estável e Jam com avisos
 

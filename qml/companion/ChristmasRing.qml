@@ -5,12 +5,13 @@ Canvas {
     id: ring
     property bool animationAllowed: true
     property real phase: 0
+    property bool ownClock: true   // false when the song page drives phase
     readonly property bool animationRunning: visible && enabled && animationAllowed && Window.window && Window.window.active
     onPhaseChanged: requestPaint()
     onWidthChanged: requestPaint()
     onHeightChanged: requestPaint()
     onVisibleChanged: requestPaint()
-    Timer { interval: 67; repeat: true; running: ring.animationRunning; onTriggered: ring.phase += .067 }
+    Timer { interval: 67; repeat: true; running: ring.ownClock && ring.animationRunning; onTriggered: ring.phase += .067 }
 
     onPaint: {
         const c = getContext("2d"); c.reset(); const cx = width / 2, cy = height / 2, r = Math.min(width, height) * .46

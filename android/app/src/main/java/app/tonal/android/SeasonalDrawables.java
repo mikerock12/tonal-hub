@@ -40,8 +40,8 @@ final class SeasonalDrawables {
     static final class ChristmasRing extends Drawable implements Runnable {
         final View host;final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);final Rect area=new Rect();float phase;boolean scheduled;
         ChristmasRing(View host){this.host=host;}
-        boolean active(){return visible(host,area);}
-        public void run(){scheduled=false;if(active()){phase+=.067f;invalidateSelf();}}
+        boolean active(){return (NativeBridge.playing||IndiePlaybackService.playing)&&visible(host,area)&&ChristmasLights.allowed(host.getContext());}
+        public void run(){if(active()){phase+=ChristmasLights.STEP;invalidateSelf();}else{scheduled=false;ChristmasLights.leave(this);}}
         public void draw(Canvas c){
             Rect b=getBounds();float cx=b.exactCenterX(),cy=b.exactCenterY(),r=Math.min(b.width(),b.height())*.46f;
             paint.setStyle(Paint.Style.FILL);paint.setAlpha(255);paint.setColor(0xff0c2118);c.drawCircle(cx,cy,r,paint);
@@ -49,60 +49,99 @@ final class SeasonalDrawables {
             paint.setStrokeWidth(Math.max(1,r*.045f));paint.setColor(0xccb88a35);c.drawCircle(cx,cy,r*.78f,paint);
             paint.setStyle(Paint.Style.FILL);for(int i=0;i<12;i++){double a=i*Math.PI*2/12-Math.PI/2;float x=cx+(float)Math.cos(a)*r*.86f,y=cy+(float)Math.sin(a)*r*.86f,glow=.45f+.4f*(.5f+.5f*(float)Math.sin(phase*3+i*1.7));
                 paint.setColor(LIGHTS[(i+(int)phase)%LIGHTS.length]);paint.setAlpha((int)(255*glow*.35f));c.drawCircle(x,y,Math.max(2,r*.13f),paint);paint.setAlpha((int)(255*(.65f+glow*.35f)));c.drawCircle(x,y,Math.max(1.2f,r*.055f),paint);}paint.setAlpha(255);
-            if(active()&&!scheduled){scheduled=true;scheduleSelf(this,SystemClock.uptimeMillis()+67);}else if(!active()&&scheduled){scheduled=false;unscheduleSelf(this);}
+            if(!scheduled&&active()){scheduled=true;ChristmasLights.join(this);}
         }
         public void setAlpha(int a){}public void setColorFilter(ColorFilter f){}public int getOpacity(){return PixelFormat.TRANSLUCENT;}
     }
 
+    private static final float SEEK_SPACING_DP=28;
+    private static int bulbCount(float width,float density){return Math.max(6,(int)(width/(SEEK_SPACING_DP*density)));}
+    private static float bulbLength(float density){return Math.max(14,Math.min(19,Ui.THUMB_SIZE*.8f))*density;}
+    private static float bulbAngle(int i){return (i%3==2?0:180)+(float)Math.sin(i*2.4)*12;}
+
+    /** Wire with every bulb dark; the lit ones are painted over it by Trail. */
     static final class Track extends Drawable {
-        private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);private final Path path=new Path();private final float density,barHeight;
-        Track(Context context,float barHeight){density=context.getResources().getDisplayMetrics().density;this.barHeight=barHeight;}
-        public void draw(Canvas c){wire(c,paint,path,getBounds(),density,barHeight,false,0);}
+        private final Context context;private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);private final RectF tile=new RectF();private final float density;private ChristmasAssets art;private Bitmap cached;
+        Track(Context context,float barHeight){this.context=context;density=context.getResources().getDisplayMetrics().density;art=ChristmasAssets.get(context,()->{art=ChristmasAssets.get(context,null);invalidateSelf();});}
+        /** The dark string never changes: painted once, then a single bitmap per frame. */
+        private Bitmap render(int w,int h){
+            Bitmap bitmap=Bitmap.createBitmap(w,h,Bitmap.Config.ARGB_8888);Canvas c=new Canvas(bitmap);float cy=h/2f,height=16*density,width=art.wire.getWidth()*height/art.wire.getHeight();
+            for(float x=0;x<w;x+=width){tile.set(x,cy-height/2,x+width,cy+height/2);c.drawBitmap(art.wire,null,tile,paint);}
+            int count=bulbCount(w,density);float length=bulbLength(density);
+            for(int i=0;i<count;i++){
+                c.save();c.translate(w*(i+.5f)/count,cy);c.rotate(bulbAngle(i));
+                float sw=length*.46f,sh=length*.52f;tile.set(-sw/2,-sh*.92f,sw/2,sh*.08f);c.drawBitmap(art.socket,null,tile,paint);
+                float gy=-length*1.28f,side=length*3.5f;tile.set(-side/2,gy-side/2,side/2,gy+side/2);c.drawBitmap(art.off[i%4],null,tile,paint);c.restore();
+            }
+            return bitmap;
+        }
+        public void draw(Canvas c){
+            Rect b=getBounds();if(art==null||b.isEmpty())return;
+            if(cached==null||cached.getWidth()!=b.width()||cached.getHeight()!=b.height()){if(cached!=null)cached.recycle();cached=render(b.width(),b.height());}
+            c.drawBitmap(cached,b.left,b.top,null);
+        }
         public void setAlpha(int a){paint.setAlpha(a);}public void setColorFilter(ColorFilter f){paint.setColorFilter(f);}public int getOpacity(){return PixelFormat.TRANSLUCENT;}
     }
 
+    /** Lit bulbs. A bulb stays dark until the star reaches it, flares, then twinkles. */
     static final class Trail extends Drawable implements Runnable {
-        final SeekBar host;final java.util.function.BooleanSupplier playing;final float density,barHeight;final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);final Path path=new Path();final Rect area=new Rect();float phase;boolean scheduled;
-        Trail(SeekBar host,java.util.function.BooleanSupplier playing,float barHeight){this.host=host;this.playing=playing;this.barHeight=barHeight;density=host.getResources().getDisplayMetrics().density;}
-        boolean active(){return host.isEnabled()&&host.getProgress()>0&&playing.getAsBoolean()&&visible(host,area);}
-        public void run(){scheduled=false;if(active()){phase+=.067f;invalidateSelf();}}
-        public void draw(Canvas c){wire(c,paint,path,getBounds(),density,barHeight,true,phase);if(active()&&!scheduled){scheduled=true;scheduleSelf(this,SystemClock.uptimeMillis()+67);}else if(!active()&&scheduled){scheduled=false;unscheduleSelf(this);}}
+        final SeekBar host;final java.util.function.BooleanSupplier playing;final float density;final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);final RectF tile=new RectF();final Rect area=new Rect();float phase;boolean scheduled;private float[] level=new float[0],flare=new float[0];private ChristmasAssets art;private boolean settling;
+        Star star;
+        Trail(SeekBar host,java.util.function.BooleanSupplier playing,float barHeight){this.host=host;this.playing=playing;density=host.getResources().getDisplayMetrics().density;art=ChristmasAssets.get(host.getContext(),()->{art=ChristmasAssets.get(host.getContext(),null);invalidateSelf();});}
+        float fraction(){return getLevel()/10000f;}
+        boolean active(){return host.isEnabled()&&playing.getAsBoolean()&&visible(host,area)&&ChristmasLights.allowed(host.getContext());}
+        /** How many bulbs the star has passed; the position alone decides, never the clock. */
+        int litBulbs(int count){int lit=0;float edge=fraction();for(int i=0;i<count;i++)if((i+.5f)/count<=edge)lit++;return lit;}
+        private boolean settle(int count){
+            if(level.length!=count){level=new float[count];flare=new float[count];float edge=fraction();for(int i=0;i<count;i++)level[i]=(i+.5f)/count<=edge?1:0;}
+            boolean moving=false;float edge=fraction();
+            for(int i=0;i<count;i++){
+                float wanted=(i+.5f)/count<=edge?1:0;
+                if(wanted==1&&level[i]==0)flare[i]=1;
+                if(level[i]!=wanted){level[i]=wanted>level[i]?Math.min(1,level[i]+.27f):Math.max(0,level[i]-.27f);moving=true;}
+                if(flare[i]>0){flare[i]=Math.max(0,flare[i]-.09f);moving=true;}
+            }
+            return moving;
+        }
+        public void run(){boolean running=active();if(running){phase+=ChristmasLights.STEP;if(star!=null)star.phase=phase;}if(running||settling)invalidateSelf();else{scheduled=false;ChristmasLights.leave(this);}}
+        @Override protected boolean onLevelChange(int level){invalidateSelf();return true;}
+        public void draw(Canvas c){
+            if(art==null)return;Rect b=getBounds();float cy=b.exactCenterY(),w=b.width(),length=bulbLength(density),side=length*3.5f,gy=-length*1.28f;int count=bulbCount(w,density);boolean moving=settle(count);
+            for(int i=0;i<count;i++){
+                if(level[i]<=.01f)continue;float grow=1+flare[i]*.42f,half=side*grow/2;
+                paint.setAlpha((int)(255*Math.min(1,level[i]*(ChristmasLights.twinkle(i,phase)+flare[i]))));
+                c.save();c.translate(b.left+w*(i+.5f)/count,cy);c.rotate(bulbAngle(i));tile.set(-half,gy-half,half,gy+half);c.drawBitmap(art.on[i%4],null,tile,paint);c.restore();
+            }
+            settling=moving;if(!scheduled&&(moving||active())){scheduled=true;ChristmasLights.join(this);}
+        }
         public void setAlpha(int a){paint.setAlpha(a);}public void setColorFilter(ColorFilter f){paint.setColorFilter(f);}public int getOpacity(){return PixelFormat.TRANSLUCENT;}
     }
 
-    private static void wire(Canvas c,Paint paint,Path path,Rect b,float density,float barHeight,boolean lit,float phase){
-        float cy=b.exactCenterY()-2*density,w=b.width();paint.setStyle(Paint.Style.STROKE);paint.setAlpha(255);paint.setStrokeWidth(Math.max(2,barHeight*.42f));paint.setColor(lit?0xff467a4e:0xff345c43);path.rewind();path.moveTo(b.left,cy);
-        for(float x=0;x<=w;x+=8*density)path.lineTo(b.left+x,cy+(float)Math.sin(x/density*.16f)*1.2f*density);c.drawPath(path,paint);
-        paint.setStrokeWidth(density);paint.setColor(0xff172e22);c.drawLine(b.left,cy-density,b.right,cy-density,paint);paint.setStyle(Paint.Style.FILL);
-        int count=Math.max(5,(int)(w/(42*density)));float size=Math.max(4*density,Ui.THUMB_SIZE*density*.25f);
-        for(int i=0;i<=count;i++){float x=b.left+w*i/count,color=lit?LIGHTS[(i+(int)(phase*.9f))%LIGHTS.length]:0xff63736a,glow=.5f+.5f*(float)Math.sin(phase*4+i);
-            if(lit){paint.setColor((int)color);paint.setAlpha((int)(255*(.12f+glow*.15f)));c.drawCircle(x,cy+size*.45f,size*1.65f,paint);paint.setAlpha(255);}
-            paint.setColor(0xff263d32);c.drawRect(x-size*.27f,cy+2*density-size*.35f,x+size*.27f,cy+2*density+size*.07f,paint);paint.setColor((int)color);c.drawOval(x-size*.48f,cy+2*density,x+size*.48f,cy+2*density+size*1.25f,paint);
-            if(lit){paint.setColor(0x8cfff7d6);c.drawOval(x-size*.22f,cy+2*density+size*.16f,x-size*.05f,cy+2*density+size*.52f,paint);}
-        }paint.setAlpha(255);
-    }
-
+    /** Thumb: faceted star over a slowly turning glow; both may spill past its bounds. */
     static final class Star extends Drawable {
-        private final int size;private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);private final Path path=new Path();private Shader gradient;
-        Star(int size){this.size=size;}
-        protected void onBoundsChange(Rect b){gradient=new LinearGradient(b.left,b.top,b.right,b.bottom,0xfffff7bd,0xffc78618,Shader.TileMode.CLAMP);}
-        public void draw(Canvas c){Rect b=getBounds();float cx=b.exactCenterX(),cy=b.exactCenterY(),outer=size*.48f,inner=outer*.44f;
-            paint.setStyle(Paint.Style.FILL);paint.setColor(0x38ffe795);c.drawCircle(cx,cy,size*.62f,paint);path.rewind();for(int i=0;i<10;i++){double a=-Math.PI/2+i*Math.PI/5;float r=i%2==1?inner:outer,x=cx+(float)Math.cos(a)*r,y=cy+(float)Math.sin(a)*r;if(i==0)path.moveTo(x,y);else path.lineTo(x,y);}path.close();paint.setShader(gradient);c.drawPath(path,paint);paint.setShader(null);paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(Math.max(1,size*.045f));paint.setColor(0xfffff4c2);c.drawPath(path,paint);
+        private final int size;private final Context context;private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);private final RectF tile=new RectF();private ChristmasAssets art;float phase;
+        Star(int size,Context context){this.size=size;this.context=context;art=ChristmasAssets.get(context,()->{art=ChristmasAssets.get(context,null);invalidateSelf();});}
+        public void draw(Canvas c){
+            if(art==null)return;Rect b=getBounds();float cx=b.exactCenterX(),cy=b.exactCenterY(),pulse=.5f+.5f*(float)Math.sin(phase*2.7f),glow=size*(3.1f+.42f*pulse),body=size*1.9f;
+            c.save();c.rotate(phase*9,cx,cy);paint.setAlpha((int)(255*(.62f+.38f*pulse)));tile.set(cx-glow,cy-glow,cx+glow,cy+glow);c.drawBitmap(art.glow,null,tile,paint);c.restore();
+            paint.setAlpha(255);tile.set(cx-body,cy-body,cx+body,cy+body);c.drawBitmap(art.star,null,tile,paint);
         }
         public int getIntrinsicWidth(){return size;}public int getIntrinsicHeight(){return size;}public void setAlpha(int a){paint.setAlpha(a);}public void setColorFilter(ColorFilter f){paint.setColorFilter(f);}public int getOpacity(){return PixelFormat.TRANSLUCENT;}
     }
 
     static final class Cover extends Drawable implements Runnable {
-        private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);private final Path path=new Path();private final Rect area=new Rect();private final float density;private Shader spiderGradient;float phase;private boolean scheduled;
+        private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);private final Path path=new Path();private final Rect area=new Rect();private final float density;private Shader spiderGradient;float phase;private boolean scheduled;private ChristmasAssets art;
         Cover(Context context){density=context.getResources().getDisplayMetrics().density;}
         protected void onBoundsChange(Rect b){float size=Math.max(5,Math.min(13,Math.min(b.width(),b.height())*.035f));spiderGradient=new RadialGradient(-size*.25f,-size*.4f,size*1.2f,new int[]{0xff5e555e,0xff282129,0xff08070a},new float[]{0,.35f,1},Shader.TileMode.CLAMP);}
         private View host(){return getCallback() instanceof View?(View)getCallback():null;}
-        private boolean active(){View v=host();Rect b=getBounds();return v!=null&&Math.min(b.width(),b.height())>=120*density&&visible(v,area);}
+        private boolean active(){View v=host();Rect b=getBounds();return Ui.HALLOWEEN&&v!=null&&Math.min(b.width(),b.height())>=120*density&&visible(v,area);}
         public void run(){scheduled=false;if(active()){phase+=.067f;invalidateSelf();}}
         public void draw(Canvas c){Rect b=getBounds();if(Ui.CHRISTMAS)drawChristmas(c,b);else if(Ui.HALLOWEEN)drawHalloween(c,b);if(active()&&!scheduled){scheduled=true;scheduleSelf(this,SystemClock.uptimeMillis()+67);}else if(!active()&&scheduled){scheduled=false;unscheduleSelf(this);}}
+        /** Ordinary covers: one still image, so a grid of them runs no clock at all. */
         private void drawChristmas(Canvas c,Rect b){
-            float w=b.width(),m=Math.min(w,b.height());paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(2.2f*density);paint.setColor(0xff1c3525);path.rewind();path.moveTo(b.left,b.top+8*density);path.quadTo(b.left+w*.5f,b.top+44*density,b.right,b.top+8*density);c.drawPath(path,paint);paint.setStyle(Paint.Style.FILL);
-            int count=Math.max(7,(int)(w/(42*density)));for(int i=0;i<=count;i++){float t=(float)i/count,x=b.left+t*w,y=b.top+8*density+56*t*(1-t)*density,size=Math.max(3*density,m*.018f),glow=.5f+.5f*(float)Math.sin(phase*3+i);paint.setColor(LIGHTS[(i+(int)(phase*.8f))%LIGHTS.length]);paint.setAlpha((int)(255*(.10f+glow*.14f)));c.drawCircle(x,y+5*density,size*2.1f,paint);paint.setAlpha((int)(255*(.8f+glow*.2f)));c.drawOval(x-size*.55f,y+5*density-size*.15f,x+size*.55f,y+5*density+size*1.4f,paint);paint.setColor(0xa6fff8dc);c.drawOval(x-size*.25f,y+5*density,x-size*.07f,y+5*density+size*.5f,paint);}paint.setAlpha(255);
+            if(Math.min(b.width(),b.height())<120*density)return;View v=host();if(v==null)return;
+            if(art==null)art=ChristmasAssets.get(v.getContext(),this::invalidateSelf);if(art==null)art=ChristmasAssets.get(v.getContext(),null);if(art==null)return;
+            paint.setAlpha(255);paint.setFilterBitmap(true);c.drawBitmap(art.lit,null,b,paint);
         }
         private void web(Canvas c,float x,float y,float radius,float start,float end,int spokes,int rings){
             c.save();c.translate(x,y);paint.setStyle(Paint.Style.STROKE);for(int pass=0;pass<2;pass++){paint.setColor(pass==1?0x94d9d5d2:0xb327232b);paint.setStrokeWidth((pass==1?.65f:1.8f)*density);

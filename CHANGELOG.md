@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.15.9 — 04/11/2026
+
+- Tema Natal refeito: fios com lâmpadas C9 que passam pela frente e por trás da capa, com sombras coerentes; 65 lâmpadas em quatro padrões de pisca-pisca.
+- Seek do Natal: as lâmpadas acendem conforme a estrela passa, com clarão, e apagam ao voltar; estrela maior, facetada e com raios.
+- Papai Noel dançando e bebendo cerveja no canto da capa, em loop de 3,38 s, com renas, brinquedos e árvore piscando. Só na página da música e só com a música tocando; início e listas não têm animação.
+- Android: corrige sobra de 74 ms da música anterior no início da faixa seguinte, possível causa do apito relatado no carro. Não confirmado no carro; ver limites.
+- Relógio único para as decorações e proteção que as interrompe por 30 s se houver falha de buffer de áudio.
+- Detalhes, custo medido e limites em docs/NATAL_PLAYER_0159.md e docs/release-0159-tests.json.
+
 ## 0.15.8 — 01/11/2026
 
 - Text to Tonalify: o filtro **Só não encontradas** passa a listar todas as referências não selecionadas, incluindo **Revisar versão** e faixas desmarcadas; antes uma playlist de 100 músicas com 89 correspondências mostrava zero.

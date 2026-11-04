@@ -16,6 +16,9 @@ final class AudioOutput {
     private volatile long writtenFrames;
     private long pauseQueuedFrames,lastPauseFadeMs;
     private volatile boolean paused;
+    // Set while suspended when the queued tail stopped belonging to what plays next.
+    private boolean staleTail;
+    private int staleFlushes;private long staleFrames;
     private final Handler main=new Handler(Looper.getMainLooper());
     private int transition,rate=44100,channels=2,lastUnderruns,previousUnderruns,bufferFrames,recoveries,minimumStableFrames;
     private long lastAdapt;
@@ -140,7 +143,22 @@ final class AudioOutput {
     }
     private static VolumeShaper.Configuration envelope(boolean up,long duration){return new VolumeShaper.Configuration.Builder().setDuration(duration).setCurve(new float[]{0,1},up?new float[]{0,1}:new float[]{1,0}).build();}
     private long queuedFrames(AudioTrack current){long ahead=writtenFrames-Integer.toUnsignedLong(current.getPlaybackHeadPosition());return ahead<0?0:Math.min(current.getBufferCapacityInFrames(),ahead&0xffffffffL);}
-    synchronized void resume(){if(track==null||!paused)return;paused=false;++transition;track.play();shaper.apply(VolumeShaper.Operation.PLAY);}
+    /**
+     * The next audio is not a continuation: another track or position was selected.
+     * Pausing keeps the tail on purpose so a plain pause/resume stays seamless, but
+     * after a selection that tail is a fragment of the previous song, heard as a
+     * short tone right at the start of the new one.
+     */
+    synchronized void discontinuity(){if(paused)staleTail=true;}
+    synchronized void resume(){
+        if(track==null||!paused)return;paused=false;++transition;
+        if(staleTail){
+            staleTail=false;staleFrames+=queuedFrames(track);staleFlushes++;
+            // flush() is ignored unless the track is paused; the delayed pause may not have run yet.
+            track.pause();track.flush();writtenFrames=0;
+        }
+        track.play();shaper.apply(VolumeShaper.Operation.PLAY);
+    }
     void finish(){
         synchronized(this){if(track==null||control==null)return;}
         write(new float[(rate*30/1000+256)*channels]);
@@ -156,7 +174,7 @@ final class AudioOutput {
             if(fade&&!paused&&oldEnvelope!=null){try{oldEnvelope.apply(VolumeShaper.Operation.REVERSE);control.postDelayed(()->closeTrack(current,oldEnvelope),50);retiring=true;}catch(IllegalStateException ignored){}}
             if(!retiring)closeTrack(current,oldEnvelope);
         }
-        shaper=null;paused=false;
+        shaper=null;paused=false;staleTail=false;
     }
     synchronized void release(){releaseTrack(true);dsp.close();}
     synchronized boolean isPlaying(){return track!=null&&track.getPlayState()==AudioTrack.PLAYSTATE_PLAYING;}
@@ -165,8 +183,9 @@ final class AudioOutput {
     synchronized boolean prefer(AudioDeviceInfo device){if(device!=null&&device.getType()==AudioDeviceInfo.TYPE_BLUETOOTH_SCO)return false;preferred=device;return track==null||track.setPreferredDevice(device);}
     String routeName(){AudioDeviceInfo current=route;return current==null?"Saída padrão do Android (inicie uma música)":current.getProductName()+" • "+(bluetooth(current)?"Bluetooth":headphones(current)?"Fones":"Saída de mídia");}
     synchronized String diagnostics(){return routeName()+"\n"+(track==null?"Saída parada":rate+" Hz • PCM float estéreo • buffer do app "+Math.round(bufferFrames*1000f/rate)+" ms • falhas de buffer "+underruns()+" • recuperações "+recoveries)+"\n"+(!config.enabled?"Processamento desligado":("EQ "+(config.eq?"ligado":"desligado")+" • Graves "+config.bass+" dB • Compressor "+(config.compressor?"ligado":"desligado")+" • "+(binauralSource?"IAMF binaural":dsp.settings.values[16]!=0?"HRTF solicitada":config.spatial==1?"HRTF inativa neste perfil":"Estéreo original")))+"\nCodec e atraso total Bluetooth: controlados pelo Android e pelo receptor.";}
+    synchronized long testQueuedFrames(){return track==null?0:queuedFrames(track);}
     void testDeadObject(){if(BuildConfig.DEBUG)testDeadObject.set(true);}
     synchronized org.json.JSONObject testSnapshot()throws org.json.JSONException{
-        return new org.json.JSONObject().put("frames",frames.get()).put("blocks",blocks.get()).put("dspNanos",dspNanos.get()).put("maxDspNanos",maxDspNanos.get()).put("overBudgetBlocks",overBudgetBlocks.get()).put("underruns",underruns()).put("recoveries",recoveries).put("bufferFrames",bufferFrames).put("rate",rate).put("channels",channels).put("routeKey",routeKey).put("route",routeName()).put("hrtfRequested",dsp.settings.values[16]!=0).put("eq",config.eq).put("enabled",config.enabled).put("binauralSource",binauralSource).put("paused",paused).put("volume",shaper==null?1:shaper.getVolume()).put("pauseQueuedFrames",pauseQueuedFrames).put("pauseFadeMs",lastPauseFadeMs);
+        return new org.json.JSONObject().put("frames",frames.get()).put("blocks",blocks.get()).put("dspNanos",dspNanos.get()).put("maxDspNanos",maxDspNanos.get()).put("overBudgetBlocks",overBudgetBlocks.get()).put("underruns",underruns()).put("staleFlushes",staleFlushes).put("staleFrames",staleFrames).put("recoveries",recoveries).put("bufferFrames",bufferFrames).put("rate",rate).put("channels",channels).put("routeKey",routeKey).put("route",routeName()).put("hrtfRequested",dsp.settings.values[16]!=0).put("eq",config.eq).put("enabled",config.enabled).put("binauralSource",binauralSource).put("paused",paused).put("volume",shaper==null?1:shaper.getVolume()).put("pauseQueuedFrames",pauseQueuedFrames).put("pauseFadeMs",lastPauseFadeMs);
     }
 }

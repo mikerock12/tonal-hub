@@ -1,0 +1,118 @@
+{
+  "version": "0.15.9",
+  "final": {
+    "themes": {
+      "themes": 8,
+      "checks": 267,
+      "passed": true,
+      "santaOnlyOnSongPage": true
+    },
+    "qml": {
+      "mix": 25,
+      "halloween": 3,
+      "christmas": 6,
+      "passed": true,
+      "realBakedLayersLoaded": true,
+      "santaFrames": 81
+    },
+    "ctest": {
+      "passed": 10,
+      "total": 10
+    },
+    "playbackPolicy": {
+      "checks": 64,
+      "passed": true
+    },
+    "androidCompile": {
+      "release": true,
+      "benchmark": true
+    },
+    "avdDevice": {
+      "audioTailTests": true,
+      "seasonalTests": true,
+      "halloweenTests": true,
+      "seasonalSmoke": [
+        "portrait_player_and_standard_header",
+        "landscape_player_left_lyrics_right_with_header",
+        "portrait_page_restored_after_rotation",
+        "no_fatal_exception"
+      ]
+    },
+    "audioTail": {
+      "measuredOn": "real AudioTrack on the dedicated AVD",
+      "staleTailBeforeFlushMs": 74,
+      "queuedAfterFlushMs": 0,
+      "plainPauseQueuedKeptMs": 82
+    },
+    "santaLoop": {
+      "frames": 81,
+      "seconds": 3.38,
+      "fps": 24,
+      "side": 384,
+      "wrapStep": 2.82,
+      "meanStep": 3.68,
+      "sourceFrames": [
+        83,
+        164
+      ]
+    },
+    "portableWindows": {
+      "tonalifyStartup": true,
+      "hubStartup": true,
+      "indieStartup": true,
+      "offscreen": true
+    },
+    "apkValidation": {
+      "upgradeOver0158WithoutUninstall": true,
+      "firstInstallTimePreserved": true,
+      "launchedAfterUpgrade": true,
+      "fatalExceptions": 0,
+      "alignment": 16384,
+      "certificateMatches0158": true
+    }
+  },
+  "avdCost": {
+    "note": "Same page, 60 s per run, synthetic tone on a real AudioTrack. Emulated GPU: compares themes, not a phone benchmark.",
+    "firstVersionSeparateClocks": {
+      "cpuPercentOfOneCore": "44-50",
+      "framesPerSecond": 41
+    },
+    "finalTonal": {
+      "cpuPercentOfOneCore": "4.0-5.4",
+      "pssMiB": "75-79",
+      "underruns": 0
+    },
+    "finalNatal": {
+      "cpuPercentOfOneCore": "36-43",
+      "pssMiB": "96-97",
+      "framesPerSecond": "32-34",
+      "underruns": 0
+    },
+    "rejected24FpsClock": {
+      "cpuPercentOfOneCore": 41.5,
+      "framesPerSecond": 36
+    }
+  },
+  "attempts": [
+    "Part-by-part measurement showed 44% of a core even without Santa and without cover bulbs: the seek and play ring timers were redrawing the window out of phase. One shared clock replaced them.",
+    "A 24 fps shared clock was tried and rejected: Santa frames come from the render thread and did not align with it, giving more frames and more CPU.",
+    "After the shared clock, Santa never started when decoding finished after the first check. One run measured 15% at 15 fps because of that bug. Fixed; that number is not a valid result.",
+    "First QML render showed only lit bulbs: a garland.layer leftover resolved to the Item layer property and produced an invalid image URL. Fixed, and the test now requires both baked layers to load.",
+    "First Android seasonal run failed on a test that sampled outside the painted cover. Test corrected; the product was not at fault.",
+    "CI personal-library failed: its Qt lacked the optional qtimageformats module, so WebP did not decode. CI now installs it and Windows packaging refuses to run without qwebp.dll.",
+    "CI android-components failed at Enable KVM before any project test ran: /dev/kvm was unavailable on the runner. The same halloweenTests action passed on the dedicated AVD.",
+    "First seam candidates showed a double Santa or a double mug. Pose matching alone was not enough; the final seam sits at a slow part of the motion and uses DIS optical flow."
+  ],
+  "limits": {
+    "syntheticData": true,
+    "physicalPhoneTested": false,
+    "authenticatedSpotifyStreamingTested": false,
+    "bluetoothTested": false,
+    "carTested": false,
+    "whistleConfirmedFixed": false,
+    "acousticMeasurement": false,
+    "batteryMeasured": false,
+    "phoneBenchmark": false,
+    "interactiveWindowsInstallTested": false
+  }
+}

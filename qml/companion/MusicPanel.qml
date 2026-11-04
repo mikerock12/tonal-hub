@@ -269,11 +269,28 @@ Dialog {
                         Label{anchors.bottom:parent.bottom;anchors.bottomMargin:18;anchors.horizontalCenter:parent.horizontalCenter;text:"Capa indisponível";color:panel.tone.textSecondary}
                         visible:songArt.status!==Image.Ready
                     }
+                    readonly property bool christmasCover:panel.tone.id==="natal"&&songArt.status===Image.Ready&&songArt.paintedWidth>=160
+                    readonly property bool coverAnimated:panel.visible&&songPages.currentIndex===0
+                    ChristmasGarland {
+                        objectName:"garlandBack";plane:"back";ownClock:false;phase:garlandFront.phase;anchors.centerIn:parent;visible:parent.christmasCover
+                        coverWidth:songArt.paintedWidth;coverHeight:songArt.paintedHeight;playing:panel.playing;animationAllowed:parent.coverAnimated
+                    }
                     Image {id:songArt;anchors.fill:parent;source:panel.controller.current.image||"";fillMode:Image.PreserveAspectFit;asynchronous:true;sourceSize.width:800;sourceSize.height:800}
                     CoverEffects {
                         anchors.centerIn:parent;width:songArt.paintedWidth;height:songArt.paintedHeight
-                        visible:(panel.tone.id==="halloween"||panel.tone.id==="natal")&&songArt.status===Image.Ready
+                        visible:panel.tone.id==="halloween"&&songArt.status===Image.Ready
                         themeId:panel.tone.id;animationAllowed:panel.visible&&songPages.currentIndex===0
+                    }
+                    ChristmasGarland {
+                        id:garlandFront;objectName:"garlandFront";plane:"front";anchors.centerIn:parent;visible:parent.christmasCover
+                        coverWidth:songArt.paintedWidth;coverHeight:songArt.paintedHeight;playing:panel.playing;animationAllowed:parent.coverAnimated
+                    }
+                    ChristmasSanta {
+                        objectName:"christmasSanta";visible:parent.christmasCover
+                        width:songArt.paintedWidth*.46;height:width
+                        x:(parent.width+songArt.paintedWidth)/2-width+songArt.paintedWidth*.008
+                        y:(parent.height+songArt.paintedHeight)/2-height+songArt.paintedWidth*.006
+                        musicPlaying:panel.playing;animationAllowed:parent.coverAnimated
                     }
                 }
                 Label {text:panel.controller.current.title||"Escolha uma música";textFormat:Text.PlainText;font.pixelSize:28;font.bold:true;Layout.fillWidth:true;wrapMode:Text.Wrap;maximumLineCount:2;elide:Text.ElideRight}
@@ -289,7 +306,7 @@ Dialog {
                     ActionIcon{accentInk:panel.tone.accent;objectName:"songRandom";visible:panel.quickModes;enabled:!panel.mixController||!panel.mixController.busy;symbol:"random";description:"Aleatório: tocar a fila em ordem aleatória / voltar à ordem";filled:!!panel.mixController&&panel.mixController.randomEnabled;onClicked:panel.applySongMode(1)}
                     ActionIcon { accentInk:panel.tone.accent;symbol:"prev";description:"Anterior"; enabled:!!panel.controller.current.title; onClicked:panel.previousRequested() }
                     ActionIcon { id:songPlay;objectName:"songPlayButton";implicitWidth:64;implicitHeight:64
-                        background:Item{Rectangle{anchors.fill:parent;radius:32;color:panel.tone.accent;visible:panel.tone.id!=="halloween"&&panel.tone.id!=="natal"} EmberRing{anchors.fill:parent;visible:panel.tone.id==="halloween";animationAllowed:panel.visible&&songPages.currentIndex===0} ChristmasRing{anchors.fill:parent;visible:panel.tone.id==="natal";animationAllowed:panel.visible&&songPages.currentIndex===0}}
+                        background:Item{Rectangle{anchors.fill:parent;radius:32;color:panel.tone.accent;visible:panel.tone.id!=="halloween"&&panel.tone.id!=="natal"} EmberRing{anchors.fill:parent;visible:panel.tone.id==="halloween";animationAllowed:panel.visible&&songPages.currentIndex===0} ChristmasRing{anchors.fill:parent;visible:panel.tone.id==="natal";animationAllowed:panel.visible&&songPages.currentIndex===0;ownClock:!garlandFront.visible;phase:garlandFront.visible?garlandFront.phase:0}}
                         scale:(panel.tone.id==="halloween"||panel.tone.id==="natal")&&down?.92:1;Behavior on scale{NumberAnimation{duration:100}}
                         contentItem:TransportGlyph{objectName:"transportGlyph";playing:panel.playing;ink:panel.tone.id==="halloween"?panel.tone.accent:panel.tone.id==="natal"?"#ffe39c":"#f5f5f5";animationAllowed:songPlay.visible}
                         ink:panel.tone.id==="halloween"?panel.tone.accent:"#f5f5f5";accentInk:panel.tone.accent;symbol:panel.playing?"pause":"play";description:panel.playing?"Pausar":"Reproduzir"; enabled:!!panel.controller.current.title; onClicked:panel.togglePlayback() }
@@ -311,7 +328,7 @@ Dialog {
                         background:Rectangle{x:songSeek.leftPadding;y:songSeek.topPadding+songSeek.availableHeight/2-height/2;width:songSeek.availableWidth;height:songSeek.active?songSeek.look.activeHeight:songSeek.look.height;radius:height/2;color:songSeek.look.track
                             Rectangle{width:Math.max(parent.height,songSeek.visualPosition*parent.width);height:parent.height;radius:height/2;visible:songSeek.look.thumbShape!=="drop"&&songSeek.look.thumbShape!=="star";gradient:Gradient{orientation:Gradient.Horizontal;GradientStop{position:0;color:(songSeek.active?songSeek.look.activeFill:songSeek.look.fill)[0]}GradientStop{position:1;color:(songSeek.active?songSeek.look.activeFill:songSeek.look.fill)[1]}}}
                             BloodSurface { x:-thumbSize/2;trackInset:thumbSize/2;width:parent.width+thumbSize;height:44;y:parent.height/2-height/2;visible:songSeek.look.thumbShape==="drop";progress:songSeek.visualPosition;barHeight:parent.height;thumbSize:songSeek.look.thumbSize;showThumb:songSeek.enabled;playing:panel.playing;animationAllowed:panel.visible&&songPages.currentIndex===0;fillColor:songSeek.look.fill[0];endColor:songSeek.look.fill[1] }
-                            ChristmasSurface { x:-thumbSize/2;trackInset:thumbSize/2;width:parent.width+thumbSize;height:44;y:parent.height/2-height/2;visible:songSeek.look.thumbShape==="star";progress:songSeek.visualPosition;barHeight:parent.height;thumbSize:songSeek.look.thumbSize;showThumb:songSeek.enabled;playing:panel.playing;animationAllowed:panel.visible&&songPages.currentIndex===0 }
+                            ChristmasSurface { ownClock:!garlandFront.visible;phase:garlandFront.visible?garlandFront.phase:0;x:-thumbSize/2;trackInset:thumbSize/2;width:parent.width+thumbSize;height:68;y:parent.height/2-height/2;visible:songSeek.look.thumbShape==="star";progress:songSeek.visualPosition;barHeight:parent.height;thumbSize:songSeek.look.thumbSize;showThumb:songSeek.enabled;playing:panel.playing;animationAllowed:panel.visible&&songPages.currentIndex===0 }
                         }
                         handle:Item{x:songSeek.leftPadding+songSeek.visualPosition*songSeek.availableWidth-width/2;y:songSeek.topPadding+songSeek.availableHeight/2-height/2;readonly property int size:songSeek.look.thumbSize+(songSeek.pressed?2:0);width:songSeek.look.thumbShape==="pill"?Math.round(size*1.6):size;height:songSeek.look.thumbShape==="pill"?Math.round(size*0.8):size;visible:songSeek.look.thumbShape!=="drop"&&songSeek.look.thumbShape!=="star"&&songSeek.enabled&&(songSeek.look.thumbAlways||songSeek.active)
                             Rectangle{visible:songSeek.look.glow;anchors.centerIn:parent;width:parent.width+10;height:parent.height+10;radius:height/2;color:songSeek.look.thumbBorder;opacity:songSeek.pressed?0.45:0.28}

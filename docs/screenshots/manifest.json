@@ -517,6 +517,18 @@
       "height": 780,
       "bytes": 73945,
       "sha256": "1fbb25bcb3d538e630d723db9c81ecaa969fcd0720625e6826a0ed3866fffa6b"
+    },
+    {
+      "file": "android-natal-0159.png",
+      "source": "out/android/christmas-0159/song-natal.png",
+      "platform": "Android (AVD dedicada)",
+      "capture_context": "0.15.9: página da música no tema Natal, tom sintético na AudioTrack",
+      "note": "Capa, música e artista sintéticos. Em 0:00 todas as lâmpadas da seek estão apagadas.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 540,
+      "height": 1200,
+      "bytes": 341524,
+      "sha256": "a348058ebe0c5bb6f39dc5efc16d3b0c015b11cb30c204e03ca63d9474cdd022"
     }
   ]
 }

@@ -77,6 +77,26 @@ def main():
     for theme in themes:
         alias = 'HubIcon' + theme['id'][0].upper() + theme['id'][1:]
         check(f'android:name=".{alias}"' in manifest, f'{alias} launcher alias missing')
+    # Christmas images are shared, and Santa belongs to the song page alone: album grids
+    # stay on one still image, so a page of covers never runs many animations at once.
+    seasonal = ROOT / 'resources/seasonal'
+    copies = ROOT / 'android/app/src/main/assets/seasonal'
+    names = sorted(p.name for p in seasonal.iterdir())
+    check(names == sorted(p.name for p in copies.iterdir()), 'Android seasonal assets differ from resources/seasonal')
+    for name in names:
+        check((seasonal / name).read_bytes() == (copies / name).read_bytes(), f'{name}: Android copy differs')
+    garland = json.loads((seasonal / 'garland.json').read_text(encoding='utf-8'))
+    check(len(garland['bulbs']) >= 50, 'Garland needs many bulbs')
+    check(json.dumps(garland['bulbs'], separators=(',', ':')) in (ROOT / 'qml/companion/ChristmasGarlandData.js').read_text(encoding='utf-8'), 'QML garland data out of date: run packaging/generate-christmas-assets.py')
+    santa_users = [p.name for p in (ROOT / 'qml').rglob('*.qml') if p.name != 'ChristmasSanta.qml' and 'ChristmasSanta' in p.read_text(encoding='utf-8')]
+    check(santa_users == ['MusicPanel.qml'], f'Santa outside the song page: {santa_users}')
+    stage_users = [p.name for p in (ROOT / 'android/app/src/main/java').rglob('*.java') if 'new ChristmasStage(' in p.read_text(encoding='utf-8')]
+    check(stage_users == ['MusicPanel.java'], f'Christmas stage outside the song page: {stage_users}')
+    panel = (ROOT / 'android/app/src/main/java/app/tonal/android/MusicPanel.java').read_text(encoding='utf-8')
+    hero = panel[panel.index('private void songHero('):]
+    check('new ChristmasStage(' in hero[:hero.index('\n    private ', 10)], 'Christmas stage must stay in songHero')
+    cover_effects = (ROOT / 'qml/companion/CoverEffects.qml').read_text(encoding='utf-8')
+    check('AnimatedImage' not in cover_effects and 'ChristmasGarland' not in cover_effects, 'Ordinary covers must stay still')
     if failures:
         print('\n'.join(failures))
         print(f'THEMES_FAIL {len(failures)} of {checks}')

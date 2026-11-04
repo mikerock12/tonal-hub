@@ -1,7 +1,9 @@
 import QtQuick
 import QtQuick.Window
 
-Canvas {
+// Seek bar as a light string. Each bulb stays dark until the star reaches it, then
+// flares and settles into the twinkle; seeking back switches it off again.
+Item {
     id: lights
     property real progress: 0
     property real barHeight: 6
@@ -11,38 +13,95 @@ Canvas {
     property bool playing: false
     property bool animationAllowed: true
     property real phase: 0
+    property bool ownClock: true   // false when a page drives phase, so surfaces tick together
     readonly property bool animationRunning: visible && enabled && playing && animationAllowed && (!Window.window || Window.window.active)
-    implicitHeight: 44
-    onProgressChanged: requestPaint()
-    onPhaseChanged: requestPaint()
-    onWidthChanged: requestPaint()
-    onHeightChanged: requestPaint()
-    onShowThumbChanged: requestPaint()
-    Timer { interval: 67; repeat: true; running: lights.animationRunning; onTriggered: lights.phase += .067 }
+    readonly property real trackWidth: Math.max(0, width - 2 * trackInset)
+    readonly property real edge: trackWidth * Math.max(0, Math.min(1, progress))
+    readonly property int count: Math.max(6, Math.floor(trackWidth / 28))
+    readonly property real wireY: height / 2
+    readonly property real bulbLength: Math.max(14, Math.min(19, thumbSize * .8))
+    readonly property var colors: ["red", "gold", "green", "blue"]
+    implicitHeight: 68
+    Timer { interval: 67; repeat: true; running: lights.ownClock && lights.animationRunning; onTriggered: lights.phase += .067 }
 
-    function bulb(c, x, y, size, color, lit, glow) {
-        if (lit) { c.globalAlpha = .12 + glow * .15; c.fillStyle = color; c.beginPath(); c.arc(x, y + size * .45, size * 1.65, 0, Math.PI * 2); c.fill(); c.globalAlpha = 1 }
-        c.fillStyle = "#263d32"; c.fillRect(x - size * .27, y - size * .35, size * .54, size * .42)
-        c.fillStyle = lit ? color : "#63736a"; c.beginPath(); c.ellipse(x - size * .48, y, size * .96, size * 1.25); c.fill()
-        if (lit) { c.fillStyle = "#fff7d6"; c.globalAlpha = .55; c.beginPath(); c.ellipse(x - size * .22, y + size * .16, size * .17, size * .36); c.fill(); c.globalAlpha = 1 }
+    function twinkle(i, t) {
+        const h = Math.abs(Math.sin(i * 12.9898) * 43758.5453) % 1
+        return .58 + .42 * (.5 + .5 * Math.sin(t * (1.8 + 3 * h) + h * 6.283))
     }
-    function star(c, x, y, outer, inner) {
-        c.save(); c.translate(x, y); c.beginPath()
-        for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? inner : outer, px = Math.cos(a) * r, py = Math.sin(a) * r; i ? c.lineTo(px, py) : c.moveTo(px, py) }
-        c.closePath(); const g = c.createLinearGradient(-outer, -outer, outer, outer); g.addColorStop(0, "#fff7bd"); g.addColorStop(.45, "#ffd45e"); g.addColorStop(1, "#c78618"); c.fillStyle = g; c.fill()
-        c.strokeStyle = "#fff4c2"; c.lineWidth = 1; c.stroke(); c.restore()
+
+    Image {
+        x: lights.trackInset
+        y: lights.wireY - height / 2
+        width: lights.trackWidth
+        height: 16
+        source: "qrc:/companion/resources/seasonal/wire.webp"
+        sourceSize: Qt.size(48, 16)
+        fillMode: Image.TileHorizontally
+        verticalAlignment: Image.AlignVCenter
+        smooth: true
     }
-    onPaint: {
-        const c = getContext("2d"); c.reset(); c.translate(trackInset, 0)
-        const w = Math.max(0, width - 2 * trackInset), cy = height / 2 - 2, amount = Math.max(0, Math.min(1, progress)), edge = w * amount
-        c.strokeStyle = "#345c43"; c.lineWidth = Math.max(2, barHeight * .42); c.beginPath(); c.moveTo(0, cy)
-        for (let x = 0; x <= w; x += 8) c.lineTo(x, cy + Math.sin(x * .16) * 1.2)
-        c.stroke(); c.strokeStyle = "#172e22"; c.lineWidth = 1; c.beginPath(); c.moveTo(0, cy - 1); c.lineTo(w, cy - 1); c.stroke()
-        const colors = ["#ff4653", "#ffd45e", "#4fd67c", "#62bfff"], count = Math.max(5, Math.floor(w / 42))
-        for (let i = 0; i <= count; i++) {
-            const x = w * i / count, lit = x <= edge + .5, color = colors[(i + Math.floor(phase * .9)) % colors.length]
-            bulb(c, x, cy + 2, Math.max(4, thumbSize * .25), color, lit, .5 + .5 * Math.sin(phase * 4 + i))
+
+    Repeater {
+        model: lights.count
+        Item {
+            id: lamp
+            required property int index
+            readonly property real position: lights.trackWidth * (index + .5) / lights.count
+            readonly property bool lit: lights.edge >= position
+            readonly property bool upright: index % 3 === 2
+            readonly property real wobble: Math.sin(index * 2.4) * 12
+            readonly property real side: lights.bulbLength * 3.5
+            property real flare: 0
+            property real level: lit ? 1 : 0
+            Behavior on level { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
+            onLitChanged: if (lit) ignite.restart()
+            NumberAnimation { id: ignite; target: lamp; property: "flare"; from: 1; to: 0; duration: 760; easing.type: Easing.OutQuad }
+            x: lights.trackInset + position
+            y: lights.wireY
+            rotation: (upright ? 0 : 180) + wobble
+            Image {
+                x: -width / 2; y: -height * .92
+                width: lights.bulbLength * .46; height: lights.bulbLength * .52
+                source: "qrc:/companion/resources/seasonal/socket.webp"
+                smooth: true
+            }
+            Item { id: glass; x: 0; y: -lights.bulbLength * .92 - lights.bulbLength * .36; width: 0; height: 0 }
+            Image {
+                anchors.centerIn: glass; width: lamp.side; height: lamp.side
+                source: "qrc:/companion/resources/seasonal/bulb_" + lights.colors[lamp.index % 4] + "_off.webp"
+                smooth: true
+            }
+            Image {
+                anchors.centerIn: glass; width: lamp.side; height: lamp.side
+                source: "qrc:/companion/resources/seasonal/bulb_" + lights.colors[lamp.index % 4] + ".webp"
+                smooth: true
+                visible: lamp.level > .01
+                scale: 1 + lamp.flare * .42
+                opacity: Math.min(1, lamp.level * (lights.twinkle(lamp.index, lights.phase) + lamp.flare))
+            }
         }
-        if (showThumb) { c.globalAlpha = .22; c.fillStyle = "#ffe795"; c.beginPath(); c.arc(edge, cy, thumbSize * .85, 0, Math.PI * 2); c.fill(); c.globalAlpha = 1; star(c, edge, cy, thumbSize * .62, thumbSize * .28) }
+    }
+
+    Item {
+        id: star
+        visible: lights.showThumb
+        x: lights.trackInset + lights.edge
+        y: lights.wireY
+        readonly property real pulse: .5 + .5 * Math.sin(lights.phase * 2.7)
+        Image {
+            anchors.centerIn: parent
+            width: lights.thumbSize * 6.4; height: width
+            source: "qrc:/companion/resources/seasonal/star_glow.webp"
+            smooth: true
+            rotation: lights.phase * 9
+            opacity: .62 + .38 * star.pulse
+            scale: .92 + .14 * star.pulse
+        }
+        Image {
+            anchors.centerIn: parent
+            width: lights.thumbSize * 3.8; height: width
+            source: "qrc:/companion/resources/seasonal/star.webp"
+            smooth: true
+        }
     }
 }
