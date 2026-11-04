@@ -22,6 +22,7 @@ public final class NativeBridge {
     public static void start(String token,String cache,int bitrate,boolean normalize){spotifyEngine=true;nativeStart(token,cache,bitrate,normalize);}
     public static void command(String command){
         synchronized(intent){intent.command(command,playing);}
+        if(PlaybackIntent.movesAudio(command))audio.discontinuity();
         if(command.equals("pause")||command.equals("stop")){audio.pause();playing=false;}
         repeatMode=RepeatMode.afterCommand(repeatMode,command);
         Consumer<String> listener=commandListener;if(listener!=null)listener.accept(command);
@@ -71,6 +72,8 @@ public final class NativeBridge {
     public static void onAudioFormat(int rate,int channels) { audio.open(rate,channels); playing=true; onStatus("Reproduzindo"); }
     public static void onAudioResume() { if(spotifyEngine&&!intent.desired){sendCommand("pause");return;}audio.resume(); playing=true; onStatus("Reproduzindo"); }
     public static void onAudioPause() { audio.pause(); playing=false; onStatus("Pausado"); }
+    /** Engine closed the sink only to load another track; runs right after onAudioPause. */
+    public static void onAudioDiscontinuity() { audio.discontinuity(); }
     private static final ThreadLocal<Boolean> audioPriority=ThreadLocal.withInitial(()->false);
     public static void onPcm(float[] samples) {
         if(spotifyEngine&&!intent.desired)return;

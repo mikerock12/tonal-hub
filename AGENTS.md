@@ -5,7 +5,7 @@ afetada antes de alterar o produto. Estado documental: 25/10/2026, builds Window
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
-Estado atual: 01/11/2026, entrega Windows/Android 0.15.8. As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
+Estado atual: 04/11/2026, entrega Windows/Android 0.15.9. As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
 
 ## Autoria, Git e privacidade
 
@@ -373,3 +373,12 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
 - Ler docs/TEXT_REVIEW_0158.md. O filtro **Só não encontradas** lista todas as referências não selecionadas (Não encontrada, Revisar versão e desmarcadas), corrigindo a contagem zero em playlists com correspondências duvidosas. A regra é `!selected` nas duas plataformas.
 - Cartões de revisão e diálogo Versão mostram música, artista, álbum e miniatura da capa no Android (tags review-check/status/track/album/cover, Artwork fechado no dismiss) e no Windows (versionDialog QML, chooseReview preserva rolagem).
 - Evidências locais: QML 3/3, temas 243, CTest 10/10, smoke sintético na AVD dedicada com o extra textPlaylistUncertain. Sem teste físico, streaming autenticado, escrita real de playlist ou benchmark novo.
+
+## Natal, seek e início de faixa 0.15.9 — 04/11/2026
+
+- Ler docs/NATAL_PLAYER_0159.md. Assets em resources/seasonal, cópia idêntica no Android; gerar com packaging/generate-christmas-assets.py e, para o clipe do usuário, packaging/generate-christmas-santa.py. Pipeline fora do produto.
+- Papai Noel só na capa grande da página da música (usuário, 04/11): nunca em início, grades ou miniaturas. Capas comuns usam imagem parada, sem relógio. check_themes.py protege essa regra.
+- 24 fps só para a animação pedida. Decorações Android num relógio único de 15 fps (ChristmasLights.join): relógios separados redesenhavam a janela fora de fase. Não criar timers próprios por componente.
+- Parar com pausa, ocultação, sem foco, economia de bateria, RAM baixa e animações desligadas; underrun novo silencia decorações por 30 s. Nada no callback PCM.
+- Troca de faixa descarta a sobra da fila: SinkStatus::TemporarilyClosed + PlaybackIntent.movesAudio. Pausa simples, requeue e editqueue preservam. A sobra de 74 ms foi medida em AudioTrack real, mas não está confirmado que era o apito do carro.
+- Na AVD o Natal custa 43% de um núcleo contra 4% do tema Tonal, 0 underruns; GPU emulada, não é benchmark de celular. Não declarar custo no aparelho, bateria, Spotify real, Bluetooth, carro ou acústica sem evidência.

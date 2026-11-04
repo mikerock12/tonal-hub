@@ -24,9 +24,10 @@ QtObject {
  }
 }
 ''',encoding='utf-8')
+shutil.copy2(ROOT/'qml/companion/ChristmasGarlandData.js',OUT/'ChristmasGarlandData.js')
 for folder in ['qml/components','qml/companion']:
  for p in (ROOT/folder).glob('*.qml'):
-  text=p.read_text(encoding='utf-8').replace('import "qrc:/companion/qml/companion" as Personal','import "." as Personal');text=text.replace('import QtQuick','import MixHarness 1.0\nimport QtQuick',1);(OUT/p.name).write_text(text,encoding='utf-8')
+  text=p.read_text(encoding='utf-8').replace('import "qrc:/companion/qml/companion" as Personal','import "." as Personal').replace('qrc:/companion/resources/seasonal/',(ROOT/'resources/seasonal').as_uri()+'/');text=text.replace('import QtQuick','import MixHarness 1.0\nimport QtQuick',1);(OUT/p.name).write_text(text,encoding='utf-8')
 (OUT/'DevicePopup.qml').write_text('import MixHarness 1.0'+chr(10)+(ROOT/'qml/panels/DevicePopup.qml').read_text(encoding='utf-8'),encoding='utf-8')
 top=(ROOT/'qml/panels/TopBar.qml').read_text(encoding='utf-8').replace('import "qrc:/companion/qml/companion" as Personal','import "." as Personal')
 for key,value in {'Ready':'1','Starting':'2','NeedsLogin':'3','NotFound':'4','Crashed':'5'}.items():top=top.replace('Librespot.'+key,value)

@@ -42,17 +42,20 @@ final class Ui {
         GradientDrawable track=new GradientDrawable();track.setColor(SEEK_TRACK);track.setCornerRadius(height);
         GradientDrawable fill=new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,new int[]{SEEK_START,SEEK_END});fill.setCornerRadius(height);
         Drawable trackDrawable=THUMB_SHAPE.equals("star")?new SeasonalDrawables.Track(context,height):track;
-        Drawable fillDrawable=THUMB_SHAPE.equals("drop")?new BloodTrail(bar,playing,height):THUMB_SHAPE.equals("star")?new SeasonalDrawables.Trail(bar,playing,height):fill;
-        LayerDrawable layers=new LayerDrawable(new Drawable[]{trackDrawable,new ClipDrawable(fillDrawable,Gravity.START,ClipDrawable.HORIZONTAL)});
+        boolean star=THUMB_SHAPE.equals("star");
+        Drawable fillDrawable=THUMB_SHAPE.equals("drop")?new BloodTrail(bar,playing,height):star?new SeasonalDrawables.Trail(bar,playing,height):fill;
+        // Lit bulbs read the level themselves: a clip would cut their glow at the star.
+        LayerDrawable layers=new LayerDrawable(new Drawable[]{trackDrawable,star?fillDrawable:new ClipDrawable(fillDrawable,Gravity.START,ClipDrawable.HORIZONTAL)});
         layers.setId(0,android.R.id.background);layers.setId(1,android.R.id.progress);
         for(int i=0;i<2;i++){layers.setLayerHeight(i,height);layers.setLayerGravity(i,Gravity.CENTER_VERTICAL|Gravity.FILL_HORIZONTAL);}
         if(THUMB_SHAPE.equals("drop")){layers.setLayerHeight(1,height+dp(32));bar.setMinimumHeight(dp(48));}
-        if(THUMB_SHAPE.equals("star")){for(int i=0;i<2;i++)layers.setLayerHeight(i,height+dp(28));bar.setMinimumHeight(dp(48));}
+        if(star){for(int i=0;i<2;i++)layers.setLayerHeight(i,dp(68));bar.setMinimumHeight(dp(68));}
         bar.setProgressDrawable(layers);bar.setThumb(thumb());bar.setSplitTrack(false);bar.setBackground(null);
+        if(star){((SeasonalDrawables.Trail)fillDrawable).star=(SeasonalDrawables.Star)bar.getThumb();bar.setClipToOutline(false);}
     }
     Drawable thumb(){
         if(THUMB_SHAPE.equals("drop"))return new BloodDrop(dp(THUMB_SIZE),THUMB,THUMB_BORDER);
-        if(THUMB_SHAPE.equals("star"))return new SeasonalDrawables.Star(dp(THUMB_SIZE));
+        if(THUMB_SHAPE.equals("star"))return new SeasonalDrawables.Star(dp(THUMB_SIZE),context);
         int size=dp(THUMB_SIZE);boolean pill=THUMB_SHAPE.equals("pill");
         GradientDrawable core=new GradientDrawable();core.setColor(THUMB);
         if(THUMB_SHAPE.equals("ring"))core.setStroke(dp(3),THUMB_BORDER);else if(THUMB_BORDER!=THUMB)core.setStroke(dp(2),THUMB_BORDER);

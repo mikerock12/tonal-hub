@@ -74,6 +74,8 @@ jobs:
           python tests/mix/run_ui.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python tests/themes/halloween_ui.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tests/themes/christmas_ui.py
   android-java:
     runs-on: ubuntu-latest
     timeout-minutes: 20

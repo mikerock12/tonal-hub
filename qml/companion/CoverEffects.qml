@@ -6,7 +6,7 @@ Canvas {
     property string themeId
     property bool animationAllowed: true
     property real phase: 0
-    readonly property bool animationRunning: visible && enabled && animationAllowed && width >= 120 && height >= 120 && (themeId === "halloween" || themeId === "natal") && (!Window.window || Window.window.active)
+    readonly property bool animationRunning: visible && enabled && animationAllowed && width >= 120 && height >= 120 && themeId === "halloween" && (!Window.window || Window.window.active)
     onPhaseChanged: requestPaint()
     onThemeIdChanged: requestPaint()
     onWidthChanged: requestPaint()
@@ -14,11 +14,16 @@ Canvas {
     onVisibleChanged: requestPaint()
     Timer { interval: 67; repeat: true; running: effects.animationRunning; onTriggered: effects.phase += .067 }
 
-    function bulb(c, x, y, size, color, glow) {
-        c.fillStyle = color; c.globalAlpha = .10 + glow * .14; c.beginPath(); c.arc(x, y, size * 2.1, 0, Math.PI * 2); c.fill()
-        c.globalAlpha = .8 + glow * .2; c.beginPath(); c.ellipse(x - size * .55, y - size * .15, size * 1.1, size * 1.55); c.fill()
-        c.fillStyle = "#fff8dc"; c.globalAlpha = .65; c.beginPath(); c.ellipse(x - size * .25, y, size * .18, size * .5); c.fill(); c.globalAlpha = 1
+    // Ordinary covers get one still image: dozens of grid cells must not each run a clock.
+    Image {
+        anchors.fill: parent
+        visible: effects.themeId === "natal" && effects.width >= 120 && effects.height >= 120
+        source: visible ? "qrc:/companion/resources/seasonal/garland_lit.webp" : ""
+        asynchronous: true
+        smooth: true
+        mipmap: true
     }
+
     function web(c, x, y, radius, start, end, spokes, rings) {
         c.save(); c.translate(x, y)
         for (let pass = 0; pass < 2; pass++) {
@@ -55,11 +60,7 @@ Canvas {
     }
     onPaint: {
         const c = getContext("2d"); c.reset(); const w = width, h = height
-        if (themeId === "natal") {
-            const colors = ["#ff4653", "#ffd45e", "#4fd67c", "#62bfff"], count = Math.max(7, Math.floor(w / 42))
-            c.strokeStyle = "#1c3525"; c.lineWidth = 2.2; c.beginPath(); c.moveTo(0, 8); c.quadraticCurveTo(w * .5, 44, w, 8); c.stroke()
-            for (let i = 0; i <= count; i++) { const t = i / count, x = t * w, y = 8 + 28 * t * (1 - t) * 2, color = colors[(i + Math.floor(phase * .8)) % colors.length]; bulb(c, x, y + 5, Math.max(3, Math.min(w, h) * .018), color, .5 + .5 * Math.sin(phase * 3 + i)) }
-        } else if (themeId === "halloween") {
+        if (themeId === "halloween") {
             const m = Math.min(w, h); web(c, 0, 0, m * .62, 0, Math.PI / 2, 9, 7); web(c, w, 0, m * .31, Math.PI / 2, Math.PI, 6, 4)
             const cycle = phase % 14; let y = h * .18, weave = 0
             if (cycle >= 2 && cycle < 6) y = h * (.18 + (cycle - 2) / 4 * .52)

@@ -24,6 +24,8 @@ final class PlaybackIntent {
         }
         if(command.equals("next")||command.equals("prev")){track="";position=0;}
     }
+    /** requeue/editqueue keep the audible decoder, so their queued audio is still valid. */
+    static boolean movesAudio(String command){return command.equals("next")||command.equals("prev")||command.startsWith("seek|")||command.startsWith("restore|")||command.startsWith("queue|")||command.startsWith("context|")||command.startsWith("spotify:");}
     void progress(String uri,int milliseconds,boolean playing) {
         if(!playing&&track.equals(uri)&&!uri.isEmpty())desired=false;
         if(!uri.isEmpty())track=uri;

@@ -10,6 +10,8 @@ public final class PlaybackSafetyChecks {
         check(PositionSync.reconcile(12000,9000,true)==9000,"large external seeks remain possible");
         check(PositionSync.reconcile(12000,11500,false)==11500,"paused correction is respected");
         check(PositionSync.reconcile(12000,12500,true)==12500,"forward progress is accepted");
+        for(String moved:new String[]{"next","prev","seek|1000","restore|0|a|b","queue|0|a","context|a","spotify:track:a"})check(PlaybackIntent.movesAudio(moved),"selection drops the previous tail: "+moved);
+        for(String kept:new String[]{"pause","play","toggle","stop","requeue|0|a|b","editqueue|0|a|b"})check(!PlaybackIntent.movesAudio(kept),"audible decoder keeps its tail: "+kept);
         PlaybackIntent state=new PlaybackIntent();
         check(!state.desired&&!state.canRecover(1000),"cold launch must be silent");
         check(!state.allowMediaPlay(false,true),"media play without a selected session is rejected");

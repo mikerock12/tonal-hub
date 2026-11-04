@@ -3,7 +3,7 @@ use librespot::{
     connect::{ConnectConfig, LoadRequest, LoadRequestOptions, PlayingTrack, Spirc},
     core::{authentication::Credentials, cache::Cache, config::SessionConfig, session::Session},
     playback::{audio_backend::{Sink, SinkError, SinkResult}, config::{Bitrate, PlayerConfig, NormalisationMethod},
-        convert::Converter, decoder::AudioPacket, mixer::{self, MixerConfig}, player::{Player, PlayerEvent}},
+        convert::Converter, decoder::AudioPacket, mixer::{self, MixerConfig}, player::{Player, PlayerEvent, SinkStatus}},
 };
 use std::{sync::{OnceLock, Mutex, atomic::{AtomicU64, Ordering}}, time::Duration};
 use tokio::sync::mpsc::{UnboundedSender, unbounded_channel};
@@ -135,6 +135,10 @@ pub extern "system" fn Java_app_tonal_android_NativeBridge_nativeStart(mut env: 
                 let mixer = mixer::find(None).unwrap()(MixerConfig::default())?;
                 // Android/car media volume is the volume control. No hidden second attenuator.
                 let player = Player::new(config, session.clone(), Box::new(mixer::NoOpVolume), move ||Box::new(AndroidSink{generation}));
+                // Sink stops also mean pause; only this status says a load replaces the audio.
+                player.set_sink_event_callback(Some(Box::new(move |status|{
+                    if status==SinkStatus::TemporarilyClosed&&generation==GENERATION.load(Ordering::SeqCst){let _=call_void("onAudioDiscontinuity","()V",&[]);}
+                })));
                 let connect = ConnectConfig {name:"Tonalify Android".into(), initial_volume:u16::MAX,disable_volume:true, ..Default::default()};
                 let events=player.get_player_event_channel();
                 let (spirc,task)=Spirc::new(connect, session.clone(), credentials, player, mixer).await?;

@@ -30,7 +30,7 @@ Item {
     signal moving(real v)   // enquanto arrasta
     signal moved(real v)    // ao soltar
 
-    implicitHeight: style.thumbShape === "drop" || style.thumbShape === "star" ? 44 : Math.max(16, style.thumbSize + 6)
+    implicitHeight: style.thumbShape === "star" ? 68 : style.thumbShape === "drop" ? 44 : Math.max(16, style.thumbSize + 6)
 
     Rectangle {
         id: track
