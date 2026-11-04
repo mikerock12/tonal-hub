@@ -1,0 +1,55 @@
+{
+  "version": "0.15.11",
+  "androidVersionCode": 31,
+  "productCode": "faff12a4b3c698db19851253d216891800f2359d",
+  "certificateSha256": "464ae7cf34f4f145541569db215f8fcdef5deda1be31921d8e366eed20aa22c2",
+  "artifacts": [
+    {
+      "path": "Tonal-Android-0.15.11-arm64-v8a.apk",
+      "bytes": 38249420,
+      "sha256": "230a2a27f37135fc9c4f4117427943ed0cc68b3d7b3dc3a24332dff9357d72fb"
+    },
+    {
+      "path": "Tonal-Android-0.15.11-audio-sources.tar.gz",
+      "bytes": 51473272,
+      "sha256": "1906232b908dc204b56d38699c49dac874da56302d15dd10a4613bf1690348fa"
+    },
+    {
+      "path": "Tonal-Android-0.15.11-local.apk",
+      "bytes": 66417725,
+      "sha256": "c812804127b4f306efb908ae40488c2c2445518e114e78c2c54e9b6e8d1d89e0"
+    },
+    {
+      "path": "Tonal-Hub-0.15.11-local.zip",
+      "bytes": 124246421,
+      "sha256": "68efd8abfd8a7bd303ae6fe3923533eca77e3ebd33af99367c2a4feb3f7e31dd"
+    },
+    {
+      "path": "Tonal-Hub-0.15.11.0-Windows-x64-Setup.exe",
+      "bytes": 89038880,
+      "sha256": "d588d3df4978238f5e00b4e7ed41f848164b6430a46040e78fca4ecf881e26e4"
+    }
+  ],
+  "validation": {
+    "ctest": "11/11",
+    "ctestSeconds": 51.32,
+    "qml": 29,
+    "javaPolicy": 13,
+    "androidVariantsCompiled": 3,
+    "portableSmoke": 3,
+    "portableFilesCrcVerified": 1436,
+    "androidSignatureV2": true,
+    "androidAlignment16KiB": true
+  },
+  "limits": {
+    "physicalPhoneTested": false,
+    "authenticatedSpotifyTested": false,
+    "interactiveWindowsInstallTested": false,
+    "published": true
+  },
+  "attempts": "Preserved in docs/catalog-rate-limits-tests.json; release build reused the existing local toolchain and offline Android dependencies.",
+  "productMerge": "2383f6e1c510b525d752da540cd63c0b7ad7b98a",
+  "release": "https://github.com/mikerock12/tonal-hub/releases/tag/v0.15.11",
+  "portalMerge": "97f7c7e514fc4dc03702270db0186fe2e6c0a954",
+  "portalWorkerVersion": "369bd845-9e13-4b6a-8439-f69df3fa730b"
+}

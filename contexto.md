@@ -1,8 +1,8 @@
 # Contexto do Tonal Hub
 
-Atualizado em **04/11/2026**. Preparação: **Windows 0.15.11 / Android 0.15.11**, versionCode 31. Última entrega publicada: 0.15.10. Leia também [AGENTS.md](AGENTS.md).
+Atualizado em **04/11/2026**. Entrega: **Windows 0.15.11 / Android 0.15.11**, versionCode 31. Leia também [AGENTS.md](AGENTS.md).
 
-## Discografia 0.15.11 — 04/11/2026 (publicação em preparação)
+## Discografia 0.15.11 — 04/11/2026 (publicada)
 
 A captura Android revelou HTTP 429 nas categorias do artista; o Windows ocultava
 Discografia quando todas falhavam. Correção em [CATALOG_RATE_LIMITS.md](docs/CATALOG_RATE_LIMITS.md):
@@ -531,3 +531,16 @@ Publicação 0.15.9: PR34 mesclado em ab75378e34bdeb29c4d09f35951404c6b1a8acbc, 
 O usuário relatou que as animações paravam ao trocar de música no Android, que a seek do Natal passava da janela no Windows e que não via o Papai Noel lá. A primeira era defeito da proteção de áudio da 0.15.9, reproduzido com falta real de áudio depois do pulo. A segunda vinha da altura da barra. A terceira, de o painel Tocando agora não ter recebido a cena. Correções em docs/NATAL_PLAYER_0159.md; sem teste físico nem Spotify real.
 
 Publicação 0.15.10: PR36 mesclado em e56f127217a757f4fab304a08209eb1e9298468f, release v0.15.10. Portal PR47 em 0cf5b3f, Worker 8b3cf6eb, downloads ao vivo na v0.15.10 e APK baixado pelo site com hash igual ao validado. Backup privado em https://drive.google.com/drive/folders/1YGceS2ZdSVEYzUj2LLSpHt8XFarnFUzV. Responsável: Claude.
+
+## Entrega 0.15.11 — 04/11/2026
+
+App PR38/merge 2383f6e1c510b525d752da540cd63c0b7ad7b98a, código de produto faff12a; release https://github.com/mikerock12/tonal-hub/releases/tag/v0.15.11.
+CI principal e regressão visual Android aprovados. CTest 11/11, QML 29, Java 13,
+portátil Windows e APKs assinados/alinhados conferidos. Portal PR50/merge
+97f7c7e514fc4dc03702270db0186fe2e6c0a954, Worker 369bd845-9e13-4b6a-8439-f69df3fa730b; verify local 60/60,
+build/dry-run e produção conferidos. Backups privados preservam fontes, histórico,
+pacotes e dados permitidos do PC; o portátil está em duas partes verificadas
+por limite de upload do Drive. Sem Spotify autenticado/aparelho físico,
+instalação interativa Windows, acústica ou benchmark novo. Commits documentais
+posteriores não significam rebuild dos binários. Evidências em
+docs/release-01511-tests.json e docs/artifacts-01511.json.

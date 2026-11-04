@@ -1,0 +1,72 @@
+{
+  "version": "0.15.11",
+  "productCode": "faff12a4b3c698db19851253d216891800f2359d",
+  "productMerge": "2383f6e1c510b525d752da540cd63c0b7ad7b98a",
+  "ctest": {
+    "passed": 11,
+    "failed": 0,
+    "seconds": 51.32
+  },
+  "qml": {
+    "passed": 29,
+    "failed": 0,
+    "synthetic": true
+  },
+  "javaPolicyChecks": 13,
+  "androidVariantsCompiled": 3,
+  "portable": {
+    "smokePassed": 3,
+    "zipFilesCrcVerified": 1436,
+    "privateRuntimePackaged": false
+  },
+  "android": {
+    "versionCode": 31,
+    "abis": [
+      "arm64-v8a",
+      "x86_64"
+    ],
+    "signatureV2": true,
+    "sameCertificateAs01510": true,
+    "alignment16KiB": true
+  },
+  "ci": {
+    "principal": {
+      "id": 41908841311,
+      "conclusion": "success"
+    },
+    "visual": {
+      "id": 41908841204,
+      "conclusion": "success",
+      "attempts": 3,
+      "head": "2bb096e0d33fdc604dbdffa9f10d86ddaffa8c5d",
+      "fixture": "synthetic benchmark app; workflow reuses native libraries from the historical 0.15.4 release"
+    }
+  },
+  "portal": {
+    "pr": 50,
+    "merge": "97f7c7e514fc4dc03702270db0186fe2e6c0a954",
+    "worker": "369bd845-9e13-4b6a-8439-f69df3fa730b",
+    "localVerify": "60/60 tests, build and dry-run",
+    "productionPassed": true,
+    "githubActionsConfigured": false,
+    "fiveGitlinksPreserved": true
+  },
+  "limits": {
+    "authenticatedSpotifyTested": false,
+    "physicalPhoneTested": false,
+    "interactiveWindowsInstallTested": false,
+    "acousticTested": false,
+    "newBenchmark": false,
+    "activeSpotifyRateLimitRemoved": false
+  },
+  "attempts": [
+    "Pre-release attempts, including restricted QSettings and short retry correction, are preserved in catalog-rate-limits-tests.json.",
+    "A packaging wrapper initially stopped after the PowerShell portable script because LASTEXITCODE was unset; the installer was subsequently compiled separately and verified.",
+    "Drive rejected the 124246421-byte portable ZIP at its 100 MiB upload limit. It was split into 80 MiB plus remainder; local reconstruction matched SHA-256 and full ZIP CRC.",
+    "Visual run 41903887663: instrumented assertions passed at 20:11:40 UTC, then the action hung after adb emu kill and was cancelled at the 25-minute limit. Selected log evidence preserved in ci-01511-first-attempt.json.",
+    "Visual run 41908532807: Enable KVM exited 1 before emulator/tests, with /dev/kvm present as root:kvm 0660. Replaced asynchronous udev preparation with explicit device permissions on the ephemeral runner, retaining device/access assertions.",
+    "Final visual run 41908841204 and principal run 41908841311 passed on 2bb096e. CI-only changes did not alter the product source paths compiled at faff12a."
+  ],
+  "toolsInstalledOrDownloadedOnPC": [],
+  "backup": "Private source/history, generated packages, allowed PC SQLite/DSP/preferences, evidence and original Santa clip. Credentials, Vault, signing keys, weights, reader checkpoints and physical phone data excluded. Remote sizes/privacy checked; remote SHA only when supplied by provider."
+}
