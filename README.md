@@ -10,7 +10,7 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
-**Versão 0.15.11 — discografia Spotify com recuperação de erros e menos consultas. Preparação em 04/11/2026.**
+**Entrega 0.15.11 — discografia Spotify com recuperação de erros e menos consultas. Publicada em 04/11/2026.**
 
 Álbuns, singles/EPs e coletâneas ficam acessíveis na página do artista. O Windows
 mostra carregamento, ausência de lançamentos e erros com nova tentativa; o Android
@@ -18,10 +18,11 @@ consulta as categorias em sequência. Cache temporário e respeito ao prazo comp
 informado pelo Spotify reduzem consultas repetidas durante o erro HTTP 429.
 Um bloqueio ativo do serviço ainda precisa expirar; esta correção não contorna a cota.
 
-[Correção e limites](docs/CATALOG_RATE_LIMITS.md) ·
+[Baixar a versão 0.15.11](https://github.com/mikerock12/tonal-hub/releases/tag/v0.15.11) · [Pacotes e hashes](docs/artifacts-01511.json) ·
+[Validação](docs/release-01511-tests.json) · [Correção e limites](docs/CATALOG_RATE_LIMITS.md) ·
 [Guia visual](docs/GUIA_VISUAL.md) · [Contexto](contexto.md) · [Créditos](CREDITS.md).
 
-A validação inicial passou em 29 testes QML, 13 verificações Java e dois grupos
+A validação passou em 29 testes QML, 13 verificações Java e 11/11 grupos
 CTest; compilação das três variantes Android e Windows com IAMF. Os testes usam
 respostas sintéticas, sem validação Spotify autenticada nem aparelho físico.
 As entregas anteriores de Natal e seek permanecem em [NATAL_PLAYER_0159.md](docs/NATAL_PLAYER_0159.md).

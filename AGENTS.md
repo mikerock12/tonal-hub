@@ -5,7 +5,7 @@ afetada antes de alterar o produto. Estado documental: 25/10/2026, builds Window
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
-Estado atual: 04/11/2026, entrega Windows/Android 0.15.10. As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
+Estado atual: 04/11/2026, entrega Windows/Android 0.15.11. As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
 
 ## Autoria, Git e privacidade
 
@@ -393,3 +393,16 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
 - Windows mantém categorias visíveis e carrega por seleção; Android serializa as três seções. Cache de sessão: 10 min, 32 páginas, limitado a discografia pública; limpa em mudança de conta e ignora cache tardio da conta anterior.
 - Cooldown comum da Web API conserva Retry-After completo; esperas até 30 s admitem recuperação limitada. Não limpar por respostas antigas bem-sucedidas nem repetir volume superado. Não altera callback PCM/motor.
 - Nova versão 0.15.11, Android versionCode 31. Candidatos 0.15.10-discografia-teste são históricos locais, não os pacotes da nova release. Preservar certificado e alinhamento 16 KiB.
+
+## Entrega 0.15.11 — 04/11/2026
+
+App PR38/merge 2383f6e1c510b525d752da540cd63c0b7ad7b98a, código de produto faff12a; release https://github.com/mikerock12/tonal-hub/releases/tag/v0.15.11.
+CI principal e regressão visual Android aprovados. CTest 11/11, QML 29, Java 13,
+portátil Windows e APKs assinados/alinhados conferidos. Portal PR50/merge
+97f7c7e514fc4dc03702270db0186fe2e6c0a954, Worker 369bd845-9e13-4b6a-8439-f69df3fa730b; verify local 60/60,
+build/dry-run e produção conferidos. Backups privados preservam fontes, histórico,
+pacotes e dados permitidos do PC; o portátil está em duas partes verificadas
+por limite de upload do Drive. Sem Spotify autenticado/aparelho físico,
+instalação interativa Windows, acústica ou benchmark novo. Commits documentais
+posteriores não significam rebuild dos binários. Evidências em
+docs/release-01511-tests.json e docs/artifacts-01511.json.

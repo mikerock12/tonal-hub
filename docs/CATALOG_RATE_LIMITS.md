@@ -66,3 +66,13 @@ Não houve instalação automática, publicação ou alteração dos pacotes ent
 A validação não usa sessão ou credenciais Spotify. Nenhum aplicativo ou ferramenta
 adicional foi instalado/baixado; foram usados Qt, MSVC, Python, JDK e Gradle já
 existentes. O Gradle foi executado offline.
+
+## Entrega 0.15.11
+
+Publicada em [v0.15.11](https://github.com/mikerock12/tonal-hub/releases/tag/v0.15.11) após merge PR38 e CI aprovado.
+Os candidatos locais 0.15.10 acima são históricos; os novos pacotes/versionCode 31
+estão em [artifacts-01511.json](artifacts-01511.json). Validação final: CTest 11/11
+(51,32 s), QML 29, Java 13, portátil 1.436 arquivos/CRC e três inicializações.
+Relatório: [release-01511-tests.json](release-01511-tests.json). Assinatura Android
+anterior preservada. Instalação interativa Windows, Spotify autenticado e telefone
+físico permanecem sem teste nesta entrega.
