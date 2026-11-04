@@ -1,0 +1,60 @@
+{
+  "version": "0.15.10",
+  "androidVersionCode": 30,
+  "productCode": "74a5080",
+  "certificateSha256": "464ae7cf34f4f145541569db215f8fcdef5deda1be31921d8e366eed20aa22c2",
+  "artifacts": [
+    {
+      "path": "Tonal-Android-0.15.10-arm64-v8a.apk",
+      "bytes": 38233036,
+      "sha256": "4c377836876ba8dae7b1e82bdb593bd0231115fef00fcbdb1c141127141edee9"
+    },
+    {
+      "path": "Tonal-Android-0.15.10-local.apk",
+      "bytes": 66401341,
+      "sha256": "dc31d81ad9a0b1dab404036aa0b8a02eb1074eb3988c9ed4a7205fd8579e0aef"
+    },
+    {
+      "path": "Tonal-Hub-0.15.10.0-Windows-x64-Setup.exe",
+      "bytes": 89028087,
+      "sha256": "aa40a071bd323f6dfea4551f0c9844fc95f5327549ab54421fc75a41ae86e649"
+    },
+    {
+      "path": "Tonal-Hub-0.15.10-local.zip",
+      "bytes": 124237918,
+      "sha256": "45562e16b446f7bdf7cfb20af2615f99841c353f8af0a1c0ec1f21a4569d5ac3"
+    }
+  ],
+  "validation": {
+    "ctest": "11/11",
+    "qml": {
+      "mix": 26,
+      "halloween": 3,
+      "christmas": 7
+    },
+    "themes": 267,
+    "ci": "5/5",
+    "skipWithStall500ms": {
+      "before": {
+        "framesIn2s": 0
+      },
+      "after": {
+        "framesIn2s": 107
+      },
+      "underrunsPerRun": 5
+    },
+    "liveApkHashMatches": true
+  },
+  "attempts": [
+    "Underruns were first suspected and then not reproduced: without a real audio gap 4 skips gave 0 underruns, and a full page rebuild also kept animating. Only a real 500 ms gap after the skip reproduced the report.",
+    "audio_ui_smoke timed out once and passed on the next two runs; cause not established.",
+    "The new seasonal_resources test hung because it forced an offscreen platform plugin absent from the build folder; the test was fixed, the product was not at fault."
+  ],
+  "limits": {
+    "physicalPhoneTested": false,
+    "authenticatedSpotifyStreamingTested": false,
+    "reportedDeviceConfirmed": false,
+    "interactiveWindowsInstallTested": false,
+    "whistleConfirmedFixed": false
+  }
+}
