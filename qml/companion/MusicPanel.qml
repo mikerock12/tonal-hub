@@ -318,7 +318,7 @@ Dialog {
                 }
                 RowLayout {
                     Label { text:panel.formatClock(songSeek.pressed?songSeek.value:panel.position); color:panel.tone.textSecondary; font.pixelSize:12; font.features:({"tnum":1}) }
-                    Slider { id:songSeek; objectName:"songSeek"; Layout.fillWidth:true; from:0; to:Math.max(1,panel.controller.current.durationMs || 0); enabled:(panel.controller.current.durationMs || 0)>0
+                    Slider { id:songSeek; objectName:"songSeek"; Layout.fillWidth:true; Layout.preferredHeight:look.thumbShape==="star"?68:-1; from:0; to:Math.max(1,panel.controller.current.durationMs || 0); enabled:(panel.controller.current.durationMs || 0)>0
                         property real dragTarget:-1
                         readonly property var look:panel.tone.seek
                         readonly property bool active:hovered||pressed

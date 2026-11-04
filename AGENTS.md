@@ -5,7 +5,7 @@ afetada antes de alterar o produto. Estado documental: 25/10/2026, builds Window
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
-Estado atual: 04/11/2026, entrega Windows/Android 0.15.9. As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
+Estado atual: 04/11/2026, entrega Windows/Android 0.15.10. As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
 
 ## Autoria, Git e privacidade
 
@@ -377,10 +377,11 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
 ## Natal, seek e início de faixa 0.15.9 — 04/11/2026
 
 - Ler docs/NATAL_PLAYER_0159.md. Assets em resources/seasonal, cópia idêntica no Android; gerar com packaging/generate-christmas-assets.py e, para o clipe do usuário, packaging/generate-christmas-santa.py. Pipeline fora do produto.
-- Papai Noel só na capa grande da página da música (usuário, 04/11): nunca em início, grades ou miniaturas. Capas comuns usam imagem parada, sem relógio. check_themes.py protege essa regra.
+- Papai Noel só na capa da música atual: página da música e Tocando agora no Windows (usuário, 04/11). Nunca em início, grades ou miniaturas. Capas comuns usam imagem parada, sem relógio. check_themes.py protege essa regra.
 - 24 fps só para a animação pedida. Decorações Android num relógio único de 15 fps (ChristmasLights.join): relógios separados redesenhavam a janela fora de fase. Não criar timers próprios por componente.
-- Parar com pausa, ocultação, sem foco, economia de bateria, RAM baixa e animações desligadas; underrun novo silencia decorações por 30 s. Nada no callback PCM.
+- Parar com pausa, ocultação, sem foco, economia de bateria, RAM baixa e animações desligadas; underruns repetidos em reprodução estável (3 em 20 s, fora de 8 s após transição) silenciam decorações por 15 s. Atraso de rede na faixa nova não é culpa da tela: não reagir a ele. Nada no callback PCM.
 - Troca de faixa descarta a sobra da fila: SinkStatus::TemporarilyClosed + PlaybackIntent.movesAudio. Pausa simples, requeue e editqueue preservam. A sobra de 74 ms foi medida em AudioTrack real, mas não está confirmado que era o apito do carro.
 - Na AVD o Natal custa 36–43% de um núcleo contra 4–5% do tema Tonal, 0 underruns; GPU emulada, não é benchmark de celular. Não declarar custo no aparelho, bateria, Spotify real, Bluetooth, carro ou acústica sem evidência.
 - Evidências: docs/release-0159-tests.json e docs/artifacts-0159.json. Código de produto 6f3c4a3; commits posteriores de CI/documentação não são rebuild. O CI precisa do módulo Qt qtimageformats para WebP.
 - Entrega: PR34 merge ab75378, release v0.15.9, portal PR45 merge d098c78, Worker bd47e92f. Backup privado 1rPWbcrsvQ0WYOJtb9HKGkeEMxsREokSl inclui o clipe original do Papai Noel, que não vai ao Git. `history_stories` falhou uma vez no CI sem relação com a entrega e passou na repetição; causa não estabelecida.
+- 0.15.10: testes de decoração precisam incluir falta real de áudio; sem ela a AVD não mostra a parada ao trocar de faixa. Barras novas no Windows: conferir a altura real em PlayerBar, MusicPanel e prévias de tema. CTest seasonal_resources prova recursos compilados; o harness QML lê do disco.

@@ -26,7 +26,7 @@ Resultado: `santa.webp`, 384×384, 1,8 MiB. A animação anda só com a música 
 
 - Android: decodificação na thread de animação da plataforma, um quadro por vez, sem manter os 81 quadros em memória. Windows: `AnimatedImage` com `cache: false`.
 - Um relógio único de 15 fps para capa, seek e aro do play. Relógios separados redesenhavam a janela inteira fora de fase e eram a maior parte do custo medido.
-- Qualquer underrun novo silencia as decorações por 30 s no Android. Economia de bateria, `isLowRamDevice`, animações do sistema desligadas, janela sem foco e página oculta também as interrompem.
+- Underruns repetidos com a música já estável silenciam as decorações por 15 s no Android (ver 0.15.10). Economia de bateria, `isLowRamDevice`, animações do sistema desligadas, janela sem foco e página oculta também as interrompem.
 - O fio apagado da seek é pintado uma vez e reutilizado como bitmap.
 - Nada disso toca o callback PCM. A saída de áudio continua na própria thread, com prioridade de áudio.
 
@@ -50,3 +50,11 @@ Limite importante: o defeito era real e foi corrigido, mas não foi possível co
 ## Validação
 
 Detalhes em `release-0159-tests.json` e `artifacts-0159.json`. Capturas com dados sintéticos. Não houve teste em aparelho físico, streaming Spotify autenticado, Bluetooth, carro, medição acústica nem benchmark em celular.
+
+## Correções 0.15.10
+
+**Android, animações paradas ao trocar de música.** A proteção da 0.15.9 silenciava as decorações por 30 s a cada underrun. Uma música nova que atrasa pela rede esvazia a saída sem nenhuma relação com a tela, e cada pulo renovava o prazo: a capa parava de vez. Os testes da 0.15.9 não pegaram isso porque o áudio sintético nunca atrasava. Reproduzido na AVD com falta de áudio de 500 ms depois do pulo: antes, 0 mudanças na capa e 0 quadros em 2 s; depois, com as mesmas 5 falhas, cerca de 107 quadros em 2 s. Agora contam só três ou mais underruns em 20 s, a partir de 8 s depois de uma transição, e o silêncio dura 15 s. `tests/android/christmas_skip_smoke.py 500` e a ação `trackChangeTests` cobrem os dois lados.
+
+**Windows, seek além da janela.** A barra inferior tinha 80 px para um desenho de 68 px mais os controles. No Natal ela passa a ter 104 px e usa a seek compacta de 48 px; a seek da página da música reserva sua altura. Prévias de tema também usam a versão compacta.
+
+**Windows, Papai Noel.** Estava só na página da música, e a capa grande de **Tocando agora**, no painel direito, mostrava apenas a imagem parada. O painel agora tem os mesmos fios e o Papai Noel. Continua sendo uma única animação, da música atual: capas de início, álbuns e listas seguem sem animação. A CTest `seasonal_resources` carrega as imagens e a animação a partir dos recursos compilados, como o app instalado; o harness QML lê do disco e não provava isso.

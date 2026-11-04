@@ -24,13 +24,14 @@ Item {
     property bool playing: false
     property bool animationAllowed: true
     property bool showThumb: false        // força o marcador (pré-visualização)
+    property bool compact: false          // barras baixas: luzes de Natal cabem na altura
     readonly property bool thumbVisible: enabled && (style.thumbAlways || active || showThumb)
     readonly property int thumbSize: style.thumbSize + (dragging ? 2 : 0)
 
     signal moving(real v)   // enquanto arrasta
     signal moved(real v)    // ao soltar
 
-    implicitHeight: style.thumbShape === "star" ? 68 : style.thumbShape === "drop" ? 44 : Math.max(16, style.thumbSize + 6)
+    implicitHeight: style.thumbShape === "star" ? (compact ? 48 : 68) : style.thumbShape === "drop" ? 44 : Math.max(16, style.thumbSize + 6)
 
     Rectangle {
         id: track
@@ -64,7 +65,7 @@ Item {
         objectName: "christmasSurface"
         anchors.fill: parent;anchors.leftMargin:-root.thumbSize/2;anchors.rightMargin:-root.thumbSize/2;trackInset:root.thumbSize/2;visible: root.style.thumbShape === "star"
         progress: root.shownValue;barHeight:root.barHeight;thumbSize:root.thumbSize
-        showThumb:root.thumbVisible;playing:root.playing;animationAllowed:root.animationAllowed
+        showThumb:root.thumbVisible;playing:root.playing;animationAllowed:root.animationAllowed;compact:root.compact
     }
 
     Item {

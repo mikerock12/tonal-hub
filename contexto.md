@@ -515,3 +515,7 @@ Fio, soquetes e sombras são pré-renderizados; em execução mudam só as opaci
 Apito: no Android a troca de faixa pausava sem descartar a fila, e 74 ms da música anterior tocavam antes da nova; o Windows já descartava. Corrigido, sobra medida em 0. Não foi possível confirmar no carro que era esse o som. Detalhes em docs/NATAL_PLAYER_0159.md e docs/release-0159-tests.json.
 
 Publicação 0.15.9: PR34 mesclado em ab75378e34bdeb29c4d09f35951404c6b1a8acbc, release v0.15.9 com APKs, instalador, ZIP e SHA256SUMS. Portal PR45 em d098c78, Worker bd47e92f, downloads ao vivo redirecionando para a v0.15.9. Backup privado em https://drive.google.com/drive/folders/1rPWbcrsvQ0WYOJtb9HKGkeEMxsREokSl. Responsável: Claude.
+
+## Correções 0.15.10 — 04/11/2026
+
+O usuário relatou que as animações paravam ao trocar de música no Android, que a seek do Natal passava da janela no Windows e que não via o Papai Noel lá. A primeira era defeito da proteção de áudio da 0.15.9, reproduzido com falta real de áudio depois do pulo. A segunda vinha da altura da barra. A terceira, de o painel Tocando agora não ter recebido a cena. Correções em docs/NATAL_PLAYER_0159.md; sem teste físico nem Spotify real.
