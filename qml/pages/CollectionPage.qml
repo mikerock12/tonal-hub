@@ -19,7 +19,7 @@ Item {
     function personalRow(index){const t=trackModel.get(index);if(!t)return{};return{provider:"Spotify",id:t.uri,uri:t.uri,title:t.name,artist:t.artistsText,artistId:t.artistId,album:t.album,albumId:t.albumId,image:t.coverUrl,durationMs:t.durationMs,year:t.releaseYear||parseInt(root.year)||0}}
     function likedAt(index){const t=personalRow(index);return!!t.uri&&App.music.liked(t)}
     function favoriteAt(index){const t=personalRow(index);if(t.uri)App.music.favorite(t)}
-    function ensureMix(action){if(loading||loadingMix){Nav.toast("Aguarde o carregamento da seleção.");return}if(nextUrl!==""&&trackModel.count<500){pendingMix=action;loadingMix=true;loadMore()}else action()}
+    function ensureMix(action){if(loadError!==""){Nav.toast(loadError);return}if(loading||loadingMix){Nav.toast("Aguarde o carregamento da seleção.");return}if(nextUrl!==""&&trackModel.count<500){pendingMix=action;loadingMix=true;loadMore()}else action()}
     // Quando esta coleção é a que toca, os modos valem na hora para a fila
     // atual, a partir da música que toca; senão, valem no próximo Reproduzir.
     function playingHere(){const u=App.player.trackUri||"";if(!App.player.hasTrack||App.player.localPlayback||!u.startsWith("spotify:track:"))return false;for(let i=0;i<trackModel.count;i++)if(trackModel.get(i).uri===u)return true;return false}
@@ -62,6 +62,7 @@ Item {
     property real dragY: 0           // ponteiro, em coordenadas da lista
     property bool saved: false
     property bool loading: false
+    property string loadError: ""
     property string nextUrl: ""
     property color tint: "#535353"
     property int serial: 0
@@ -88,7 +89,24 @@ Item {
         totalTracks = -1; totalDurationMs = 0; contentsAvailable = true; owned = false; saved = false
         isOwner = false; snapshotId = ""
         nextUrl = ""; tint = "#535353"
+        loadError = ""
         list.positionViewAtBeginning()
+    }
+
+    function failLoad(status, data) {
+        loading = false; loadingMix = false; pendingMix = null
+        if (status === 429)
+            loadError = data && data.error && data.error.message ? data.error.message : qsTr("O Spotify limitou esta consulta. Aguarde e tente novamente.")
+        else if (status === 401) loadError = qsTr("A sessão Spotify expirou. Entre novamente em Conta.")
+        else if (status === 403) loadError = qsTr("O Spotify não permitiu acessar esta seleção (HTTP 403).")
+        else if (status === 404) loadError = qsTr("Esta seleção não foi encontrada ou não está acessível para sua conta (HTTP 404).")
+        else loadError = status === 0 ? qsTr("Não foi possível conectar ao Spotify. Verifique a conexão e tente novamente.") : qsTr("Não foi possível carregar esta seleção (HTTP %1). Tente novamente.").arg(status)
+    }
+
+    function retryFailed() {
+        if (loading) return
+        if (trackModel.count > 0 && nextUrl !== "") { loadError = ""; loadMore() }
+        else load()
     }
 
     function load() {
@@ -107,13 +125,13 @@ Item {
             fetchPage("/me/tracks?limit=50", s)
             return
         }
-        if (itemId === "") return
+        if (itemId === "") { failLoad(404, null); return }
 
         if (kind === "album") {
             App.api.call("GET", "/albums/" + itemId, {}, null, function(status, a) {
                 if (s !== root.serial) return
                 root.loading = false
-                if (status !== 200) { Nav.toast(qsTr("Não consegui abrir o álbum")); return }
+                if (status !== 200) { root.failLoad(status, a); return }
                 root.typeLabel = a.album_type === "single" ? qsTr("Single") : a.album_type === "compilation" ? qsTr("Compilação") : qsTr("Álbum")
                 root.title = a.name
                 root.uri = a.uri
@@ -136,7 +154,7 @@ Item {
         App.api.call("GET", "/playlists/" + itemId, {}, null, function(status, p) {
             if (s !== root.serial) return
             root.loading = false
-            if (status !== 200) { Nav.toast(qsTr("Não consegui abrir a playlist")); return }
+            if (status !== 200) { root.failLoad(status, p); return }
             // "public" é palavra reservada no modo estrito: o parser do QML não aceita p.public
             root.typeLabel = p["public"] === false ? qsTr("Playlist privada") : qsTr("Playlist")
             root.title = p.name
@@ -165,10 +183,11 @@ Item {
 
     function fetchPage(url, s) {
         loading = true
+        loadError = ""
         App.api.call("GET", url, {}, null, function(status, data) {
             if (s !== root.serial) return
             root.loading = false
-            if (status !== 200) {root.loadingMix=false;root.pendingMix=null;Nav.toast("Não foi possível carregar a seleção completa.");return}
+            if (status !== 200) { root.failLoad(status, data); return }
             if (root.kind === "album") {
                 root.appendTracks(data.items, null)
             } else {
@@ -181,7 +200,7 @@ Item {
     }
 
     function loadMore() {
-        if (loading || nextUrl === "") return
+        if (loading || loadError !== "" || nextUrl === "") return
         fetchPage(nextUrl, serial)
     }
 
@@ -397,6 +416,7 @@ Item {
     // ------------------------------------------------------------ lista
     ListView {
         id: list
+        visible: root.loadError === "" || trackModel.count > 0
         anchors.fill: parent
         model: trackModel
         clip: true
@@ -651,6 +671,20 @@ Item {
             bottomPadding: 48
             spacing: 4
 
+            Label {
+                width: parent.width - 48
+                anchors.horizontalCenter: parent.horizontalCenter
+                visible: root.loadError !== ""
+                text: root.loadError
+                wrapMode: Text.WordWrap
+                color: Theme.textSecondary
+            }
+            Button {
+                visible: root.loadError !== ""
+                text: qsTr("Tentar novamente")
+                anchors.horizontalCenter: parent.horizontalCenter
+                onClicked: root.retryFailed()
+            }
             BusyIndicator {
                 anchors.horizontalCenter: parent.horizontalCenter
                 running: root.loading
@@ -689,6 +723,39 @@ Item {
         }
     }
 
+    Rectangle {
+        objectName: "collectionLoadFailure"
+        visible: root.loadError !== "" && trackModel.count === 0
+        anchors.centerIn: parent
+        width: Math.min(560, root.width - 48)
+        height: failureContent.implicitHeight + 32
+        radius: 12
+        color: Theme.panel
+        Column {
+            id: failureContent
+            x: 16; y: 16; width: parent.width - 32; spacing: 16
+            Label {
+                width: parent.width
+                text: qsTr("Não foi possível abrir esta seleção")
+                color: Theme.textPrimary
+                font.bold: true
+                wrapMode: Text.WordWrap
+            }
+            Label {
+                objectName: "collectionLoadError"
+                width: parent.width
+                text: root.loadError
+                color: Theme.textSecondary
+                wrapMode: Text.WordWrap
+            }
+            Button {
+                objectName: "collectionRetry"
+                text: qsTr("Tentar novamente")
+                onClicked: root.retryFailed()
+            }
+        }
+    }
+
     // ------------------------------------------------------------ barra fixa ao rolar
     Rectangle {
         id: stickyBar
@@ -698,7 +765,7 @@ Item {
         height: 64
         color: Qt.darker(root.tint, 1.6)
         opacity: Math.max(0, Math.min(1, (scrolled - 280) / 60))
-        visible: opacity > 0
+        visible: opacity > 0 && list.visible
 
         Row {
             x: 24

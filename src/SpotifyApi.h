@@ -2,6 +2,7 @@
 
 #include <QJSEngine>
 #include <QDeadlineTimer>
+#include <QHash>
 #include <QJSValue>
 #include <QJsonDocument>
 #include <QObject>
@@ -77,13 +78,15 @@ private:
   void enqueue(Pending p);
   void send(Pending p);
   void flushWaiting(bool tokenOk);
+  QString cooldownKey(const Pending &p) const;
+  void expireCooldowns();
 
   QNetworkAccessManager *m_nam;
   AuthManager *m_auth;
   QPointer<QJSEngine> m_engine;
   QList<Pending> m_waiting; // aguardando refresh do token
   bool m_rateLimited = false;
-  QDeadlineTimer m_cooldown{0};
+  QHash<QString, QDeadlineTimer> m_cooldowns;
   struct CatalogPage { QUrl url; QJsonDocument doc; QDeadlineTimer expires; };
   QList<CatalogPage> m_catalogPages; // only public artist discography, 32 pages / 10 min
   int m_catalogEpoch = 0;

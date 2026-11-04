@@ -1,0 +1,99 @@
+{
+  "version": "0.15.12",
+  "before": {
+    "completed": true,
+    "credentials_logged": false,
+    "playback_commands": 0,
+    "probes": [
+      {
+        "endpoint_family": "search",
+        "http": 200,
+        "retry_after": ""
+      },
+      {
+        "endpoint_family": "my_playlists",
+        "http": 200,
+        "retry_after": ""
+      },
+      {
+        "endpoint_family": "album_detail",
+        "http": 200,
+        "retry_after": ""
+      },
+      {
+        "endpoint_family": "playlist_detail",
+        "http": 200,
+        "retry_after": ""
+      },
+      {
+        "endpoint_family": "artist_albums",
+        "http": 429,
+        "retry_after": "17848"
+      }
+    ],
+    "read_only": true,
+    "recorded_at_utc": "2026-11-04T21:26:58Z"
+  },
+  "after": {
+    "artist_blocked_locally_without_request": true,
+    "collections_opened": true,
+    "completed": true,
+    "credentials_logged": false,
+    "playback_commands": 0,
+    "probes": [
+      {
+        "endpoint_family": "search",
+        "http": 200,
+        "rate_limit_source": "spotify",
+        "requests_sent": 1,
+        "retry_after": null
+      },
+      {
+        "endpoint_family": "my_playlists",
+        "http": 200,
+        "rate_limit_source": "spotify",
+        "requests_sent": 1,
+        "retry_after": null
+      },
+      {
+        "endpoint_family": "album_detail",
+        "http": 200,
+        "rate_limit_source": "spotify",
+        "requests_sent": 1,
+        "retry_after": null
+      },
+      {
+        "endpoint_family": "album_tracks",
+        "http": 200,
+        "rate_limit_source": "spotify",
+        "requests_sent": 1,
+        "retry_after": null
+      },
+      {
+        "endpoint_family": "playlist_detail",
+        "http": 200,
+        "rate_limit_source": "spotify",
+        "requests_sent": 1,
+        "retry_after": null
+      },
+      {
+        "endpoint_family": "playlist_items",
+        "http": 200,
+        "rate_limit_source": "spotify",
+        "requests_sent": 1,
+        "retry_after": null
+      },
+      {
+        "endpoint_family": "artist_albums",
+        "http": 429,
+        "rate_limit_source": "local",
+        "requests_sent": 0,
+        "retry_after": 17845
+      }
+    ],
+    "production_client_with_replayed_artist_wait": true,
+    "read_only": true,
+    "recorded_at_utc": "2026-11-04T21:36:34Z"
+  },
+  "scope": "Authenticated metadata reads only; no playback commands, tokens, response bodies, playlist names or IDs logged."
+}

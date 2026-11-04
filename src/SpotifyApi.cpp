@@ -174,6 +174,28 @@ void SpotifyApi::flushWaiting(bool tokenOk) {
   }
 }
 
+QString SpotifyApi::cooldownKey(const Pending &p) const {
+  auto parts = p.url.path().split('/');
+  // Share a service wait across IDs and pagination of the same endpoint,
+  // without inventing a global outage from one catalog endpoint's 429.
+  if (parts.size() > 3 && QStringList{"artists", "albums", "playlists", "tracks",
+      "shows", "episodes", "audiobooks", "chapters", "users"}.contains(parts[2]))
+    parts[3] = ":id";
+  const QString key = QString::fromLatin1(p.verb) + " " + parts.join('/');
+  // Bound memory without evicting an active service wait. Normal app routes
+  // fit well below this cap; excess unknown routes share an overflow bucket.
+  if (!m_cooldowns.contains(key) && (m_cooldowns.contains("overflow") || m_cooldowns.size() >= 64))
+    return "overflow";
+  return key;
+}
+
+void SpotifyApi::expireCooldowns() {
+  for (auto it = m_cooldowns.begin(); it != m_cooldowns.end();)
+    if (it.value().hasExpired()) it = m_cooldowns.erase(it); else ++it;
+  const bool active = !m_cooldowns.isEmpty();
+  if (active != m_rateLimited) { m_rateLimited = active; emit rateLimitedChanged(); }
+}
+
 void SpotifyApi::send(Pending p) {
   if (p.isCurrent && !p.isCurrent()) {
     if (p.notifyCancellation && p.cb)
@@ -184,6 +206,7 @@ void SpotifyApi::send(Pending p) {
     if (p.cb) p.cb(401, {});
     return;
   }
+  expireCooldowns();
   const bool discography = p.verb == "GET" &&
       p.url.path().startsWith("/v1/artists/") && p.url.path().endsWith("/albums");
   if (discography) {
@@ -194,21 +217,22 @@ void SpotifyApi::send(Pending p) {
       }
     }
   }
-  if (!m_cooldown.hasExpired()) {
+  const auto limit = m_cooldowns.constFind(cooldownKey(p));
+  const qint64 remaining = limit == m_cooldowns.cend() ? 0 : limit.value().remainingTime();
+  if (remaining > 0) {
     // A scheduled retry can wake a fraction before the deadline; wait out the
     // remainder instead of turning that retry into a terminal local 429.
-    if ((p.verb != "GET" || p.attempts > 0) && m_cooldown.remainingTime() <= 30000 && p.attempts < 3) {
-      QTimer::singleShot(int(m_cooldown.remainingTime()), Qt::PreciseTimer, this,
+    if ((p.verb != "GET" || p.attempts > 0) && remaining <= 30000 && p.attempts < 3) {
+      QTimer::singleShot(int(remaining), Qt::PreciseTimer, this,
                         [this, p]() mutable { enqueue(std::move(p)); });
       return;
     }
-    const qint64 seconds = (m_cooldown.remainingTime() + 999) / 1000;
+    const qint64 seconds = (remaining + 999) / 1000;
     if (p.cb) p.cb(429, QJsonDocument(QJsonObject{
-        {"retry_after", seconds}, {"error", QJsonObject{{"message",
+        {"retry_after", seconds}, {"rate_limit_source", "local"}, {"error", QJsonObject{{"message",
           QStringLiteral("O Spotify limitou as consultas. Aguarde %1 s para tentar novamente.").arg(seconds)}}}}));
-    return; // also stop unrelated polls/retries from extending the service limit
+    return;
   }
-  if (m_rateLimited) { m_rateLimited = false; emit rateLimitedChanged(); }
   QNetworkRequest req(p.url);
   req.setRawHeader("Authorization",
                    "Bearer " + m_auth->accessToken().toLatin1());
@@ -251,7 +275,11 @@ void SpotifyApi::send(Pending p) {
       const qint64 retryAfter = valid && header > 0 ? header : 30;
       const qint64 delay = retryAfter > std::numeric_limits<qint64>::max() / 1000
           ? std::numeric_limits<qint64>::max() : retryAfter * 1000;
-      if (delay > m_cooldown.remainingTime()) m_cooldown = QDeadlineTimer(delay, Qt::PreciseTimer);
+      expireCooldowns();
+      const QString key = cooldownKey(p);
+      const auto previous = m_cooldowns.constFind(key);
+      if (previous == m_cooldowns.cend() || delay > previous.value().remainingTime())
+        m_cooldowns.insert(key, QDeadlineTimer(delay, Qt::PreciseTimer));
       if (!m_rateLimited) {
         m_rateLimited = true;
         emit rateLimitedChanged();
@@ -261,7 +289,7 @@ void SpotifyApi::send(Pending p) {
         QTimer::singleShot(int(retryAfter * 1000), Qt::PreciseTimer, this,
                          [this, p]() mutable { enqueue(std::move(p)); });
       } else if (p.cb) {
-        p.cb(429, QJsonDocument(QJsonObject{{"retry_after", retryAfter},
+        p.cb(429, QJsonDocument(QJsonObject{{"retry_after", retryAfter}, {"rate_limit_source", "spotify"},
           {"error", QJsonObject{{"message", QStringLiteral("O Spotify limitou as consultas. Aguarde %1 s para tentar novamente.").arg(retryAfter)}}}}));
       }
       return;

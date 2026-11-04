@@ -20,13 +20,14 @@ QtObject {
  property QtObject listeningMix:QtObject{property bool busy:false;property string status:"";property var received:({});property var previewQueue:[];property var committedRows:[];property bool discoveryEnabled:false;property bool randomEnabled:false;property bool enrichmentEnabled:false;property string enrichmentStatus:"";function queueFor(uri){return committedRows}property var applied:null;function applyModes(rows,shake,random,discovery){applied={rows:rows,shake:shake,random:random,discovery:discovery}}property int appliedPosition:-1;signal changed();signal previewReady();function preview(rows,index,random,discovery,album){received={rows:rows,index:index,random:random,discover:discovery,album:album};previewQueue=rows.slice();previewReady();changed()}function applyPreview(position){appliedPosition=position}function cancel(){}function order(n,seed){let a=[];for(let i=1;i<n;i++)a.push(i);a.push(0);return a}function play(rows,index,random,discover,album){received={rows:rows,index:index,random:random,discover:discover,album:album}}}
  property QtObject api:QtObject{
   property int writes:0
+  property int collectionStatus:200
   property int catalogStatus:200
   property int catalogReads:0
   property string catalogNext:""
   property var catalogPending:[]
   property bool catalogDeferred:false
   function catalogReply(callback, group){if(catalogStatus!==200){callback(catalogStatus,{error:{message:"Aguarde 7200 s"},retry_after:7200});return}callback(200,{items:[{id:group,uri:"spotify:album:"+group,name:"Synthetic "+group,album_type:group,release_date:"2026",images:[]}],next:catalogNext||null})}
-  function call(method,path,query,body,callback){if(path.indexOf("/artists/")>=0&&path.indexOf("/albums")>0){catalogReads++;if(catalogDeferred)catalogPending=catalogPending.concat([{callback:callback,group:query.include_groups}]);else catalogReply(callback,query.include_groups||"album");return}if(path.indexOf("/artists/")===0){callback(200,{name:"Fixture Band",uri:"spotify:artist:test",images:[],genres:[]});return}if(path==="/search"&&query.type==="track"){callback(200,{tracks:{items:[]}});return}if(method!=="GET")writes++;let items=[];for(let i=0;i<6;i++)items.push({uri:"spotify:track:fixture"+i,id:"fixture"+i,name:"Fixture song "+i,duration_ms:180000,artists:[{id:"artist",name:"Test Band"}],album:{id:"album",name:"Test Album",images:[]}});if(path.indexOf("/albums/")===0)callback(200,{id:"album",uri:"spotify:album:album",name:"Test Album",release_date:"1994-01-01",artists:[{id:"artist",name:"Test Band"}],images:[],total_tracks:6,tracks:{items:items,next:null}});else callback(200,{items:[],next:null});}
+  function call(method,path,query,body,callback){if((path.indexOf("/albums/")===0||path.indexOf("/playlists/")===0)&&collectionStatus!==200){callback(collectionStatus,{error:{message:"O Spotify limitou esta consulta. Aguarde 7200 s para tentar novamente."},retry_after:7200});return}if(path.indexOf("/artists/")>=0&&path.indexOf("/albums")>0){catalogReads++;if(catalogDeferred)catalogPending=catalogPending.concat([{callback:callback,group:query.include_groups}]);else catalogReply(callback,query.include_groups||"album");return}if(path.indexOf("/artists/")===0){callback(200,{name:"Fixture Band",uri:"spotify:artist:test",images:[],genres:[]});return}if(path==="/search"&&query.type==="track"){callback(200,{tracks:{items:[]}});return}if(method!=="GET")writes++;let items=[];for(let i=0;i<6;i++)items.push({uri:"spotify:track:fixture"+i,id:"fixture"+i,name:"Fixture song "+i,duration_ms:180000,artists:[{id:"artist",name:"Test Band"}],album:{id:"album",name:"Test Album",images:[]}});if(path.indexOf("/albums/")===0&&path.indexOf("/tracks")>0){callback(200,{items:items,next:null,total:12});return}if(path.indexOf("/playlists/")===0){callback(200,{name:"Fixture Playlist",uri:"spotify:playlist:list",images:[],owner:{id:"user",display_name:"Synthetic owner"},items:{items:items.map(t=>({item:t})),total:6,next:null}});return}if(path.indexOf("/albums/")===0)callback(200,{id:"album",uri:"spotify:album:album",name:"Test Album",release_date:"1994-01-01",artists:[{id:"artist",name:"Test Band"}],images:[],total_tracks:6,tracks:{items:items,next:null}});else callback(200,{items:[],next:null});}
  }
 }
 ''',encoding='utf-8')
@@ -205,6 +206,22 @@ Pane {width:1000;height:800;padding:0;palette.button:"#263440";palette.buttonTex
    let repeat=findChild(personalPanel,"songRepeat");App.player.repeatMode="off";let cycles=App.player.repeatCycles;mouseClick(repeat);compare(App.player.repeatCycles,cycles+1);compare(App.player.repeatMode,"context");verify(repeat.filled);
    mouseClick(repeat);compare(repeat.symbol,"repeat1");wait(300);let rp=repeat.mapToItem(null,0,0);console.log("REPEAT_AT "+Math.round(rp.x)+" "+Math.round(rp.y)+" "+Math.round(repeat.width)+" "+Math.round(repeat.height));grabImage(themedSeek.Window.window.contentItem).save("repeat-one-window.png");mouseClick(repeat);verify(!repeat.filled);
    wait(80);grabImage(themedSeek.Window.window.contentItem).save("song-controls.png");personalPanel.close()
+  }
+  function test_collection_error_is_visible_and_retry_opens_album_and_playlist(){
+   App.api.collectionStatus=429;page.route={page:"album",params:{id:"blocked"}};wait(25);
+   verify(page.loadError.indexOf("7200")>=0);verify(findChild(page,"collectionLoadFailure").visible);compare(page.rawRows().length,0);
+   App.api.collectionStatus=200;mouseClick(findChild(page,"collectionRetry"));compare(page.loadError,"");compare(page.rawRows().length,6);verify(!findChild(page,"collectionLoadFailure").visible);
+   App.api.collectionStatus=403;page.route={page:"playlist",params:{id:"list"}};wait(25);verify(page.loadError.indexOf("403")>=0);
+   App.api.collectionStatus=200;page.retryFailed();compare(page.loadError,"");compare(page.title,"Fixture Playlist");compare(page.rawRows().length,6);
+   page.route={page:"album",params:{id:"album"}};wait(25);
+  }
+  function test_collection_failed_more_keeps_rows_and_cancels_pending_mix(){
+   page.route={page:"album",params:{id:"pagination"}};wait(25);compare(page.rawRows().length,6);
+   page.nextUrl="/albums/album/tracks?offset=6";App.api.collectionStatus=429;page.loadingMix=true;page.pendingMix=function(){fail("failed paging applied mix")};page.fetchPage(page.nextUrl,page.serial);
+   compare(page.rawRows().length,6);verify(page.loadError.length>0);verify(!page.loadingMix);compare(page.pendingMix,null);
+   let applied=false;page.ensureMix(function(){applied=true});verify(!applied);
+   App.api.collectionStatus=200;page.retryFailed();compare(page.rawRows().length,12);compare(page.loadError,"");
+   page.route={page:"album",params:{id:"album"}};wait(25);
   }
   function test_collection_modes_apply_to_playing_queue(){
    let mix=App.listeningMix;mix.applied=null;tryCompare(page,"totalTracks",6);
