@@ -554,3 +554,19 @@ por limite de upload do Drive. Sem Spotify autenticado/aparelho físico,
 instalação interativa Windows, acústica ou benchmark novo. Commits documentais
 posteriores não significam rebuild dos binários. Evidências em
 docs/release-01511-tests.json e docs/artifacts-01511.json.
+
+## Entrega 0.15.12 — 04/11/2026
+
+Corrige a regressão da espera global da 0.15.11. Código de produto aa6d87ab435fccddc60a3c8fd42723c82903fc27;
+PR40/merge 764866d3b6232c3cff3742dd40792265d6423ac4, release v0.15.12. CI principal
+41918415044 e visual 41918414926 aprovados. CTest 11/11 (94,05 s), QML 31, Java 20,
+três variantes Android; portátil Windows três inicializações e 1.448 arquivos/CRC.
+APKs code32, certificado anterior, v2 e 16 KiB conferidos. Leitura Spotify real:
+álbum/faixas e playlist/itens HTTP200; discografia bloqueada localmente sem
+novo pedido. Isso não é streaming, teste físico ou benchmark. Portal PR52/merge
+d0f2a1e6619f8c46320d80603153baa4c491af83, Worker 901de0e5-f40a-421e-9230-93de865204a2; verify60/60,
+build/dry-run e produção/API/hashes/redirects/privado401 conferidos. Backup
+privado mantém fontes, histórico, pacotes, dados permitidos do PC, portal e clipe
+original; portátil em partes verificadas pelo limite do Drive. Commits documentais
+posteriores não significam rebuild. Evidências: docs/artifacts-01512.json e
+docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no PC.
