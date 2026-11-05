@@ -10,7 +10,9 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
-**Versão 0.15.12 — correção da abertura de álbuns e playlists. Preparação em 04/11/2026.**
+**Entrega 0.15.12 — correção da abertura de álbuns e playlists. Publicada em 04/11/2026.**
+
+[Baixar 0.15.12](https://github.com/mikerock12/tonal-hub/releases/tag/v0.15.12) · [Pacotes e hashes](docs/artifacts-01512.json) · [Testes](docs/release-01512-tests.json)
 
 Corrige uma regressão da 0.15.11: a espera do Spotify para a discografia estava
 bloqueando a API inteira. O bloqueio agora acompanha a rota que o recebeu,

@@ -40,3 +40,11 @@ QML 31/31 (inclui falha/recuperação de álbum e playlist e paginação com mix
 
 A espera real da discografia continua dependendo do Spotify. Os testes não
 representam reprodução autenticada, acústica, benchmark novo ou aparelho Android físico.
+
+## Entrega publicada
+
+[v0.15.12](https://github.com/mikerock12/tonal-hub/releases/tag/v0.15.12) após PR40 e CI aprovado. CTest 11/11, QML31,
+Java20, três variantes Android, portátil e assinaturas conferidos. Portal PR52
+publicado e produção verificada. [Pacotes](artifacts-01512.json) e
+[relatório final](release-01512-tests.json). Fontes compiladas no commit aa6d87a;
+registros documentais posteriores não são novo build.

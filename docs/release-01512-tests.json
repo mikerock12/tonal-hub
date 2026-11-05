@@ -1,0 +1,59 @@
+{
+  "version": "0.15.12",
+  "productCode": "aa6d87ab435fccddc60a3c8fd42723c82903fc27",
+  "productMerge": "764866d3b6232c3cff3742dd40792265d6423ac4",
+  "validation": {
+    "ctest": "11/11",
+    "ctestSeconds": 94.05,
+    "qml": 31,
+    "javaPolicy": 20,
+    "androidVariantsCompiled": 3,
+    "portableSmoke": 3,
+    "portableFilesCrcVerified": 1448,
+    "androidSignatureV2": true,
+    "androidAlignment16KiB": true
+  },
+  "spotify": {
+    "authenticatedReadOnly": true,
+    "albumDetail": 200,
+    "albumTracks": 200,
+    "playlistDetail": 200,
+    "playlistItems": 200,
+    "artistBlockedLocallyWithoutRequest": true,
+    "playbackCommands": 0,
+    "report": "collections-routing-live-01512.json"
+  },
+  "ci": {
+    "principal": {
+      "id": 41918415044,
+      "conclusion": "success"
+    },
+    "visual": {
+      "id": 41918414926,
+      "conclusion": "success",
+      "fixture": "synthetic benchmark app; reuses native libraries from historical 0.15.4 release"
+    }
+  },
+  "portal": {
+    "pr": 52,
+    "merge": "d0f2a1e6619f8c46320d80603153baa4c491af83",
+    "worker": "901de0e5-f40a-421e-9230-93de865204a2",
+    "localVerify": "60/60, build, dry-run",
+    "productionPassed": true,
+    "githubActionsConfigured": false,
+    "fiveGitlinksPreserved": true
+  },
+  "limits": {
+    "authenticatedStreamingTested": false,
+    "physicalPhoneTested": false,
+    "interactiveWindowsInstallTested": false,
+    "acousticTested": false,
+    "newBenchmark": false,
+    "activeSpotifyRateLimitRemoved": false
+  },
+  "attempts": [
+    "Portal catalog test initially retained the previous version regex and old warning text; expectations updated to the new version and route-scoped restriction. All 60 checks subsequently passed."
+  ],
+  "toolsInstalledOrDownloadedOnPC": [],
+  "backup": "Private source/history, generated packages, allowed PC snapshot, evidence, portal and original Santa clip. No credentials, Vault, keys, reader checkpoints, weights or physical phone data. Portable split at 80 MiB and locally reconstructed by SHA-256/CRC; remote size/privacy checked separately."
+}
