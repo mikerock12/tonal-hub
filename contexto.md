@@ -574,3 +574,5 @@ docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no
 ## Descoberta 0.15.13 — 07/11/2026
 
 O usuário relatou que a Descoberta 2+1 quase sempre dizia não haver sugestões e pediu para saber qual atualização a quebrou. O código da Descoberta Android estava igual desde 19/10. Medição real: o Spotify deixou de enviar o campo `genres` para artistas, e sem gênero da âncora o Android não fazia nenhuma busca; no print a âncora era The Muffs, fora das regras editoriais, ao lado de artistas conhecidos. O Windows já tinha defesa parcial que nunca foi levada ao Android. Correção nas duas plataformas com vizinhas da seleção e MusicBrainz sob demanda.
+
+Publicação 0.15.13: PR42 mesclado em 8d8308e7be5c85cd3ccd69da007fbd7fab293dfe, release v0.15.13. Portal PR58 em 313864a, Worker a7b5ab3c; `.exe` e `.apk` baixados pelo site com hash igual ao validado. Backup privado na pasta Tonal do Drive. Responsável: Claude.

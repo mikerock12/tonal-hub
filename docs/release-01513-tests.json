@@ -1,0 +1,68 @@
+{
+  "version": "0.15.13",
+  "productCode": "115a005",
+  "productMerge": "8d8308e7be5c85cd3ccd69da007fbd7fab293dfe",
+  "validation": {
+    "ctest": "11/11",
+    "qml": {
+      "mix": 31,
+      "christmas": 7
+    },
+    "themes": 267,
+    "javaPolicy": 68,
+    "ci": "5/5"
+  },
+  "cause": {
+    "measuredOn": "2026-11-07",
+    "artistsMeasured": 9,
+    "artistsWithGenresField": 0,
+    "httpStatus": 200,
+    "genreFilterStillWorks": true,
+    "officialMigrationGuideListsRemoval": false,
+    "reasonAndDateConfirmed": false,
+    "androidDiscoveryCodeUnchangedSince": "2026-10-19"
+  },
+  "liveWindows": {
+    "readOnly": true,
+    "playbackCommands": 0,
+    "realSpotify": true,
+    "realMusicBrainz": true,
+    "unknownAnchorOnly": {
+      "source": 2,
+      "outside": 1
+    },
+    "unknownAnchorKnownNeighbours": {
+      "source": 6,
+      "outside": 3
+    },
+    "hole": {
+      "source": 3,
+      "outside": 1
+    }
+  },
+  "avdAndroid": {
+    "realMusicBrainz": true,
+    "liveSpotify": false,
+    "coldLookupMs": [
+      1514,
+      2265,
+      2260,
+      2515
+    ],
+    "genre": "pop punk, power pop, punk rock",
+    "queries": 6,
+    "plannerOutside": 2,
+    "seasonalTests": true
+  },
+  "attempts": [
+    "The first Android lookup right after the AVD booted found no style within 12 s. A run with diagnostics and four cold runs passed; the cause of that first miss was not established.",
+    "Portal test pinned the discography warning; the first note dropped it. The warning was restored and only the version pin changed."
+  ],
+  "limits": {
+    "physicalPhoneTested": false,
+    "androidDiscoveryWithAuthenticatedSpotify": false,
+    "interactiveWindowsInstallTested": false,
+    "newBenchmark": false
+  },
+  "toolsInstalledOrDownloadedOnPC": []
+}
