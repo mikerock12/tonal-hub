@@ -1,0 +1,30 @@
+{
+  "version": "0.15.13",
+  "androidVersionCode": 33,
+  "productCode": "115a005",
+  "certificateSha256": "464ae7cf34f4f145541569db215f8fcdef5deda1be31921d8e366eed20aa22c2",
+  "alignment": 16384,
+  "artifacts": [
+    {
+      "path": "Tonal-Android-0.15.13-arm64-v8a.apk",
+      "bytes": 38249420,
+      "sha256": "709e7ea5baaa760fe7452acf07f9c99e4dbc264f37b6ad1cf2934121a58f5f54"
+    },
+    {
+      "path": "Tonal-Android-0.15.13-local.apk",
+      "bytes": 66417725,
+      "sha256": "2560330aaa15b73f5708daca180c4335d5dd9a77237b0f8d2797b495d9a0b334"
+    },
+    {
+      "path": "Tonal-Hub-0.15.13-local.zip",
+      "bytes": 124256910,
+      "sha256": "b69375bc524042ef48ba8489ea25cd61b6bef0f71ec6bb7ebd6a6fb29e2546ab"
+    },
+    {
+      "path": "Tonal-Hub-0.15.13.0-Windows-x64-Setup.exe",
+      "bytes": 89045717,
+      "sha256": "ac323e6e9ebf1aa238bbee115fa210ebb009e087c8a1ddd93e3ef7d001fdb038"
+    }
+  ],
+  "liveDownloadHashesMatch": true
+}
