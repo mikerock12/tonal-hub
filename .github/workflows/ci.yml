@@ -103,7 +103,7 @@ jobs:
       - name: Reject unsolicited playback and late recovery
         run: |
           mkdir -p out/ci-playback
-          javac -d out/ci-playback android/app/src/main/java/app/tonal/android/PlaybackIntent.java android/app/src/main/java/app/tonal/android/RepeatMode.java android/app/src/main/java/app/tonal/android/PositionSync.java tests/android/PlaybackSafetyChecks.java
+          javac -d out/ci-playback android/app/src/main/java/app/tonal/android/DiscoveryStyles.java android/app/src/main/java/app/tonal/android/PlaybackIntent.java android/app/src/main/java/app/tonal/android/RepeatMode.java android/app/src/main/java/app/tonal/android/PositionSync.java tests/android/PlaybackSafetyChecks.java
           java -cp out/ci-playback app.tonal.android.PlaybackSafetyChecks
       - name: Test Spotify catalog cooldown and cache without credentials
         # Public catalog cooldown/cache can be exercised without Android or credentials.

@@ -50,6 +50,13 @@ QVariantMap MusicCompanion::summary(const QString &kind,const QString &value) co
 void MusicCompanion::mergeMetadata(const QString &id,const QVariantMap &patch){auto tracks=m_data["tracks"].toObject(),track=tracks[id].toObject();if(track.isEmpty())return;for(auto field:{"album","image","genre","artistId","albumId","genreSource","metadataSource"})if(!patch.value(field).toString().isEmpty())track[field]=patch.value(field).toString();tracks[id]=track;m_data["tracks"]=tracks;if(key(m_current)==id){m_current=track.toVariantMap();emit currentChanged();}save();}
 
 void MusicCompanion::refreshMetadata(){auto events=m_data["events"].toArray();auto tracks=m_data["tracks"].toObject(),checks=m_data["metadataChecks"].toObject();int count=0;for(int i=events.size()-1;i>=0&&count<24;--i){auto id=events[i].toObject()["key"].toString();auto t=tracks[id].toObject();if(t.isEmpty()||m_metadataPending.contains(id))continue;const auto check=checks[id].toObject();if(QDateTime::currentMSecsSinceEpoch()-qint64(check["at"].toDouble())<qint64(check["ttl"].toDouble(3600000)))continue;if(!t["genre"].toString().isEmpty()&&!t["album"].toString().isEmpty())continue;m_metadataPending.insert(id);m_metadataQueue<<id;count++;}metadataNext();}
+bool MusicCompanion::lookUpGenre(const QVariantMap &track){
+  rememberTracks({track});const auto id=key(track);const auto t=m_data["tracks"].toObject()[id].toObject();if(t.isEmpty())return false;
+  const auto check=m_data["metadataChecks"].toObject()[id].toObject();
+  if(QDateTime::currentMSecsSinceEpoch()-qint64(check["at"].toDouble())<qint64(check["ttl"].toDouble(3600000)))return false;
+  if(!m_metadataPending.contains(id)){m_metadataPending.insert(id);m_metadataQueue.prepend(id);metadataNext();}
+  return true;
+}
 void MusicCompanion::metadataNext(){
   if(m_metadataBusy||m_metadataQueue.isEmpty())return;m_metadataBusy=true;const auto id=m_metadataQueue.takeFirst();const auto track=m_data["tracks"].toObject()[id].toObject();
   const auto cacheKey=track["artist"].toString()+"|"+track["album"].toString();auto finish=[this,id,cacheKey](const QString &genre){if(!genre.isEmpty()){mergeMetadata(id,{{"genre",genre},{"genreSource","MusicBrainz • artista confirmado"}});auto cache=m_data["publicArtistMetadata"].toObject();cache[cacheKey]=QJsonObject{{"genre",genre},{"at",double(QDateTime::currentMSecsSinceEpoch())}};if(cache.size()>1000)cache.erase(cache.begin());m_data["publicArtistMetadata"]=cache;}auto checks=m_data["metadataChecks"].toObject();checks[id]=QJsonObject{{"at",double(QDateTime::currentMSecsSinceEpoch())},{"ttl",double(genre.isEmpty()?3600000:30LL*86400000)}};m_data["metadataChecks"]=checks;save();m_metadataPending.remove(id);m_metadataBusy=false;QTimer::singleShot(1200,this,[this]{metadataNext();});};

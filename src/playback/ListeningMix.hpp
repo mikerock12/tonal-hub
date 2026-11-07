@@ -37,6 +37,8 @@ public:
 signals:void changed();void previewReady();void ready(const QVariantList&);void resumeReady(const QVariantList&,int);
 private:
  bool m_queueCapacityExceeded=false;
+ bool m_styleLookup=false;
+ void awaitStyles(int serial,const QVariantMap &anchor,qint64 until);
  void prepare(const QVariantList&,int,bool,bool,bool,bool,bool autoApply=false);
  bool m_autoApply=false;
  QVariantList m_previewQueue,m_appliedQueue;bool m_preview=false,m_activeDiscovery=false,m_activeRandom=false;

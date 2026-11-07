@@ -15,6 +15,9 @@ final class MusicMetadata implements AutoCloseable {
     MusicMetadata(MusicStore store,SpotifyClient api){this.store=store;this.api=api;}
     boolean uses(SpotifyClient client){return api==client;}
     void recent(){JSONArray events=MusicStore.array(store.data,"events");int added=0;Set<String> seen=new HashSet<>();for(int i=events.length()-1;i>=0&&added<24;i--){String k=events.optJSONObject(i).optString("key");JSONObject t=MusicStore.object(store.data,"tracks").optJSONObject(k);if(t!=null&&seen.add(k)){enrich(t);added++;}}}
+    boolean closed(){return closed;}
+    /** Ahead of the queue, for a screen waiting on it; false when no lookup will happen now. */
+    boolean priority(JSONObject t){if(closed)return false;String key=MusicStore.key(t);JSONObject cached=MusicStore.object(MusicStore.object(store.data,"metadataChecks"),key);if(System.currentTimeMillis()-cached.optLong("at")<cached.optLong("ttl",3600000))return false;if(pending.add(key)){queue.addFirst(key);next();}return true;}
     void enrich(JSONObject t){if(closed)return;String key=MusicStore.key(t);JSONObject cached=MusicStore.object(MusicStore.object(store.data,"metadataChecks"),key);if(System.currentTimeMillis()-cached.optLong("at")<cached.optLong("ttl",3600000))return;if(queue.size()>=32||!pending.add(key))return;queue.add(key);next();}
     private void next(){if(closed||busy||queue.isEmpty())return;busy=true;String key=queue.remove();JSONObject t=MusicStore.object(store.data,"tracks").optJSONObject(key);if(t==null){done(key,false);return;}
         if(api!=null&&api.loggedIn()&&t.optString("provider").equals("Spotify")&&(t.optString("album").isEmpty()||t.optString("image").isEmpty()||t.optString("artistId").isEmpty())){

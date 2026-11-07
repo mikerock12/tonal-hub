@@ -26,15 +26,21 @@ fica definida: não há outra busca automática a cada terceira música.
 
 ## Busca e filtros
 
-- Os estilos vêm dos dados locais, das regras editoriais do projeto ou dos
-  metadados do artista Spotify. O Windows também tenta recuperar o identificador
-  do artista pela faixa e aproveitar estilos conhecidos de outras faixas da seleção.
+- Os estilos vêm dos dados locais, das regras editoriais do projeto, dos metadados
+  do artista Spotify e das faixas vizinhas da seleção. Se nada disso identificar um
+  estilo, a âncora é consultada no MusicBrainz, com a mesma regra de identificação
+  sem homônimos das estatísticas, por até 5 segundos. O resultado fica salvo.
+- Desde 07/11/2026 observamos que o Spotify não envia o campo `genres` para artistas,
+  nem na busca nem em `/artists/{id}`. Sem isso a Descoberta terminava sem candidatas
+  sempre que a âncora era desconhecida. O guia oficial de fevereiro de 2026 não lista
+  essa remoção: o motivo e a data não estão confirmados. O filtro `genre:` da busca segue ativo.
 - A busca usa até seis consultas de gênero. Quando o ano é válido, tenta
   `genre:"estilo" year:ANO-8-ANO+8` e uma consulta do mesmo gênero sem restringir o ano.
 - Cada consulta pode obter dez resultados iniciais e mais dez numa página
   sorteada, dentro de até mil resultados informados pela API. São até doze
   chamadas de busca e até 120 candidatos; consultas de metadados são adicionais.
-- O prazo global é **15 segundos no Windows** e **6,5 segundos no Android**.
+- O prazo global é **15 segundos no Windows**. No Android a busca tem **6,5 segundos**,
+  depois de até 5 segundos de espera pelo estilo quando a seleção não tem nenhum conhecido.
   Rede, metadados e limites da API podem reduzir bastante o conjunto obtido.
 - Rejeita entradas que não são faixas Spotify, arquivos locais, faixas
   explicitamente indisponíveis e nomes normalizados contendo `karaoke` ou `tribute`.

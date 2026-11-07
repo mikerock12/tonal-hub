@@ -12,6 +12,10 @@ public final class PlaybackSafetyChecks {
         check(PositionSync.reconcile(12000,12500,true)==12500,"forward progress is accepted");
         for(String moved:new String[]{"next","prev","seek|1000","restore|0|a|b","queue|0|a","context|a","spotify:track:a"})check(PlaybackIntent.movesAudio(moved),"selection drops the previous tail: "+moved);
         for(String kept:new String[]{"pause","play","toggle","stop","requeue|0|a|b","editqueue|0|a|b"})check(!PlaybackIntent.movesAudio(kept),"audible decoder keeps its tail: "+kept);
+        check(DiscoveryStyles.merge("",java.util.List.of("","grunge, noise rock","alternative rock")).equals("grunge,alternative rock,noise rock"),"unknown anchor uses styles from its selection");
+        check(DiscoveryStyles.merge("Punk, power pop, garage rock",java.util.List.of("grunge")).equals("punk,power pop,grunge"),"anchor leads, neighbours add variety");
+        check(DiscoveryStyles.merge("",java.util.List.of("","")).isEmpty(),"no known style means no invented query");
+        check(DiscoveryStyles.merge("rock|rock;Rock",java.util.List.of()).equals("rock"),"styles are not repeated");
         PlaybackIntent state=new PlaybackIntent();
         check(!state.desired&&!state.canRecover(1000),"cold launch must be silent");
         check(!state.allowMediaPlay(false,true),"media play without a selected session is rejected");

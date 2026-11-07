@@ -258,6 +258,40 @@ public:
         require(spin([&] { return received; }, 15000), "Catalog probe timed out");
       }
       report["catalog_probes"] = probes;
+      // What the service gives Discovery for well-known artists: genre counts only.
+      if (QCoreApplication::arguments().contains("--artist-genres")) {
+        QJsonArray rows;
+        for (const QString name : {QString("The Muffs"), QString("Sonic Youth"), QString("PJ Harvey"), QString("The Breeders"),
+                                   QString("Lush"), QString("Garbage"), QString("Elastica"), QString("Skunk Anansie"), QString("Hole")}) {
+          QJsonObject row{{"artist", name}};
+          received = false;
+          QString id;
+          api.get("/search", {{"q", "artist:\"" + name + "\""}, {"type", "artist"}, {"limit", 1}},
+            [&](int s, const QJsonDocument &d) {
+              const auto items = d.object()["artists"].toObject()["items"].toArray();
+              row["search_http"] = s;
+              if (!items.isEmpty()) {
+                id = items.first().toObject()["id"].toString();
+                row["search_genres"] = items.first().toObject()["genres"];
+                row["search_has_genres_field"] = items.first().toObject().contains("genres");
+              }
+              received = true;
+            });
+          require(spin([&] { return received; }, 15000), "Artist search timed out");
+          if (!id.isEmpty()) {
+            received = false;
+            api.get("/artists/" + id, {}, [&](int s, const QJsonDocument &d) {
+              row["artist_http"] = s;
+              row["artist_has_genres_field"] = d.object().contains("genres");
+              row["artist_genres"] = d.object()["genres"];
+              received = true;
+            });
+            require(spin([&] { return received; }, 35000), "Artist lookup timed out");
+          }
+          rows.append(row);
+        }
+        report["artist_genres"] = rows;
+      }
       QJsonArray cases;
       auto check = [&](QVariantList source, const QString &name) {
         QTemporaryDir storage;
@@ -290,6 +324,31 @@ public:
           if (source.size() == 6) break;
         }
         if (!source.isEmpty()) check(source, "current_queue");
+      }
+      // An anchor outside the editorial rules, as in the reported queue.
+      if (QCoreApplication::arguments().contains("--artist-genres")) {
+        auto rowsFor = [&](const QString &artist, int limit) {
+          QVariantList rows; received = false;
+          api.get("/search", {{"q", "artist:\"" + artist + "\""}, {"type", "track"}, {"limit", limit}},
+            [&](int, const QJsonDocument &d) {
+              for (const auto &v : d.object()["tracks"].toObject()["items"].toArray()) {
+                const auto t = v.toObject(), album = t["album"].toObject(); const auto people = t["artists"].toArray();
+                if (people.first().toObject()["name"].toString().compare(artist, Qt::CaseInsensitive) != 0) continue;
+                rows << QVariantMap{{"provider", "Spotify"}, {"id", t["uri"].toString()}, {"uri", t["uri"].toString()}, {"title", t["name"].toString()},
+                  {"artist", artist}, {"artistId", people.first().toObject()["id"].toString()}, {"albumId", album["id"].toString()},
+                  {"album", album["name"].toString()}, {"year", album["release_date"].toString().left(4).toInt()}};
+              }
+              received = true;
+            });
+          require(spin([&] { return received; }, 20000), "Track search timed out");
+          return rows;
+        };
+        auto muffs = rowsFor("The Muffs", 4);
+        if (muffs.size() >= 2) {
+          check(muffs, "unknown_anchor_only");
+          auto mixed = muffs.mid(0, 2); mixed += rowsFor("Sonic Youth", 3); mixed += rowsFor("Garbage", 3);
+          check(mixed, "unknown_anchor_known_neighbours");
+        }
       }
       // Stable user-requested artist; inspect the same catalog path used by the UI.
       received = false;

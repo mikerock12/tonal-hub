@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.15.13 — 07/11/2026
+
+- Descoberta 2+1 volta a encontrar músicas quando o Spotify não informa o gênero do artista, o que hoje acontece com todos os artistas testados. Usa os estilos das outras faixas da seleção e, se preciso, consulta o MusicBrainz sem adivinhar homônimos, guardando o resultado no aparelho.
+- A mensagem passa a explicar quando faltam estilos ou quando o Spotify limitou as buscas, em vez de sempre dizer que não há sugestões.
+- Android e Windows; no Windows, um limite na consulta do artista não encerra mais a busca.
+- Detalhes em docs/DESCOBERTA_2_MAIS_1.md e docs/release-01513-tests.json.
+
 ## 0.15.10 — 04/11/2026
 
 - Android: as animações do Natal não param mais ao trocar de música. A proteção de áudio confundia o atraso da música nova na rede com um problema causado pela tela.
