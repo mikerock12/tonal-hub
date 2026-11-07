@@ -68,6 +68,8 @@ public:
   Q_INVOKABLE QVariantMap summary(const QString &kind,const QString &value) const;
   Q_INVOKABLE void mergeMetadata(const QString &key,const QVariantMap &);
   Q_INVOKABLE void refreshMetadata();
+  // Ahead of the queue, for a screen waiting on it; false when no lookup will happen now.
+  bool lookUpGenre(const QVariantMap &track);
   Q_INVOKABLE void selectTrack(const QVariantMap &);
   Q_INVOKABLE void pulse(bool playing,int positionMs);
   Q_INVOKABLE bool liked(const QVariantMap &) const;

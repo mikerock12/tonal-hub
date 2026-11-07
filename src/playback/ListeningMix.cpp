@@ -1,6 +1,7 @@
 #include "ListeningMix.hpp"
 #include "ListeningMixCore.hpp"
 #include "DiscoveryLyrics.hpp"
+#include <QDateTime>
 #include <QFileInfo>
 #include <QDir>
 #include "playlist/TextPlaylistCore.hpp"
@@ -46,7 +47,7 @@ void ListeningMix::prepare(const QVariantList &tracks, int selected, bool random
  if(!discovery){m_retainedSource.clear();m_retainedExternal.clear();}
  else if(!marked&&originalIds==m_retainedSource)m_source+=m_retainedExternal;
 
- m_pool.clear();m_totals.clear();m_selected=selected;m_random=random;
+ m_styleLookup=false;m_pool.clear();m_totals.clear();m_selected=selected;m_random=random;
  m_discovery=discovery;m_album=album;m_seed=QRandomGenerator::global()->generate();
  m_busy=true;const int serial=m_generation;
  m_status=discovery?"Preparando descoberta 2+1… a música atual continua tocando.":"Preparando ordem da reprodução…";
@@ -76,7 +77,7 @@ void ListeningMix::resolveGenres(int serial, QVariantMap anchor) {
    m_api->raw("GET","/artists/"+artistId,{}, {}, {},
      [this,serial,anchor](int status,const QJsonDocument &doc){
        if(serial!=m_generation||!m_busy)return;
-       if(status==401||status==403||status==429){m_failure=QString("Não foi possível consultar sugestões (Spotify HTTP %1). Tente novamente mais tarde.").arg(status);finish(serial);return;}
+       // Spotify may send no genres or limit this route: neither may end the search here.
        QStringList tags;
        if(status==200)for(const auto &v:doc.object()["genres"].toArray())tags<<v.toString();
        startSearch(serial,anchor,tags.join(','));
@@ -114,11 +115,22 @@ void ListeningMix::startSearch(int serial,const QVariantMap &anchor,const QStrin
  m_queries.clear();
  for(const auto &q:tonal::mix::queries(tags.join(',').toStdString(),anchor["year"].toInt()))
    if(!m_queries.contains(QString::fromStdString(q)))m_queries<<QString::fromStdString(q);
+ if(m_queries.isEmpty()&&!m_styleLookup){
+   // Nothing known in the selection: wait for the verified public lookup of the anchor.
+   m_styleLookup=true;
+   if(m_music->lookUpGenre(anchor)){awaitStyles(serial,anchor,QDateTime::currentMSecsSinceEpoch()+5000);return;}
+ }
  if(m_queries.isEmpty()){
    m_failure="Ainda não há estilos identificados nesta seleção para buscar músicas parecidas. Abra as estatísticas para atualizar os metadados ou escolha outra seleção.";
    finish(serial);return;
  }
  search(serial,0);
+}
+void ListeningMix::awaitStyles(int serial,const QVariantMap &anchor,qint64 until){
+ if(serial!=m_generation||!m_busy)return;
+ const auto genre=genres(anchor);
+ if(!genre.isEmpty()||QDateTime::currentMSecsSinceEpoch()>=until){startSearch(serial,anchor,genre);return;}
+ QTimer::singleShot(300,this,[this,serial,anchor,until]{awaitStyles(serial,anchor,until);});
 }
 void ListeningMix::search(int serial,int index){if(serial!=m_generation||!m_busy)return;if(index>=m_queries.size()*2||m_pool.size()>=120){finish(serial);return;}if(index%2 && m_totals.value(m_queries[index/2],0)<=10){search(serial,index+1);return;}const QString q=m_queries[index/2],genre=q.section('"',1,1);m_api->raw("GET","/search",{{"q",q},{"type","track"},{"limit",10},{"offset",index%2?int(QRandomGenerator::global()->bounded(std::max(1,(std::min(1000,m_totals.value(q,100))-10)/10+1))*10):0}},{},{},[this,serial,index,genre,q](int status,const QJsonDocument&doc){if(serial!=m_generation||!m_busy)return;if(status==429||status==401||status==403){m_failure=QString("Sugestões indisponíveis: Spotify HTTP %1. Tente novamente mais tarde.").arg(status);finish(serial);return;}if(status!=200)m_failure=QString("Falha na consulta de sugestões (Spotify HTTP %1). Tente novamente.").arg(status);if(status==200)m_totals[q]=doc.object()["tracks"].toObject()["total"].toInt(100);if(status==200)for(auto v:doc.object()["tracks"].toObject()["items"].toArray()){auto t=v.toObject(),a=t["album"].toObject();if(!t["uri"].toString().startsWith("spotify:track:")||t["is_local"].toBool()||(t.contains("is_playable")&&!t["is_playable"].toBool()))continue;QStringList names;auto artists=t["artists"].toArray();for(auto av:artists)names<<av.toObject()["name"].toString();auto label=QString::fromStdString(tonal::playlist::normalize((names.join(" ")+" "+t["name"].toString()).toStdString()));if(label.contains("karaoke")||label.contains("tribute"))continue;auto images=a["images"].toArray();m_pool<<QVariantMap{{"provider","Spotify"},{"id",t["uri"].toString()},{"uri",t["uri"].toString()},{"title",t["name"].toString()},{"artist",names.join(", ")},{"artistId",artists.isEmpty()?QString():artists[0].toObject()["id"].toString()},{"album",a["name"].toString()},{"albumId",a["id"].toString()},{"genre",genre},{"year",a["release_date"].toString().left(4).toInt()},{"image",images.isEmpty()?QString():images[0].toObject()["url"].toString()},{"durationMs",t["duration_ms"].toInt()}};}QTimer::singleShot(160,this,[this,serial,index]{search(serial,index+1);});},[this,serial]{return m_busy&&serial==m_generation;});}
 void ListeningMix::finish(int serial){

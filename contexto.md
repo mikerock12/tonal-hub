@@ -570,3 +570,7 @@ privado mantém fontes, histórico, pacotes, dados permitidos do PC, portal e cl
 original; portátil em partes verificadas pelo limite do Drive. Commits documentais
 posteriores não significam rebuild. Evidências: docs/artifacts-01512.json e
 docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no PC.
+
+## Descoberta 0.15.13 — 07/11/2026
+
+O usuário relatou que a Descoberta 2+1 quase sempre dizia não haver sugestões e pediu para saber qual atualização a quebrou. O código da Descoberta Android estava igual desde 19/10. Medição real: o Spotify deixou de enviar o campo `genres` para artistas, e sem gênero da âncora o Android não fazia nenhuma busca; no print a âncora era The Muffs, fora das regras editoriais, ao lado de artistas conhecidos. O Windows já tinha defesa parcial que nunca foi levada ao Android. Correção nas duas plataformas com vizinhas da seleção e MusicBrainz sob demanda.

@@ -5,7 +5,7 @@ afetada antes de alterar o produto. Estado documental: 25/10/2026, builds Window
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
-Estado atual: 04/11/2026, entrega Windows/Android 0.15.12. As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
+Estado atual: 07/11/2026, entrega Windows/Android 0.15.13. As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
 
 ## Autoria, Git e privacidade
 
@@ -46,7 +46,8 @@ Atualize esse documento, contexto.md e os testes pertinentes se as regras mudare
 - Duas originais → uma externa, numa fila temporária preparada, sem editar a
   playlist. Até 500 entradas; 500 originais podem impedir extras.
 - Até 120 candidatos, seis consultas de gênero, duas páginas de dez por consulta;
-  ano de referência ±8 mais busca sem ano; Windows 15 s, Android 6,5 s.
+  ano de referência ±8 mais busca sem ano; Windows 15 s, Android 6,5 s de busca
+  após até 5 s de espera pelo estilo quando a seleção não tem nenhum conhecido.
 - Excluir URI/artista normalizado da seleção; álbum de origem em modo álbum;
   não repetir artista externo na fila. Filtros textuais karaoke/tribute.
 - Melhor afinidade entre até 12 originais de referência; gênero comum
@@ -430,3 +431,9 @@ privado mantém fontes, histórico, pacotes, dados permitidos do PC, portal e cl
 original; portátil em partes verificadas pelo limite do Drive. Commits documentais
 posteriores não significam rebuild. Evidências: docs/artifacts-01512.json e
 docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no PC.
+
+## Descoberta 0.15.13 — 07/11/2026
+
+- O Spotify não envia `genres` em artistas (9/9 medidos, busca e `/artists/{id}`, HTTP 200 sem o campo). O guia oficial de fevereiro de 2026 não lista essa remoção: não declarar motivo nem data. O filtro `genre:` da busca funciona.
+- Nunca depender do gênero do Spotify. Ordem: dado local, regras editoriais, vizinhas da seleção, MusicBrainz com a regra de homônimos existente. Sem estilo não há consulta inventada. Falha ou limite numa rota não pode encerrar a busca em silêncio; a mensagem diz o motivo.
+- `--discovery-readonly --artist-genres` mede o serviço com leitura real, sem reprodução nem credenciais no relatório. Android não tem login na AVD: lá a validação usa MusicBrainz real e o núcleo compartilhado, não Spotify autenticado.
