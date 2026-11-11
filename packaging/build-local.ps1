@@ -29,8 +29,12 @@ try {
     Check 'Build'
     & (Join-Path $PSScriptRoot 'build-stories-local.ps1')
     $build=Join-Path $projectRoot 'out\build\release'
-    $librespot=Join-Path $env:USERPROFILE '.cargo\bin\librespot.exe'
-    if(-not (Test-Path -LiteralPath $librespot)){throw 'Instale librespot: cargo install librespot --locked'}
+    & (Join-Path $tools 'Scripts/python.exe') -X utf8 (Join-Path $PSScriptRoot 'prepare-librespot-windows.py')
+    Check 'Fontes do librespot'
+    $librespotBuild=Join-Path $projectRoot 'out/librespot-windows'
+    cargo build --release --locked --manifest-path (Join-Path $librespotBuild 'librespot-0.8.0/Cargo.toml') --target-dir (Join-Path $librespotBuild 'target')
+    Check 'Motor de áudio do Windows'
+    $librespot=Join-Path $librespotBuild 'target/release/librespot.exe'
     Copy-Item -LiteralPath $librespot -Destination $build -Force
     $runtime=Get-ChildItem -LiteralPath (Join-Path $env:VCToolsRedistDir 'x64') -Directory -Filter 'Microsoft.VC*.CRT' | Select-Object -First 1
     Get-ChildItem -LiteralPath $runtime.FullName -Filter '*.dll' | Copy-Item -Destination $build -Force

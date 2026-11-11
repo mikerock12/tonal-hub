@@ -57,7 +57,7 @@ public final class PlaybackSafetyChecks {
         check(!mix.desired&&mix.position==held&&mix.selection.endsWith("spotify:track:new"),"queue edit preserves pause and live position");
         mix.command("editqueue|0|spotify:track:stale|queue|0|stale",false);
         check(!mix.desired&&!mix.selection.endsWith("stale"),"late edit cannot replace a different track");
-        check(RepeatMode.loadsSelection("editqueue|0|spotify:track:a|queue|0|spotify:track:a"),"queue edit reapplies repeat");
+        check(!RepeatMode.loadsSelection("editqueue|0|spotify:track:a|queue|0|spotify:track:a"),"queue edit preserves repeat without issuing another command");
         // Repeat: off -> queue -> track -> off; reapplied after every selection
         // load; skipping ahead leaves track repeat, the end of a track does not.
         check(RepeatMode.next(RepeatMode.OFF)==RepeatMode.QUEUE&&RepeatMode.next(RepeatMode.QUEUE)==RepeatMode.TRACK&&RepeatMode.next(RepeatMode.TRACK)==RepeatMode.OFF,"repeat cycles through three modes");

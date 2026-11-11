@@ -422,7 +422,9 @@ public:
     require(first.mid(0, 3) == order.mid(1, 3), "Ordered mix not reflected in the Spotify queue");
     const QStringList shaken{order[0], order[3], order[1], order[2]};
     auto frames = audio.spotifyFramesRead();
-    player.playOrderedUrisAt(shaken, player.positionMs());
+    QVariantList edited;
+    for (const auto &uri : shaken) edited << QVariantMap{{"uri", uri}};
+    require(player.applyQueueEdit(edited), "Queue-only command was unavailable");
     wait(3000);
     const auto second = liveQueue(api);
     report["requeue_queue"] = toJson(second.mid(0, 3));
@@ -1116,13 +1118,8 @@ public:
     require(qAbs(player.positionMs()-120400)<250,"confirmed remote position ignored");
     player.seek(150000);player.next();spin([]{return false;},150);
     require(seeks.size()==1,"pending seek leaked into the next track");
-    player.applyState(state);player.m_commandLatencyMs=300;
-    const int before=player.positionMs();
-    player.playOrderedUrisAt({"spotify:track:fixture","spotify:track:next"},1000);
-    require(spin([&]{return !playBody.isEmpty();},800),"requeue request not sent");
-    const int sent=QJsonDocument::fromJson(playBody).object()["position_ms"].toInt();
-    require(sent>=before+300&&sent<before+300+400,"requeue did not use current position plus latency");
-    std::cout<<"PASS seek coalescing, stale poll guard and requeue position\n";
+    require(playBody.isEmpty(), "seeking unexpectedly sent a play request");
+    std::cout<<"PASS seek coalescing and stale poll guard\n";
   }
   // 0.13.1: repeat survives new selections and stale polls, a failed change
   // is reverted and explained, skipping leaves track repeat, the applied mix
@@ -1176,7 +1173,7 @@ public:
     queueGets=0;player.refreshQueue();
     require(finished==200&&queueGets==0&&player.queue().size()==2&&player.queue()[0].toMap()["mixExternal"].toBool()&&player.queue()[0].toMap()["name"]=="Title x","applied mix not shown as the queue");
     bool replaced=false;QObject::connect(&player,&Player::selectionReplaced,&player,[&]{replaced=true;});
-    player.playOrderedUrisAt({"spotify:track:a","spotify:track:c"},1000);
+    player.playOrderedUris({"spotify:track:a","spotify:track:c"});
     require(!replaced&&!player.m_orderedRows.isEmpty(),"an applied mix was treated as a plain selection");
     player.playUris({"spotify:track:z"});
     require(replaced&&player.m_orderedRows.isEmpty(),"a plain selection kept the old mix queue");
@@ -1204,19 +1201,38 @@ public:
   }
   static void queueInsertion(){
     QTemporaryDir storage;FakeNetwork network;AuthManager auth(&network);SpotifyApi api(&network,&auth);
-    LibrespotProcess engine(nullptr,storage.path());Player player(&api,&engine,&auth);fakeAuth(auth);
+    class QueueEngine : public LibrespotProcess {
+    public:
+      using LibrespotProcess::LibrespotProcess;
+      bool available=true;
+      QList<QPair<quint64,QStringList>> commands;
+      bool queueEditingAvailable() const override {return available;}
+      bool writeQueueEdit(quint64 serial,const QStringList &uris) override {
+        commands.append({serial,uris});
+        return true;
+      }
+      void confirm() {emit queueEditFinished(commands.last().first,true);}
+    };
+    QueueEngine engine(nullptr,storage.path());Player player(&api,&engine,&auth);fakeAuth(auth);
     player.m_localDeviceId=player.m_activeDeviceId="local-device";player.m_trackUri="spotify:track:AAAAAAAAAAAAAAAAAAAAAA";
     auto row=[](const QString &id,bool external=false){return QVariantMap{{"uri","spotify:track:"+id},{"title",id},{"mixExternal",external}};};
     player.setOrderedQueue({row("AAAAAAAAAAAAAAAAAAAAAA"),row("BBBBBBBBBBBBBBBBBBBBBB",true),row("CCCCCCCCCCCCCCCCCCCCCC")});
-    int plays=0;QJsonObject body;network.respond=[&](const QNetworkRequest &r,const QByteArray &bytes){if(r.url().path().endsWith("/play")){++plays;body=QJsonDocument::fromJson(bytes).object();}return Response{};};
+    int transportWrites=0;
+    network.respond=[&](const QNetworkRequest &r,const QByteArray &){
+      if(r.url().path().endsWith("/play") || r.url().path().endsWith("/seek") || r.url().path().endsWith("/repeat") || r.url().path().endsWith("/shuffle"))++transportWrites;
+      return Response{};
+    };
     player.insertInQueue(row("DDDDDDDDDDDDDDDDDDDDDD"),true);
-    require(player.m_queueEditPending&&!player.m_isPlaying&&plays==0&&player.queue().size()==3,"queue insertion must preserve a pause");
+    require(player.queueEditPending()&&!player.m_isPlaying&&transportWrites==0&&player.queue().size()==3,"queue insertion must preserve a pause");
     require(player.queue()[0].toMap()["uri"]=="spotify:track:DDDDDDDDDDDDDDDDDDDDDD"&&player.m_orderedRows[2].toMap()["mixExternal"].toBool(),"next insertion lost order or discovery");
     player.insertInQueue(row("DDDDDDDDDDDDDDDDDDDDDD"),false);
     require(player.m_orderedRows.size()==5&&player.m_orderedRows.last().toMap()["uri"]=="spotify:track:DDDDDDDDDDDDDDDDDDDDDD","last insertion must preserve duplicate occurrences");
-    player.togglePlay();require(spin([&]{return plays==1;},800)&&body["uris"].toArray().size()==5,"pending queue must apply on explicit resume");
-    require(!player.m_queueEditPending,"pending queue applied more than once");
-    player.m_isPlaying=false;
+    require(engine.commands.size()==1,"rapid queue edits must be coalesced while waiting for confirmation");
+    engine.confirm();
+    require(engine.commands.size()==2&&engine.commands.last().second.size()==5,"the engine did not receive the latest order");
+    engine.confirm();
+    require(!player.queueEditPending()&&!player.m_isPlaying&&transportWrites==0,"queue acknowledgement changed paused transport");
+    player.m_isPlaying=true;
     player.setOrderedQueue({row("AAAAAAAAAAAAAAAAAAAAAA"),row("BBBBBBBBBBBBBBBBBBBBBB",true)});
     player.insertInQueue(row("CCCCCCCCCCCCCCCCCCCCCC"),2);
     player.insertInQueue(row("DDDDDDDDDDDDDDDDDDDDDD"),2);
@@ -1231,11 +1247,19 @@ public:
     player.insertInQueue(row("DDDDDDDDDDDDDDDDDDDDDD"),2);
     require(ids()=="CDBC","add after the most recent surviving addition even after drag");
     require(player.editQueue(player.queueEditToken(),{})&&player.queue().isEmpty()&&
-            player.m_orderedRows.size()==1&&player.m_queueEditPending&&plays==1,
-            "clear must keep the current track and preserve pause");
+            player.m_orderedRows.size()==1&&player.queueEditPending()&&transportWrites==0,
+            "clear must keep the current track without replaying it");
+    engine.confirm();
+    require(engine.commands.last().second==QStringList{player.m_trackUri},"clear must send only the current track anchor");
+    engine.confirm();
+    require(player.m_isPlaying&&transportWrites==0,"editing while playing sent a playback command");
+    engine.available=false;
+    require(player.queueEditToken().isEmpty()&&!player.applyQueueEdit({row("AAAAAAAAAAAAAAAAAAAAAA")}),
+            "a stock or remote engine must not fall back to Web API play");
+    engine.available=true;
     player.m_isPlaying=false;QVariantList full;for(int i=0;i<500;++i)full<<row("AAAAAAAAAAAAAAAAAAAAAA");player.setOrderedQueue(full);player.insertInQueue(row("BBBBBBBBBBBBBBBBBBBBBB"),true);
     require(player.m_orderedRows.size()==500,"queue limit discarded original songs");
-    std::cout<<"PASS queue insertion, pause, duplicate occurrences, discoveries and explicit resume\n";
+    std::cout<<"PASS queue-only transport while playing and paused, coalescing, duplicates and discoveries\n";
   }
   static void deadlines() {
     QTemporaryDir storage;

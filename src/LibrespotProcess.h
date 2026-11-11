@@ -42,6 +42,8 @@ public:
   void setBitrate(int kbps);
   void setAudioEngine(tonal::audio::AudioEngine *engine);
   void setPlaybackExpected(bool playing);
+  virtual bool queueEditingAvailable() const;
+  virtual bool writeQueueEdit(quint64 serial, const QStringList &uris);
 
   Q_INVOKABLE void start();
   Q_INVOKABLE void stop();
@@ -61,6 +63,7 @@ signals:
   // O Player usa isso para atualizar o estado sem ficar fazendo polling
   // agressivo.
   void playbackEvent();
+  void queueEditFinished(quint64 serial, bool accepted);
   // A sessão com o Spotify caiu (o motor vai voltar sozinho). O que estava
   // tocando aqui se perde.
   void sessionLost();
@@ -107,6 +110,7 @@ private:
   QString m_storageRoot;
   bool m_restartRequested = false, m_autoRestartBlocked = false;
   bool m_expectedPlayback = false;
+  bool m_queueControlReady = false;
   int m_restartDelay = 0, m_restartBaseMs = 1500, m_stallTimeoutMs = 30000;
   uint64_t m_lastPcmFrames = 0;
 };

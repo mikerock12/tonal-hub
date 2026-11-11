@@ -91,7 +91,7 @@ public:
   QString localDeviceId() const { return m_localDeviceId; }
   QVariantList queue() const { return m_queue; }
   QVariantList preparedQueue() const {return m_orderedRows;}
-  bool queueEditPending() const{return m_queueEditPending || m_queueWriteInFlight;}
+  bool queueEditPending() const{return m_queueEditPending || m_queueEditInFlight != 0;}
   void reconcileJamQueue(const QVariantList &rows){if(rows.isEmpty()||rows.first().toMap().value("uri").toString()!=m_trackUri)return;setOrderedQueue(rows);emit orderedQueueEdited(rows);queueFromOrderedRows();}
   void setQueueCapacityExceeded(bool exceeded);
   QVariantList devices() const { return m_devices; }
@@ -115,7 +115,7 @@ public:
   // Toca uma lista solta de faixas (ex.: resultados de busca).
   Q_INVOKABLE void playUris(const QStringList &uris, int offsetIndex = 0);
   Q_INVOKABLE void playOrderedUris(const QStringList &uris);
-  void playOrderedUrisAt(const QStringList &uris,int position);
+  bool applyQueueEdit(const QVariantList &rows);
   // Linhas do mix aplicado (título, artista, capa, Descoberta) para a Fila.
   Q_INVOKABLE void setOrderedQueue(const QVariantList &rows);
   Q_INVOKABLE void addToQueue(const QString &uri);
@@ -159,7 +159,7 @@ private:
   void findLocalDevice(int attemptsLeft);
   QString targetDeviceForPlay() const;
   void sendPlay(const QJsonObject &body, const QString &deviceId,
-                bool retried = false, bool ordered = false, bool queueEdit = false);
+                bool retried = false, bool ordered = false);
   void setPositionBase(int ms);
   void rememberForResume();
   void resumeAfterEngineRestart();
@@ -188,9 +188,6 @@ private:
   QElapsedTimer m_seekClock;
   int m_seekTarget = -1;
   uint64_t m_seekGeneration = 0;
-  // Ida e volta de um comando à Web API (média móvel), para reaplicar a
-  // fila na posição em que a faixa atual vai estar quando o comando chegar.
-  int m_commandLatencyMs = 250;
   bool seekSettling(int remoteMs) const;
   void cancelSeek();
   // Repetição escolhida pelo usuário; o librespot a zera a cada nova seleção.
@@ -201,10 +198,13 @@ private:
   QString m_orderedQueueDevice;
   QList<QPair<QVariantMap,int>> m_queueInsertions;
   bool m_queueEditPending=false;
-  bool m_queueWriteInFlight=false;
-  bool m_queueResumeAfterWrite=false;
+  quint64 m_queueEditSerial=0, m_queueEditInFlight=0;
+  QStringList m_sentQueueUris;
+  QString m_sentQueueDevice;
   bool m_queueCapacityExceeded=false;
-  void dispatchQueueEdit(bool resume = false);
+  void dispatchQueueEdit();
+  void finishQueueEdit(quint64 serial, bool accepted);
+  bool queueEditingAvailable() const;
   quint64 m_queueRevision=0;
   QString m_queueTrack,m_queueDevice;
   void publishQueue(QVariantList rows);
@@ -214,7 +214,6 @@ private:
   void reapplyRepeat(const QString &deviceId);
   void skipLeavesTrackRepeat();
   bool queueFromOrderedRows();
-  void playOrdered(const QStringList &uris, int position, bool keepCurrent, bool queueEdit = false);
   QElapsedTimer m_positionClock;
   QElapsedTimer m_transportIntentClock;
   uint64_t m_transportGeneration = 0;

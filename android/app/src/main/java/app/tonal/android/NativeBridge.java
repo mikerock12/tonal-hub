@@ -15,6 +15,7 @@ public final class NativeBridge {
     public static void onJamResult(long epoch,String json){if(epoch!=generation||json.length()>600*1024)return;main.post(()->{Consumer<String> listener=jamListener;if(epoch==generation&&listener!=null)listener.accept(json);});}
     /** Engine position events (Seeked/PositionChanged), delivered on the main thread. */
     static volatile java.util.function.BiConsumer<String,Integer> progressObserver;
+    static volatile java.util.function.BiConsumer<Integer,Boolean> queueEditObserver;
     static final CopyOnWriteArrayList<Consumer<String>> commandListeners=new CopyOnWriteArrayList<>();
     static final PlaybackIntent intent=new PlaybackIntent();
     static volatile long generation,lastPcm;
@@ -35,6 +36,12 @@ public final class NativeBridge {
     static volatile int repeatMode;
     static void applyRepeat(){for(String c:RepeatMode.engineCommands(repeatMode))sendCommand(c);}
     public static void onGeneration(long value){generation=value;}
+    public static void onQueueEditResult(long epoch,int revision,boolean accepted){
+        main.post(()->{
+            var observer=queueEditObserver;
+            if(epoch==generation&&observer!=null)observer.accept(revision,accepted);
+        });
+    }
     public static void onNativeStatus(long epoch,String value){if(epoch==generation)onStatus(value);}
     public static void onProgress(long epoch,String uri,int position,boolean active){
         if(epoch!=generation)return;

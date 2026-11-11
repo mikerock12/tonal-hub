@@ -448,3 +448,12 @@ docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no
   e marcadores de Descoberta. Limpar mantém a música atual.
 - Preservar o transporte de edição sem retomar uma pausa. A prévia dos modos
   continua distinta da edição da fila atual. Android versionCode 34.
+
+## Transporte da fila 0.15.15
+
+- No Windows e no Android, edições e aplicação dos modos alteram o contexto
+  das próximas faixas no motor local. A faixa atual, o relógio, o estado de
+  buffering e a repetição ficam sob controle do player existente.
+- A edição nunca envia play, seek, pausa ou pré-carga. O motor rejeita a edição
+  quando a faixa atual mudou. Windows requer o librespot empacotado com o canal
+  local de comandos. Android usa o mesmo código de fila pelo JNI, versionCode 35.

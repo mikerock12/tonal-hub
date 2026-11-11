@@ -191,6 +191,7 @@ void LibrespotProcess::start() {
     return;
   m_restartTimer.stop();
   m_restartRequested = false;
+  m_queueControlReady = false;
 
   if (m_exe.isEmpty() || !QFileInfo::exists(m_exe))
     m_exe = findExecutable();
@@ -255,9 +256,23 @@ void LibrespotProcess::start() {
     logging += QStringLiteral(",librespot_playback::player=debug");
   }
   environment.insert(QStringLiteral("RUST_LOG"), logging);
+  environment.insert(QStringLiteral("TONAL_QUEUE_STDIN"), QStringLiteral("1"));
   m_process.setProcessEnvironment(environment);
   setState(Starting, tr("Iniciando o motor de áudio..."));
   m_process.start(m_exe, args);
+}
+
+bool LibrespotProcess::queueEditingAvailable() const {
+  return m_queueControlReady && m_state == Ready && m_process.state() == QProcess::Running;
+}
+
+bool LibrespotProcess::writeQueueEdit(quint64 serial, const QStringList &uris) {
+  if (!queueEditingAvailable() || m_process.bytesToWrite() > 0 ||
+      uris.isEmpty() || uris.size() > 500)
+    return false;
+  const auto command = "editqueue|" + QByteArray::number(serial) + "|" +
+                       uris.join(QLatin1Char(',')).toLatin1() + "\n";
+  return m_process.write(command) == command.size();
 }
 
 void LibrespotProcess::stop() {
@@ -443,6 +458,20 @@ void LibrespotProcess::onReadyRead() {
 }
 
 void LibrespotProcess::handleLine(const QString &line) {
+  if (line == QLatin1String("tonal-queue-ready")) {
+    m_queueControlReady = true;
+    emit stateChanged();
+    return;
+  }
+  if (line.startsWith(QLatin1String("tonal-queue-result|"))) {
+    const auto fields = line.split(QLatin1Char('|'));
+    bool valid = false;
+    const auto serial = fields.value(1).toULongLong(&valid);
+    if (valid && fields.size() == 3 && (fields[2] == "ok" || fields[2] == "rejected"))
+      emit queueEditFinished(serial, fields[2] == "ok");
+    return;
+  }
+
   m_log << safeLog(line);
   if (m_log.size() > 300)
     m_log.removeFirst();
