@@ -6,8 +6,9 @@ destacada acima. O sinal ≥ indica que há músicas sem duração no catálogo.
 O Spotify pode informar só uma parte da fila. O resumo cobre as faixas
 disponíveis na lista exibida.
 
-No menu da música, **Adicionar à fila** insere depois da última ocorrência
-adicionada por esse comando que ainda esteja na fila. Se não houver nenhuma,
+No menu da música, **Adicionar à fila** insere depois da ocorrência mais
+recente adicionada por esse comando que ainda esteja na fila, inclusive
+se ela tiver sido movida. Se não houver nenhuma,
 insere logo após a faixa atual. As ações **Colocar como próxima da fila** e
 **Colocar como última da fila** continuam disponíveis. Exemplo: adicionar B,
 C e Z produz Atual → B → C → Z → demais faixas.

@@ -1227,6 +1227,9 @@ public:
     require(!player.editQueue(token,{0,0}),"same occurrence submitted twice must be rejected");
     require(player.editQueue(token,{3,2,0})&&ids()=="BCC","edit must move and remove individual occurrences");
     require(!player.editQueue(token,{}),"a stale snapshot must not clear a newer queue");
+    require(player.editQueue(player.queueEditToken(),{1,0,2}),"reorder the last manual addition");
+    player.insertInQueue(row("DDDDDDDDDDDDDDDDDDDDDD"),2);
+    require(ids()=="CDBC","add after the most recent surviving addition even after drag");
     require(player.editQueue(player.queueEditToken(),{})&&player.queue().isEmpty()&&
             player.m_orderedRows.size()==1&&player.m_queueEditPending&&plays==1,
             "clear must keep the current track and preserve pause");

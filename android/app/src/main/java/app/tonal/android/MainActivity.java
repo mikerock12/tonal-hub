@@ -272,10 +272,18 @@ public final class MainActivity extends Activity {
                     String key=keys.next();
                     MusicStore.put(item,key,insertion.track().opt(key));
                 }
-                MusicStore.put(item,"_queueAdded",insertion.placement()==QueuePlacement.ADDED);
                 int at=insertion.placement()==QueuePlacement.LAST?rows.size():1;
-                if(insertion.placement()==QueuePlacement.ADDED)
-                    for(int i=1;i<rows.size();i++)if(rows.get(i).optBoolean("_queueAdded"))at=i+1;
+                long lastAdded=0;
+                if(insertion.placement()==QueuePlacement.ADDED){
+                    for(int i=1;i<rows.size();i++){
+                        long sequence=rows.get(i).optLong("_queueAdded");
+                        if(sequence>lastAdded){
+                            lastAdded=sequence;
+                            at=i+1;
+                        }
+                    }
+                }
+                MusicStore.put(item,"_queueAdded",insertion.placement()==QueuePlacement.ADDED?lastAdded+1:0);
                 rows.add(at,item);
                 added++;
             }

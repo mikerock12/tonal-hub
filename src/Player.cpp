@@ -1043,7 +1043,7 @@ bool Player::queueFromOrderedRows() {
     item.insert(QStringLiteral("coverUrl"), row.value(QStringLiteral("image"), row.value(QStringLiteral("coverUrl"))));
     item.insert(QStringLiteral("durationMs"), row.value(QStringLiteral("durationMs")));
     item.insert(QStringLiteral("mixExternal"), row.value(QStringLiteral("mixExternal")).toBool());
-    item.insert(QStringLiteral("queueAdded"), row.value(QStringLiteral("queueAdded")).toBool());
+    item.insert(QStringLiteral("queueAdded"), row.value(QStringLiteral("queueAdded")).toLongLong());
     upcoming << item;
   }
   publishQueue(std::move(upcoming));
@@ -1282,11 +1282,18 @@ void Player::insertInQueue(const QVariantMap &track, int placement) {
       row["id"] = row.value("uri");
       if (!row.contains("title")) row["title"] = row.value("name");
       if (!row.contains("image")) row["image"] = row.value("coverUrl");
-      row["queueAdded"] = placement == 2;
       qsizetype at = placement == 0 ? rows.size() : 1;
-      if (placement == 2)
-        for (qsizetype i = 1; i < rows.size(); ++i)
-          if (rows[i].toMap().value("queueAdded").toBool()) at = i + 1;
+      qint64 lastAdded = 0;
+      if (placement == 2) {
+        for (qsizetype i = 1; i < rows.size(); ++i) {
+          const auto sequence = rows[i].toMap().value("queueAdded").toLongLong();
+          if (sequence > lastAdded) {
+            lastAdded = sequence;
+            at = i + 1;
+          }
+        }
+      }
+      row["queueAdded"] = placement == 2 ? lastAdded + 1 : 0;
       rows.insert(at, row);
     }
     if (rows.size() > initialSize && commitQueueEdit(rows) && m_isPlaying)
