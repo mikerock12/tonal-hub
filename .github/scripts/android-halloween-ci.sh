@@ -16,3 +16,4 @@ timeout 120 adb shell am instrument -w -e action halloweenTests \
 adb logcat -d -s AndroidRuntime:E | tail -100
 adb pull /sdcard/Android/data/app.tonal.android.benchmark/files/halloween-0154 evidence || true
 grep -q '"passed":true' /tmp/result.txt
+python3 tests/android/queue_editor_smoke.py evidence

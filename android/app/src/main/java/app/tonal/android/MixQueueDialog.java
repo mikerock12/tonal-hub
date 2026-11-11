@@ -31,6 +31,7 @@ final class MixQueueDialog {
     private JSONObject current;
     private ArrayList<JSONObject> prepared;
     private boolean random, discovery, editing, preparing;
+    private boolean editingAvailable;
     private int serial, snapshotRevision, visibleRows = 100;
     private int dragFrom = -1, dragTo = -1;
     private float pressY, pointerY;
@@ -47,8 +48,9 @@ final class MixQueueDialog {
             if(!dialog.isShowing())return;
             if(current!=null&&snapshotRevision!=host.queueRevision()&&dragFrom<0)
                 load(3);
-            enrichmentStatus.setText(store.discoveryLyrics().status());
-            updateActions();
+            String enrichment=store.discoveryLyrics().status();
+            if(!enrichment.contentEquals(enrichmentStatus.getText()))enrichmentStatus.setText(enrichment);
+            if(editingAvailable!=canEdit())render();
             handler.postDelayed(this,1000);
         }
     };
@@ -143,7 +145,7 @@ final class MixQueueDialog {
         enrichmentStatus=ui.text(store.discoveryLyrics().status(),11,Ui.MUTED);
         modeActions.addView(enrichmentStatus);
         apply=ui.action("Aplicar e reproduzir fila",()->{
-            if(prepared!=null&&snapshotRevision==host.queueRevision()){
+            if(prepared!=null&&!prepared.isEmpty()&&snapshotRevision==host.queueRevision()){
                 host.applyPreparedQueue(prepared,prepared.get(0).optString("uri"));
                 dialog.dismiss();
             }else load(3);
@@ -219,7 +221,7 @@ final class MixQueueDialog {
         mixer.prepare(input,0,random,discovery,false,result->{
             if(!dialog.isShowing()||request!=serial)return;
             preparing=false;
-            prepared=result;
+            prepared=result.isEmpty()?null:result;
             render();
         },message->{if(dialog.isShowing()&&request==serial)showStatus(message);});
     }
@@ -335,11 +337,12 @@ final class MixQueueDialog {
 
     private void updateActions(){
         boolean preview=prepared!=null||preparing;
+        editingAvailable=canEdit();
         title.setText(editing?"Editar fila":preview?"Prévia da fila":"Fila");
         edit.setText(editing?"Concluir":"Editar");
         editActions.setVisibility(editing?View.VISIBLE:View.GONE);
         modeActions.setVisibility(editing?View.GONE:View.VISIBLE);
-        boolean enabled=canEdit()&&!entries.isEmpty()&&dragFrom<0;
+        boolean enabled=editingAvailable&&!entries.isEmpty()&&dragFrom<0;
         clear.setVisibility(preview?View.GONE:View.VISIBLE);
         edit.setVisibility(preview?View.GONE:View.VISIBLE);
         enabled(clear,enabled);
