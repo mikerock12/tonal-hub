@@ -10,9 +10,19 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
-**Entrega 0.15.13 — Descoberta 2+1 volta a funcionar sem gêneros do Spotify. Documentação em 07/11/2026.**
+**0.15.14 — Fila editável no Tonalify para Windows e Android.**
 
-[Baixar 0.15.12](https://github.com/mikerock12/tonal-hub/releases/tag/v0.15.12) · [Pacotes e hashes](docs/artifacts-01512.json) · [Testes](docs/release-01512-tests.json)
+Veja quantas músicas, álbuns e artistas vêm a seguir e quanto tempo a fila
+dura. Arraste as músicas ou marque várias para subir, descer e excluir.
+**Adicionar à fila** mantém a sequência em que você adicionou as músicas.
+[Como editar a fila](docs/QUEUE_EDITOR_01514.md) · [Downloads](https://github.com/mikerock12/tonal-hub/releases/latest).
+
+## Atualização 0.15.13 — Descoberta 2+1 sem gêneros do Spotify
+
+A descoberta voltou a sugerir músicas usando os estilos da seleção e
+dados públicos. [Pacotes e hashes](docs/artifacts-01513.json) · [Testes](docs/release-01513-tests.json).
+
+## Atualização 0.15.12 — espera do Spotify por rota
 
 Corrige uma regressão da 0.15.11: a espera do Spotify para a discografia estava
 bloqueando a API inteira. O bloqueio agora acompanha a rota que o recebeu,

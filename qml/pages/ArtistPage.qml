@@ -283,7 +283,7 @@ Flickable {
                     onArtistClicked: if (modelData.artists[0].id !== root.artistId) Nav.go("artist", { id: modelData.artists[0].id })
                     onAlbumClicked: Nav.go("album", { id: modelData.albumId })
                     onMenuRequested: (mx, my) => Nav.trackMenuRequested(
-                        { uri: modelData.uri, name: modelData.name, albumId: modelData.albumId, artists: modelData.artists }, prow, mx, my)
+                        modelData, prow, mx, my)
                 }
             }
             Label {

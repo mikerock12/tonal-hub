@@ -1,8 +1,16 @@
 # Contexto do Tonal Hub
 
-Atualizado em **04/11/2026**. Preparação: **Windows 0.15.12 / Android 0.15.12**, versionCode 32. Última publicada: 0.15.11. Leia também [AGENTS.md](AGENTS.md).
+Atualizado em **11/11/2026**. Versão de trabalho **Windows 0.15.14 / Android 0.15.14**, versionCode 34. Leia também [AGENTS.md](AGENTS.md).
 
-## Coleções 0.15.12 — correção em preparação
+## Edição da fila 0.15.14
+
+A fila do Tonalify ganhou resumo das próximas músicas, álbuns, artistas e
+duração, além de limpar, editar em lote e arrastar com animação. **Adicionar
+à fila** acumula músicas em ordem de inclusão após a faixa atual, antes
+das próximas do contexto. As ações Próxima e Última continuam disponíveis.
+[Funcionamento da fila](docs/QUEUE_EDITOR_01514.md).
+
+## Coleções 0.15.12
 
 A 0.15.11 generalizou a espera da discografia para toda a API e impediu abrir
 álbuns/playlists que respondiam 200 no servidor. Corrigido para método/família de

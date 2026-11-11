@@ -438,3 +438,13 @@ docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no
 - Nunca depender do gênero do Spotify. Ordem: dado local, regras editoriais, vizinhas da seleção, MusicBrainz com a regra de homônimos existente. Sem estilo não há consulta inventada. Falha ou limite numa rota não pode encerrar a busca em silêncio; a mensagem diz o motivo.
 - `--discovery-readonly --artist-genres` mede o serviço com leitura real, sem reprodução nem credenciais no relatório. Android não tem login na AVD: lá a validação usa MusicBrainz real e o núcleo compartilhado, não Spotify autenticado.
 - Entrega 0.15.13: PR42 merge 8d8308e, código de produto 115a005, release v0.15.13, portal PR58 merge 313864a, Worker a7b5ab3c. Evidências em docs/release-01513-tests.json e docs/artifacts-01513.json. Commits documentais posteriores não são rebuild. Pendente: Descoberta no Android com Spotify autenticado e aparelho físico.
+
+## Edição da fila 0.15.14
+
+- Ler docs/QUEUE_EDITOR_01514.md. Contagens cobrem próximas ocorrências;
+  metadados faltantes e janelas parciais do Spotify limitam o resumo.
+- Inserção manual segue a última ocorrência marcada como adicionada.
+  Edição usa posições da versão consultada, preservando ocorrências repetidas
+  e marcadores de Descoberta. Limpar mantém a música atual.
+- Preservar o transporte de edição sem retomar uma pausa. A prévia dos modos
+  continua distinta da edição da fila atual. Android versionCode 34.

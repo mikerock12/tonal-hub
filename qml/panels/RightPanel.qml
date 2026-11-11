@@ -178,56 +178,15 @@ Rectangle {
     }
 
     // ---------------------------------------------------- Fila
-    ListView {
-        id: queueList
+    Personal.QueueEditor {
         visible: Nav.rightPanel === "queue"
         anchors.top: header.bottom
         anchors.bottom: parent.bottom
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.leftMargin: 8
-        anchors.rightMargin: 8
-        clip: true
-        boundsBehavior: Flickable.StopAtBounds
-        model: root.player.queue
-        ScrollBar.vertical: ThinScrollBar { }
-
-        header: Column {
-            width: queueList.width
-            spacing: 8
-            bottomPadding: 16
-            Label {
-                leftPadding: 8
-                text: qsTr("Tocando agora")
-                color: Theme.textPrimary
-                font.pixelSize: 16
-                font.weight: Font.Bold
-            }
-            QueueRow {
-                width: parent.width
-                current: true
-                item: root.player.hasTrack ? {
-                    name: root.player.trackName,
-                    artists: root.player.artistsText,
-                    coverUrl: root.player.coverUrl
-                } : null
-            }
-            Label {
-                visible: root.player.queue.length > 0
-                leftPadding: 8
-                topPadding: 16
-                text: qsTr("A seguir")
-                color: Theme.textPrimary
-                font.pixelSize: 16
-                font.weight: Font.Bold
-            }
-        }
-
-        delegate: QueueRow {
-            required property var modelData
-            width: queueList.width
-            item: modelData
-        }
+        anchors.margins: 8
+        player: root.player
+        tone: App.theme.current
     }
 
     component QueueRow: Item {

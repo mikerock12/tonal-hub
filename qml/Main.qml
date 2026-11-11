@@ -234,12 +234,16 @@ ApplicationWindow {
         property var track: ({})
 
         DarkMenuItem {
+            text: qsTr("Adicionar à fila")
+            onTriggered: App.player.insertInQueue(trackMenu.track, 2)
+        }
+        DarkMenuItem {
             text: qsTr("Colocar como próxima da fila")
-            onTriggered: App.player.insertInQueue(trackMenu.track,true)
+            onTriggered: App.player.insertInQueue(trackMenu.track, 1)
         }
         DarkMenuItem {
             text: qsTr("Colocar como última da fila")
-            onTriggered: App.player.insertInQueue(trackMenu.track,false)
+            onTriggered: App.player.insertInQueue(trackMenu.track, 0)
         }
         DarkMenu {
             id: addToPlaylistMenu

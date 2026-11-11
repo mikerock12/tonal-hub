@@ -89,8 +89,9 @@ final class CatalogScreen {
     }
     private void trackMenu(JSONObject track){
         ArrayList<String> options=new ArrayList<>();ArrayList<Runnable> actions=new ArrayList<>();
-        options.add("Colocar como próxima da fila");actions.add(()->host.insertInQueue(track,true));
-        options.add("Colocar como última da fila");actions.add(()->host.insertInQueue(track,false));
+        options.add("Adicionar à fila");actions.add(()->host.insertInQueue(track,MainActivity.QueuePlacement.ADDED));
+        options.add("Colocar como próxima da fila");actions.add(()->host.insertInQueue(track,MainActivity.QueuePlacement.NEXT));
+        options.add("Colocar como última da fila");actions.add(()->host.insertInQueue(track,MainActivity.QueuePlacement.LAST));
         options.add("Favoritos, playlists e letras");actions.add(()->host.trackPersonalMenu(track));
         JSONObject album=track.optJSONObject("album");if(album!=null&&!id(album).isEmpty()){options.add("Abrir álbum");actions.add(()->openEntity(album,"album"));}
         JSONArray artists=track.optJSONArray("artists");if(artists!=null)for(int i=0;i<artists.length();i++){JSONObject a=artists.optJSONObject(i);if(a==null)continue;options.add("Artista: "+a.optString("name"));actions.add(()->openEntity(a,"artist"));}

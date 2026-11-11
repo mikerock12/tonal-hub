@@ -384,7 +384,7 @@ Flickable {
         onPlay: root.playTracks(trackIndex)
         onArtistClicked: { root.rememberQuery(); if (track.artists.length > 0) Nav.go("artist", { id: track.artists[0].id }) }
         onAlbumClicked: { root.rememberQuery(); Nav.go("album", { id: track.albumId }) }
-        onMenuRequested: (mx, my) => Nav.trackMenuRequested({ uri: track.uri, name: track.name, albumId: track.albumId, artists: track.artists }, str, mx, my)
+        onMenuRequested: (mx, my) => Nav.trackMenuRequested(track, str, mx, my)
     }
 
     component LoadMore: Item {
