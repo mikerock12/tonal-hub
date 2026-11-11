@@ -207,6 +207,10 @@ Pane {id:harness;width:1000;height:800;padding:0;palette.button:"#263440";palett
    compare(editor.markedCount,2)
    wait(200)
    captureSong(card,"desktop-editar-fila-01514.png")
+   card.width=300
+   const actions=findChild(editor,"queueBatchActions")
+   tryVerify(()=>actions.children[2].x+actions.children[2].width<=editor.width)
+   card.width=640
    editor.moveMarked(1)
    compare(editor.player.queue[0].name,"Luz de Vidro")
    editor.removeMarked()

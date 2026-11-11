@@ -13,7 +13,7 @@ PACKAGE = "app.tonal.android.benchmark"
 ACTIVITY = PACKAGE + "/app.tonal.android.MainActivity"
 OUTPUT = Path(sys.argv[1])
 OUTPUT.mkdir(parents=True, exist_ok=True)
-DUMP = "/sdcard/tonal-queue-editor.xml"
+DUMP = f"/sdcard/tonal-queue-editor-{os.getpid()}.xml"
 
 
 def adb(*args):
@@ -21,18 +21,25 @@ def adb(*args):
 
 
 def hierarchy():
-    adb("shell", "uiautomator", "dump", DUMP)
+    report = adb("shell", "uiautomator", "dump", DUMP)
+    if b"dumped to" not in report:
+        return []
     return list(ET.fromstring(adb("exec-out", "cat", DUMP)).iter("node"))
 
 
 def wait_for(*labels):
     deadline = time.monotonic() + 22
     while time.monotonic() < deadline:
-        nodes = hierarchy()
+        try:
+            nodes = hierarchy()
+        except (ET.ParseError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            nodes = []
         if all(any(label in (node.get("text"), node.get("content-desc"))
                    for node in nodes) for label in labels):
             return nodes
         time.sleep(0.3)
+    screenshot("android-queue-diagnostic.png")
+    (OUTPUT / "android-queue-logcat.txt").write_bytes(adb("logcat", "-d", "-s", "AndroidRuntime:E", "TonalTest:I"))
     raise AssertionError(f"Missing controls {labels}")
 
 
@@ -57,7 +64,7 @@ def assert_order(nodes, *titles):
 
 assert adb("shell", "getprop", "ro.kernel.qemu").strip() == b"1"
 adb("shell", "am", "force-stop", PACKAGE)
-adb("shell", "am", "start", "-n", ACTIVITY, "--ez", "queueEditorFixture", "true",
+adb("shell", "am", "start", "-W", "-n", ACTIVITY, "--ez", "queueEditorFixture", "true",
     "--ez", "mixWithDiscovery", "true")
 nodes = wait_for("Editar", "Agora · Mix Fixture 1", "Arrastar Mix Fixture 2")
 assert any(node.get("text", "").startswith("7 mús. · 3 álb. · 3 art.") for node in nodes)

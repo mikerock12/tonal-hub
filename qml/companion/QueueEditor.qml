@@ -142,11 +142,13 @@ ColumnLayout {
         }
     }
 
-    RowLayout {
+    GridLayout {
         Layout.fillWidth: true
+        columns: editor.width < 420 ? 2 : 3
         Label {
             objectName: "queueSummary"
             Layout.fillWidth: true
+            Layout.columnSpan: parent.columns === 2 ? 2 : 1
             text: editor.summary(editor.player && editor.player.queue || [])
             color: editor.tone.textSecondary
             font.pixelSize: 12
@@ -154,6 +156,7 @@ ColumnLayout {
         }
         Button {
             text: qsTr("Limpar")
+            Layout.fillWidth: parent.columns === 2
             enabled: editor.available && entries.count > 0 && editor.dragIndex < 0
             onClicked: {
                 confirm.token = editor.loadedToken
@@ -162,6 +165,7 @@ ColumnLayout {
         }
         Button {
             text: editor.editing ? qsTr("Concluir") : qsTr("Editar")
+            Layout.fillWidth: parent.columns === 2
             enabled: editor.available && entries.count > 0 && editor.dragIndex < 0
             onClicked: { if (editor.editing) editor.stopEditing(); else editor.editing = true }
         }
@@ -225,12 +229,12 @@ ColumnLayout {
     }
 
     RowLayout {
+        objectName: "queueBatchActions"
         visible: editor.editing
         Layout.fillWidth: true
-        Button { text: qsTr("↑ Subir"); enabled: editor.markedCount > 0 && editor.dragIndex < 0; onClicked: editor.moveMarked(-1) }
-        Button { text: qsTr("↓ Descer"); enabled: editor.markedCount > 0 && editor.dragIndex < 0; onClicked: editor.moveMarked(1) }
-        Button { text: qsTr("Excluir"); enabled: editor.markedCount > 0 && editor.dragIndex < 0; onClicked: editor.removeMarked() }
-        Item { Layout.fillWidth: true }
+        Button { Layout.fillWidth: true; text: qsTr("↑ Subir"); enabled: editor.markedCount > 0 && editor.dragIndex < 0; onClicked: editor.moveMarked(-1) }
+        Button { Layout.fillWidth: true; text: qsTr("↓ Descer"); enabled: editor.markedCount > 0 && editor.dragIndex < 0; onClicked: editor.moveMarked(1) }
+        Button { Layout.fillWidth: true; text: qsTr("Excluir"); enabled: editor.markedCount > 0 && editor.dragIndex < 0; onClicked: editor.removeMarked() }
     }
 
     Dialog {
