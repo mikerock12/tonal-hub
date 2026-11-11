@@ -343,7 +343,7 @@ final class MixQueueDialog {
         editActions.setVisibility(editing?View.VISIBLE:View.GONE);
         modeActions.setVisibility(editing?View.GONE:View.VISIBLE);
         boolean enabled=editingAvailable&&!entries.isEmpty()&&dragFrom<0;
-        clear.setVisibility(preview?View.GONE:View.VISIBLE);
+        clear.setVisibility(preview||editing?View.GONE:View.VISIBLE);
         edit.setVisibility(preview?View.GONE:View.VISIBLE);
         enabled(clear,enabled);
         enabled(edit,enabled);

@@ -27,6 +27,10 @@ def hierarchy():
     return list(ET.fromstring(adb("exec-out", "cat", DUMP)).iter("node"))
 
 
+def matches(node, label):
+    return any(node.get(key, "").casefold() == label.casefold() for key in ("text", "content-desc"))
+
+
 def wait_for(*labels):
     deadline = time.monotonic() + 22
     while time.monotonic() < deadline:
@@ -34,8 +38,7 @@ def wait_for(*labels):
             nodes = hierarchy()
         except (ET.ParseError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
             nodes = []
-        if all(any(label in (node.get("text"), node.get("content-desc"))
-                   for node in nodes) for label in labels):
+        if all(any(matches(node, label) for node in nodes) for label in labels):
             return nodes
         time.sleep(0.3)
     screenshot("android-queue-diagnostic.png")
@@ -44,7 +47,7 @@ def wait_for(*labels):
 
 
 def center(nodes, label):
-    node = next(n for n in nodes if label in (n.get("text"), n.get("content-desc")))
+    node = next(n for n in nodes if matches(n, label))
     x1, y1, x2, y2 = map(int, re.findall(r"\d+", node.get("bounds")))
     return str((x1 + x2) // 2), str((y1 + y2) // 2)
 
@@ -89,8 +92,10 @@ tap(nodes, "↓ Descer")
 nodes = wait_for("Mix Fixture 2", "Mix Fixture 3", "Mix Fixture 4")
 assert_order(nodes, "Mix Fixture 3", "Mix Fixture 4", "Mix Fixture 2")
 tap(nodes, "Excluir")
-nodes = wait_for("Mix Fixture 3", "Limpar")
+nodes = wait_for("Mix Fixture 3", "Concluir")
 assert not any(node.get("text") in ("Mix Fixture 4", "Mix Fixture 2") for node in nodes)
+tap(nodes, "Concluir")
+nodes = wait_for("Limpar")
 tap(nodes, "Limpar")
 tap(wait_for("Limpar fila?", "Cancelar"), "Limpar")
 wait_for("Agora · Mix Fixture 1", "0 mús. · 0 álb. · 0 art. · 0min 0s")
