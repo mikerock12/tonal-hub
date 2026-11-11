@@ -31,7 +31,7 @@ def main():
  recovery=json.loads(ui.adb('exec-out','cat',f'/sdcard/Android/data/{ui.PKG}/files/lyrics-recovery-tests.json'));assert recovery['passed'],recovery
  try:find('Ver fila de reprodução',True,timeout=2)
  except AssertionError:ui.adb('shell','input','swipe','270','1020','270','600','300')
- click('Ver fila de reprodução');find('Fila de reprodução');find('5 • Mix Fixture 6');ui.screen('07-queue.png');click('Sortear reprodução aleatória');find('Aplicar e reproduzir fila');ui.screen('08-queue-preview.png');click('Fechar fila')
+ click('Ver fila de reprodução');find('Fila de reprodução');find('5 • Mix Fixture 6');ui.screen('07-queue.png');click('Sortear reprodução aleatória');find('Aplicar ordem');ui.screen('08-queue-preview.png');click('Fechar fila')
  click('Letras');click('Expandir letras em tela cheia');find('Linha da letra 1');time.sleep(6.5);click('Linha da letra 1')
  def receipt():return json.loads(ui.adb('exec-out','cat',f'/sdcard/Android/data/{ui.PKG}/files/fullscreen-touch-tests.json'))
  first=receipt();assert not first['aligned'] and first['controls_visible'],first

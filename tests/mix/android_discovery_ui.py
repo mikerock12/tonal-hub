@@ -24,13 +24,13 @@ def main():
     mix.click('Ver fila de reprodução');mix.find('Fila de reprodução')
     mix.find('7 • Accepted Discovery 2')
     before=outsiders();assert before=={'Accepted Discovery 1','Accepted Discovery 2'},before
-    mix.click('Sortear outra ordem da fila');mix.find('Aplicar e reproduzir fila')
+    mix.click('Sortear outra ordem da fila');mix.find('Aplicar ordem')
     assert outsiders()==before,'Shake discarded discoveries'
     mix.click('Sortear reprodução aleatória');assert outsiders()==before,'Random discarded discoveries'
     ui.screen('queue-retains-discovery.png')
     mix.click('Fechar fila');mix.click('Ver fila de reprodução');mix.find('7 • Accepted Discovery 2')
     assert outsiders()==before,'Reopened dialog discarded discoveries'
-    mix.click('Ativar ou desativar Descoberta 2+1');mix.find('Aplicar e reproduzir fila')
+    mix.click('Ativar ou desativar Descoberta 2+1');mix.find('Aplicar ordem')
     assert not outsiders(),'Discovery toggle failed to remove future outsiders'
     ui.screen('queue-discovery-off.png');mix.click('Fechar fila')
     report={'passed':True,'native_cpp_jni_checks':proof,'shake_keeps_discoveries':True,'random_keeps_discoveries':True,

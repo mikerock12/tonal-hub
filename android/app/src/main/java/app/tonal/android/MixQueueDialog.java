@@ -32,10 +32,12 @@ final class MixQueueDialog {
     private ArrayList<JSONObject> prepared;
     private boolean random, discovery, editing, preparing;
     private boolean editingAvailable;
-    private int serial, snapshotRevision, visibleRows = 100;
+    private static final int PAGE_SIZE = 24;
+    private int serial, snapshotRevision, visibleRows = PAGE_SIZE;
     private int dragFrom = -1, dragTo = -1;
     private float pressY, pointerY;
     private int pressScroll;
+    private final int[] scrollLocation = new int[2];
 
     private static final class Entry {
         final JSONObject track;
@@ -58,9 +60,8 @@ final class MixQueueDialog {
     private final Runnable scrollDrag = new Runnable() {
         @Override public void run(){
             if(dragFrom<0)return;
-            int[] location=new int[2];
-            scroll.getLocationOnScreen(location);
-            float y=pointerY-location[1];
+            scroll.getLocationOnScreen(scrollLocation);
+            float y=pointerY-scrollLocation[1];
             int edge=ui.dp(45);
             int step=y<edge?-ui.dp(7):y>scroll.getHeight()-edge?ui.dp(7):0;
             if(step!=0){
@@ -144,7 +145,7 @@ final class MixQueueDialog {
         modeActions.addView(ui.text("Envia título, artista, álbum e duração ao LRCLIB. Guarda apenas os temas.",11,Ui.MUTED));
         enrichmentStatus=ui.text(store.discoveryLyrics().status(),11,Ui.MUTED);
         modeActions.addView(enrichmentStatus);
-        apply=ui.action("Aplicar e reproduzir fila",()->{
+        apply=ui.action("Aplicar ordem",()->{
             if(prepared!=null&&!prepared.isEmpty()&&snapshotRevision==host.queueRevision()){
                 host.applyPreparedQueue(prepared,prepared.get(0).optString("uri"));
                 dialog.dismiss();
@@ -382,7 +383,7 @@ final class MixQueueDialog {
             rowViews.add(row);
         }
         if(next.size()>visibleRows)
-            rows.addView(ui.action("Mostrar mais músicas",()->{visibleRows+=100;render();}));
+            rows.addView(ui.action("Mostrar mais músicas",()->{visibleRows+=PAGE_SIZE;render();}));
         updateActions();
     }
 

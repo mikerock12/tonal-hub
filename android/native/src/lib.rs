@@ -214,12 +214,28 @@ pub extern "system" fn Java_app_tonal_android_NativeBridge_nativeStart(mut env: 
                             "shuffle:on"=>spirc.shuffle(true), "shuffle:off"=>spirc.shuffle(false),
                             "repeat:on"=>spirc.repeat(true), "repeat:off"=>spirc.repeat(false),
                             "repeat-track:on"=>spirc.repeat_track(true), "repeat-track:off"=>spirc.repeat_track(false),
+                            _ if cmd.starts_with("editqueue|") => {
+                                let mut parts = cmd.splitn(5, '|');
+                                parts.next();
+                                let Some(revision) = parts.next().and_then(|s|s.parse::<i32>().ok()) else {continue;};
+                                let anchor = parts.next().unwrap_or_default();
+                                if parts.next() != Some("queue") {continue;}
+                                let Some(source) = parts.next().and_then(|s|s.strip_prefix("0|")) else {continue;};
+                                let tracks:Vec<String> = source.split(',').take(501).map(str::to_owned).collect();
+                                if tracks.first().is_none_or(|uri| uri != anchor) {continue;}
+                                let result = spirc.edit_queue(tracks);
+                                tokio::spawn(async move {
+                                    let accepted = match result { Ok(reply) => reply.await.unwrap_or(false), Err(_) => false };
+                                    let _ = call_void("onQueueEditResult", "(JIZ)V", &[JValue::Long(generation as jlong),JValue::Int(revision),JValue::Bool(accepted as u8)]);
+                                });
+                                continue;
+                            },
                             // requeue keeps the audible decoder; restore reloads it.
-                            _ if cmd.starts_with("restore|") || cmd.starts_with("requeue|") || cmd.starts_with("editqueue|") => {
-                                let mut parts=cmd.splitn(4,'|');let kind=parts.next();let edit_only=kind==Some("editqueue");let keep_playing_track=edit_only||kind==Some("requeue");
+                            _ if cmd.starts_with("restore|") || cmd.starts_with("requeue|") => {
+                                let mut parts=cmd.splitn(4,'|');let kind=parts.next();let keep_playing_track=kind==Some("requeue");
                                 let Some(position)=parts.next().and_then(|s|s.parse::<u32>().ok()) else {continue;};
                                 let track=parts.next().unwrap_or_default();let selection=parts.next().unwrap_or_default();
-                                let mut options=LoadRequestOptions{start_playing:!edit_only,seek_to:position,keep_playing_track,queue_edit_only:edit_only,..Default::default()};
+                                let mut options=LoadRequestOptions{start_playing:true,seek_to:position,keep_playing_track,..Default::default()};
                                 if !track.is_empty(){options.playing_track=Some(PlayingTrack::Uri(track.to_owned()));}
                                 if selection.starts_with("queue|")||selection.starts_with("context|") {
                                     let mut selection_parts=selection.splitn(3,'|');let kind=selection_parts.next().unwrap_or_default();

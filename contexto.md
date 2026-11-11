@@ -1,6 +1,13 @@
 # Contexto do Tonal Hub
 
-Atualizado em **11/11/2026**. Versão de trabalho **Windows 0.15.14 / Android 0.15.14**, versionCode 34. Leia também [AGENTS.md](AGENTS.md).
+Atualizado em **11/11/2026**. Versão de trabalho **Windows 0.15.15 / Android 0.15.15**, versionCode 35. Leia também [AGENTS.md](AGENTS.md).
+
+## Edição da fila sem recarregar a faixa 0.15.15
+
+A edição altera o contexto das próximas músicas diretamente no motor local,
+durante reprodução, pausa ou buffering. O Windows recebe a ordem pela entrada
+do processo auxiliar e o Android pelo JNI. O comando preserva o relógio, a
+repetição e o decoder atual. O motor confere a faixa antes de aplicar a ordem.
 
 ## Edição da fila 0.15.14
 

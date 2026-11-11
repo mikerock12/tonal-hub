@@ -43,6 +43,9 @@ use std::{
 use thiserror::Error;
 use tokio::{sync::mpsc, time::sleep};
 
+#[path = "queue_edit.rs"]
+mod queue_edit;
+
 #[derive(Debug, Error)]
 enum SpircError {
     #[error("response payload empty")]
@@ -143,6 +146,7 @@ enum SpircCommand {
     Activate,
     Transfer(Option<TransferRequest>),
     Load(LoadRequest),
+    EditQueue(Vec<String>, tokio::sync::oneshot::Sender<bool>),
 }
 
 const CONTEXT_FETCH_THRESHOLD: usize = 2;
@@ -678,6 +682,7 @@ impl SpircTask {
             Some(SpircCommand::Play)=>{self.handle_play();if let Some(SpircCommand::Load(load))=pending{load.options.start_playing=true;}}
             Some(SpircCommand::PlayPause)=>{self.handle_play_pause();}
             Some(SpircCommand::SetPosition(ms))=>self.handle_seek(ms),
+            Some(SpircCommand::EditQueue(tracks, ack))=>{let _=ack.send(self.edit_queue(tracks).unwrap_or(false));}
             Some(command)=>{if matches!(command,SpircCommand::Load(_)){self.handle_pause();}*pending=Some(command);}
         }
         true
@@ -757,6 +762,11 @@ impl SpircTask {
                 trace!("Received SpircCommand::{cmd:?}");
                 self.handle_activate();
                 return self.notify().await;
+            }
+            SpircCommand::EditQueue(tracks, ack) => {
+                let accepted = self.edit_queue(tracks);
+                let _ = ack.send(matches!(accepted, Ok(true)));
+                return accepted.map(|_| ());
             }
             SpircCommand::Transfer(..) | SpircCommand::Activate => {
                 warn!("SpircCommand::{cmd:?} will be ignored while already active")
@@ -1187,7 +1197,6 @@ impl SpircTask {
                             playing_track: play.options.skip_to.and_then(|s| s.try_into().ok()),
                             context_options,
                             keep_playing_track: false,
-                            queue_edit_only: false,
                         },
                     },
                     play.context.pages.pop(),
@@ -1443,9 +1452,6 @@ impl SpircTask {
         fallback_index: Option<usize>,
     ) -> Result<(), Error> {
         let audible_uri=self.connect_state.current_track(|t|t.uri.clone());
-        if cmd.options.queue_edit_only && !matches!(&cmd.options.playing_track, Some(PlayingTrack::Uri(uri)) if !audible_uri.is_empty() && *uri==audible_uri) {
-            return Ok(());
-        }
         let pending_recovery=self.buffer_recovery.take();
         self.connect_state
             .reset_context(if let PlayContext::Uri(ref uri) = cmd.context {

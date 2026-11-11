@@ -104,19 +104,15 @@ Player::Player(SpotifyApi *api, LibrespotProcess *librespot, AuthManager *auth,
   connect(&m_seekTimer, &QTimer::timeout, this, [this] {
     if (m_seekTarget < 0 || localPlayback())
       return;
-    QElapsedTimer sent;
-    sent.start();
     m_api->put(QStringLiteral("/me/player/seek"),
                {{QStringLiteral("position_ms"), m_seekTarget}}, {},
-               [this, sent](int status, const QJsonDocument &) {
-                 if (status >= 200 && status < 300)
-                   m_commandLatencyMs = qBound(80, int(m_commandLatencyMs * 0.7 + sent.elapsed() * 0.3), 1500);
-                 refreshSoon(900);
-               });
+               [this](int, const QJsonDocument &) { refreshSoon(900); });
   });
 
   connect(m_librespot, &LibrespotProcess::playbackEvent, this,
           [this] { refreshSoon(250); });
+  connect(m_librespot, &LibrespotProcess::queueEditFinished, this, &Player::finishQueueEdit);
+  connect(m_librespot, &LibrespotProcess::stateChanged, this, &Player::queueChanged);
   connect(m_librespot, &LibrespotProcess::sessionLost, this,
           &Player::rememberForResume);
   connect(m_librespot, &LibrespotProcess::stateChanged, this, [this] {
@@ -538,7 +534,9 @@ void Player::rememberForResume() {
   const QString track = failed.isEmpty() ? m_trackUri : failed;
   QJsonObject body{{QStringLiteral("position_ms"), failed.isEmpty() ? positionMs() : 0}};
   const QJsonObject offset{{QStringLiteral("uri"), track}};
-  if (!m_contextUri.isEmpty()) {
+  const bool knownOrder = m_orderedQueueDevice == m_localDeviceId &&
+                          !m_orderedRows.isEmpty() && m_lastUris.contains(track);
+  if (!knownOrder && !m_contextUri.isEmpty() && m_contextUri != "spotify:web-api") {
     body.insert(QStringLiteral("context_uri"), m_contextUri);
     body.insert(QStringLiteral("offset"), offset);
   } else if (m_lastUris.contains(track)) {
@@ -622,7 +620,7 @@ QString Player::targetDeviceForPlay() const {
 }
 
 void Player::sendPlay(const QJsonObject &body, const QString &deviceId,
-                      bool retried, bool ordered, bool queueEdit) {
+                      bool retried, bool ordered) {
   if (deviceId.isEmpty() &&
       (m_librespot->state() == LibrespotProcess::Starting ||
        m_librespot->state() == LibrespotProcess::Crashed)) {
@@ -642,14 +640,11 @@ void Player::sendPlay(const QJsonObject &body, const QString &deviceId,
   if (!deviceId.isEmpty())
     q.insert(QStringLiteral("device_id"), deviceId);
   if (!body.isEmpty()) {
-    if (!queueEdit) {
-      m_queueEditPending = false;
-      m_queueResumeAfterWrite = false;
-    }
+    m_queueEditPending = false;
+    m_queueEditInFlight = 0;
     cancelSeek();
     m_selectionClock.restart();
     if (!ordered) {
-      m_queueEditPending=false;
       // Seleção comum (álbum, playlist, busca): a fila do mix deixa de valer.
       m_orderedRows.clear();
       m_queueTrack.clear();
@@ -663,23 +658,7 @@ void Player::sendPlay(const QJsonObject &body, const QString &deviceId,
   m_api->put(
       QStringLiteral("/me/player/play"), q,
       body.isEmpty() ? QJsonDocument() : QJsonDocument(body),
-      [this, body, retried, ordered, intent, deviceId, queueEdit](int status, const QJsonDocument &) {
-        if (queueEdit) {
-          m_queueWriteInFlight = false;
-          if (intent == m_transportGeneration && (status < 200 || status >= 300)) {
-            emit message(tr("O Spotify não confirmou a edição da fila (%1).").arg(status));
-            if (!m_queueEditPending) {
-              m_orderedRows.clear();
-              emit selectionReplaced();
-              publishQueue({});
-              m_queueTrack.clear();
-              emit queueChanged();
-              refreshQueue();
-            }
-          }
-          if (m_queueResumeAfterWrite || (intent == m_transportGeneration && m_queueEditPending && m_isPlaying))
-            QTimer::singleShot(0, this, [this] { dispatchQueueEdit(std::exchange(m_queueResumeAfterWrite, false)); });
-        }
+      [this, body, retried, ordered, intent, deviceId](int status, const QJsonDocument &) {
         if(ordered&&intent!=m_transportGeneration)return;
         if(!body.isEmpty()&&status>=200&&status<300){
           reapplyRepeat(deviceId);
@@ -688,7 +667,7 @@ void Player::sendPlay(const QJsonObject &body, const QString &deviceId,
           if(ordered)QTimer::singleShot(0,this,&Player::refreshQueue);
         }
         if(ordered&&status>=200&&status<300){QVariantMap query{{"state",false}};if(!deviceId.isEmpty())query["device_id"]=deviceId;m_api->put("/me/player/shuffle",query,{},[this,intent](int s,const QJsonDocument&){if(intent!=m_transportGeneration)return;if(s>=200&&s<300){m_shuffle=false;emit stateChanged();}else emit message(tr("Não foi possível confirmar a ordem do mix no dispositivo."));});}
-        if (status == 404 && !queueEdit && !retried && !m_localDeviceId.isEmpty()) {
+        if (status == 404 && !retried && !m_localDeviceId.isEmpty()) {
           // NO_ACTIVE_DEVICE: o dispositivo ativo sumiu, toca aqui.
           sendPlay(body, m_localDeviceId, true, ordered);
           return;
@@ -699,9 +678,7 @@ void Player::sendPlay(const QJsonObject &body, const QString &deviceId,
         else if (status == 403)
           emit message(tr("O Spotify recusou o comando (precisa de Premium)."));
         refreshSoon(500);
-      }, queueEdit ? std::function<bool()>{[this,intent,deviceId] {
-        return intent == m_transportGeneration && deviceId == targetDeviceForPlay() && !localPlayback();
-      }} : std::function<bool()>{}, queueEdit);
+      });
 }
 
 void Player::togglePlay() {
@@ -718,15 +695,7 @@ void Player::togglePlay() {
     pause();
     return;
   }
-  if(m_queueEditPending){
-    if(m_trackUri==m_queueEditAnchor&&targetDeviceForPlay()==m_queueEditDevice){
-      if(m_queueWriteInFlight)m_queueResumeAfterWrite=!m_queueResumeAfterWrite;
-      else dispatchQueueEdit(true);
-      return;
-    }
-    m_queueEditPending=false;
-    emit message(tr("A seleção mudou. A edição pendente da fila foi descartada."));
-  }
+
 
   if (!m_resumeBody.isEmpty() && !m_localDeviceId.isEmpty()) {
     // O motor caiu tocando e já voltou: o Spotify perdeu o estado, então
@@ -755,9 +724,6 @@ void Player::pause() {
     return;
   }
   cancelResume();
-  m_queueResumeAfterWrite = false;
-  if (m_queueWriteInFlight && m_trackUri == m_queueEditAnchor && targetDeviceForPlay() == m_queueEditDevice)
-    m_queueEditPending = true;
   ++m_transportGeneration;
   m_transportIntentClock.restart();
   m_librespot->setPlaybackExpected(false);
@@ -1116,15 +1082,28 @@ void Player::playUris(const QStringList &uris, int offsetIndex) {
   sendPlay(body, targetDeviceForPlay());
 }
 
-void Player::playOrderedUris(const QStringList& uris){playOrdered(uris,0,false);}
-void Player::playOrderedUrisAt(const QStringList& uris,int position){playOrdered(uris,position,true);}
-// keepCurrent: reaplicar a fila a partir da faixa que já toca (Fila, Shake,
-// Aleatório, Descoberta). Uma seleção nova começa do início pedido.
-void Player::playOrdered(const QStringList& uris,int position,bool keepCurrent,bool queueEdit){if(uris.isEmpty())return;emit playbackRequested();cancelResume();
-  // Reaplicar a fila começando pela faixa que já toca: o librespot reaproveita o
-  // decoder e só ajusta a posição. Usa a posição de agora mais a latência medida
-  // do comando, para o ajuste cair onde o áudio estará, sem voltar um trecho.
-  if(keepCurrent&&uris.first()==m_trackUri&&m_isPlaying&&playingHere()&&!localPlayback()){const int ahead=positionMs()+m_commandLatencyMs;position=m_durationMs>0?qMin(m_durationMs-1,ahead):ahead;}if(localPlayback())m_audio->returnToSpotify();m_lastUris=uris.mid(0,500);m_shuffle=false;emit stateChanged();QJsonObject body{{"uris",QJsonArray::fromStringList(m_lastUris)},{"position_ms",std::max(0,position)},{"offset",QJsonObject{{"position",0}}}};sendPlay(body,targetDeviceForPlay(),false,true,queueEdit);}
+void Player::playOrderedUris(const QStringList &uris) {
+  if (uris.isEmpty())
+    return;
+  emit playbackRequested();
+  cancelResume();
+  if (localPlayback())
+    m_audio->returnToSpotify();
+  m_lastUris = uris.mid(0, 500);
+  m_shuffle = false;
+  emit stateChanged();
+  sendPlay({{"uris", QJsonArray::fromStringList(m_lastUris)},
+            {"position_ms", 0}, {"offset", QJsonObject{{"position", 0}}}},
+           targetDeviceForPlay(), false, true);
+}
+
+bool Player::applyQueueEdit(const QVariantList &rows) {
+  if (!queueEditingAvailable()) {
+    emit message(tr("A edição da fila requer o motor local do Tonalify."));
+    return false;
+  }
+  return commitQueueEdit(rows);
+}
 
 void Player::addToQueue(const QString &uri) {
   m_api->post(
@@ -1147,8 +1126,12 @@ void Player::publishQueue(QVariantList rows) {
   emit queueChanged();
 }
 
+bool Player::queueEditingAvailable() const {
+  return !localPlayback() && playingHere() && m_librespot->queueEditingAvailable();
+}
+
 QString Player::queueEditToken() const {
-  if (localPlayback() || !m_trackUri.startsWith("spotify:track:") ||
+  if (!queueEditingAvailable() || !m_trackUri.startsWith("spotify:track:") ||
       m_queueTrack != m_trackUri || m_queueDevice.isEmpty() ||
       m_queueDevice != targetDeviceForPlay() || m_queue.size() >= 500 || m_queueCapacityExceeded)
     return {};
@@ -1196,7 +1179,7 @@ bool Player::editQueue(const QString &token, const QVariantList &order) {
 
 bool Player::commitQueueEdit(const QVariantList &rows) {
   static const QRegularExpression valid("^spotify:track:[A-Za-z0-9]{22}$");
-  if (m_queueCapacityExceeded || rows.isEmpty() || rows.size() > 500 || rows.first().toMap().value("uri") != m_trackUri)
+  if (!queueEditingAvailable() || m_queueCapacityExceeded || rows.isEmpty() || rows.size() > 500 || rows.first().toMap().value("uri") != m_trackUri)
     return false;
   for (const auto &row : rows) {
     if (!valid.match(row.toMap().value("uri").toString()).hasMatch()) {
@@ -1210,11 +1193,8 @@ bool Player::commitQueueEdit(const QVariantList &rows) {
   m_queueEditPending = true;
   emit orderedQueueEdited(rows);
   queueFromOrderedRows();
-  if (m_isPlaying)
-    dispatchQueueEdit();
-  else
-    emit message(tr("Fila atualizada. A ordem será aplicada ao retomar pelo Tonalify."));
-  return true;
+  dispatchQueueEdit();
+  return queueEditPending();
 }
 
 void Player::setQueueCapacityExceeded(bool exceeded) {
@@ -1225,19 +1205,50 @@ void Player::setQueueCapacityExceeded(bool exceeded) {
   emit queueChanged();
 }
 
-void Player::dispatchQueueEdit(bool resume) {
-  if (!m_queueEditPending || m_queueWriteInFlight || (!resume && !m_isPlaying) ||
-      localPlayback() || m_trackUri != m_queueEditAnchor || targetDeviceForPlay() != m_queueEditDevice)
+void Player::dispatchQueueEdit() {
+  if (!m_queueEditPending || m_queueEditInFlight != 0)
     return;
-  QStringList uris;
-  for (const auto &row : m_orderedRows)
-    uris << row.toMap().value("uri").toString();
   m_queueEditPending = false;
-  m_queueWriteInFlight = true;
-  playOrdered(uris, positionMs(), true, true);
+  if (!queueEditingAvailable() || m_trackUri != m_queueEditAnchor ||
+      targetDeviceForPlay() != m_queueEditDevice)
+    return;
+  m_sentQueueUris.clear();
+  for (const auto &row : m_orderedRows)
+    m_sentQueueUris << row.toMap().value("uri").toString();
+  m_sentQueueDevice = m_queueEditDevice;
+  const auto serial = ++m_queueEditSerial;
+  m_queueEditInFlight = serial;
+  if (!m_librespot->writeQueueEdit(serial, m_sentQueueUris)) {
+    finishQueueEdit(serial, false);
+    return;
+  }
+  QTimer::singleShot(4000, this, [this, serial] { finishQueueEdit(serial, false); });
+}
+
+void Player::finishQueueEdit(quint64 serial, bool accepted) {
+  if (serial != m_queueEditInFlight)
+    return;
+  m_queueEditInFlight = 0;
+  if (accepted && m_sentQueueDevice == targetDeviceForPlay()) {
+    m_lastUris = m_sentQueueUris;
+    m_shuffle = false;
+    emit stateChanged();
+  } else if (!m_queueEditPending && m_sentQueueDevice == targetDeviceForPlay()) {
+    m_orderedRows.clear();
+    emit selectionReplaced();
+    m_queueTrack.clear();
+    emit queueChanged();
+    emit message(tr("O motor não confirmou a edição da fila. Tente novamente."));
+    refreshQueue();
+  }
+  dispatchQueueEdit();
 }
 
 void Player::insertInQueue(const QVariantMap &track, int placement) {
+  if (!queueEditingAvailable()) {
+    emit message(tr("A edição da fila requer o motor local do Tonalify."));
+    return;
+  }
   static const QRegularExpression valid("^spotify:track:[A-Za-z0-9]{22}$");
   if (localPlayback() || m_trackUri.isEmpty() || targetDeviceForPlay().isEmpty() ||
       !valid.match(track.value("uri").toString()).hasMatch() || placement < 0 || placement > 2) {

@@ -21,9 +21,11 @@ Subir ou descer desloca cada bloco marcado uma posição, preservando sua ordem.
 faixa são ocorrências independentes. Os modos de descoberta e embaralhamento
 continuam com sua própria prévia.
 
-O editor atualiza a fila temporária do Tonalify. No Android usa o comando
-existente que mantém o decoder, posição e pausa. No Windows, enquanto toca,
-reaplica a ordem pelo transporte Spotify existente. Se estiver pausado,
-guarda a alteração para o próximo play explícito pelo Tonalify. Uma edição
-feita sobre uma versão antiga da fila é recusada. O limite continua em
+Desde a 0.15.15, o editor atualiza somente as próximas músicas no motor local.
+A edição mantém o decoder, a posição e o estado de reprodução ou pausa.
+O motor confere a faixa atual antes de aplicar a ordem. O limite continua em
 500 entradas contando a faixa atual.
+
+No Windows, a edição requer o dispositivo Tonalify neste PC e o librespot
+incluído no pacote. A reprodução em outros dispositivos Spotify Connect
+continua disponível.

@@ -413,7 +413,7 @@ Dialog {
                 ActionIcon{accentInk:panel.tone.accent;objectName:"previewRandom";symbol:"random";description:"Prévia com reprodução aleatória / ordem da lista";filled:panel.randomPlayback;onClicked:panel.changeSongMode(1)}
                 ActionIcon{accentInk:panel.tone.accent;objectName:"previewDiscovery";symbol:"discover";description:"Prévia com Descoberta 2+1 / desativar";filled:panel.discoveryPlayback;onClicked:panel.changeSongMode(2)}
             }
-            Label{Layout.fillWidth:true;wrapMode:Text.Wrap;color:"#c4c7cc";text:panel.queueEdited?"Confira a ordem e aplique para tocar. A faixa atual será retomada na posição atual.":"Agora e próximas músicas informadas pelo Spotify. A fila do serviço pode ser parcial."}
+            Label{Layout.fillWidth:true;wrapMode:Text.Wrap;color:"#c4c7cc";text:panel.queueEdited?"Confira a ordem antes de aplicar às próximas músicas.":"Agora e próximas músicas informadas pelo Spotify. A fila do serviço pode ser parcial."}
             Label{visible:!!panel.mixController;color:panel.tone.accentText;text:panel.queueLoading?"Carregando a fila atual do Spotify…":panel.queueNotice|| (panel.mixController?panel.mixController.status:"");Layout.fillWidth:true;wrapMode:Text.Wrap}
             CheckBox{text:"Analisar letras das candidatas em segundo plano";visible:panel.mixController&&typeof panel.mixController.enrichmentEnabled!=="undefined";checked:panel.mixController?panel.mixController.enrichmentEnabled:false;onToggled:if(panel.mixController)panel.mixController.enrichmentEnabled=checked}
             Label{text:"Envia título, artista, álbum e duração ao LRCLIB; guarda apenas os temas. A fila confirmada permanece igual.";Layout.fillWidth:true;wrapMode:Text.Wrap;color:"#a5a8ad";font.pixelSize:11}
@@ -431,7 +431,7 @@ Dialog {
                     Label{width:parent.width;text:(modelData.artist||"")+(modelData.mixExternal?" • Descoberta":"");textFormat:Text.PlainText;color:"#a5a8ad";elide:Text.ElideRight}
                 }
             }
-            Button{text:"Aplicar e reproduzir fila";visible:panel.queueEdited;enabled:!panel.queueLoading&&!panel.pendingRemix&&!panel.queueNotice&&panel.mixController&&!panel.mixController.busy&&panel.queuedRows.length>0;onClicked:{if(panel.queueAnchor!==(panel.controller.current.uri||"")){panel.notice="A música mudou. Prepare a fila novamente.";queueDialog.close();return}panel.mixController.applyPreview(panel.transportPlayer&&typeof panel.transportPlayer.positionMs==="number"?panel.transportPlayer.positionMs:panel.position);queueDialog.close()}}
+            Button{text:"Aplicar ordem";visible:panel.queueEdited;enabled:!panel.queueLoading&&!panel.pendingRemix&&!panel.queueNotice&&panel.mixController&&!panel.mixController.busy&&panel.queuedRows.length>0;onClicked:{if(panel.queueAnchor!==(panel.controller.current.uri||"")){panel.notice="A música mudou. Prepare a fila novamente.";queueDialog.close();return}panel.mixController.applyPreview(panel.transportPlayer&&typeof panel.transportPlayer.positionMs==="number"?panel.transportPlayer.positionMs:panel.position);queueDialog.close()}}
         }
     }
     FileDialog{id:syncExport;fileMode:FileDialog.SaveFile;nameFilters:["Ajuste Tonal (*.json)"];onAccepted:panel.controller.exportSyncFeedback(selectedFile)}
