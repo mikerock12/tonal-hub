@@ -418,7 +418,14 @@ Dialog {
             CheckBox{text:"Analisar letras das candidatas em segundo plano";visible:panel.mixController&&typeof panel.mixController.enrichmentEnabled!=="undefined";checked:panel.mixController?panel.mixController.enrichmentEnabled:false;onToggled:if(panel.mixController)panel.mixController.enrichmentEnabled=checked}
             Label{text:"Envia título, artista, álbum e duração ao LRCLIB; guarda apenas os temas. A fila confirmada permanece igual.";Layout.fillWidth:true;wrapMode:Text.Wrap;color:"#a5a8ad";font.pixelSize:11}
             Label{text:panel.mixController&&typeof panel.mixController.enrichmentStatus!=="undefined"?panel.mixController.enrichmentStatus:"";Layout.fillWidth:true;wrapMode:Text.Wrap;color:"#9bcfe1"}
-            ListView{Layout.fillWidth:true;Layout.fillHeight:true;clip:true;model:panel.queuedRows;spacing:8;ScrollBar.vertical:ScrollBar{}
+            QueueEditor {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                visible: !panel.queueEdited && !!panel.transportPlayer && typeof panel.transportPlayer.editQueue === "function"
+                player: panel.transportPlayer
+                tone: panel.tone
+            }
+            ListView{visible:panel.queueEdited||!panel.transportPlayer||typeof panel.transportPlayer.editQueue!=="function";Layout.fillWidth:true;Layout.fillHeight:true;clip:true;model:panel.queuedRows;spacing:8;ScrollBar.vertical:ScrollBar{}
                 delegate:Column{required property var modelData;required property int index;width:ListView.view.width;spacing:3
                     Label{width:parent.width;text:(index===0?"Agora • ":index+" • ")+(modelData.title||"");textFormat:Text.PlainText;color:modelData.mixExternal?panel.tone.accentText:panel.tone.text;elide:Text.ElideRight;font.bold:true}
                     Label{width:parent.width;text:(modelData.artist||"")+(modelData.mixExternal?" • Descoberta":"");textFormat:Text.PlainText;color:"#a5a8ad";elide:Text.ElideRight}

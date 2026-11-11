@@ -656,7 +656,8 @@ Item {
             onArtistClicked: if (artistId) Nav.go("artist", { id: artistId })
             onAlbumClicked: if (albumId) Nav.go("album", { id: albumId })
             onMenuRequested: (mx, my) => {
-                const track = { uri: uri, name: name, albumId: albumId, artists: JSON.parse(artistsJson) }
+                const track = { uri: uri, name: name, album: album, albumId: albumId,
+                                coverUrl: coverUrl, durationMs: durationMs, artists: JSON.parse(artistsJson) }
                 if (root.kind === "playlist" && root.owned) {
                     const trackUri = uri
                     track.removeFromPlaylist = function() { root.removeTrack(trackUri) }

@@ -1216,6 +1216,20 @@ public:
     require(player.m_orderedRows.size()==5&&player.m_orderedRows.last().toMap()["uri"]=="spotify:track:DDDDDDDDDDDDDDDDDDDDDD","last insertion must preserve duplicate occurrences");
     player.togglePlay();require(spin([&]{return plays==1;},800)&&body["uris"].toArray().size()==5,"pending queue must apply on explicit resume");
     require(!player.m_queueEditPending,"pending queue applied more than once");
+    player.m_isPlaying=false;
+    player.setOrderedQueue({row("AAAAAAAAAAAAAAAAAAAAAA"),row("BBBBBBBBBBBBBBBBBBBBBB",true)});
+    player.insertInQueue(row("CCCCCCCCCCCCCCCCCCCCCC"),2);
+    player.insertInQueue(row("DDDDDDDDDDDDDDDDDDDDDD"),2);
+    player.insertInQueue(row("CCCCCCCCCCCCCCCCCCCCCC"),2);
+    auto ids=[&]{QStringList result;for(const auto &v:player.queue())result<<v.toMap()["name"].toString().left(1);return result.join("");};
+    require(ids()=="CDCB","manual additions must remain FIFO before the original selection");
+    auto token=player.queueEditToken();
+    require(!player.editQueue(token,{0,0}),"same occurrence submitted twice must be rejected");
+    require(player.editQueue(token,{3,2,0})&&ids()=="BCC","edit must move and remove individual occurrences");
+    require(!player.editQueue(token,{}),"a stale snapshot must not clear a newer queue");
+    require(player.editQueue(player.queueEditToken(),{})&&player.queue().isEmpty()&&
+            player.m_orderedRows.size()==1&&player.m_queueEditPending&&plays==1,
+            "clear must keep the current track and preserve pause");
     player.m_isPlaying=false;QVariantList full;for(int i=0;i<500;++i)full<<row("AAAAAAAAAAAAAAAAAAAAAA");player.setOrderedQueue(full);player.insertInQueue(row("BBBBBBBBBBBBBBBBBBBBBB"),true);
     require(player.m_orderedRows.size()==500,"queue limit discarded original songs");
     std::cout<<"PASS queue insertion, pause, duplicate occurrences, discoveries and explicit resume\n";

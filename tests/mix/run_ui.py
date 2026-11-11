@@ -48,7 +48,40 @@ text=(ROOT/'qml/pages/CollectionPage.qml').read_text(encoding='utf-8').replace('
 import QtQuick.Controls
 import QtTest
 import MixHarness 1.0
-Pane {width:1000;height:800;padding:0;palette.button:"#263440";palette.buttonText:"#f5f5f5";background:Rectangle{color:"#121212"}
+Pane {id:harness;width:1000;height:800;padding:0;palette.button:"#263440";palette.buttonText:"#f5f5f5";background:Rectangle{color:"#121212"}
+ Component {
+  id:queueFixture
+  Rectangle {
+   width:640;height:485;x:20;y:20;z:110
+   color:App.theme.current.panel
+  QueueEditor {
+   objectName:"fixtureQueueEditor"
+   anchors.fill:parent
+   anchors.margins:10
+   tone:App.theme.current
+   player:QtObject {
+    property bool hasTrack:true
+    property string trackName:"Entre Estações"
+    property string artistsText:"Vento Norte"
+    property string coverUrl:""
+    property string queueEditToken:"1"
+    property var queue:[
+     {name:"Luz de Vidro",artists:"Vento Norte",albumId:"a",durationMs:180000},
+     {name:"Maré Baixa",artists:"Vento Norte",albumId:"a",durationMs:240000},
+     {name:"Órbita",artists:"Sete Luas",albumId:"b",durationMs:180000,mixExternal:true},
+     {name:"A Última Rua",artists:"Sete Luas",albumId:"b",durationMs:120000},
+     {name:"Farol",artists:"Horizonte Sul",albumId:"c",durationMs:240000}
+    ]
+    function editQueue(token,order){
+     if(token!==queueEditToken)return false
+     queueEditToken=String(Number(queueEditToken)+1)
+     queue=order.map(i=>queue[i])
+     return true
+    }
+   }
+  }
+  }
+ }
  QtObject{id:personal;property var current:({provider:"Spotify",id:"current",uri:"spotify:track:current",title:"Current song",artist:"Current artist",durationMs:180000});property var favorites:[];property var playlists:[];property var lines:[];property bool busy:false;property string background:"Sem animação";property string photo:"";property var lyricStyle:({});property bool syncEnabled:true;property string lyricStatus:"";property int syncOffset:0;property bool historyEnabled:true;property int requestedDays:-1;property var storageInfo:({databaseBytes:2048,lastBackupBytes:1024});property QtObject stories:QtObject{property var state:({ready:false,busy:false,summary:"",modelBytes:0,cacheBytes:0,status:"Synthetic UI fixture"});function cancel(){}};property var statisticsReport:({rows:[],recommendations:[]});signal statisticsChanged();function requestStatistics(d,k){requestedDays=d;statisticsChanged()}function insights(d){return {themes:[],artists:[],albums:[],genres:[]}}signal lyricsChanged();signal changed();function refreshMetadata(){}function statistics(d,k){return {rows:[],recommendations:[]}}function lineAt(p){return -1}function fetchLyrics(){}function translate(a){}function summary(k,v){return {}}function playlistTracks(k){return []}function liked(t){return false}property var seeks:[];function seek(ms){seeks=seeks.concat([ms])}}
  TopBar{id:globalHeader;z:100;width:1000;height:72}
  SignalSpy{id:statsSpy;target:globalHeader;signalName:"statisticsRequested"}
@@ -158,6 +191,38 @@ Pane {width:1000;height:800;padding:0;palette.button:"#263440";palette.buttonTex
    let dialog=findChild(personalPanel,"songQueueDialog");dialog.close();tryCompare(dialog,"visible",false);personalPanel.queuedRows=[personal.current];
    personalPanel.changeSongMode(0);verify(mix.received.discover);compare(mix.received.rows.filter(t=>t.mixExternal).length,1);
    findChild(personalPanel,"songQueueDialog").close();personalPanel.close();mix.committedRows=[];mix.discoveryEnabled=false;mix.randomEnabled=false;personalPanel.discoveryPlayback=false;personalPanel.randomPlayback=false;
+  }
+  function test_queue_editor_summary_move_and_clear(){
+   const card=queueFixture.createObject(harness)
+   const editor=findChild(card,"fixtureQueueEditor")
+   const summary=findChild(editor,"queueSummary")
+   compare(summary.text,"5 mús. · 3 álb. · 3 art. · 16min 0s")
+   tryVerify(()=>findChild(editor,"editableQueueList").count===5)
+   captureSong(card,"desktop-fila-01514.png")
+   editor.editing=true
+   editor.toggleMarked(1)
+   editor.toggleMarked(2)
+   editor.moveMarked(-1)
+   compare(editor.player.queue.map(t=>t.name).join("|"),"Maré Baixa|Órbita|Luz de Vidro|A Última Rua|Farol")
+   compare(editor.markedCount,2)
+   wait(200)
+   captureSong(card,"desktop-editar-fila-01514.png")
+   editor.moveMarked(1)
+   compare(editor.player.queue[0].name,"Luz de Vidro")
+   editor.removeMarked()
+   compare(editor.player.queue.map(t=>t.name).join("|"),"Luz de Vidro|A Última Rua|Farol")
+   const list=findChild(editor,"editableQueueList")
+   wait(160)
+   const handle=findChild(list.itemAtIndex(0),"queueDragHandle")
+   const start=handle.mapToItem(list,handle.width/2,handle.height/2)
+   mousePress(list,start.x,start.y)
+   mouseMove(list,start.x,start.y+editor.rowHeight)
+   mouseMove(list,start.x,start.y+editor.rowHeight*2)
+   mouseRelease(list,start.x,start.y+editor.rowHeight*2)
+   compare(editor.player.queue.map(t=>t.name).join("|"),"A Última Rua|Farol|Luz de Vidro")
+   verify(editor.player.editQueue(editor.loadedToken,[]))
+   compare(summary.text,"0 mús. · 0 álb. · 0 art. · 0min 0s")
+   card.destroy()
   }
   function test_song_queue_preview(){personalPanel.showSong();tryCompare(personalPanel,"visible",true);let button=findChild(personalPanel,"songQueueButton");verify(button!==null);verify(button.visible);personalPanel.openQueue();compare(personalPanel.queuedRows.length,2);compare(personalPanel.queuedRows[0].title,"Current song");let dialog=findChild(personalPanel,"songQueueDialog");verify(dialog.visible);personalPanel.remixSong(true);compare(App.listeningMix.previewQueue.length,2);compare(App.listeningMix.appliedPosition,-1);App.listeningMix.applyPreview(personalPanel.position);compare(App.listeningMix.appliedPosition,12345);grabImage(dialog.contentItem).save("song-queue.png");dialog.close();personalPanel.close()}
   function test_track_switch_cancels_queue_request(){

@@ -50,7 +50,13 @@ App::App(QObject *parent)
     connect(m_player,&Player::selectionReplaced,m_listeningMix,&ListeningMix::forgetApplied);
     connect(m_player,&Player::orderedQueueEdited,m_listeningMix,&ListeningMix::retainEditedQueue);
     connect(m_jam,&JamController::queueCapacityExceeded,m_listeningMix,&ListeningMix::setQueueCapacityExceeded);
-    connect(m_jam,&JamController::changed,this,[this]{if(!m_jam->session().value("active").toBool())m_listeningMix->setQueueCapacityExceeded(false);});
+    connect(m_jam,&JamController::queueCapacityExceeded,m_player,&Player::setQueueCapacityExceeded);
+    connect(m_jam,&JamController::changed,this,[this]{
+        if(!m_jam->session().value("active").toBool()){
+            m_listeningMix->setQueueCapacityExceeded(false);
+            m_player->setQueueCapacityExceeded(false);
+        }
+    });
     m_librespot->setAudioEngine(m_audio);
     m_player->setAudioEngine(m_audio);
     connect(m_music,&MusicCompanion::metadataRequested,this,[this](const QVariantMap &t){
