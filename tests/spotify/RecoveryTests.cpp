@@ -1,6 +1,7 @@
 #include "AuthManager.h"
 #include "LibrespotProcess.h"
 #include "Player.h"
+#include "DesktopUpdate.h"
 #include "SpotifyApi.h"
 #include "playback/ListeningMix.hpp"
 #include "companion/MusicCompanion.h"
@@ -1315,6 +1316,25 @@ public:
     require(completions==beforePreview,"preview changed current playback");
     std::cout<<"PASS listening mix: 2+1, readonly bounded discovery, stale callbacks and offline fallback\n";
   }
+  static void desktopUpdate() {
+    const QString filename = "Tonal-Hub-0.15.16.0-Windows-x64-Setup.exe";
+    QJsonObject metadata{{"version","v0.15.16"},{"name",filename},{"sha256",QString(64,'a')},{"size",1000},
+                         {"url","https://github.com/mikerock12/tonal-hub/releases/download/v0.15.16/"+filename}};
+    auto parse = [&]{ return DesktopUpdate::parseRelease(QJsonDocument(metadata).toJson()); };
+    require(parse().version=="0.15.16"&&parse().size==1000&&parse().sha256.size()==32,"portal installer metadata rejected");
+    require(DesktopUpdate::newer("0.15.16","0.15.9")&&!DesktopUpdate::newer("0.15.16","0.15.16")&&
+            !DesktopUpdate::newer("0.15.15","0.15.16"),"desktop update version comparison is unsafe");
+    require(DesktopUpdate::allowedAssetRedirect(QUrl("https://release-assets.githubusercontent.com/a?key=value"))&&
+            !DesktopUpdate::allowedAssetRedirect(QUrl("http://release-assets.githubusercontent.com/a"))&&
+            !DesktopUpdate::allowedAssetRedirect(QUrl("https://release-assets.githubusercontent.com.example.com/a")),
+            "installer redirect host validation failed");
+    metadata["sha256"]="bad";
+    require(parse().version.isEmpty(),"installer accepted an invalid SHA-256");
+    metadata["sha256"]=QString(64,'a');
+    metadata["url"]="https://github.com/other/tonal-hub/releases/download/v0.15.16/"+filename;
+    require(parse().version.isEmpty(),"installer accepted another repository");
+    std::cout<<"PASS updater version, portal metadata and asset origin validation\n";
+  }
   static void contextQueue() {
     FakeNetwork network; AuthManager auth(&network); fakeAuth(auth);
     SpotifyApi api(&network, &auth); QTemporaryDir storage;
@@ -1337,7 +1357,34 @@ public:
     player.refreshQueue();require(spin([&]{return done>=0;})&&done==200&&player.queue().size()==5,"empty Connect queue did not resolve album context");
     auto row=player.queue()[0].toMap();require(row["uri"]=="spotify:track:source1"&&row["year"]==1994&&row["artistId"]=="artist-fixture"&&row["albumId"]=="album-fixture","queue lost discovery metadata");
     deny=true;done=-1;player.refreshQueue();require(spin([&]{return done>=0;})&&done==403,"queue failure left preview waiting");
-    std::cout<<"PASS partial Connect queue resolves exact context and preserves discovery metadata\n";
+
+    int pages=0;
+    auto track=[](int i){return QJsonObject{{"uri",QString("spotify:track:source%1").arg(i==70?0:i)}};};
+    player.m_contextUri="spotify:playlist:playlist-fixture";
+    network.respond=[&](const QNetworkRequest &request,const QByteArray &body){
+      require(body.isEmpty(),"long queue resolution mutated playback");
+      QJsonArray items;
+      if(request.url().path()=="/v1/me/player/queue"){
+        items.append(track(999));
+        for(int i=1;i<=19;++i)items.append(track(i));
+        return Response{200,QJsonDocument(QJsonObject{{"queue",items},{"currently_playing",track(0)}}).toJson()};
+      }
+      require(request.url().path()=="/v1/playlists/playlist-fixture/items","long queue used the wrong playlist");
+      const auto start=50*pages++;
+      for(int i=start;i<qMin(start+50,120);++i)items.append(QJsonObject{{"item",track(i)}});
+      const auto next=start<100?QString("https://api.spotify.com/v1/playlists/playlist-fixture/items?offset=%1").arg(start+50):QString();
+      return Response{200,QJsonDocument(QJsonObject{{"items",items},{"next",next}}).toJson()};
+    };
+    done=-1;player.refreshQueue();
+    require(spin([&]{return done>=0;})&&done==200&&pages==3&&!player.queuePartial()&&player.queue().size()==120,
+            "120-track playlist truncated to the Connect window");
+    require(player.queue().first().toMap()["uri"]=="spotify:track:source999"&&
+            player.queue().last().toMap()["uri"]=="spotify:track:source119","long queue lost the manual addition or catalog tail");
+    player.m_shuffle=true;
+    done=-1;player.refreshQueue();
+    require(spin([&]{return done>=0;})&&player.queuePartial()&&player.queue().size()==20&&
+            player.queueEditToken().isEmpty(),"shuffled queue incorrectly assumed catalog order");
+    std::cout<<"PASS long playlist pagination, manual additions, duplicate occurrences and partial shuffle\n";
   }
   static void playlistTransport() {
     FakeNetwork network;AuthManager auth(&network);SpotifyApi api(&network,&auth);fakeAuth(auth);
@@ -1531,6 +1578,7 @@ int main(int argc, char **argv) {
         SpotifyRecoveryTests::playlistTransport();
         SpotifyRecoveryTests::listeningMix();
         SpotifyRecoveryTests::contextQueue();
+        SpotifyRecoveryTests::desktopUpdate();
 #ifdef _WIN32
         for (const auto *mode : {"crash-once", "eof-once", "stall-once",
                                  "panic-once", "paused", "always-crash",

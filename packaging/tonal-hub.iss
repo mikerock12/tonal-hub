@@ -53,3 +53,10 @@ Name: "{autodesktop}\Tonal Hub"; Filename: "{app}\TonalHub.exe"; WorkingDir: "{a
 
 [Run]
 Filename: "{app}\TonalHub.exe"; Description: "{cm:LaunchProgram,Tonal Hub}"; WorkingDir: "{app}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\Tonalify.exe"; WorkingDir: "{app}"; Flags: nowait skipifnotsilent; Check: RestartTonalify
+
+[Code]
+function RestartTonalify: Boolean;
+begin
+  Result := ExpandConstant('{param:TONALRESTART|}') = 'Tonalify';
+end;

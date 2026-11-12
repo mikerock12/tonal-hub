@@ -86,6 +86,7 @@ ApplicationWindow {
             height: Theme.topBarHeight
             onStatisticsRequested: window.openStatistics()
             onBackupRequested: window.openBackup()
+            onAboutRequested: aboutDialog.open()
             onAudioSettingsRequested: audioPanel.open()
             onMusicRequested:{window.openMusic();if(musicLoader.item)musicLoader.item.section=0}
         }
@@ -207,6 +208,57 @@ ApplicationWindow {
     }
 
     AudioEffectsPanel { id: audioPanel }
+    Button {
+        visible: !App.auth.authenticated && !App.audio.localActive
+        anchors.left: parent.left
+        anchors.bottom: parent.bottom
+        anchors.margins: 24
+        text: qsTr("Sobre")
+        onClicked: aboutDialog.open()
+    }
+    ModalDialog {
+        id: aboutDialog
+        objectName: "aboutDialog"
+        title: qsTr("Sobre o Tonalify")
+        Label {
+            width: parent.width
+            color: Theme.textPrimary
+            font.pixelSize: 16
+            text: qsTr("Versão %1").arg(Qt.application.version)
+        }
+        Label {
+            width: parent.width
+            color: Theme.textSecondary
+            wrapMode: Text.WordWrap
+            text: qsTr("Projeto original de Matheus Nunes (natheus). Tonal Hub mantido por Maicon Nunes (mikerock12). Licença MIT.")
+        }
+        Label {
+            width: parent.width
+            visible: !!desktopUpdate.status
+            color: Theme.textSecondary
+            wrapMode: Text.WordWrap
+            text: desktopUpdate.status
+        }
+        Button {
+            visible: !desktopUpdate.installed && !!desktopUpdate.availableVersion
+            text: qsTr("Abrir downloads do portal")
+            onClicked: Qt.openUrlExternally("https://softwares.smellsliketech.com.br")
+        }
+        buttons: [
+            PillButton {
+                primary: !desktopUpdate.availableVersion
+                enabled: !desktopUpdate.busy
+                text: qsTr("Verificar atualização")
+                onClicked: desktopUpdate.check()
+            },
+            PillButton {
+                visible: desktopUpdate.installed && !!desktopUpdate.availableVersion
+                enabled: !desktopUpdate.busy
+                text: qsTr("Atualizar e reiniciar")
+                onClicked: desktopUpdate.ready ? desktopUpdate.install() : desktopUpdate.download()
+            }
+        ]
+    }
     Button {
         visible: !App.auth.authenticated && !App.audio.localActive
         anchors.right: parent.right

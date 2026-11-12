@@ -6,6 +6,7 @@
 #include <QObject>
 #include <QTimer>
 #include <QVariantList>
+#include <functional>
 
 class SpotifyApi;
 class LibrespotProcess;
@@ -38,6 +39,7 @@ class Player : public QObject {
   Q_PROPERTY(bool playingHere READ playingHere NOTIFY stateChanged)
   Q_PROPERTY(QString localDeviceId READ localDeviceId NOTIFY localDeviceChanged)
   Q_PROPERTY(QVariantList queue READ queue NOTIFY queueChanged)
+  Q_PROPERTY(bool queuePartial READ queuePartial NOTIFY queueChanged)
   Q_PROPERTY(QString queueEditToken READ queueEditToken NOTIFY queueChanged)
   Q_PROPERTY(QVariantList devices READ devices NOTIFY devicesChanged)
 
@@ -90,6 +92,7 @@ public:
   }
   QString localDeviceId() const { return m_localDeviceId; }
   QVariantList queue() const { return m_queue; }
+  bool queuePartial() const { return m_queuePartial; }
   QVariantList preparedQueue() const {return m_orderedRows;}
   bool queueEditPending() const{return m_queueEditPending || m_queueEditInFlight != 0;}
   void reconcileJamQueue(const QVariantList &rows){if(rows.isEmpty()||rows.first().toMap().value("uri").toString()!=m_trackUri)return;setOrderedQueue(rows);emit orderedQueueEdited(rows);queueFromOrderedRows();}
@@ -154,7 +157,7 @@ private:
   void scheduleNextPoll();
   void checkLiked();
   void loadContextQueue(const QString &path, const QString &context,
-                        const QString &track, uint64_t generation,
+                        std::function<bool()> valid, std::function<void(QVariantList,bool)> done,
                         QVariantList rows = {}, QJsonObject album = {}, int page = 0);
   void findLocalDevice(int attemptsLeft);
   QString targetDeviceForPlay() const;
@@ -207,7 +210,13 @@ private:
   bool queueEditingAvailable() const;
   quint64 m_queueRevision=0;
   QString m_queueTrack,m_queueDevice;
-  void publishQueue(QVariantList rows);
+  void publishQueue(QVariantList rows, bool partial = false);
+  bool m_queuePartial=false;
+  quint64 m_queueReadSerial=0;
+  QStringList m_queueReadKey;
+  QString m_queueCatalogUri;
+  QVariantList m_queueCatalogRows;
+  QElapsedTimer m_queueCatalogAge;
   QVariantList queueForEditing() const;
   bool commitQueueEdit(const QVariantList &rows);
   QString m_queueEditAnchor,m_queueEditDevice;

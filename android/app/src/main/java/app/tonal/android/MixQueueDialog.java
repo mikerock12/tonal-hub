@@ -31,7 +31,7 @@ final class MixQueueDialog {
     private JSONObject current;
     private ArrayList<JSONObject> prepared;
     private boolean random, discovery, editing, preparing;
-    private boolean editingAvailable;
+    private boolean editingAvailable, partial;
     private static final int PAGE_SIZE = 24;
     private int serial, snapshotRevision, visibleRows = PAGE_SIZE;
     private int dragFrom = -1, dragTo = -1;
@@ -176,12 +176,15 @@ final class MixQueueDialog {
         preparing=false;
         current=null;
         entries.clear();
+        partial=false;
         editing=false;
         showStatus("Carregando a fila…");
         render();
-        host.queueSnapshot(tracks->{
+        host.queueSnapshot(snapshot->{
+            ArrayList<JSONObject> tracks=snapshot.tracks();
             if(!dialog.isShowing()||request!=serial)return;
             snapshotRevision=host.queueRevision();
+            partial=snapshot.partial();
             if(!tracks.isEmpty()){
                 current=tracks.get(0);
                 for(int i=1;i<tracks.size();i++)entries.add(new Entry(tracks.get(i)));
@@ -190,7 +193,7 @@ final class MixQueueDialog {
                 if(!current.has("_mixDiscoveryEnabled"))
                     for(Entry entry:entries)discovery|=entry.track.optBoolean("_mixExternal");
             }
-            showStatus(entries.isEmpty()?"Nenhuma próxima música.":"");
+            showStatus(partial?"Fila parcial do Spotify. A ordem atual foi preservada.":entries.isEmpty()?"Nenhuma próxima música.":"");
             render();
             if(mode<3)generate(mode);
         },error->{
@@ -206,7 +209,7 @@ final class MixQueueDialog {
     }
 
     private void generate(int mode){
-        if(current==null||editing||dragFrom>=0)return;
+        if(current==null||editing||dragFrom>=0||partial)return;
         if(mode==1)random=!random;
         if(mode==2)discovery=!discovery;
         int request=++serial;
@@ -228,7 +231,7 @@ final class MixQueueDialog {
     }
 
     private boolean canEdit(){
-        return current!=null&&prepared==null&&!preparing&&entries.size()<500&&
+        return !partial&&current!=null&&prepared==null&&!preparing&&entries.size()<500&&
                 snapshotRevision==host.queueRevision()&&host.canEditQueue();
     }
 
