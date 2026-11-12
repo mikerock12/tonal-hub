@@ -100,3 +100,9 @@ tap(nodes, "Limpar")
 tap(wait_for("Limpar fila?", "Cancelar"), "Limpar")
 wait_for("Agora · Mix Fixture 1", "0 mús. · 0 álb. · 0 art. · 0min 0s")
 print("PASS queue summary, drag, batch up/down, removal and clear with current track retained")
+
+adb("shell", "am", "force-stop", PACKAGE)
+adb("shell", "am", "start", "-W", "-n", ACTIVITY, "--ez", "queueEditorFixture", "true",
+    "--ez", "queueLongFixture", "true")
+wait_for("Agora · Faixa de teste 0", "120 mús. · 0 álb. · 0 art. · 6h 0min", "Editar")
+print("PASS 20 observed tracks extended to 120 upcoming tracks")

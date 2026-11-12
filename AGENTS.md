@@ -457,3 +457,15 @@ docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no
 - A edição nunca envia play, seek, pausa ou pré-carga. O motor rejeita a edição
   quando a faixa atual mudou. Windows requer o librespot empacotado com o canal
   local de comandos. Android usa o mesmo código de fila pelo JNI, versionCode 35.
+
+## Fila longa e atualização Windows 0.15.16
+
+- Completar a janela do Spotify com páginas da playlist ou álbum quando a
+  sequência observada identificar uma ocorrência inequívoca da faixa atual.
+  Preservar o prefixo observado, repetições e faixas inseridas. Ordem externa
+  incerta, catálogo indisponível ou mais de 500 entradas resulta em fila parcial
+  sem reescrita. Android versionCode 36.
+- Sobre no Tonalify mostra os créditos e consulta a versão pública do portal.
+  Atualizar a edição instalada somente com versão mais nova, instalador oficial,
+  tamanho e SHA-256 conferidos. Manter o diretório instalado e reiniciar o
+  Tonalify após a instalação. Portátil usa os downloads do portal.

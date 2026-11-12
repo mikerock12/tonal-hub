@@ -1,6 +1,6 @@
 # Contexto do Tonal Hub
 
-Atualizado em **11/11/2026**. Versão de trabalho **Windows 0.15.15 / Android 0.15.15**, versionCode 35. Leia também [AGENTS.md](AGENTS.md).
+Atualizado em **12/11/2026**. Versão de trabalho **Windows 0.15.16 / Android 0.15.16**, versionCode 36. Leia também [AGENTS.md](AGENTS.md).
 
 ## Edição da fila sem recarregar a faixa 0.15.15
 

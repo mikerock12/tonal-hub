@@ -29,3 +29,15 @@ O motor confere a faixa atual antes de aplicar a ordem. O limite continua em
 No Windows, a edição requer o dispositivo Tonalify neste PC e o librespot
 incluído no pacote. A reprodução em outros dispositivos Spotify Connect
 continua disponível.
+# Fila longa na versão 0.15.16
+
+A janela de próximas faixas do Spotify pode conter só 20 itens. Windows e
+Android consultam as páginas do álbum ou da playlist e acrescentam a sequência
+restante quando a janela identifica uma ocorrência única da faixa atual.
+Preservam-se as inserções do início da janela e as ocorrências repetidas.
+O resumo considera todas as próximas faixas identificadas. No Android,
+**Mostrar mais músicas** expande a lista em lotes de 24.
+
+A edição aceita até 500 entradas incluindo a faixa atual. Se a ordem não puder
+ser confirmada, como em uma fila externa embaralhada, o app identifica a fila
+como parcial e impede alterações que descartariam faixas.

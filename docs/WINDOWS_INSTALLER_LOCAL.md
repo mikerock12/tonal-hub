@@ -65,3 +65,12 @@ Saída em `out/release-local/`, junto do arquivo `.sha256`.
 Créditos ao projeto original de **Matheus Nunes (natheus)**:
 https://github.com/natheus/tonal-player. Licença MIT e avisos das dependências
 acompanham a instalação.
+
+## Atualizar pelo Tonalify
+
+Abra **Sobre** no menu da conta ou na tela de login e selecione
+**Verificar atualização**. A versão vem dos metadados de download do portal.
+Se houver uma versão mais nova, **Atualizar e reiniciar** baixa o instalador,
+verifica o tamanho e o SHA-256 e inicia a instalação no diretório atual.
+O instalador reabre o Tonalify ao concluir. A edição portátil oferece acesso
+aos downloads do portal para atualização manual.

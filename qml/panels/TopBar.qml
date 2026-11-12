@@ -9,6 +9,7 @@ Item {
     signal musicRequested()
     signal statisticsRequested()
     signal backupRequested()
+    signal aboutRequested()
 
     function focusSearch() {
         search.forceActiveFocus()
@@ -279,6 +280,7 @@ Item {
         AccountItem { text: qsTr("Áudio e efeitos…"); onTriggered: root.audioSettingsRequested() }
         AccountItem { text: qsTr("Biblioteca pessoal, estatísticas e letras…"); onTriggered: root.musicRequested() }
         AccountItem { text: qsTr("Temas: %1…").arg(Theme.palette.name); onTriggered: themeDialog.open() }
+        AccountItem { text: qsTr("Sobre…"); onTriggered: root.aboutRequested() }
         AccountItem {
             text: qsTr("Qualidade: 320 kbps (muito alta)")
             checked: App.librespot.bitrate === 320

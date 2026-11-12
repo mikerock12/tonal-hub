@@ -4,6 +4,7 @@
 #include <QLocale>
 #include <QProcess>
 #include <QQmlApplicationEngine>
+#include <QQmlContext>
 #include <QQuickStyle>
 #include <QTranslator>
 #include <QWindow>
@@ -17,6 +18,7 @@
 #include <QJsonDocument>
 
 #include "App.h"
+#include "DesktopUpdate.h"
 #include "MediaControls.h"
 #include "NetworkFactory.h"
 
@@ -71,7 +73,9 @@ int main(int argc, char *argv[])
         App backend(nullptr);
         App::setInstance(&backend);
 
+        DesktopUpdate desktopUpdate;
         QQmlApplicationEngine engine;
+        engine.rootContext()->setContextProperty(QStringLiteral("desktopUpdate"), &desktopUpdate);
         engine.setNetworkAccessManagerFactory(&networkFactory);
         QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
                          &app, [] { QCoreApplication::exit(-1); }, Qt::QueuedConnection);

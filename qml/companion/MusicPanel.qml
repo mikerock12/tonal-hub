@@ -62,6 +62,7 @@ Dialog {
             const m=panel.pendingQuick;panel.pendingQuick=null
             if(m.anchor!==(panel.controller.current.uri||"")){panel.notice="A música mudou. Use o modo de novo.";return}
             if(status!==200){panel.notice="Não foi possível carregar a fila (Spotify HTTP "+status+").";return}
+            if(panel.transportPlayer.queuePartial){panel.notice=qsTr("A fila é parcial. O modo precisa da ordem completa.");return}
             const rows=[panel.controller.current].concat(panel.queueRows())
             if(rows.length<2){panel.notice="A fila só tem a música atual. Abra um álbum ou playlist e toque a seleção.";return}
             panel.mixController.applyModes(rows,m.shake,m.random,m.discovery);return
@@ -71,6 +72,7 @@ Dialog {
         if(!queueDialog.visible||panel.queueAnchor!==(panel.controller.current.uri||"")){panel.pendingRemix=false;panel.queueNotice="A música mudou. Prepare a fila novamente.";return}
         if(status!==200){panel.pendingRemix=false;panel.queueNotice="Não foi possível carregar a fila (Spotify HTTP "+status+"). Tente novamente.";panel.queueEdited=false;return}
         panel.songQueueSource=[panel.controller.current].concat(panel.queueRows())
+        if(panel.transportPlayer.queuePartial){panel.pendingRemix=false;panel.queueEdited=false;panel.queuedRows=panel.songQueueSource;panel.queueNotice=qsTr("A fila é parcial. A edição requer a ordem completa.");return}
         if(panel.pendingRemix){panel.pendingRemix=false;panel.prepareSongMix(panel.pendingShake)}else panel.queuedRows=panel.songQueueSource
     }}
     onClosed: {pendingRemix=false;queueLoading=false;if(typeof controller.cancelArtistNotes==="function")controller.cancelArtistNotes()}

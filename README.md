@@ -10,7 +10,7 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
-**0.15.15 — Edição da fila sem recarregar a música atual no Tonalify.**
+**0.15.16 — Fila de playlists longas no Tonalify e atualização pelo menu Sobre no Windows.**
 
 Veja quantas músicas, álbuns e artistas vêm a seguir e quanto tempo a fila
 dura. Arraste as músicas ou marque várias para subir, descer e excluir.

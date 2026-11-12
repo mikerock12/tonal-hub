@@ -132,6 +132,9 @@ Player::Player(SpotifyApi *api, LibrespotProcess *librespot, AuthManager *auth,
     }
   });
   connect(m_auth, &AuthManager::authenticatedChanged, this, [this] {
+    m_queueCatalogUri.clear();
+    m_queueCatalogRows.clear();
+    m_queueCatalogAge.invalidate();
     if (m_auth->isAuthenticated()) {
       refresh();
       if (m_librespot->state() == LibrespotProcess::Ready)
@@ -284,7 +287,6 @@ void Player::applyState(const QJsonObject &obj, bool acceptVolume) {
     m_coverUrlLarge = pickImage(images, 300);
     emit trackChanged();
     checkLiked();
-    refreshQueue();
   }
 
   const QJsonObject device = obj.value(QStringLiteral("device")).toObject();
@@ -299,6 +301,7 @@ void Player::applyState(const QJsonObject &obj, bool acceptVolume) {
   const bool selectionLoading = m_selectionClock.isValid() && m_selectionClock.elapsed() < 4000;
   if (!repeatSettling && !(selectionLoading && m_repeatWanted != QLatin1String("off")))
     m_repeatMode = m_repeatWanted = remoteRepeat;
+  const auto previousContext = m_contextUri;
   m_contextUri = context.value(QStringLiteral("uri")).toString();
   const QString deviceId = device.value(QStringLiteral("id")).toString();
   const bool volumeRouteChanged = deviceId != m_activeDeviceId;
@@ -306,6 +309,8 @@ void Player::applyState(const QJsonObject &obj, bool acceptVolume) {
     cancelVolume();
   m_activeDeviceId = deviceId;
   m_activeDeviceName = device.value(QStringLiteral("name")).toString();
+  if (!sameTrack || previousContext != m_contextUri || volumeRouteChanged)
+    refreshQueue();
   m_librespot->setPlaybackExpected(m_isPlaying && playingHere());
   // Connect controls can arrive without a matching librespot debug command.
   // Reconcile the physical sink with confirmed session state as a fallback.
@@ -392,47 +397,112 @@ void Player::refreshQueue() {
   const auto generation = m_transportGeneration;
   const auto current = m_trackUri;
   const auto device = targetDeviceForPlay();
-  m_api->get(QStringLiteral("/me/player/queue"), {},
-             [this, generation, current, device](int status, const QJsonDocument &doc) {
-                 const auto reported = doc.object()["currently_playing"].toObject()["uri"].toString();
-                 if (generation != m_transportGeneration || current != m_trackUri ||
-                     device != targetDeviceForPlay() || (!reported.isEmpty() && reported != current)) {
-                   emit queueRefreshFinished(409);
-                   return;
-                 }
-                 if (status != 200) {
-                   emit queueRefreshFinished(status);
-                   return;
-                 }
-               QVariantList rows;
-               for (const QJsonValue &v :
-                    doc.object().value(QStringLiteral("queue")).toArray())
-                 rows << simplifyItem(v.toObject());
-               // Connect devices may return no queue even for an album/playlist.
-               // Resolve that exact context, never invent a second source song.
-               if (rows.isEmpty() && (m_contextUri.startsWith("spotify:album:") ||
-                                         m_contextUri.startsWith("spotify:playlist:"))) {
-                 const auto id = m_contextUri.section(':', -1);
-                 const auto path = m_contextUri.startsWith("spotify:album:")
-                     ? "/albums/" + id : "/playlists/" + id + "/items?limit=50";
-                 loadContextQueue(path, m_contextUri, current, generation);
-                 return;
-               }
-               publishQueue(std::move(rows));
-               emit queueRefreshFinished(status);
-             });
-}
-
-void Player::loadContextQueue(const QString &path, const QString &context,
-                              const QString &track, uint64_t generation,
-                              QVariantList rows, QJsonObject album, int page) {
-  m_api->get(path, {}, [this, context, track, generation, rows, album, page]
-             (int status, const QJsonDocument &doc) mutable {
-    if (generation != m_transportGeneration || track != m_trackUri || context != m_contextUri) {
+  const auto context = m_contextUri;
+  const bool catalog = context.startsWith("spotify:album:") || context.startsWith("spotify:playlist:");
+  const bool shuffled = m_shuffle;
+  const auto key = QStringList{current, device, context, QString::number(generation), QString::number(shuffled)};
+  if (key == m_queueReadKey)
+    return;
+  m_queueReadKey = key;
+  const auto serial = ++m_queueReadSerial;
+  auto valid = [this, generation, current, device, context, shuffled] {
+    return generation == m_transportGeneration && current == m_trackUri &&
+           device == targetDeviceForPlay() && context == m_contextUri && shuffled == m_shuffle;
+  };
+  auto finish = [this, serial, valid](int status, QVariantList rows, bool partial) {
+    if (serial != m_queueReadSerial)
+      return;
+    m_queueReadKey.clear();
+    if (!valid()) {
       emit queueRefreshFinished(409);
       return;
     }
-    if (status != 200) { emit queueRefreshFinished(status); return; }
+    if (status == 200)
+      publishQueue(std::move(rows), partial);
+    emit queueRefreshFinished(status);
+  };
+  m_api->get("/me/player/queue", {}, [this, serial, valid, finish, current, context, catalog, shuffled]
+             (int status, const QJsonDocument &doc) {
+    if (serial != m_queueReadSerial)
+      return;
+    const auto object = doc.object();
+    const auto reported = object["currently_playing"].toObject()["uri"].toString();
+    if (!valid() || (status == 200 && !reported.isEmpty() && reported != current)) {
+      finish(409, {}, true);
+      return;
+    }
+    if (status != 200) {
+      finish(status, {}, true);
+      return;
+    }
+    QVariantList observed;
+    for (const auto &value : object["queue"].toArray())
+      if (value.isObject()) observed << simplifyItem(value.toObject());
+    if (!catalog || shuffled) {
+      finish(200, std::move(observed), catalog);
+      return;
+    }
+
+    auto merge = [finish, observed, current](const QVariantList &rows, bool complete) mutable {
+      // Keep the service's exact front (including manual additions), then append
+      // the catalog tail only after a unique, consecutive match.
+      qsizetype best = -1, suffix = -1;
+      for (qsizetype i = 0; i < rows.size(); ++i) {
+        if (rows[i].toMap().value("uri") != current)
+          continue;
+        for (qsizetype count = qMin(observed.size(), rows.size() - i - 1); count >= 0; --count) {
+          if (count == 0 && !observed.isEmpty())
+            break;
+          bool matches = true;
+          for (qsizetype j = 0; j < count && matches; ++j)
+            matches = observed[observed.size()-count+j].toMap().value("uri") == rows[i+1+j].toMap().value("uri");
+          if (!matches)
+            continue;
+          if (count > best) {
+            best = count;
+            suffix = i + 1 + count;
+          } else if (count == best) {
+            suffix = -1;
+          }
+          break;
+        }
+      }
+      if (suffix < 0 || (best < observed.size() && best < 2)) {
+        finish(200, std::move(observed), true);
+        return;
+      }
+      const auto total = observed.size() + rows.size() - suffix;
+      observed += rows.mid(suffix, qMax<qsizetype>(0, 499 - observed.size()));
+      finish(200, observed.mid(0, 499), !complete || total > 499);
+    };
+
+    if (m_queueCatalogUri == context && m_queueCatalogAge.isValid() && m_queueCatalogAge.elapsed() < 60000) {
+      merge(m_queueCatalogRows, true);
+      return;
+    }
+    const auto id = context.section(':', -1);
+    const auto path = context.startsWith("spotify:album:") ? "/albums/" + id : "/playlists/" + id + "/items?limit=50";
+    loadContextQueue(path, context, [this, serial, valid]{return serial == m_queueReadSerial && valid();},
+      [this, context, serial, valid, merge](QVariantList rows, bool complete) mutable {
+        if (serial == m_queueReadSerial && valid() && complete) {
+          m_queueCatalogUri = context;
+          m_queueCatalogRows = rows;
+          m_queueCatalogAge.restart();
+        }
+        merge(rows, complete);
+      });
+  });
+}
+
+void Player::loadContextQueue(const QString &path, const QString &context,
+                              std::function<bool()> valid, std::function<void(QVariantList,bool)> done,
+                              QVariantList rows, QJsonObject album, int page) {
+  m_api->get(path, {}, [this, path, context, valid, done, rows=std::move(rows), album, page]
+             (int status, const QJsonDocument &doc) mutable {
+    if (!valid() || status != 200) {
+      done({}, false);
+      return;
+    }
     auto data = doc.object();
     if (data.contains("tracks") && context.startsWith("spotify:album:")) {
       album = data;
@@ -443,20 +513,17 @@ void Player::loadContextQueue(const QString &path, const QString &context,
       auto item = value.toObject();
       if (item.contains("item")) item = item["item"].toObject();
       else if (item.contains("track")) item = item["track"].toObject();
-      if (!item["uri"].toString().startsWith("spotify:track:") || item["is_local"].toBool()) continue;
+      if (!item["uri"].toString().startsWith("spotify:track:") || item["is_local"].toBool() ||
+          (item.contains("is_playable") && !item["is_playable"].toBool())) continue;
       if (!item.contains("album") && !album.isEmpty()) item["album"] = album;
-      if (rows.size() < 500) rows << simplifyItem(item);
+      if (rows.size() < 2000) rows << simplifyItem(item);
     }
-    int at = -1;
-    for (int i = 0; i < rows.size(); ++i)
-      if (rows[i].toMap()["uri"].toString() == track) { at = i; break; }
     const auto next = data["next"].toString();
-    if (!next.isEmpty() && rows.size() < 500 && page < 9 && (at < 0 || rows.size() - at < 20)) {
-      loadContextQueue(next, context, track, generation, rows, album, page + 1);
+    if (!next.isEmpty() && next != path && page < 39 && rows.size() < 2000) {
+      loadContextQueue(next, context, valid, done, std::move(rows), album, page + 1);
       return;
     }
-    publishQueue(at < 0 ? QVariantList{} : rows.mid(at + 1));
-    emit queueRefreshFinished(200);
+    done(std::move(rows), next.isEmpty());
   });
 }
 
@@ -1102,6 +1169,10 @@ bool Player::applyQueueEdit(const QVariantList &rows) {
     emit message(tr("A edição da fila requer o motor local do Tonalify."));
     return false;
   }
+  if (m_queuePartial && m_queueTrack == m_trackUri) {
+    emit message(tr("A fila disponível é parcial. A ordem atual foi preservada."));
+    return false;
+  }
   return commitQueueEdit(rows);
 }
 
@@ -1115,11 +1186,12 @@ void Player::addToQueue(const QString &uri) {
       });
 }
 
-void Player::publishQueue(QVariantList rows) {
+void Player::publishQueue(QVariantList rows, bool partial) {
   const auto device = targetDeviceForPlay();
-  if (rows == m_queue && m_queueTrack == m_trackUri && m_queueDevice == device)
+  if (rows == m_queue && m_queueTrack == m_trackUri && m_queueDevice == device && m_queuePartial == partial)
     return;
   m_queue = std::move(rows);
+  m_queuePartial = partial;
   m_queueTrack = m_trackUri;
   m_queueDevice = device;
   ++m_queueRevision;
@@ -1131,7 +1203,7 @@ bool Player::queueEditingAvailable() const {
 }
 
 QString Player::queueEditToken() const {
-  if (!queueEditingAvailable() || !m_trackUri.startsWith("spotify:track:") ||
+  if (m_queuePartial || !queueEditingAvailable() || !m_trackUri.startsWith("spotify:track:") ||
       m_queueTrack != m_trackUri || m_queueDevice.isEmpty() ||
       m_queueDevice != targetDeviceForPlay() || m_queue.size() >= 500 || m_queueCapacityExceeded)
     return {};
@@ -1273,6 +1345,10 @@ void Player::insertInQueue(const QVariantMap &track, int placement) {
     const auto insertions = std::exchange(m_queueInsertions, {});
     if (status != 200 || anchor != m_trackUri || device != targetDeviceForPlay() || localPlayback()) {
       emit message(tr("Não foi possível carregar a fila desta música. Tente novamente."));
+      return;
+    }
+    if (m_queuePartial) {
+      emit message(tr("A fila disponível é parcial. A ordem atual foi preservada."));
       return;
     }
     auto rows = queueForEditing();

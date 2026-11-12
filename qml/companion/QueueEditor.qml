@@ -13,7 +13,8 @@ ColumnLayout {
     property int dragIndex: -1
     property real dragY: 0
     property string loadedToken: ""
-    readonly property bool available: visible && loadedToken !== ""
+    readonly property bool partial: !!(player && player.queuePartial)
+    readonly property bool available: visible && !partial && loadedToken !== ""
     readonly property int rowHeight: 56
 
     function reload() {
@@ -27,7 +28,7 @@ ColumnLayout {
                             queueCover:t.coverUrl || "", external:!!t.mixExternal})
         }
         markedCount = 0
-        if (!tracks.length) editing = false
+        if (!tracks.length || partial) editing = false
     }
 
     function summary(tracks) {
@@ -179,6 +180,14 @@ ColumnLayout {
         cover: editor.player ? editor.player.coverUrl || "" : ""
         highlighted: true
         current: true
+    }
+
+    Label {
+        Layout.fillWidth: true
+        visible: editor.partial
+        color: editor.tone.textSecondary
+        text: qsTr("Fila parcial. A edição requer a ordem completa.")
+        wrapMode: Text.WordWrap
     }
 
     Label {
