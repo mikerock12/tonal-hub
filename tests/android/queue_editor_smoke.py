@@ -101,8 +101,19 @@ tap(wait_for("Limpar fila?", "Cancelar"), "Limpar")
 wait_for("Agora · Mix Fixture 1", "0 mús. · 0 álb. · 0 art. · 0min 0s")
 print("PASS queue summary, drag, batch up/down, removal and clear with current track retained")
 
-adb("shell", "am", "force-stop", PACKAGE)
-adb("shell", "am", "start", "-W", "-n", ACTIVITY, "--ez", "queueEditorFixture", "true",
-    "--ez", "queueLongFixture", "true")
+def launch_long_queue(*extras):
+    adb("shell", "am", "force-stop", PACKAGE)
+    adb("shell", "am", "start", "-W", "-n", ACTIVITY, "--ez", "queueEditorFixture", "true",
+        "--ez", "queueLongFixture", "true", *extras)
+
+
+launch_long_queue()
 wait_for("Agora · Faixa de teste 0", "120 mús. · 0 álb. · 0 art. · 6h 0min", "Editar")
-print("PASS 20 observed tracks extended to 120 upcoming tracks")
+print("PASS Android recovered 120 upcoming tracks from the active selection after Spotify omitted the context")
+launch_long_queue("--ez", "queueContextFromPlayer", "true")
+wait_for("Agora · Faixa de teste 0", "120 mús. · 0 álb. · 0 art. · 6h 0min", "Editar")
+print("PASS Android recovered 120 upcoming tracks from fresh player state")
+launch_long_queue("--ez", "queueContextUnknown", "true")
+nodes = wait_for("20 mús. · 0 álb. · 0 art. · 1h 0min", "Fila parcial do Spotify. A ordem atual foi preservada.")
+assert any(matches(node, "Editar") and node.get("enabled") == "false" for node in nodes)
+print("PASS an unverified 20-track window disables editing")

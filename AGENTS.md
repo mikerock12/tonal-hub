@@ -469,3 +469,13 @@ docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no
   Atualizar a edição instalada somente com versão mais nova, instalador oficial,
   tamanho e SHA-256 conferidos. Manter o diretório instalado e reiniciar o
   Tonalify após a instalação. Portátil usa os downloads do portal.
+
+## Contexto da fila no Android 0.15.17
+
+- Ao abrir a fila sem contexto conhecido, consultar o estado do player e
+  conferir a faixa atual. Se o contexto vier ausente, reconciliar a seleção
+  local com a sequência observada. Uma janela de 20 sem contexto verificável
+  é parcial e não pode ser editada. Nenhum comando de áudio nessa leitura.
+- Testar o diálogo sem pré-carregar a fila, com 20 próximas da API e três
+  páginas de playlist. Android versionCode 37. Windows segue 0.15.16 no canal
+  latest. A atualização Android tem tag própria no portal.

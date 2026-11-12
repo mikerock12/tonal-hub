@@ -41,3 +41,8 @@ O resumo considera todas as próximas faixas identificadas. No Android,
 A edição aceita até 500 entradas incluindo a faixa atual. Se a ordem não puder
 ser confirmada, como em uma fila externa embaralhada, o app identifica a fila
 como parcial e impede alterações que descartariam faixas.
+
+No Android 0.15.17, se o estado periódico omitir o contexto, abrir a fila
+consulta a faixa e o contexto atuais. Na ausência de contexto, o app pode
+usar a última seleção local de álbum ou playlist quando ela corresponder à
+sequência observada. Uma janela de 20 faixas sem ordem verificável é parcial.
