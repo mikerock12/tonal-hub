@@ -12,6 +12,9 @@ As entregas pessoais não são releases oficiais do projeto original ou do Spoti
 
 **0.15.16 — Fila de playlists longas no Tonalify e atualização pelo menu Sobre no Windows.**
 
+No Android, a **0.15.17** recupera a fila longa quando o estado de reprodução
+chega sem o contexto da playlist. [APK atualizado](https://softwares.smellsliketech.com.br/download/tonal-android).
+
 Veja quantas músicas, álbuns e artistas vêm a seguir e quanto tempo a fila
 dura. Arraste as músicas ou marque várias para subir, descer e excluir.
 **Adicionar à fila** mantém a sequência em que você adicionou as músicas.

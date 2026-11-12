@@ -10,6 +10,7 @@ import org.json.JSONObject;
 /** Extends Spotify's short queue window with the verified tail of its context. */
 final class ContextQueue {
     record Snapshot(ArrayList<JSONObject> tracks, boolean partial) {}
+    interface Reader { void get(String path, Consumer<JSONObject> success, Consumer<String> failure); }
 
     private String cachedContext = "";
     private long cachedAt;
@@ -20,12 +21,78 @@ final class ContextQueue {
         cachedTracks = null;
     }
 
-    void resolve(SpotifyClient api, String context, boolean shuffled, ArrayList<JSONObject> observed,
+    static String contextUri(JSONObject state) {
+        JSONObject context = state.optJSONObject("context");
+        return context == null || context.isNull("uri") ? "" : canonicalContext(context.optString("uri"));
+    }
+
+    private static boolean collection(String context) {
+        return context.matches("spotify:(album|playlist):[A-Za-z0-9]{22}");
+    }
+
+    private static String canonicalContext(String uri) {
+        if (uri.matches("spotify:user:[^:]+:playlist:[A-Za-z0-9]{22}"))
+            return "spotify:playlist:" + uri.substring(uri.lastIndexOf(':') + 1);
+        return uri.startsWith("spotify:internal:") ? "" : uri;
+    }
+
+    static String selectionUri(String command) {
+        String[] parts = command.split("\\|", 3);
+        String uri = canonicalContext(parts.length == 3 && parts[0].equals("context") ? parts[2] : command);
+        return collection(uri) ? uri : "";
+    }
+
+    void read(Reader api, JSONObject current, String anchor, String context, String selected,
+              boolean shuffled, BooleanSupplier valid, Consumer<Snapshot> done, Consumer<String> error) {
+        String changed = "A música ou o dispositivo mudou. Abra a fila novamente.";
+        Consumer<Snapshot> deliver = snapshot -> {
+            if (valid.getAsBoolean()) done.accept(snapshot);
+            else error.accept(changed);
+        };
+        api.get("me/player/queue", result -> {
+            JSONObject playing = result.optJSONObject("currently_playing");
+            if (playing == null) playing = current;
+            if (!valid.getAsBoolean() || playing == null || !anchor.equals(playing.optString("uri"))) {
+                error.accept(changed);
+                return;
+            }
+            ArrayList<JSONObject> observed = new ArrayList<>();
+            observed.add(playing);
+            for (Object value : MusicStore.values(MusicStore.array(result, "queue")))
+                if (value instanceof JSONObject track) observed.add(track);
+            if (!context.isEmpty()) {
+                resolve(api, context, shuffled, observed, valid, deliver);
+                return;
+            }
+            // The periodic player poll may have no context while Connect keeps playing.
+            // Recover the context on demand, using the last selection only when its order matches.
+            Consumer<Boolean> fromSelection = shuffle -> {
+                if (!valid.getAsBoolean()) { error.accept(changed); return; }
+                if (!collection(selected) || observed.size() < 3)
+                    deliver.accept(new Snapshot(observed, observed.size() >= 21 || collection(selected)));
+                else resolve(api, selected, shuffle, observed, valid, deliver);
+            };
+            api.get("me/player", state -> {
+                if (!valid.getAsBoolean()) { error.accept(changed); return; }
+                JSONObject item = state.optJSONObject("item");
+                if (item != null && !anchor.equals(item.optString("uri"))) {
+                    error.accept(changed);
+                    return;
+                }
+                String live = contextUri(state);
+                boolean liveShuffle = state.optBoolean("shuffle_state", shuffled);
+                if (live.isEmpty()) fromSelection.accept(liveShuffle);
+                else resolve(api, live, liveShuffle, observed, valid, deliver);
+            }, failure -> fromSelection.accept(shuffled));
+        }, error);
+    }
+
+    private void resolve(Reader api, String context, boolean shuffled, ArrayList<JSONObject> observed,
                  BooleanSupplier valid, Consumer<Snapshot> done) {
         boolean album = context.startsWith("spotify:album:");
-        boolean supported = album || context.startsWith("spotify:playlist:");
+        boolean supported = collection(context);
         if (!supported || shuffled) {
-            done.accept(new Snapshot(observed, supported));
+            done.accept(new Snapshot(observed, supported || observed.size() >= 21));
             return;
         }
         if (cachedTracks != null && context.equals(cachedContext) && SystemClock.elapsedRealtime()-cachedAt < 60_000) {
@@ -46,7 +113,7 @@ final class ContextQueue {
 
     private interface PageResult { void accept(ArrayList<JSONObject> rows, boolean complete); }
 
-    private void page(SpotifyClient api, String path, boolean album, JSONObject albumInfo,
+    private void page(Reader api, String path, boolean album, JSONObject albumInfo,
                       ArrayList<JSONObject> rows, int page, BooleanSupplier valid, PageResult done) {
         api.get(path, response -> {
             if (!valid.getAsBoolean()) { done.accept(new ArrayList<>(), false); return; }
@@ -76,15 +143,14 @@ final class ContextQueue {
 
     static Snapshot extend(ArrayList<JSONObject> observed, List<JSONObject> catalog, boolean complete) {
         if (observed.isEmpty()) return new Snapshot(observed,true);
-        String current = observed.get(0).optString("uri");
         int best = -1, suffix = -1, upcoming = observed.size()-1;
         for (int i = 0; i < catalog.size(); i++) {
-            if (!current.equals(catalog.get(i).optString("uri"))) continue;
+            if (!sameTrack(observed.get(0), catalog.get(i))) continue;
             for (int count = Math.min(upcoming,catalog.size()-i-1); count >= 0; count--) {
                 if (count == 0 && upcoming > 0) break;
                 boolean matches = true;
                 for (int j = 0; j < count && matches; j++)
-                    matches = observed.get(observed.size()-count+j).optString("uri").equals(catalog.get(i+1+j).optString("uri"));
+                    matches = sameTrack(observed.get(observed.size()-count+j), catalog.get(i+1+j));
                 if (!matches) continue;
                 if (count > best) {
                     best = count;
@@ -98,5 +164,18 @@ final class ContextQueue {
         ArrayList<JSONObject> tracks = new ArrayList<>(observed.subList(0,Math.min(500,observed.size())));
         tracks.addAll(catalog.subList(suffix,Math.min(catalog.size(),suffix+500-tracks.size())));
         return new Snapshot(tracks,!complete || total > 500);
+    }
+
+    private static boolean sameTrack(JSONObject first, JSONObject second) {
+        String uri = first.optString("uri");
+        String other = second.optString("uri");
+        if (uri.isEmpty() || other.isEmpty()) return false;
+        if (uri.equals(other)) return true;
+        JSONObject linked = first.optJSONObject("linked_from");
+        JSONObject otherLinked = second.optJSONObject("linked_from");
+        return (linked != null && other.equals(linked.optString("uri"))) ||
+               (otherLinked != null && uri.equals(otherLinked.optString("uri"))) ||
+               (linked != null && otherLinked != null && !linked.optString("uri").isEmpty() &&
+                linked.optString("uri").equals(otherLinked.optString("uri")));
     }
 }
