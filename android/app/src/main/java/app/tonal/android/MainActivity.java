@@ -16,6 +16,7 @@ import java.util.function.Consumer;
 import org.json.*;
 
 public final class MainActivity extends Activity {
+    private final AppUpdate updates = new AppUpdate(this);
     // Cores do tema ativo (AppTheme); o shell lê Ui.* ao ser construído.
     private LinearLayout root,body;
     private TextView status,now,byline,time;
@@ -78,7 +79,7 @@ public final class MainActivity extends Activity {
         api=new SpotifyClient(this);engineApi=new SpotifyClient(this,true);ui=new Ui(this);artwork=new Artwork(this);jamClient=new JamClient(this,api);
         diagnostics=BuildConfig.DEBUG&&(getIntent().getBooleanExtra("benchmark",false)||getIntent().getBooleanExtra("selfTest",false)||getIntent().getBooleanExtra("streamingBenchmark",false)||getIntent().getBooleanExtra("catalogTest",false));
         buildShell();catalog=new CatalogScreen(this,api,artwork,body);
-        setContentView(root);if(BuildConfig.DEBUG&&getIntent().getBooleanExtra("songPageFixture",false))handler.post(()->DebugSongPage.show(this,api));if(BuildConfig.DEBUG&&getIntent().getBooleanExtra("openSetlists",false))handler.post(()->DebugSongPage.setlists(this,api));if(BuildConfig.DEBUG&&(getIntent().getBooleanExtra("mixUiFixture",false)||queueFixture()))handler.post(this::mixUiFixture);if(BuildConfig.DEBUG&&getIntent().getBooleanExtra("openTextPlaylist",false))handler.post(()->TextPlaylistWizard.show(this,api));NativeBridge.listeners.add(statusListener);NativeBridge.commandListeners.add(commandObserver);NativeBridge.progressObserver=progressObserver;NativeBridge.queueEditObserver=queueEditObserver;home();String literal=getIntent().getStringExtra("literalQuery");if(literal!=null)catalog.search(literal);
+        setContentView(root);updates.onOpen();if(BuildConfig.DEBUG&&getIntent().getBooleanExtra("songPageFixture",false))handler.post(()->DebugSongPage.show(this,api));if(BuildConfig.DEBUG&&getIntent().getBooleanExtra("openSetlists",false))handler.post(()->DebugSongPage.setlists(this,api));if(BuildConfig.DEBUG&&(getIntent().getBooleanExtra("mixUiFixture",false)||queueFixture()))handler.post(this::mixUiFixture);if(BuildConfig.DEBUG&&getIntent().getBooleanExtra("openTextPlaylist",false))handler.post(()->TextPlaylistWizard.show(this,api));NativeBridge.listeners.add(statusListener);NativeBridge.commandListeners.add(commandObserver);NativeBridge.progressObserver=progressObserver;NativeBridge.queueEditObserver=queueEditObserver;home();String literal=getIntent().getStringExtra("literalQuery");if(literal!=null)catalog.search(literal);
         if(Build.VERSION.SDK_INT>=33)getOnBackInvokedDispatcher().registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT,()->{if(!catalog.back())leaveToHub();});
         if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=android.content.pm.PackageManager.PERMISSION_GRANTED)requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},10);
         loadDsp();
@@ -160,7 +161,7 @@ public final class MainActivity extends Activity {
         boolean fromPlayer=getIntent().getBooleanExtra("queueContextFromPlayer",false);
         boolean unknown=getIntent().getBooleanExtra("queueContextUnknown",false);
         ArrayList<JSONObject> catalog=new ArrayList<>();
-        for(int i=0;i<121;i++)catalog.add(new JSONObject().put("uri",String.format(Locale.ROOT,"spotify:track:%022d",i==70?0:i))
+        for(int i=0;i<500;i++)catalog.add(new JSONObject().put("uri",String.format(Locale.ROOT,"spotify:track:%022d",i==70?0:i))
             .put("name","Faixa de teste "+i).put("duration_ms",180000));
         orderedQueue.clear();
         currentTrack=catalog.get(0);
@@ -190,6 +191,15 @@ public final class MainActivity extends Activity {
             handler.post(()->ready.accept(response));
         };
         showQueue();
+        if(!unknown)handler.postDelayed(()->{
+            ContextQueue.Reader available=queueTestReader;
+            queueTestReader=(path,ready,error)->{
+                if(path.startsWith("playlists/")||path.contains("/v1/playlists/"))handler.post(()->error.accept("HTTP 503"));
+                else available.get(path,ready,error);
+            };
+            contextQueue.expireCatalog();
+            queueRevision++;
+        },3500);
     }
     View toolbar(Runnable leave,Runnable favorites){return toolbar(leave,favorites,()->MusicPanel.showStats(this,api),()->MusicPanel.showBackup(this,api));}
     View toolbar(Runnable leave,Runnable favorites,Runnable stats,Runnable backup){
@@ -223,13 +233,14 @@ public final class MainActivity extends Activity {
     void restyle(){CharSequence title=now.getText(),artist=byline.getText();android.graphics.drawable.Drawable cover=nowCover.getDrawable();getWindow().setStatusBarColor(Ui.BG);getWindow().setNavigationBarColor(Ui.BG);tabs.clear();CatalogScreen old=catalog;buildShell();catalog=new CatalogScreen(this,api,artwork,body);old.close();setContentView(root);home();now.setText(title);byline.setText(artist);if(cover!=null)nowCover.setImageDrawable(cover);updateTransport();}
     void selectTab(String page){int active=page.equals("search")?1:page.equals("library")?2:0;for(int i=0;i<tabs.size();i++)tabs.get(i).setTextColor(i==active?Ui.TEXT:Ui.MUTED);}
     private void account(){
-        String[] names=api.loggedIn()?new String[]{"Atualizar autorização da biblioteca","Conectar motor Spotify","Áudio","Temas","Abrir arquivo de áudio","Testar áudio por 60 segundos","Refazer autorização do áudio","Parar motor de áudio","Sair do Spotify"}:new String[]{"Entrar com Spotify","Áudio","Temas","Abrir arquivo de áudio","Testar áudio por 60 segundos"};
+        String[] names=api.loggedIn()?new String[]{"Atualizar autorização da biblioteca","Conectar motor Spotify","Áudio","Temas","Abrir arquivo de áudio","Testar áudio por 60 segundos","Refazer autorização do áudio","Parar motor de áudio","Sobre","Sair do Spotify"}:new String[]{"Entrar com Spotify","Áudio","Temas","Abrir arquivo de áudio","Testar áudio por 60 segundos","Sobre"};
         new AlertDialog.Builder(this).setTitle("Tonalify • "+BuildConfig.VERSION_NAME).setItems(names,(dialog,index)->{switch(names[index]){
             case "Entrar com Spotify":case "Atualizar autorização da biblioteca":login();break;
             case "Conectar motor Spotify":connectSpotify();break;case "Áudio":audioSettings();break;case "Temas":AppTheme.pick(this,this::restyle);break;case "Abrir arquivo de áudio":openFile();break;
             case "Testar áudio por 60 segundos":api.worker.execute(()->{try{File test=copyAsset();runOnUiThread(()->playLocal(test,"Ensaio de áudio Vorbis"));}catch(IOException e){runOnUiThread(()->notice(e.getMessage()));}});break;
             case "Refazer autorização do áudio":stopService(new Intent(this,PlaybackService.class));engineApi.logout();clearAudioCredentials();connectSpotify();break;
             case "Parar motor de áudio":pendingPlayback=null;connecting=false;stopService(new Intent(this,PlaybackService.class));notice("Motor parado");break;
+            case "Sobre":updates.about();break;
             case "Sair do Spotify":pendingPlayback=null;connecting=false;stopService(new Intent(this,PlaybackService.class));api.logout();engineApi.logout();clearAudioCredentials();contextQueue.clear();queueContext="";queueRevision++;local=false;currentTrack=null;currentUri="";now.setText("Escolha sua música");byline.setText("Spotify e arquivos locais");nowCover.setImageDrawable(new Ui.Symbol("image",Ui.MUTED));home();break;
         }}).setNegativeButton("Fechar",null).show();
     }
@@ -244,6 +255,7 @@ public final class MainActivity extends Activity {
         for(JSONObject metadata:tracks)MusicStore.get(this).remember(MusicStore.spotifyTrack(metadata));
         orderedQueue.clear();
         orderedCursor=0;
+        contextQueue.clear();
         queueRevision++;
         ArrayList<String> uris=new ArrayList<>();
         int selectedIndex=0;
@@ -278,6 +290,7 @@ public final class MainActivity extends Activity {
 
     void replaceKnownQueue(ArrayList<JSONObject> rows){
         cancelMix();
+        contextQueue.clear();
         orderedQueue.clear();
         orderedQueue.addAll(rows);
         orderedCursor=0;
@@ -368,7 +381,7 @@ public final class MainActivity extends Activity {
     void playPersonalMix(JSONArray values,boolean random,boolean discovery){ArrayList<JSONObject> tracks=new ArrayList<>();for(Object v:MusicStore.values(values)){JSONObject t=(JSONObject)v;if(t.optString("provider").equals("Local")){if(tracks.isEmpty()){playLocal(new File(t.optString("localFile")),t.optString("title"));return;}continue;}if(!t.optString("provider").equals("Spotify"))continue;JSONObject item=new JSONObject();MusicStore.put(item,"uri",t.optString("uri"));MusicStore.put(item,"name",t.optString("title"));MusicStore.put(item,"duration_ms",t.optInt("durationMs"));JSONObject artist=new JSONObject();MusicStore.put(artist,"name",t.optString("artist"));MusicStore.put(artist,"id",t.optString("artistId"));MusicStore.put(item,"artists",new JSONArray().put(artist));JSONObject album=new JSONObject();MusicStore.put(album,"name",t.optString("album"));MusicStore.put(album,"id",t.optString("albumId"));if(t.optInt("year")>0)MusicStore.put(album,"release_date",String.valueOf(t.optInt("year")));JSONObject img=new JSONObject();MusicStore.put(img,"url",t.optString("image"));MusicStore.put(album,"images",new JSONArray().put(img));MusicStore.put(item,"album",album);tracks.add(item);}if(!tracks.isEmpty()){if(random||discovery)playMix(tracks,0,random,discovery,false);else playTracks(tracks,0,"",tracks.get(0));}}
     void trackPersonalMenu(JSONObject track){MusicPanel.trackMenu(this,api,track);}
     private void setTrack(JSONObject item){if(!item.optString("uri").equals(currentUri)){seekGuardUntil=0;lastEnginePositionAt=0;queueRevision++;}if(!item.optString("uri").equals(currentUri)&&!orderedQueue.isEmpty()){int found=-1;for(int i=orderedCursor;i<orderedQueue.size();i++)if(item.optString("uri").equals(orderedQueue.get(i).optString("uri"))){found=i;break;}if(found<0){if(jamClient==null||!jamClient.active()){orderedQueue.clear();orderedCursor=0;}}else orderedCursor=found;}MusicStore journal=MusicStore.get(this);journal.select(MusicStore.spotifyTrack(item));if(musicMetadata==null){if(journal.metadata!=null)journal.metadata.close();musicMetadata=new MusicMetadata(journal,api);journal.metadata=musicMetadata;}musicMetadata.enrich(journal.current);currentTrack=item;currentUri=item.optString("uri");if(!currentUri.isEmpty()&&!currentUri.equals(queriedLikeUri)){queriedLikeUri=currentUri;String requested=currentUri;api.get("me/library/contains?uris="+SpotifyClient.encode(requested),r->{JSONArray items=r.optJSONArray("items");if(requested.equals(currentUri)&&items!=null&&items.length()>0)MusicStore.get(this).favorite(MusicStore.spotifyTrack(item),items.optBoolean(0));},error->{});}now.setText(item.optString("name"));byline.setText(CatalogScreen.artists(item));durationMs=item.optInt("duration_ms");artwork.load(nowCover,journal.current.optString("image"));}
-    private void updatePlayer(JSONObject json){if(local||!NativeBridge.ready)return;JSONObject device=json.optJSONObject("device");if(engineDeviceId.isEmpty())try{engineDeviceId=new String(java.nio.file.Files.readAllBytes(new File(new File(getFilesDir(),SpotifyClient.ENGINE_CACHE),"device-id").toPath()),StandardCharsets.UTF_8).trim();}catch(IOException ignored){}if(device==null||engineDeviceId.isEmpty()||!engineDeviceId.equals(device.optString("id")))return;JSONObject item=json.optJSONObject("item");if(item!=null){if(!expectedUri.isEmpty()){if(!expectedUri.equals(item.optString("uri"))&&SystemClock.elapsedRealtime()<expectedUntil)return;expectedUri="";}String confirmedContext=ContextQueue.contextUri(json);boolean confirmedShuffle=json.optBoolean("shuffle_state");if(!confirmedContext.equals(queueContext)||confirmedShuffle!=queueShuffled){queueContext=confirmedContext;queueShuffled=confirmedShuffle;if(orderedQueue.isEmpty())queueRevision++;}if(!item.optString("uri").equals(currentUri)||currentTrack==null||Artwork.url(currentTrack).isEmpty())setTrack(item);int remote=json.optInt("progress_ms");long now=SystemClock.elapsedRealtime();if((lastEnginePositionAt==0||now-lastEnginePositionAt>10000)&&(now>=seekGuardUntil||Math.abs(remote-seekTarget)<=SEEK_TOLERANCE_MS)){positionMs=PositionSync.reconcile(currentPosition(),remote,clockPlaying);positionAt=now;}else{positionMs=currentPosition();positionAt=now;}clockPlaying=NativeBridge.playing&&json.optBoolean("is_playing");durationMs=item.optInt("duration_ms");}}
+    private void updatePlayer(JSONObject json){if(local||!NativeBridge.ready)return;JSONObject device=json.optJSONObject("device");if(engineDeviceId.isEmpty())try{engineDeviceId=new String(java.nio.file.Files.readAllBytes(new File(new File(getFilesDir(),SpotifyClient.ENGINE_CACHE),"device-id").toPath()),StandardCharsets.UTF_8).trim();}catch(IOException ignored){}if(device==null||engineDeviceId.isEmpty()||!engineDeviceId.equals(device.optString("id")))return;JSONObject item=json.optJSONObject("item");if(item!=null){if(!expectedUri.isEmpty()){if(!expectedUri.equals(item.optString("uri"))&&SystemClock.elapsedRealtime()<expectedUntil)return;expectedUri="";}String confirmedContext=ContextQueue.contextUri(json);boolean confirmedShuffle=json.optBoolean("shuffle_state");if(!confirmedContext.isEmpty()&&!confirmedContext.equals(queueContext)){queueContext=confirmedContext;if(orderedQueue.isEmpty())queueRevision++;}if(json.has("shuffle_state")&&confirmedShuffle!=queueShuffled){queueShuffled=confirmedShuffle;if(orderedQueue.isEmpty())queueRevision++;}if(!item.optString("uri").equals(currentUri)||currentTrack==null||Artwork.url(currentTrack).isEmpty())setTrack(item);int remote=json.optInt("progress_ms");long now=SystemClock.elapsedRealtime();if((lastEnginePositionAt==0||now-lastEnginePositionAt>10000)&&(now>=seekGuardUntil||Math.abs(remote-seekTarget)<=SEEK_TOLERANCE_MS)){positionMs=PositionSync.reconcile(currentPosition(),remote,clockPlaying);positionAt=now;}else{positionMs=currentPosition();positionAt=now;}clockPlaying=NativeBridge.playing&&json.optBoolean("is_playing");durationMs=item.optInt("duration_ms");}}
     private static void changedText(TextView view,String value){if(!value.contentEquals(view.getText()))view.setText(value);}
     int currentPosition(){return (int)Math.min(durationMs,positionMs+(clockPlaying?SystemClock.elapsedRealtime()-positionAt:0));}
     private void updateTransport(){if(favoriteButton!=null){boolean liked=MusicStore.get(this).liked(MusicStore.get(this).current);String label=liked?"Remover das favoritas":"Favoritar música";if(!label.contentEquals(favoriteButton.getContentDescription())){favoriteButton.setContentDescription(label);favoriteButton.setImageDrawable(new Ui.Symbol(liked?"heart_filled":"heart",liked?Ui.BLUE:Ui.TEXT));}}if(toggle!=null){String description=NativeBridge.playing?"Pausar":"Reproduzir";if(!description.contentEquals(toggle.getContentDescription())){toggle.setContentDescription(description);ui.setTransport(toggle,NativeBridge.playing);}}if(progress!=null)progress.setProgress(durationMs>0?(int)(currentPosition()*1000L/durationMs):0);if(time!=null&&diagnostics){long frames=NativeBridge.audio.frames.get(),blocks=NativeBridge.audio.blocks.get();double micros=blocks==0?0:NativeBridge.audio.dspNanos.get()/1000.0/blocks;changedText(time,String.format(java.util.Locale.ROOT,"PCM: %,d frames · DSP %.0f µs/bloco · underruns %d",frames,micros,NativeBridge.audio.underruns()));}}

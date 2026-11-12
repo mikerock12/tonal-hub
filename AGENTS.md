@@ -479,3 +479,15 @@ docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no
 - Testar o diálogo sem pré-carregar a fila, com 20 próximas da API e três
   páginas de playlist. Android versionCode 37. Windows segue 0.15.16 no canal
   latest. A atualização Android tem tag própria no portal.
+
+## Fila e atualização 0.16.0
+
+- Até 500 entradas incluindo a faixa atual. Preservar fila longa confirmada
+  se a janela parcial coincidir e o contexto e a faixa atual continuarem
+  válidos. Bloquear edição de resultado parcial. O comando Windows
+  playqueue é para iniciar uma seleção, editqueue não toca o decoder.
+- Publicar a nota resumida por tag no portal e junto dos binários. Mostrar
+  nota antes da sugestão de download. Consulta automática em segundo plano
+  sem usar o motor de áudio. Instalar após ação do usuário e verificar
+  tamanho e SHA-256. No Android, confirmação e abertura pelo instalador
+  do sistema. VersionCode 38.

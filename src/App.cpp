@@ -92,8 +92,7 @@ App::App(QObject *parent)
         if (index<0||index>=tracks.size()) return;
         const auto t=tracks[index].toMap();
         if(t["provider"]=="Local") {m_audio->openFile(QUrl(t["localFile"].toString()));return;}
-        QStringList uris;int offset=0;for(int i=0;i<tracks.size();i++){auto uri=tracks[i].toMap()["uri"].toString();if(uri.startsWith("spotify:track:")){if(i==index)offset=uris.size();uris<<uri;}}
-        if(!uris.isEmpty())m_player->playUris(uris,offset);
+        m_player->playSavedQueue(tracks,index);
     });
     connect(m_music,&MusicCompanion::spotifyFavoriteRequested,this,[this](const QVariantMap &t,bool on) {
         const auto done=[this,t,on](int status,const QJsonDocument &) {if(status>=200&&status<300){m_music->setFavorite(t,on);m_player->refresh();}else emit m_music->message("Não foi possível atualizar as Músicas Curtidas no Spotify. Confira as permissões da conta.");};

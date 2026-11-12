@@ -108,11 +108,12 @@ def launch_long_queue(*extras):
 
 
 launch_long_queue()
-wait_for("Agora · Faixa de teste 0", "120 mús. · 0 álb. · 0 art. · 6h 0min", "Editar")
-print("PASS Android recovered 120 upcoming tracks from the active selection after Spotify omitted the context")
+wait_for("Agora · Faixa de teste 0", "499 mús. · 0 álb. · 0 art. · 24h 57min", "Editar")
+wait_for("499 mús. · 0 álb. · 0 art. · 24h 57min", "Fila parcial do Spotify. A ordem atual foi preservada.")
+print("PASS Android retained 499 upcoming tracks after a catalog failure")
 launch_long_queue("--ez", "queueContextFromPlayer", "true")
-wait_for("Agora · Faixa de teste 0", "120 mús. · 0 álb. · 0 art. · 6h 0min", "Editar")
-print("PASS Android recovered 120 upcoming tracks from fresh player state")
+wait_for("Agora · Faixa de teste 0", "499 mús. · 0 álb. · 0 art. · 24h 57min", "Editar")
+print("PASS Android recovered 499 upcoming tracks from fresh player state")
 launch_long_queue("--ez", "queueContextUnknown", "true")
 nodes = wait_for("20 mús. · 0 álb. · 0 art. · 1h 0min", "Fila parcial do Spotify. A ordem atual foi preservada.")
 assert any(matches(node, "Editar") and node.get("enabled") == "false" for node in nodes)

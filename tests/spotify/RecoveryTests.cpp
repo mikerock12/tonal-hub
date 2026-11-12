@@ -1321,7 +1321,9 @@ public:
     QJsonObject metadata{{"version","v0.15.16"},{"name",filename},{"sha256",QString(64,'a')},{"size",1000},
                          {"url","https://github.com/mikerock12/tonal-hub/releases/download/v0.15.16/"+filename}};
     auto parse = [&]{ return DesktopUpdate::parseRelease(QJsonDocument(metadata).toJson()); };
-    require(parse().version=="0.15.16"&&parse().size==1000&&parse().sha256.size()==32,"portal installer metadata rejected");
+    metadata["notes"]="Fila de até 500 músicas.";
+    require(parse().version=="0.15.16"&&parse().size==1000&&parse().sha256.size()==32&&
+            parse().notes=="Fila de até 500 músicas.","portal installer metadata rejected");
     require(DesktopUpdate::newer("0.15.16","0.15.9")&&!DesktopUpdate::newer("0.15.16","0.15.16")&&
             !DesktopUpdate::newer("0.15.15","0.15.16"),"desktop update version comparison is unsafe");
     require(DesktopUpdate::allowedAssetRedirect(QUrl("https://release-assets.githubusercontent.com/a?key=value"))&&
@@ -1371,15 +1373,15 @@ public:
       }
       require(request.url().path()=="/v1/playlists/playlist-fixture/items","long queue used the wrong playlist");
       const auto start=50*pages++;
-      for(int i=start;i<qMin(start+50,120);++i)items.append(QJsonObject{{"item",track(i)}});
-      const auto next=start<100?QString("https://api.spotify.com/v1/playlists/playlist-fixture/items?offset=%1").arg(start+50):QString();
+      for(int i=start;i<qMin(start+50,499);++i)items.append(QJsonObject{{"item",track(i)}});
+      const auto next=start<450?QString("https://api.spotify.com/v1/playlists/playlist-fixture/items?offset=%1").arg(start+50):QString();
       return Response{200,QJsonDocument(QJsonObject{{"items",items},{"next",next}}).toJson()};
     };
     done=-1;player.refreshQueue();
-    require(spin([&]{return done>=0;})&&done==200&&pages==3&&!player.queuePartial()&&player.queue().size()==120,
-            "120-track playlist truncated to the Connect window");
+    require(spin([&]{return done>=0;})&&done==200&&pages==10&&!player.queuePartial()&&player.queue().size()==499,
+            "500-entry queue truncated to the Connect window");
     require(player.queue().first().toMap()["uri"]=="spotify:track:source999"&&
-            player.queue().last().toMap()["uri"]=="spotify:track:source119","long queue lost the manual addition or catalog tail");
+            player.queue().last().toMap()["uri"]=="spotify:track:source498","long queue lost the manual addition or catalog tail");
     player.m_shuffle=true;
     done=-1;player.refreshQueue();
     require(spin([&]{return done>=0;})&&player.queuePartial()&&player.queue().size()==20&&

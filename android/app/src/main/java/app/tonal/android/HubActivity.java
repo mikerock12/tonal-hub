@@ -8,6 +8,7 @@ import android.widget.*;
 
 /** A launcher only: this process never loads the audio libraries or Spotify credentials. */
 public final class HubActivity extends Activity {
+    private final AppUpdate updates = new AppUpdate(this);
     @Override public void onCreate(Bundle saved){
         super.onCreate(saved);Ui ui=new Ui(this);AppTheme.apply(this);getWindow().setStatusBarColor(Ui.BG);getWindow().setNavigationBarColor(Ui.BG);
         LinearLayout page=ui.column();page.setBackgroundColor(Ui.BG);page.setGravity(Gravity.CENTER_VERTICAL);ui.pad(page,24,24);
@@ -16,7 +17,9 @@ public final class HubActivity extends Activity {
         page.addView(ui.action("Tonalify • Spotify e arquivos locais",()->open(this,MainActivity.class,"")));ui.space(page,12);
         page.addView(ui.action("IndieTonal • outras fontes e shows ao vivo",()->open(this,IndieActivity.class,"")));ui.space(page,24);
         page.addView(ui.text("Audius · MusicBrainz · Live Music Archive\nJamendo com client ID · sua biblioteca OpenSubsonic\n\nVersão "+BuildConfig.VERSION_NAME+" • instalação local",13,Ui.MUTED));
+        page.addView(ui.action("Sobre", updates::about));
         setContentView(page);
+        updates.onOpen();
     }
     static void open(Activity from,Class<?> target,String query){
         if(target==MainActivity.class)from.sendBroadcast(new Intent("app.tonal.android.PAUSE_INDIE").setPackage(from.getPackageName()));

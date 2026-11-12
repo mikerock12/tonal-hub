@@ -9,6 +9,7 @@
 #include <QLoggingCategory>
 #include <QProcessEnvironment>
 #include <QRegularExpression>
+#include <algorithm>
 #include <QSettings>
 #include <QStandardPaths>
 #include <QSysInfo>
@@ -192,6 +193,7 @@ void LibrespotProcess::start() {
   m_restartTimer.stop();
   m_restartRequested = false;
   m_queueControlReady = false;
+  m_queueLoadReady = false;
 
   if (m_exe.isEmpty() || !QFileInfo::exists(m_exe))
     m_exe = findExecutable();
@@ -272,6 +274,15 @@ bool LibrespotProcess::writeQueueEdit(quint64 serial, const QStringList &uris) {
     return false;
   const auto command = "editqueue|" + QByteArray::number(serial) + "|" +
                        uris.join(QLatin1Char(',')).toLatin1() + "\n";
+  return m_process.write(command) == command.size();
+}
+
+bool LibrespotProcess::playQueue(const QStringList &uris) {
+  static const QRegularExpression valid("^spotify:track:[A-Za-z0-9]{22}$");
+  if (!m_queueLoadReady || !queueEditingAvailable() || uris.isEmpty() || uris.size() > 500 ||
+      !std::all_of(uris.cbegin(), uris.cend(), [](const QString &uri){ return valid.match(uri).hasMatch(); }))
+    return false;
+  const auto command = "playqueue|" + uris.join(QLatin1Char(',')).toLatin1() + "\n";
   return m_process.write(command) == command.size();
 }
 
@@ -458,8 +469,9 @@ void LibrespotProcess::onReadyRead() {
 }
 
 void LibrespotProcess::handleLine(const QString &line) {
-  if (line == QLatin1String("tonal-queue-ready")) {
+  if (line == QLatin1String("tonal-queue-ready") || line == QLatin1String("tonal-queue-ready-v2")) {
     m_queueControlReady = true;
+    m_queueLoadReady = line.endsWith("-v2");
     emit stateChanged();
     return;
   }

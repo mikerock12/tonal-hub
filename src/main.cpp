@@ -80,6 +80,8 @@ int main(int argc, char *argv[])
         QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
                          &app, [] { QCoreApplication::exit(-1); }, Qt::QueuedConnection);
         engine.loadFromModule("Tonal", "Main");
+        if (!isolated)
+            QTimer::singleShot(1800, &desktopUpdate, [&desktopUpdate]{ desktopUpdate.check(true); });
         QObject::connect(&instance,&QLocalServer::newConnection,&app,[&]{
             while(auto *socket=instance.nextPendingConnection()){
                 auto buffer=std::make_shared<QByteArray>();

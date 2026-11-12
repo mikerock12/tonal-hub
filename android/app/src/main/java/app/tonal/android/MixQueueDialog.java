@@ -171,13 +171,12 @@ final class MixQueueDialog {
 
     private void load(int mode){
         int request=++serial;
+        snapshotRevision=host.queueRevision();
         mixer.cancel();
         prepared=null;
         preparing=false;
-        current=null;
-        entries.clear();
-        partial=false;
         editing=false;
+        partial=true;
         showStatus("Carregando a fila…");
         render();
         host.queueSnapshot(snapshot->{
@@ -185,6 +184,8 @@ final class MixQueueDialog {
             if(!dialog.isShowing()||request!=serial)return;
             snapshotRevision=host.queueRevision();
             partial=snapshot.partial();
+            current=null;
+            entries.clear();
             if(!tracks.isEmpty()){
                 current=tracks.get(0);
                 for(int i=1;i<tracks.size();i++)entries.add(new Entry(tracks.get(i)));

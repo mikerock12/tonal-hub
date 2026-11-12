@@ -15,11 +15,17 @@ final class ContextQueue {
     private String cachedContext = "";
     private long cachedAt;
     private ArrayList<JSONObject> cachedTracks;
+    private Snapshot confirmed;
+    private String confirmedAnchor = "", confirmedSource = "";
 
     void clear() {
         cachedContext = "";
         cachedTracks = null;
+        confirmed = null;
+        confirmedAnchor = confirmedSource = "";
     }
+
+    void expireCatalog() { cachedTracks = null; }
 
     static String contextUri(JSONObject state) {
         JSONObject context = state.optJSONObject("context");
@@ -45,9 +51,21 @@ final class ContextQueue {
     void read(Reader api, JSONObject current, String anchor, String context, String selected,
               boolean shuffled, BooleanSupplier valid, Consumer<Snapshot> done, Consumer<String> error) {
         String changed = "A música ou o dispositivo mudou. Abra a fila novamente.";
+        String[] source = {collection(context) ? context : selected};
+        boolean[] currentShuffle = {shuffled};
         Consumer<Snapshot> deliver = snapshot -> {
-            if (valid.getAsBoolean()) done.accept(snapshot);
-            else error.accept(changed);
+            if (!valid.getAsBoolean()) { error.accept(changed); return; }
+            if (!snapshot.partial() && !source[0].isEmpty() && snapshot.tracks().size() > 21) {
+                confirmed = snapshot;
+                confirmedAnchor = anchor;
+                confirmedSource = source[0];
+            } else if (snapshot.partial() && !currentShuffle[0] && confirmed != null &&
+                       anchor.equals(confirmedAnchor) && source[0].equals(confirmedSource) &&
+                       samePrefix(snapshot.tracks(), confirmed.tracks())) {
+                done.accept(new Snapshot(new ArrayList<>(confirmed.tracks()), true));
+                return;
+            }
+            done.accept(snapshot);
         };
         api.get("me/player/queue", result -> {
             JSONObject playing = result.optJSONObject("currently_playing");
@@ -60,7 +78,7 @@ final class ContextQueue {
             observed.add(playing);
             for (Object value : MusicStore.values(MusicStore.array(result, "queue")))
                 if (value instanceof JSONObject track) observed.add(track);
-            if (!context.isEmpty()) {
+            if (collection(context)) {
                 resolve(api, context, shuffled, observed, valid, deliver);
                 return;
             }
@@ -81,10 +99,21 @@ final class ContextQueue {
                 }
                 String live = contextUri(state);
                 boolean liveShuffle = state.optBoolean("shuffle_state", shuffled);
+                currentShuffle[0] = liveShuffle;
                 if (live.isEmpty()) fromSelection.accept(liveShuffle);
-                else resolve(api, live, liveShuffle, observed, valid, deliver);
+                else {
+                    source[0] = live;
+                    resolve(api, live, liveShuffle, observed, valid, deliver);
+                }
             }, failure -> fromSelection.accept(shuffled));
         }, error);
+    }
+
+    private static boolean samePrefix(List<JSONObject> observed, List<JSONObject> previous) {
+        if (observed.size() < 3 || observed.size() > previous.size()) return false;
+        for (int i = 0; i < observed.size(); ++i)
+            if (!sameTrack(observed.get(i), previous.get(i))) return false;
+        return true;
     }
 
     private void resolve(Reader api, String context, boolean shuffled, ArrayList<JSONObject> observed,
@@ -138,7 +167,7 @@ final class ContextQueue {
             if (!next.isEmpty() && !next.equals(path) && page < 39 && rows.size() < 2000)
                 page(api,next,album,metadata,rows,page+1,valid,done);
             else done.accept(rows,next.isEmpty());
-        },error -> done.accept(new ArrayList<>(),false));
+        },error -> done.accept(rows,false));
     }
 
     static Snapshot extend(ArrayList<JSONObject> observed, List<JSONObject> catalog, boolean complete) {
