@@ -10,10 +10,10 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
-**0.15.16 — Fila de playlists longas no Tonalify e atualização pelo menu Sobre no Windows.**
+**0.16.0 — Fila de até 500 músicas e atualização pelo menu Sobre.**
 
-No Android, a **0.15.17** recupera a fila longa quando o estado de reprodução
-chega sem o contexto da playlist. [APK atualizado](https://softwares.smellsliketech.com.br/download/tonal-android).
+O limite conta a faixa atual. O Windows e o Android consultam o portal ao
+abrir e exibem as mudanças antes de oferecer o download.
 
 Veja quantas músicas, álbuns e artistas vêm a seguir e quanto tempo a fila
 dura. Arraste as músicas ou marque várias para subir, descer e excluir.

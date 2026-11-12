@@ -239,6 +239,14 @@ ApplicationWindow {
             wrapMode: Text.WordWrap
             text: desktopUpdate.status
         }
+        Label {
+            width: parent.width
+            visible: !!desktopUpdate.releaseNotes
+            color: Theme.textPrimary
+            wrapMode: Text.WordWrap
+            textFormat: Text.PlainText
+            text: desktopUpdate.releaseNotes
+        }
         Button {
             visible: !desktopUpdate.installed && !!desktopUpdate.availableVersion
             text: qsTr("Abrir downloads do portal")
@@ -258,6 +266,44 @@ ApplicationWindow {
                 onClicked: desktopUpdate.ready ? desktopUpdate.install() : desktopUpdate.download()
             }
         ]
+    }
+    Rectangle {
+        id: updateNotice
+        visible: false
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.margins: 22
+        z: 20
+        width: 388
+        height: updateText.implicitHeight + updateActions.height + 38
+        radius: 10
+        color: Theme.elevated
+        border.color: Theme.divider
+        Column {
+            anchors.fill: parent
+            anchors.margins: 14
+            spacing: 10
+            Label {
+                id: updateText
+                width: parent.width
+                wrapMode: Text.WordWrap
+                color: Theme.textPrimary
+                textFormat: Text.PlainText
+                text: qsTr("Versão %1 disponível").arg(desktopUpdate.availableVersion) + "\n" + desktopUpdate.releaseNotes
+                maximumLineCount: 6
+                elide: Text.ElideRight
+            }
+            Row {
+                id: updateActions
+                spacing: 10
+                Button { text: qsTr("Ver atualização"); onClicked: { updateNotice.visible = false; aboutDialog.open() } }
+                Button { text: qsTr("Agora não"); onClicked: updateNotice.visible = false }
+            }
+        }
+        Connections {
+            target: desktopUpdate
+            function onUpdateAvailable() { updateNotice.visible = !aboutDialog.opened }
+        }
     }
     Button {
         visible: !App.auth.authenticated && !App.audio.localActive

@@ -11,6 +11,7 @@
 #include <QSet>
 
 #include <climits>
+#include <algorithm>
 #include <utility>
 
 namespace {
@@ -292,7 +293,8 @@ void Player::applyState(const QJsonObject &obj, bool acceptVolume) {
   const QJsonObject device = obj.value(QStringLiteral("device")).toObject();
   const QJsonObject context = obj.value(QStringLiteral("context")).toObject();
   m_isPlaying = obj.value(QStringLiteral("is_playing")).toBool();
-  m_shuffle = obj.value(QStringLiteral("shuffle_state")).toBool();
+  if (obj.contains(QStringLiteral("shuffle_state")))
+    m_shuffle = obj.value(QStringLiteral("shuffle_state")).toBool();
   // Repetição: logo depois de uma troca do usuário ou de uma nova seleção (que
   // o librespot zera até reapplyRepeat chegar), um GET antigo não manda.
   const QString remoteRepeat =
@@ -302,9 +304,13 @@ void Player::applyState(const QJsonObject &obj, bool acceptVolume) {
   if (!repeatSettling && !(selectionLoading && m_repeatWanted != QLatin1String("off")))
     m_repeatMode = m_repeatWanted = remoteRepeat;
   const auto previousContext = m_contextUri;
-  m_contextUri = context.value(QStringLiteral("uri")).toString();
+  const auto reportedContext = context.value(QStringLiteral("uri")).toString();
   const QString deviceId = device.value(QStringLiteral("id")).toString();
   const bool volumeRouteChanged = deviceId != m_activeDeviceId;
+  if (!reportedContext.isEmpty() || volumeRouteChanged)
+    m_contextUri = reportedContext;
+  if (m_contextUri.startsWith("spotify:user:") && m_contextUri.contains(":playlist:"))
+    m_contextUri = "spotify:playlist:" + m_contextUri.section(':', -1);
   if (volumeRouteChanged)
     cancelVolume();
   m_activeDeviceId = deviceId;
@@ -359,6 +365,12 @@ void Player::clearState() {
   m_activeDeviceName.clear();
   emit stateChanged();
   if (hadTrack && !m_auth->isAuthenticated()) {
+    m_contextUri.clear();
+    m_queueContext.clear();
+    m_queue.clear();
+    m_orderedRows.clear();
+    ++m_queueRevision;
+    emit queueChanged();
     m_trackUri.clear();
     m_trackName.clear();
     m_artists.clear();
@@ -439,7 +451,8 @@ void Player::refreshQueue() {
     for (const auto &value : object["queue"].toArray())
       if (value.isObject()) observed << simplifyItem(value.toObject());
     if (!catalog || shuffled) {
-      finish(200, std::move(observed), catalog);
+      const bool partial = catalog || observed.size() >= 20;
+      finish(200, std::move(observed), partial);
       return;
     }
 
@@ -500,7 +513,7 @@ void Player::loadContextQueue(const QString &path, const QString &context,
   m_api->get(path, {}, [this, path, context, valid, done, rows=std::move(rows), album, page]
              (int status, const QJsonDocument &doc) mutable {
     if (!valid() || status != 200) {
-      done({}, false);
+      done(std::move(rows), false);
       return;
     }
     auto data = doc.object();
@@ -714,6 +727,7 @@ void Player::sendPlay(const QJsonObject &body, const QString &deviceId,
     if (!ordered) {
       // Seleção comum (álbum, playlist, busca): a fila do mix deixa de valer.
       m_orderedRows.clear();
+      m_contextUri.clear();
       m_queueTrack.clear();
       ++m_queueRevision;
       emit queueChanged();
@@ -1159,9 +1173,42 @@ void Player::playOrderedUris(const QStringList &uris) {
   m_lastUris = uris.mid(0, 500);
   m_shuffle = false;
   emit stateChanged();
+  const auto device = targetDeviceForPlay();
+  if (!device.isEmpty() && device == m_localDeviceId && m_librespot->playQueue(m_lastUris)) {
+    ++m_transportGeneration;
+    m_transportIntentClock.restart();
+    m_selectionClock.restart();
+    cancelSeek();
+    m_queueEditPending = false;
+    m_queueEditInFlight = 0;
+    QTimer::singleShot(650, this, [this, device, generation=m_transportGeneration]{
+      if (generation != m_transportGeneration) return;
+      reapplyRepeat(device);
+      refresh();
+    });
+    return;
+  }
   sendPlay({{"uris", QJsonArray::fromStringList(m_lastUris)},
             {"position_ms", 0}, {"offset", QJsonObject{{"position", 0}}}},
-           targetDeviceForPlay(), false, true);
+           device, false, true);
+}
+
+void Player::playSavedQueue(const QVariantList &tracks, int index) {
+  emit selectionReplaced();
+  QVariantList rows;
+  QStringList uris;
+  for (qsizetype i = index; i < tracks.size() && rows.size() < 500; ++i) {
+    const auto row = tracks[i].toMap();
+    const auto uri = row.value("uri").toString();
+    if (!uri.startsWith("spotify:track:"))
+      continue;
+    rows << row;
+    uris << uri;
+  }
+  if (rows.isEmpty())
+    return;
+  setOrderedQueue(rows);
+  playOrderedUris(uris);
 }
 
 bool Player::applyQueueEdit(const QVariantList &rows) {
@@ -1188,11 +1235,23 @@ void Player::addToQueue(const QString &uri) {
 
 void Player::publishQueue(QVariantList rows, bool partial) {
   const auto device = targetDeviceForPlay();
-  if (rows == m_queue && m_queueTrack == m_trackUri && m_queueDevice == device && m_queuePartial == partial)
+  if (partial && !m_shuffle && m_queueTrack == m_trackUri && m_queueDevice == device &&
+      !m_contextUri.isEmpty() && m_queueContext == m_contextUri && rows.size() >= 2 &&
+      rows.size() < m_queue.size()) {
+    const bool matching = std::equal(rows.cbegin(), rows.cend(), m_queue.cbegin(),
+      [](const QVariant &left, const QVariant &right) {
+        return left.toMap().value("uri") == right.toMap().value("uri");
+      });
+    if (matching)
+      rows = m_queue;
+  }
+  if (rows == m_queue && m_queueTrack == m_trackUri && m_queueDevice == device &&
+      m_queueContext == m_contextUri && m_queuePartial == partial)
     return;
   m_queue = std::move(rows);
   m_queuePartial = partial;
   m_queueTrack = m_trackUri;
+  m_queueContext = m_contextUri;
   m_queueDevice = device;
   ++m_queueRevision;
   emit queueChanged();

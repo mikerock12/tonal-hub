@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(Tonal VERSION 0.15.16 LANGUAGES C CXX)
+project(Tonal VERSION 0.16.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -148,7 +148,9 @@ foreach(program TonalHub IndieTonal)
         qt_add_resources(${program} "companion_ui" PREFIX "/companion" BASE "${CMAKE_CURRENT_SOURCE_DIR}" FILES qml/companion/EmberRing.qml qml/companion/ChristmasRing.qml qml/companion/TransportGlyph.qml qml/companion/BloodSurface.qml qml/companion/ChristmasSurface.qml qml/companion/ChristmasGarland.qml qml/companion/ChristmasGarlandData.js qml/companion/ChristmasSanta.qml ${TONAL_SEASONAL_ASSETS} qml/companion/CoverEffects.qml qml/companion/JamDialog.qml qml/companion/JamToast.qml qml/companion/SongShareDialog.qml qml/companion/MusicPanel.qml qml/companion/QueueEditor.qml qml/companion/ActionIcon.qml qml/companion/LyricBackdrop.qml qml/companion/StyledVerse.qml qml/companion/LyricStyleDialog.qml qml/companion/LyricsFullscreen.qml qml/companion/StatisticsDetail.qml qml/companion/ClimateDetail.qml qml/companion/StoryCard.qml resources/music-rules.json)
         tonal_deploy_audio(${program})
     endif()
-    qt_add_resources(${program} "indie_ui" PREFIX "/indie" BASE "${CMAKE_CURRENT_SOURCE_DIR}/qml/indie" FILES qml/indie/IndieMain.qml qml/indie/HubMain.qml)
+    target_sources(${program} PRIVATE src/DesktopUpdate.cpp src/DesktopUpdate.h)
+    target_compile_definitions(${program} PRIVATE PROJECT_VERSION_STRING="${PROJECT_VERSION}")
+    qt_add_resources(${program} "indie_ui" PREFIX "/indie" BASE "${CMAKE_CURRENT_SOURCE_DIR}/qml/indie" FILES qml/indie/IndieMain.qml qml/indie/HubMain.qml qml/indie/AboutUpdate.qml)
     set_target_properties(${program} PROPERTIES WIN32_EXECUTABLE TRUE)
     if(WIN32)
         target_sources(${program} PRIVATE resources/hub.rc)

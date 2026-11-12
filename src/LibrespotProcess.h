@@ -44,6 +44,7 @@ public:
   void setPlaybackExpected(bool playing);
   virtual bool queueEditingAvailable() const;
   virtual bool writeQueueEdit(quint64 serial, const QStringList &uris);
+  bool playQueue(const QStringList &uris);
 
   Q_INVOKABLE void start();
   Q_INVOKABLE void stop();
@@ -111,6 +112,7 @@ private:
   bool m_restartRequested = false, m_autoRestartBlocked = false;
   bool m_expectedPlayback = false;
   bool m_queueControlReady = false;
+  bool m_queueLoadReady = false;
   int m_restartDelay = 0, m_restartBaseMs = 1500, m_stallTimeoutMs = 30000;
   uint64_t m_lastPcmFrames = 0;
 };

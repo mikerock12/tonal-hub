@@ -46,3 +46,9 @@ No Android 0.15.17, se o estado periódico omitir o contexto, abrir a fila
 consulta a faixa e o contexto atuais. Na ausência de contexto, o app pode
 usar a última seleção local de álbum ou playlist quando ela corresponder à
 sequência observada. Uma janela de 20 faixas sem ordem verificável é parcial.
+
+Na 0.16.0, a fila mostra até 500 entradas contando a faixa atual. Uma consulta
+parcial preserva a lista confirmada quando o contexto, a faixa atual e as
+próximas ocorrências observadas continuam compatíveis. A edição fica bloqueada
+enquanto a consulta for parcial. No Windows, playlists pessoais são enviadas
+ao motor local como uma seleção ordenada completa.

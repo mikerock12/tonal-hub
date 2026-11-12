@@ -118,6 +118,7 @@ public:
   // Toca uma lista solta de faixas (ex.: resultados de busca).
   Q_INVOKABLE void playUris(const QStringList &uris, int offsetIndex = 0);
   Q_INVOKABLE void playOrderedUris(const QStringList &uris);
+  void playSavedQueue(const QVariantList &tracks, int index);
   bool applyQueueEdit(const QVariantList &rows);
   // Linhas do mix aplicado (título, artista, capa, Descoberta) para a Fila.
   Q_INVOKABLE void setOrderedQueue(const QVariantList &rows);
@@ -210,6 +211,7 @@ private:
   bool queueEditingAvailable() const;
   quint64 m_queueRevision=0;
   QString m_queueTrack,m_queueDevice;
+  QString m_queueContext;
   void publishQueue(QVariantList rows, bool partial = false);
   bool m_queuePartial=false;
   quint64 m_queueReadSerial=0;

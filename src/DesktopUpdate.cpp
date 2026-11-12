@@ -61,7 +61,8 @@ DesktopUpdate::Release DesktopUpdate::parseRelease(const QByteArray &data) {
   if (json["name"].toString() != expected || json["url"].toString() != url ||
       size < 1 || size > maxInstaller || !hex.match(QString::fromLatin1(hash)).hasMatch())
     return {};
-  return {version, expected, QByteArray::fromHex(hash), size, QUrl(url)};
+  return {version, expected, QByteArray::fromHex(hash), size, QUrl(url),
+          json["notes"].toString().trimmed().left(2000)};
 }
 
 bool DesktopUpdate::newer(const QString &candidate, const QString &installed) {
@@ -89,7 +90,7 @@ void DesktopUpdate::fail(const QString &text) {
   status(text);
 }
 
-void DesktopUpdate::check() {
+void DesktopUpdate::check(bool automatic) {
   if (m_busy || m_ready) return;
   m_release = {};
   m_busy = true;
@@ -99,7 +100,7 @@ void DesktopUpdate::check() {
   connect(reply, &QNetworkReply::readyRead, this, [reply] {
     if (reply->bytesAvailable() > maxMetadata) reply->abort();
   });
-  connect(reply, &QNetworkReply::finished, this, [this, reply] {
+  connect(reply, &QNetworkReply::finished, this, [this, reply, automatic] {
     reply->deleteLater();
     m_busy = false;
     if (reply->error() != QNetworkReply::NoError ||
@@ -116,9 +117,15 @@ void DesktopUpdate::check() {
       status(tr("O Tonalify está atualizado."));
       return;
     }
+    if (release.notes.isEmpty()) {
+      status(tr("O resumo desta atualização ainda não está disponível no portal."));
+      return;
+    }
     m_release = std::move(release);
     status(installed() ? tr("Versão %1 disponível.").arg(m_release.version)
                        : tr("Versão %1 disponível no portal. A instalação automática requer a edição instalada.").arg(m_release.version));
+    if (automatic)
+      emit updateAvailable();
   });
 }
 
@@ -191,9 +198,11 @@ void DesktopUpdate::install() {
     return;
   }
   verified.close();
+  const auto executable = QFileInfo(QCoreApplication::applicationFilePath()).completeBaseName();
+  const auto restart = executable == "TonalHub" || executable == "IndieTonal" ? executable : QStringLiteral("Tonalify");
   if (!QProcess::startDetached(m_file.fileName(),
        {"/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CLOSEAPPLICATIONS",
-        "/TONALRESTART=Tonalify", "/DIR=" + QDir::toNativeSeparators(m_installPath)})) {
+        "/TONALRESTART=" + restart, "/DIR=" + QDir::toNativeSeparators(m_installPath)})) {
     status(tr("Não foi possível iniciar o instalador."));
     return;
   }

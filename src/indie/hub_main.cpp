@@ -1,4 +1,5 @@
 #include "HubController.h"
+#include "DesktopUpdate.h"
 #include <QCryptographicHash>
 #include <QDir>
 #include <QFont>
@@ -19,6 +20,7 @@ int main(int argc, char **argv) {
   QGuiApplication::setFont(QFont("Segoe UI", 10));
   app.setOrganizationName("Tonal");
   app.setApplicationName("TonalHub");
+  app.setApplicationVersion(PROJECT_VERSION_STRING);
   QQuickStyle::setStyle("Basic");
   auto args = app.arguments();
   bool smoke = args.contains("--smoke-test");
@@ -40,12 +42,16 @@ int main(int argc, char **argv) {
   if (!server.listen(name))
     return 3;
   HubController hub;
+  DesktopUpdate desktopUpdate;
   QQmlApplicationEngine engine;
+  engine.rootContext()->setContextProperty("desktopUpdate", &desktopUpdate);
   engine.rootContext()->setContextProperty("hub", &hub);
   QObject::connect(
       &engine, &QQmlApplicationEngine::objectCreationFailed, &app,
       [] { QCoreApplication::exit(2); }, Qt::QueuedConnection);
   engine.load(QUrl("qrc:/indie/HubMain.qml"));
+  if (!smoke)
+    QTimer::singleShot(1800, &desktopUpdate, [&desktopUpdate]{ desktopUpdate.check(true); });
   QObject::connect(&server, &QLocalServer::newConnection, &app, [&] {
     while (auto *socket = server.nextPendingConnection()) {
       auto handle = [&, socket] {

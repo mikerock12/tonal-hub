@@ -1,4 +1,4 @@
-use librespot::connect::Spirc;
+use librespot::connect::{LoadContextOptions, LoadRequest, LoadRequestOptions, Options, Spirc};
 use std::io::{BufRead, Read};
 use tokio::sync::mpsc;
 
@@ -20,11 +20,26 @@ pub fn start() -> Option<mpsc::Receiver<String>> {
             }
         }
     });
-    eprintln!("tonal-queue-ready");
+    eprintln!("tonal-queue-ready-v2");
     Some(rx)
 }
 
 pub fn handle(line: &str, spirc: Option<&Spirc>) {
+    if let Some(tracks) = line.trim_end().strip_prefix("playqueue|") {
+        let uris: Vec<String> = tracks.split(',').take(501).map(str::to_owned).collect();
+        if !uris.is_empty() && uris.len() <= 500 &&
+            uris.iter().all(|uri| uri.strip_prefix("spotify:track:").is_some_and(|id|
+                id.len() == 22 && id.bytes().all(|byte| byte.is_ascii_alphanumeric()))) {
+            if let Some(spirc) = spirc {
+                let _ = spirc.load(LoadRequest::from_tracks(uris, LoadRequestOptions {
+                    start_playing: true,
+                    context_options: Some(LoadContextOptions::Options(Options::default())),
+                    ..Default::default()
+                }));
+            }
+        }
+        return;
+    }
     let Some((serial, tracks)) = line.trim_end().strip_prefix("editqueue|")
         .and_then(|fields| fields.split_once('|')) else {return;};
     let Ok(serial) = serial.parse::<u64>() else {return;};
