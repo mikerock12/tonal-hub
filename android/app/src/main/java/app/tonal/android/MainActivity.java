@@ -153,7 +153,18 @@ public final class MainActivity extends Activity {
         if(queueFixture() && getIntent().getBooleanExtra("queueLongFixture",false)){longQueueFixture();return;}
         orderedCursor=0;currentTrack=orderedQueue.get(0);currentUri=currentTrack.optString("uri");if(queueFixture())showQueue();else DebugLyricChecks.run(this,store,()->MusicPanel.showSong(this,api));
         }catch(Exception e){throw new IllegalStateException("Native mix fixture failed",e);}}
-    private void longQueueFixture() throws JSONException {
+    private void longQueueFixture() throws Exception {
+        String name="Tonal-Android-0.16.1-arm64-v8a.apk";
+        JSONObject metadata=new JSONObject().put("version","v0.16.1").put("name",name).put("size",100)
+            .put("url","https://github.com/mikerock12/tonal-hub/releases/download/v0.16.1/"+name)
+            .put("sha256","a".repeat(64)).put("notes","Fila de teste.");
+        if(AppUpdate.parse(metadata,"0.16.0")==null || AppUpdate.parse(metadata,"0.16.1")!=null)
+            throw new IllegalStateException("Update metadata or version rejected");
+        metadata.remove("notes");
+        try {
+            AppUpdate.parse(metadata,"0.16.0");
+            throw new IllegalStateException("Update offered without release notes");
+        } catch(IOException expected) {}
         String id="FixturePlaylist0000000";
         String uri="spotify:playlist:"+id;
         String endpoint="playlists/"+id+"/items?limit=50";

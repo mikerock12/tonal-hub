@@ -198,9 +198,11 @@ void DesktopUpdate::install() {
     return;
   }
   verified.close();
+  const auto executable = QFileInfo(QCoreApplication::applicationFilePath()).completeBaseName();
+  const auto restart = executable == "TonalHub" || executable == "IndieTonal" ? executable : QStringLiteral("Tonalify");
   if (!QProcess::startDetached(m_file.fileName(),
        {"/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CLOSEAPPLICATIONS",
-        "/TONALRESTART=Tonalify", "/DIR=" + QDir::toNativeSeparators(m_installPath)})) {
+        "/TONALRESTART=" + restart, "/DIR=" + QDir::toNativeSeparators(m_installPath)})) {
     status(tr("Não foi possível iniciar o instalador."));
     return;
   }

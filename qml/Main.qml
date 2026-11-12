@@ -290,6 +290,8 @@ ApplicationWindow {
                 color: Theme.textPrimary
                 textFormat: Text.PlainText
                 text: qsTr("Versão %1 disponível").arg(desktopUpdate.availableVersion) + "\n" + desktopUpdate.releaseNotes
+                maximumLineCount: 6
+                elide: Text.ElideRight
             }
             Row {
                 id: updateActions

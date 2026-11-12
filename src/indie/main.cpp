@@ -1,4 +1,5 @@
 #include "CatalogService.h"
+#include "DesktopUpdate.h"
 #include "HubController.h"
 #include "ThemeCatalog.h"
 #include "audio/AudioEngine.hpp"
@@ -32,6 +33,7 @@ int main(int argc, char **argv) {
   const bool hubMode = false;
 #endif
   QCoreApplication::setApplicationName(hubMode ? "TonalHub" : "IndieTonal");
+  QCoreApplication::setApplicationVersion(PROJECT_VERSION_STRING);
   QQuickStyle::setStyle("Basic");
   const auto args = app.arguments();
   int index = args.indexOf("--query");
@@ -87,7 +89,11 @@ int main(int argc, char **argv) {
       music.setBackground("Halloween");
     }
   }
+  DesktopUpdate desktopUpdate;
   QQmlApplicationEngine engine;
+  engine.rootContext()->setContextProperty("desktopUpdate", &desktopUpdate);
+  if (!smoke)
+    QTimer::singleShot(1800, &desktopUpdate, [&desktopUpdate]{ desktopUpdate.check(true); });
   engine.rootContext()->setContextProperty("indieTheme", &theme);
   engine.rootContext()->setContextProperty("catalog", &catalog);
   engine.rootContext()->setContextProperty("hub", &hub);

@@ -5,6 +5,7 @@ import "qrc:/companion/qml/companion" as Personal
 import QtQuick.Dialogs
 
 ApplicationWindow {
+    AboutUpdate { id: updates }
     id: window
     width: 1180; height: 820; minimumWidth: 800; minimumHeight: 600
     visible: true; title: hubMode ? "Tonal Hub" : "IndieTonal"
@@ -75,6 +76,7 @@ ApplicationWindow {
             Personal.ActionIcon {symbol:"save";description:"Backup e restauração";visible:!hubMode;onClicked:{if(musicLoader.item){window.openMusic();musicLoader.item.showBackup()}else{window.backupRequested=true;window.openMusic()}}}
             Button { text: "Sua música"; visible: !hubMode; onClicked: window.openMusic() }
             Button { text: "Arquivo"; visible: !hubMode; onClicked: filePicker.open() }
+            Button { text: "Sobre"; onClicked: updates.open() }
         }
         Label { visible: notice !== ""; text: notice; color: "#ffbf78"; wrapMode: Text.WordWrap; Layout.fillWidth: true }
         ColumnLayout {
