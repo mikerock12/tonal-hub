@@ -173,7 +173,8 @@ public final class MainActivity extends Activity {
         for(int i=1;i<=20;i++)window.put(catalog.get(i));
         JSONObject queue=new JSONObject().put("currently_playing",currentTrack).put("queue",window);
         JSONObject player=new JSONObject().put("item",currentTrack).put("shuffle_state",false)
-            .put("context",fromPlayer?new JSONObject().put("uri",uri):JSONObject.NULL);
+            .put("context",unknown?JSONObject.NULL:new JSONObject().put("uri",
+                fromPlayer?"spotify:user:fixture:playlist:"+id:JSONObject.NULL));
         Map<String,JSONObject> responses=new HashMap<>();
         responses.put("me/player/queue",queue);
         responses.put("me/player",player);

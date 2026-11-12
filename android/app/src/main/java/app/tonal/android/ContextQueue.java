@@ -23,16 +23,22 @@ final class ContextQueue {
 
     static String contextUri(JSONObject state) {
         JSONObject context = state.optJSONObject("context");
-        return context == null ? "" : context.optString("uri", "");
+        return context == null || context.isNull("uri") ? "" : canonicalContext(context.optString("uri"));
     }
 
     private static boolean collection(String context) {
         return context.matches("spotify:(album|playlist):[A-Za-z0-9]{22}");
     }
 
+    private static String canonicalContext(String uri) {
+        if (uri.matches("spotify:user:[^:]+:playlist:[A-Za-z0-9]{22}"))
+            return "spotify:playlist:" + uri.substring(uri.lastIndexOf(':') + 1);
+        return uri.startsWith("spotify:internal:") ? "" : uri;
+    }
+
     static String selectionUri(String command) {
         String[] parts = command.split("\\|", 3);
-        String uri = parts.length == 3 && parts[0].equals("context") ? parts[2] : command;
+        String uri = canonicalContext(parts.length == 3 && parts[0].equals("context") ? parts[2] : command);
         return collection(uri) ? uri : "";
     }
 
