@@ -74,10 +74,13 @@ final class CatalogScreen {
         parent.addView(item(obj.optString("name"),detail,Artwork.url(obj),type,()->openEntity(obj,type)));
     }
     private void song(LinearLayout parent,JSONObject track,ArrayList<JSONObject> queue,String context,int index,String fallbackImage){
+        song(parent,track,queue,context,index,fallbackImage,false);
+    }
+    private void song(LinearLayout parent,JSONObject track,ArrayList<JSONObject> queue,String context,int index,String fallbackImage,boolean completeCatalog){
         if(track.optString("uri").isEmpty())return;
         String art=Artwork.url(track);if(art.isEmpty())art=fallbackImage;
         boolean available=!track.optBoolean("is_local")&&(!track.has("is_playable")||track.optBoolean("is_playable"));
-        LinearLayout row=item(track.optString("name"),artists(track)+"  •  "+(available?duration(track.optInt("duration_ms")):"Indisponível"),art,"track",()->{if(!queue.isEmpty()&&(route.shaken||route.random||route.discovery||route.touched))host.playMix(queue,index,route.random,route.discovery,route.page.equals("album"));else host.playTracks(queue,index,context,track);});
+        LinearLayout row=item(track.optString("name"),artists(track)+"  •  "+(available?duration(track.optInt("duration_ms")):"Indisponível"),art,"track",()->{if(!queue.isEmpty()&&(route.shaken||route.random||route.discovery||route.touched))host.playMix(queue,index,route.random,route.discovery,route.page.equals("album"));else host.playTracks(queue,index,context,track,completeCatalog);});
         if(!available)row.setAlpha(.45f);
         JSONObject stat=MusicStore.get(host).summary("track",MusicStore.key(MusicStore.spotifyTrack(track)));LinearLayout labels=(LinearLayout)row.getChildAt(1);TextView badge=ui.text(statsText(stat),12,Ui.ACCENT_SOFT);badge.setPadding(0,ui.dp(6),0,0);badge.setVisibility(showStats?View.VISIBLE:View.GONE);statViews.add(badge);labels.addView(badge);ui.clickable(badge,()->MusicPanel.showStatistics(host,api,"track",MusicStore.key(MusicStore.spotifyTrack(track))));
         JSONObject saved=MusicStore.spotifyTrack(track);boolean liked=MusicStore.get(host).liked(saved);ImageButton heart=ui.favorite(liked,()->{});heart.setContentDescription((liked?"Remover das favoritas: ":"Favoritar: ")+track.optString("name"));heart.setOnClickListener(v->toggleFavorite(saved,heart));row.addView(heart,new LinearLayout.LayoutParams(ui.dp(44),ui.dp(48)));
@@ -180,10 +183,10 @@ final class CatalogScreen {
         final LinearLayout target;final String kind,wrapper,context;final boolean search;
         final ArrayList<JSONObject> items=new ArrayList<>();final Set<String> seen=new HashSet<>();
         String next,artistId="",fallbackImage="";JSONObject albumContext;boolean busy;int sourceOffset;TextView control;ImageButton[] modeButtons;int visibleLimit=100;final ArrayList<JSONObject> original=new ArrayList<>();boolean capped;
-        void play(){if(busy){host.notice("Carregando a seleção…");return;}if(!items.isEmpty()){if(route.shaken||route.random||route.discovery||route.touched)host.playMix(items,route.random?new java.security.SecureRandom().nextInt(items.size()):0,route.random,route.discovery,route.page.equals("album"));else host.playTracks(items,0,context,items.get(0));}else host.notice("Aguarde as músicas carregarem.");}
+        void play(){if(busy){host.notice("Carregando a seleção…");return;}if(!items.isEmpty()){if(route.shaken||route.random||route.discovery||route.touched)host.playMix(items,route.random?new java.security.SecureRandom().nextInt(items.size()):0,route.random,route.discovery,route.page.equals("album"));else host.playTracks(items,0,context,items.get(0),!capped&&next.isEmpty());}else host.notice("Aguarde as músicas carregarem.");}
         void refreshRows(){if(modeButtons==null)return;items.clear();if(route.shaken){for(int i:ListeningMixNative.order(original.size(),route.shakeSeed))items.add(original.get(i));}else items.addAll(original);target.removeAllViews();boolean[] active={route.shaken,route.random,route.discovery};String[] icons={"shake","random","discover"};for(int i=0;i<3;i++){modeButtons[i].setImageDrawable(new Ui.Symbol(icons[i],active[i]?Ui.BLUE:Ui.TEXT));modeButtons[i].setSelected(active[i]);}
             if(route.shaken||route.random||route.discovery||route.touched){message(target,"Ordem temporária • Reproduzir aplica os modos selecionados. A playlist salva permanece na ordem original."+(capped?" Limite: primeiras 500 músicas.":""));}
-            for(int i=0;i<Math.min(visibleLimit,items.size());i++)song(target,items.get(i),items,context,i,fallbackImage);if(items.size()>visibleLimit)target.addView(ui.action("Mostrar mais músicas",()->{visibleLimit+=100;refreshRows();}));
+            for(int i=0;i<Math.min(visibleLimit,items.size());i++)song(target,items.get(i),items,context,i,fallbackImage,!capped&&next.isEmpty());if(items.size()>visibleLimit)target.addView(ui.action("Mostrar mais músicas",()->{visibleLimit+=100;refreshRows();}));
             if(!next.isEmpty()&&!capped){control=ui.action("Carregar mais",this::load);target.addView(control);if(route.shaken||route.random||route.discovery||route.touched)load();}}
 
         Pager(LinearLayout target,String url,String kind,String wrapper,boolean search,String context){this.target=target;next=url;this.kind=kind;this.wrapper=wrapper;this.search=search;this.context=context;}

@@ -31,6 +31,7 @@ public final class MainActivity extends Activity {
     private Runnable pendingPlayback;
     private JamClient jamClient;
     private int queueRevision;
+    private int playlistLoadRevision;
     private final ContextQueue contextQueue=new ContextQueue();
     private ContextQueue.Reader queueTestReader;
     private String queueContext="";
@@ -43,7 +44,7 @@ public final class MainActivity extends Activity {
             notice("A música mudou antes da edição da fila. Tente novamente.");
         }
     };
-    private final Consumer<String> commandObserver=command->{if(jamClient!=null)jamClient.quiet();if(command.equals("next"))saveRepeat();if(command.equals("next")||command.equals("prev"))queueRevision++;if(command.equals("pause")){pendingPlayback=null;}if(command.equals("pause")||command.equals("toggle")||command.equals("next")||command.equals("prev")||command.startsWith("seek|"))cancelMix();if(command.startsWith("seek|"))anchorSeek(command.substring(5));};
+    private final Consumer<String> commandObserver=command->{if(jamClient!=null)jamClient.quiet();if(command.equals("next"))saveRepeat();if(command.equals("next")||command.equals("prev"))queueRevision++;if(command.equals("pause")){pendingPlayback=null;}if(command.equals("pause")||command.equals("stop")||command.equals("toggle")||command.equals("next")||command.equals("prev"))playlistLoadRevision++;if(command.equals("pause")||command.equals("toggle")||command.equals("next")||command.equals("prev")||command.startsWith("seek|"))cancelMix();if(command.startsWith("seek|"))anchorSeek(command.substring(5));};
     // The engine seeks locally. Keep the shown clock on the requested position until
     // its Seeked event arrives; a late Web API poll must not pull the bar back.
     private final java.util.function.BiConsumer<String,Integer> progressObserver=(uri,position)->{if(this.local||!uri.equals(this.currentUri))return;long now=SystemClock.elapsedRealtime();if(now<this.seekGuardUntil&&Math.abs(position-this.seekTarget)>SEEK_TOLERANCE_MS)return;this.positionMs=PositionSync.reconcile(currentPosition(),position,this.clockPlaying);this.positionAt=now;this.lastEnginePositionAt=now;};
@@ -183,6 +184,12 @@ public final class MainActivity extends Activity {
         }
         JSONArray window=new JSONArray();
         for(int i=1;i<=20;i++)window.put(catalog.get(i));
+        ArrayList<JSONObject> observed=new ArrayList<>(catalog.subList(0,21));
+        if(JamClient.mergeWindow(new ArrayList<>(),new ArrayList<>(observed))!=null)
+            throw new IllegalStateException("Jam treated the first 20 tracks as a complete queue");
+        ArrayList<JSONObject> merged=JamClient.mergeWindow(catalog,observed);
+        if(merged==null||merged.size()!=500||!ContextQueue.sameTrack(merged.get(499),catalog.get(499)))
+            throw new IllegalStateException("Jam lost the confirmed playlist tail");
         JSONObject queue=new JSONObject().put("currently_playing",currentTrack).put("queue",window);
         JSONObject player=new JSONObject().put("item",currentTrack).put("shuffle_state",false)
             .put("context",unknown?JSONObject.NULL:new JSONObject().put("uri",
@@ -259,6 +266,43 @@ public final class MainActivity extends Activity {
     void cancelMix(){if(listeningMix!=null)listeningMix.cancel();}
     void playMix(ArrayList<JSONObject> tracks,int selected,boolean random,boolean discovery,boolean album){if(listeningMix==null)listeningMix=new ListeningMix(api,MusicStore.get(this));listeningMix.prepare(tracks,selected,random,discovery,album,result->{if(!destroyed&&foreground&&!result.isEmpty()){NativeBridge.command("shuffle:off");playTracks(result,0,"",result.get(0));}},this::notice);}
     void playTracks(ArrayList<JSONObject> tracks,int index,String context,JSONObject selected){
+        playTracks(tracks,index,context,selected,false);
+    }
+    void playTracks(ArrayList<JSONObject> tracks,int index,String context,JSONObject selected,boolean completeCatalog){
+        int request=++playlistLoadRevision;
+        if(foreground&&api.loggedIn()&&context.startsWith("spotify:playlist:")&&index>=0&&index<tracks.size()
+                && !selected.optBoolean("is_local")&&selected.optBoolean("is_playable",true)){
+            int occurrence=0;
+            for(int i=0;i<index;i++){
+                JSONObject row=tracks.get(i);
+                if(!row.optBoolean("is_local")&&row.optBoolean("is_playable",true)&&ContextQueue.sameTrack(selected,row))
+                    occurrence++;
+            }
+            final int chosen=occurrence;
+            Consumer<ArrayList<JSONObject>> launch=rows->{
+                int seen=0;
+                for(int i=0;i<rows.size();i++){
+                    JSONObject row=rows.get(i);
+                    if(!ContextQueue.sameTrack(row,selected)||row.optBoolean("is_local")||
+                            !row.optBoolean("is_playable",true)||seen++!=chosen)continue;
+                    startTracks(rows,i,"",row,false);
+                    return;
+                }
+                notice("A lista completa não pôde ser carregada. A fila pode aparecer parcial.");
+                startTracks(tracks,index,context,selected,false);
+            };
+            if(completeCatalog)launch.accept(tracks);
+            else {
+                notice("Carregando as faixas da playlist…");
+                int transport=playbackRevision;
+                contextQueue.playlistForPlayback(api::get,context,
+                        ()->foreground&&!destroyed&&request==playlistLoadRevision&&transport==playbackRevision,launch);
+            }
+            return;
+        }
+        startTracks(tracks,index,context,selected,completeCatalog);
+    }
+    private void startTracks(ArrayList<JSONObject> tracks,int index,String context,JSONObject selected,boolean completeCatalog){
         if(!foreground)return;
         cancelMix();
         if(!api.loggedIn()){login();return;}if(index<0||index>=tracks.size())return;
@@ -267,6 +311,7 @@ public final class MainActivity extends Activity {
         orderedQueue.clear();
         orderedCursor=0;
         contextQueue.clear();
+        if(completeCatalog)contextQueue.rememberCatalog(context,tracks);
         queueRevision++;
         ArrayList<String> uris=new ArrayList<>();
         int selectedIndex=0;
@@ -306,6 +351,12 @@ public final class MainActivity extends Activity {
         orderedQueue.addAll(rows);
         orderedCursor=0;
         queueRevision++;
+    }
+
+    ArrayList<JSONObject> knownQueueForJam(String anchor) {
+        if (orderedCursor<orderedQueue.size() && anchor.equals(orderedQueue.get(orderedCursor).optString("uri")))
+            return new ArrayList<>(orderedQueue.subList(orderedCursor,orderedQueue.size()));
+        return contextQueue.knownForJam(anchor,queueContext);
     }
 
     boolean editQueue(ArrayList<JSONObject> rows,int revision){
@@ -436,7 +487,7 @@ public final class MainActivity extends Activity {
     }
     @Override protected void onStart(){super.onStart();foreground=true;if(jamClient!=null)jamClient.foreground(true);handler.removeCallbacks(ticker);handler.post(ticker);}
     @Override protected void onStop(){
-        foreground=false;if(jamClient!=null)jamClient.foreground(false);cancelMix();
+        foreground=false;playlistLoadRevision++;if(jamClient!=null)jamClient.foreground(false);cancelMix();
         handler.removeCallbacks(ticker);
         // Do not start a pending selection after the user locks or leaves.
         if(pendingPlayback!=null){pendingPlayback=null;expectedUri="";NativeBridge.command("pause");}

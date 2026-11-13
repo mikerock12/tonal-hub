@@ -78,5 +78,6 @@ aos downloads do portal para atualização manual.
 Desde a 0.16.0, a consulta automática ao abrir é assíncrona e mostra um aviso
 com o resumo do portal. O download começa por ação do usuário. Para cada
 release, mantenha a nota resumida por tag no portal antes de sugerir a
-instalação. No Android, o instalador do sistema pede confirmação e oferece
-**Abrir** quando a atualização conclui.
+instalação. Desde a 0.16.1, no Android **Baixar no portal** abre o navegador.
+O app consulta a versão e as notas em segundo plano, sem a permissão
+de instalar pacotes.

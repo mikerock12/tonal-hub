@@ -27,6 +27,12 @@ final class ContextQueue {
 
     void expireCatalog() { cachedTracks = null; }
 
+    ArrayList<JSONObject> knownForJam(String anchor, String source) {
+        if (confirmed == null || !anchor.equals(confirmedAnchor) ||
+                (!source.isEmpty() && !source.equals(confirmedSource))) return new ArrayList<>();
+        return new ArrayList<>(confirmed.tracks());
+    }
+
     static String contextUri(JSONObject state) {
         JSONObject context = state.optJSONObject("context");
         return context == null || context.isNull("uri") ? "" : canonicalContext(context.optString("uri"));
@@ -55,7 +61,7 @@ final class ContextQueue {
         boolean[] currentShuffle = {shuffled};
         Consumer<Snapshot> deliver = snapshot -> {
             if (!valid.getAsBoolean()) { error.accept(changed); return; }
-            if (!snapshot.partial() && !source[0].isEmpty() && snapshot.tracks().size() > 21) {
+            if (!snapshot.partial() && !source[0].isEmpty()) {
                 confirmed = snapshot;
                 confirmedAnchor = anchor;
                 confirmedSource = source[0];
@@ -142,8 +148,32 @@ final class ContextQueue {
 
     private interface PageResult { void accept(ArrayList<JSONObject> rows, boolean complete); }
 
+    void playlistForPlayback(Reader api, String uri, BooleanSupplier valid, Consumer<ArrayList<JSONObject>> done) {
+        String id=uri.substring(uri.lastIndexOf(':')+1);
+        page(api,"playlists/"+id+"/items?limit=50",false,null,new ArrayList<>(),0,valid,
+            (tracks, complete) -> { if (valid.getAsBoolean()) done.accept(complete ? tracks : new ArrayList<>()); },500);
+    }
+
+    void rememberCatalog(String context, ArrayList<JSONObject> tracks) {
+        if (!collection(context) || tracks.isEmpty()) return;
+        cachedContext = context;
+        cachedTracks = new ArrayList<>(tracks);
+        cachedTracks.removeIf(track -> !playable(track));
+        cachedAt = SystemClock.elapsedRealtime();
+    }
+
+    private static boolean playable(JSONObject track) {
+        return track.optString("uri").startsWith("spotify:track:") &&
+                !track.optBoolean("is_local") && track.optBoolean("is_playable", true);
+    }
+
     private void page(Reader api, String path, boolean album, JSONObject albumInfo,
                       ArrayList<JSONObject> rows, int page, BooleanSupplier valid, PageResult done) {
+        page(api,path,album,albumInfo,rows,page,valid,done,2000);
+    }
+
+    private void page(Reader api, String path, boolean album, JSONObject albumInfo,
+                      ArrayList<JSONObject> rows, int page, BooleanSupplier valid, PageResult done, int limit) {
         api.get(path, response -> {
             if (!valid.getAsBoolean()) { done.accept(new ArrayList<>(), false); return; }
             JSONObject group = response;
@@ -158,15 +188,14 @@ final class ContextQueue {
                 if (!(value instanceof JSONObject item)) continue;
                 JSONObject track = album ? item : item.optJSONObject("item");
                 if (!album && track == null) track = item.optJSONObject("track");
-                if (track == null || !track.optString("uri").startsWith("spotify:track:") ||
-                    track.optBoolean("is_local") || !track.optBoolean("is_playable", true)) continue;
+                if (track == null || !playable(track)) continue;
                 if (!track.has("album") && metadata != null) MusicStore.put(track,"album",metadata);
-                if (rows.size() < 2000) rows.add(track);
+                if (rows.size() < limit) rows.add(track);
             }
             String next = group.isNull("next") ? "" : group.optString("next");
-            if (!next.isEmpty() && !next.equals(path) && page < 39 && rows.size() < 2000)
-                page(api,next,album,metadata,rows,page+1,valid,done);
-            else done.accept(rows,next.isEmpty());
+            if (!next.isEmpty() && !next.equals(path) && page < 39 && rows.size() < limit)
+                page(api,next,album,metadata,rows,page+1,valid,done,limit);
+            else done.accept(rows,next.isEmpty() || limit==500 && rows.size()==limit);
         },error -> done.accept(rows,false));
     }
 
@@ -195,7 +224,7 @@ final class ContextQueue {
         return new Snapshot(tracks,!complete || total > 500);
     }
 
-    private static boolean sameTrack(JSONObject first, JSONObject second) {
+    static boolean sameTrack(JSONObject first, JSONObject second) {
         String uri = first.optString("uri");
         String other = second.optString("uri");
         if (uri.isEmpty() || other.isEmpty()) return false;
