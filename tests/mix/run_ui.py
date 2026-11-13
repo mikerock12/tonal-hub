@@ -192,6 +192,21 @@ Pane {id:harness;width:1000;height:800;padding:0;palette.button:"#263440";palett
    personalPanel.changeSongMode(0);verify(mix.received.discover);compare(mix.received.rows.filter(t=>t.mixExternal).length,1);
    findChild(personalPanel,"songQueueDialog").close();personalPanel.close();mix.committedRows=[];mix.discoveryEnabled=false;mix.randomEnabled=false;personalPanel.discoveryPlayback=false;personalPanel.randomPlayback=false;
   }
+  function test_queue_500_entries_capture(){
+   const card=queueFixture.createObject(harness)
+   const editor=findChild(card,"fixtureQueueEditor")
+   const tracks=Array.from({length:499},(_,i)=>({name:"Faixa de teste "+String(i+2).padStart(3,"0"),artists:"Dados sintéticos",albumId:"fixture",durationMs:180000}))
+   editor.player.trackName="Playlist de teste · faixa 001"
+   editor.player.queue=tracks
+   editor.reload()
+   const list=findChild(editor,"editableQueueList")
+   tryCompare(list,"count",499)
+   list.positionViewAtEnd()
+   tryVerify(()=>list.itemAtIndex(498)!==null)
+   compare(list.itemAtIndex(498).name,"Faixa de teste 500")
+   captureSong(card,"desktop-fila-500-0161.png")
+   card.destroy()
+  }
   function test_queue_editor_summary_move_and_clear(){
    const card=queueFixture.createObject(harness)
    const editor=findChild(card,"fixtureQueueEditor")

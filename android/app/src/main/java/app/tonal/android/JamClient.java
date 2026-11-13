@@ -24,13 +24,28 @@ final class JamClient implements AutoCloseable {
         if(SystemClock.elapsedRealtime()<quietUntil||!host.isCurrentTrack(anchor))return;
         ArrayList<JSONObject> observed=new ArrayList<>();JSONObject current=data.optJSONObject("currently_playing");if(current==null)return;observed.add(current);
         for(Object v:MusicStore.values(MusicStore.array(data,"queue"))){if(observed.size()>=101)break;if(v instanceof JSONObject&&!((JSONObject)v).optString("uri").isEmpty())observed.add((JSONObject)v);}
-        ArrayList<JSONObject> known=new ArrayList<>(host.orderedQueue);String[] old=new String[known.size()],now=new String[observed.size()];if(old.length>500){capacityExceeded=true;return;}
+        ArrayList<JSONObject> known=host.knownQueueForJam(anchor);
+        ArrayList<JSONObject> merged=mergeWindow(known,observed);
+        if(merged==null)return;
+        capacityExceeded=merged.size()>500;
+        if(capacityExceeded)return;
+        boolean same=known.size()==merged.size();if(same)for(int i=0;i<known.size();i++)if(!known.get(i).optString("uri").equals(merged.get(i).optString("uri"))){same=false;break;}
+        if(!same)host.replaceKnownQueue(merged);
+    }
+
+    static ArrayList<JSONObject> mergeWindow(ArrayList<JSONObject> known, ArrayList<JSONObject> observed){
+        // The Web API window is never the source of truth for a new queue.
+        if(known.isEmpty()||observed.isEmpty()||!known.get(0).optString("uri").equals(observed.get(0).optString("uri")))return null;
+        String[] old=new String[known.size()],now=new String[observed.size()];
         for(int i=0;i<old.length;i++)old[i]=known.get(i).optString("uri");for(int i=0;i<now.length;i++)now[i]=observed.get(i).optString("uri");
-        int[] alignment=ListeningMixNative.alignQueue(old,now);if(alignment==null||alignment.length!=now.length+1)return;
+        int[] alignment=ListeningMixNative.alignQueue(old,now);if(alignment==null||alignment.length!=now.length+1)return null;
+        int suffix=alignment[now.length];if(suffix<0||suffix>known.size())return null;
+        boolean overlap=false;
+        for(int i=1;i<now.length;i++)overlap|=alignment[i]>0;
+        if(!overlap&&now.length>=21)return null;
         for(int i=0;i<now.length;i++)if(alignment[i]>=0){JSONObject source=known.get(alignment[i]),target=observed.get(i);for(Iterator<String> keys=source.keys();keys.hasNext();){String key=keys.next();if(key.startsWith("_mix")||key.equals("_queueAdded"))MusicStore.put(target,key,source.opt(key));}}
-        int suffix=alignment[now.length];if(suffix<0||suffix>known.size())return;for(int index=suffix;index<known.size();index++){boolean used=false;for(int n=0;n<now.length;n++)if(alignment[n]==index){used=true;break;}if(!used)observed.add(known.get(index));}capacityExceeded=observed.size()>500;if(capacityExceeded)return;
-        boolean same=known.size()==observed.size();if(same)for(int i=0;i<known.size();i++)if(!known.get(i).optString("uri").equals(observed.get(i).optString("uri"))){same=false;break;}
-        if(!same)host.replaceKnownQueue(observed);
+        for(int index=suffix;index<known.size();index++){boolean used=false;for(int n=0;n<now.length;n++)if(alignment[n]==index){used=true;break;}if(!used)observed.add(known.get(index));}
+        return observed;
     }
     void quiet(){baseline=false;quietUntil=SystemClock.elapsedRealtime()+3500;}
     // Notices that arrive while the app is in the background wait (at most eight)

@@ -8,20 +8,30 @@ Dialog {
     width: Math.min(520, parent.width - 40)
     title: "Sobre o Tonal Hub"
     modal: true
+    readonly property color surface: "#17232e"
+    readonly property color foreground: "#f4f6f8"
+    palette.window: surface
+    palette.windowText: foreground
+    palette.text: foreground
+    background: Rectangle { color: about.surface; border.color: "#42586a"; radius: 10 }
+    header: Label { text: about.title; color: about.foreground; font.pixelSize: 20; font.bold: true; padding: 16 }
     contentItem: ColumnLayout {
-        Label { text: "Versão " + Qt.application.version }
+        Label { text: "Versão " + Qt.application.version; color: about.foreground }
         Label {
             Layout.fillWidth: true
+            color: about.foreground
             text: "Projeto original de Matheus Nunes (natheus). Tonal Hub mantido por Maicon Nunes (mikerock12). Licença MIT."
             wrapMode: Text.WordWrap
         }
         Label {
             Layout.fillWidth: true
+            color: about.foreground
             text: desktopUpdate.status
             wrapMode: Text.WordWrap
         }
         Label {
             Layout.fillWidth: true
+            color: about.foreground
             visible: !!desktopUpdate.releaseNotes
             text: desktopUpdate.releaseNotes
             textFormat: Text.PlainText
@@ -51,9 +61,11 @@ Dialog {
         y: 18
         width: Math.min(390, parent.width - 36)
         modal: false
+        background: Rectangle { color: about.surface; border.color: "#42586a"; radius: 10 }
         contentItem: ColumnLayout {
             Label {
                 Layout.fillWidth: true
+                color: about.foreground
                 text: "Versão " + desktopUpdate.availableVersion + " disponível\n" + desktopUpdate.releaseNotes
                 textFormat: Text.PlainText
                 wrapMode: Text.WordWrap

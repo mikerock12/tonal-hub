@@ -52,3 +52,9 @@ parcial preserva a lista confirmada quando o contexto, a faixa atual e as
 próximas ocorrências observadas continuam compatíveis. A edição fica bloqueada
 enquanto a consulta for parcial. No Windows, playlists pessoais são enviadas
 ao motor local como uma seleção ordenada completa.
+
+Na 0.16.1, o Jam só reconcilia a janela observada com uma fila conhecida.
+No Android, a reprodução iniciada pela playlist tenta carregar a sequência
+completa até 500 faixas e a envia ao motor local. Se o catálogo estiver
+indisponível, a reprodução pelo contexto continua possível e o app avisa
+que a fila pode aparecer parcial.

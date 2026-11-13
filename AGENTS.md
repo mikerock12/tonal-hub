@@ -491,3 +491,13 @@ docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no
   sem usar o motor de áudio. Instalar após ação do usuário e verificar
   tamanho e SHA-256. No Android, confirmação e abertura pelo instalador
   do sistema. VersionCode 38.
+
+## Fila, contraste e distribuição 0.16.1
+
+- Jam não pode transformar uma janela curta em fila autoritativa sem uma
+  fila conhecida da faixa atual. Preservar a cauda e ocorrências.
+- Android carrega até 500 faixas ao iniciar uma playlist no Tonalify.
+  Se falhar, oferece reprodução pelo contexto com aviso de fila parcial.
+- Android consulta versão e notas, mas delega download e instalação
+  ao navegador e ao sistema. Não declara REQUEST_INSTALL_PACKAGES.
+  Preservar o certificado atual e conferir o manifesto final. VersionCode 39.

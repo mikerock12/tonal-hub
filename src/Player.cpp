@@ -1098,6 +1098,17 @@ bool Player::queueFromOrderedRows() {
   return true;
 }
 
+QVariantList Player::knownQueueForJam() const {
+  if (m_orderedQueueDevice == targetDeviceForPlay()) {
+    for (qsizetype i = 0; i < m_orderedRows.size(); ++i)
+      if (m_orderedRows[i].toMap().value("uri") == m_trackUri)
+        return m_orderedRows.mid(i);
+  }
+  if (m_queuePartial || m_queueTrack != m_trackUri || m_queueDevice != targetDeviceForPlay())
+    return {};
+  return queueForEditing();
+}
+
 void Player::toggleLike() {
   if (localPlayback())
     return;

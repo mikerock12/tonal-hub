@@ -84,15 +84,18 @@ void JamController::pollQueue(){
         m_queueBusy=false;if(epoch!=m_epoch||status!=200)return;
         const auto object=doc.object();const auto anchor=object.value("currently_playing").toObject().value("uri").toString();
         if(anchor==m_player->trackUri()&&!m_player->queueEditPending()&&QDateTime::currentMSecsSinceEpoch()>=m_quietUntil){
-            const auto old=m_player->preparedQueue();QVariantList observed;
+            const auto old=m_player->knownQueueForJam();QVariantList observed;
             auto row=[](const QJsonObject &t){const auto a=t.value("album").toObject();QStringList artists;QString artistId;for(const auto &v:t.value("artists").toArray()){const auto artist=v.toObject();artists<<artist.value("name").toString();if(artistId.isEmpty())artistId=artist.value("id").toString();}const auto images=a.value("images").toArray();return QVariantMap{{"uri",t.value("uri").toString()},{"id",t.value("uri").toString()},{"provider","Spotify"},{"title",t.value("name").toString()},{"artist",artists.join(", ")},{"artistId",artistId},{"artistCredits",t.value("artists").toArray().toVariantList()},{"album",a.value("name").toString()},{"albumId",a.value("id").toString()},{"year",a.value("release_date").toString().left(4).toInt()},{"durationMs",t.value("duration_ms").toInt()},{"image",images.isEmpty()?QString():images.first().toObject().value("url").toString()}};};
             observed<<row(object.value("currently_playing").toObject());
             for(const auto &v:object.value("queue").toArray()){if(observed.size()>=101)break;if(!v.toObject().value("uri").toString().isEmpty())observed<<row(v.toObject());}
             std::vector<std::string> before,after;for(const auto &v:old)before.push_back(v.toMap().value("uri").toString().toStdString());for(const auto &v:observed)after.push_back(v.toMap().value("uri").toString().toStdString());
             const auto alignment=tonal::queue::align(before,after);
+            const bool overlap=std::any_of(alignment.matches.begin()+1,alignment.matches.end(),[](int index){return index>0;});
+            if(!old.isEmpty()&&(observed.size()<21||overlap)){
             for(int i=0;i<observed.size();++i)if(alignment.matches[i]>=0){auto merged=observed[i].toMap();const auto known=old[alignment.matches[i]].toMap();for(auto it=known.cbegin();it!=known.cend();++it)if(it.key().startsWith("mix")||it.key()=="queueAdded")merged[it.key()]=it.value();observed[i]=merged;}
             for(int i=alignment.suffix;i<old.size();++i)if(std::find(alignment.matches.begin(),alignment.matches.end(),i)==alignment.matches.end())observed<<old[i];emit queueCapacityExceeded(observed.size()>500);
             if(observed.size()<=500){std::vector<std::string> merged;for(const auto &v:observed)merged.push_back(v.toMap().value("uri").toString().toStdString());if(merged!=before)m_player->reconcileJamQueue(observed);}
+            }
         }
         QStringList ids,names;for(const auto &v:object.value("queue").toArray()){if(ids.size()>=100)break;const auto t=v.toObject();const auto uri=t.value("uri").toString();if(uri.isEmpty())continue;ids<<uri;const auto artists=t.value("artists").toArray();const auto artist=artists.isEmpty()?QString():artists.first().toObject().value("name").toString();names<<(artist.isEmpty()?t.value("name").toString():t.value("name").toString()+" — "+artist).left(200);}
         const bool notify=m_queueBaseline&&anchor==m_queueAnchor&&QDateTime::currentMSecsSinceEpoch()>=m_quietUntil;

@@ -96,6 +96,7 @@ public:
   QVariantList preparedQueue() const {return m_orderedRows;}
   bool queueEditPending() const{return m_queueEditPending || m_queueEditInFlight != 0;}
   void reconcileJamQueue(const QVariantList &rows){if(rows.isEmpty()||rows.first().toMap().value("uri").toString()!=m_trackUri)return;setOrderedQueue(rows);emit orderedQueueEdited(rows);queueFromOrderedRows();}
+  QVariantList knownQueueForJam() const;
   void setQueueCapacityExceeded(bool exceeded);
   QVariantList devices() const { return m_devices; }
 
