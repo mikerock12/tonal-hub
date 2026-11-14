@@ -106,9 +106,11 @@ adb("shell", "am", "start", "-W", "-n", ACTIVITY, "--ez", "queueEditorFixture", 
 nodes = wait_for("Agora · Mix Fixture 1", "Mix Fixture 3", "Mix Fixture 4")
 x, y = center(nodes, "Mix Fixture 3")
 adb("shell", f"input tap {x} {y}; input tap {x} {y}")
-nodes = wait_for("Agora · Mix Fixture 3", "Mix Fixture 4", "4 mús. · 1 álb. · 1 art. · 9min 0s")
-assert not any(matches(node, "Mix Fixture 2") for node in nodes)
-print("PASS Android double tap starts the selected occurrence and keeps the following tracks")
+nodes = wait_for("Agora · Mix Fixture 3", "Mix Fixture 2", "Mix Fixture 4", "Mix Fixture 5", "Mix Fixture 6",
+                 "5 mús. · 1 álb. · 1 art. · 12min 0s")
+assert_order(nodes, "Agora · Mix Fixture 3", "Mix Fixture 2", "Mix Fixture 4", "Mix Fixture 5", "Mix Fixture 6")
+assert not any(matches(node, "Mix Fixture 3") or matches(node, "Mix Fixture 1") for node in nodes)
+print("PASS Android double tap starts the selected occurrence and preserves every other upcoming track")
 
 def launch_long_queue(*extras):
     adb("shell", "am", "force-stop", PACKAGE)

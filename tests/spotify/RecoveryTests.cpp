@@ -1265,9 +1265,11 @@ public:
     player.refreshQueue();
     const auto playbackToken=player.queueEditToken();
     require(player.playQueueEntry(playbackToken,2)&&player.m_lastUris==
-      QStringList{"spotify:track:BBBBBBBBBBBBBBBBBBBBBB","spotify:track:DDDDDDDDDDDDDDDDDDDDDD"}&&
-      player.preparedQueue().first().toMap()["mixExternal"].toBool(),
-      "double click must start the selected occurrence and keep its tail");
+      QStringList{"spotify:track:BBBBBBBBBBBBBBBBBBBBBB","spotify:track:BBBBBBBBBBBBBBBBBBBBBB",
+                  "spotify:track:CCCCCCCCCCCCCCCCCCCCCC","spotify:track:DDDDDDDDDDDDDDDDDDDDDD"}&&
+      player.preparedQueue().first().toMap()["mixExternal"].toBool()&&
+      !player.preparedQueue()[1].toMap()["mixExternal"].toBool(),
+      "double click must promote the selected occurrence and preserve all other upcoming entries");
     require(!player.playQueueEntry(playbackToken,0),"a stale queue row started another selection");
     std::cout<<"PASS queue-only transport while playing and paused, coalescing, duplicates and discoveries\n";
   }

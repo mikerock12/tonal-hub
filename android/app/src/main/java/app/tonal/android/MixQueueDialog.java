@@ -429,10 +429,9 @@ final class MixQueueDialog {
                 @Override public boolean onDown(MotionEvent event){return true;}
                 @Override public boolean onDoubleTap(MotionEvent event){
                     if(!canEdit()||editing||dragFrom>=0||revision!=snapshotRevision)return false;
-                    ArrayList<JSONObject> suffix=new ArrayList<>();
-                    if(active)suffix.add(current);
-                    for(int i=Math.max(0,index);i<entries.size();i++)suffix.add(entries.get(i).track);
-                    if(host.playQueueEntry(suffix,anchor,revision,!active))load(3);
+                    ArrayList<JSONObject> order=tracks(entries);
+                    if(!active)order.set(0,order.remove(index+1));
+                    if(host.playQueueEntry(order,anchor,revision,!active))load(3);
                     return true;
                 }
             });
