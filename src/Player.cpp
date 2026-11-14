@@ -1341,6 +1341,8 @@ bool Player::playQueueEntry(const QString &token, int index) {
   emit queueChanged();
   emit orderedQueueEdited(rows);
   playOrderedUris(uris);
+  if (uris.first() == m_trackUri)
+    queueFromOrderedRows();
   return true;
 }
 

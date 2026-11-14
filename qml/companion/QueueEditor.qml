@@ -305,7 +305,6 @@ ColumnLayout {
                 Image { anchors.fill: parent; source: track.cover; asynchronous: true; fillMode: Image.PreserveAspectCrop; sourceSize: Qt.size(76,76) }
             }
             ColumnLayout {
-                id: trackLabels
                 objectName: "queueTrackLabels"
                 Layout.fillWidth: true
                 spacing: 2
@@ -318,6 +317,11 @@ ColumnLayout {
                     textFormat: Text.PlainText
                 }
                 Label { Layout.fillWidth: true; text: track.byline; color: editor.tone.textSecondary; elide: Text.ElideRight; textFormat: Text.PlainText }
+                MouseArea {
+                    anchors.fill: parent
+                    enabled: track.canPlay
+                    onDoubleClicked: track.playRequested()
+                }
             }
             Label {
                 visible: track.canDrag
@@ -347,11 +351,6 @@ ColumnLayout {
                     onCanceled: { if (moved) track.dragFinish(true) }
                 }
             }
-        }
-        TapHandler {
-            parent: trackLabels
-            enabled: track.canPlay
-            onDoubleTapped: track.playRequested()
         }
     }
 }
