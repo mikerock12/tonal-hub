@@ -1319,6 +1319,33 @@ bool Player::editQueue(const QString &token, const QVariantList &order) {
   return commitQueueEdit(rows);
 }
 
+bool Player::playQueueEntry(const QString &token, int index) {
+  if (token.isEmpty() || token != queueEditToken() || index < -1 || index >= m_queue.size())
+    return false;
+  auto rows = queueForEditing().mid(index + 1);
+  const auto uriAtIndex = index == -1 ? QVariant(m_trackUri) : m_queue[index].toMap().value("uri");
+  if (rows.isEmpty() || rows.first().toMap().value("uri") != uriAtIndex)
+    return false;
+  QStringList uris;
+  for (const auto &row : rows) {
+    const auto uri = row.toMap().value("uri").toString();
+    if (!uri.startsWith("spotify:track:"))
+      return false;
+    uris << uri;
+  }
+  if (index >= 0)
+    skipLeavesTrackRepeat();
+  setOrderedQueue(rows);
+  ++m_queueRevision;
+  m_queueTrack.clear();
+  emit queueChanged();
+  emit orderedQueueEdited(rows);
+  playOrderedUris(uris);
+  if (uris.first() == m_trackUri)
+    queueFromOrderedRows();
+  return true;
+}
+
 bool Player::commitQueueEdit(const QVariantList &rows) {
   static const QRegularExpression valid("^spotify:track:[A-Za-z0-9]{22}$");
   if (!queueEditingAvailable() || m_queueCapacityExceeded || rows.isEmpty() || rows.size() > 500 || rows.first().toMap().value("uri") != m_trackUri)

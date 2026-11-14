@@ -312,7 +312,7 @@ final class MixQueueDialog {
         status.setVisibility(text.isEmpty()?View.GONE:View.VISIBLE);
     }
 
-    private static String summary(List<JSONObject> tracks){
+    private static String summary(List<JSONObject> tracks,boolean hasCurrent){
         HashSet<String> albums=new HashSet<>(),artists=new HashSet<>();
         long ms=0;
         boolean missing=false;
@@ -337,7 +337,7 @@ final class MixQueueDialog {
         long sec=ms/1000,min=sec/60;
         String time=min>=60?(min/60)+"h "+(min%60)+"min":min+"min "+(sec%60)+"s";
         if(missing)time=ms>0?"≥ "+time:"—";
-        return tracks.size()+" mús. · "+albums.size()+" álb. · "+artists.size()+" art. · "+time;
+        return (tracks.size()+(hasCurrent?1:0))+" mús. · "+albums.size()+" álb. · "+artists.size()+" art. · "+time;
     }
 
     private void updateActions(){
@@ -379,7 +379,7 @@ final class MixQueueDialog {
         List<JSONObject> next=new ArrayList<>();
         if(prepared!=null)next=prepared.subList(1,prepared.size());
         else for(Entry entry:entries)next.add(entry.track);
-        summary.setText(summary(next));
+        summary.setText(summary(next,current!=null));
         if(current!=null)rows.addView(trackRow(current,-1));
         for(int i=0;i<Math.min(visibleRows,next.size());i++){
             View row=trackRow(next.get(i),i);
@@ -422,6 +422,22 @@ final class MixQueueDialog {
         artist.setEllipsize(TextUtils.TruncateAt.END);
         labels.addView(artist);
         ui.weight(row,labels);
+        if(!editing&&canEdit()){
+            int revision=snapshotRevision;
+            String anchor=current.optString("uri");
+            GestureDetector taps=new GestureDetector(host,new GestureDetector.SimpleOnGestureListener(){
+                @Override public boolean onDown(MotionEvent event){return true;}
+                @Override public boolean onDoubleTap(MotionEvent event){
+                    if(!canEdit()||editing||dragFrom>=0||revision!=snapshotRevision)return false;
+                    ArrayList<JSONObject> suffix=new ArrayList<>();
+                    if(active)suffix.add(current);
+                    for(int i=Math.max(0,index);i<entries.size();i++)suffix.add(entries.get(i).track);
+                    if(host.playQueueEntry(suffix,anchor,revision,!active))load(3);
+                    return true;
+                }
+            });
+            row.setOnTouchListener((view,event)->taps.onTouchEvent(event));
+        }
         if(!active&&canEdit()&&entries.size()>1){
             TextView handle=ui.text("≡",25,Ui.MUTED);
             handle.setGravity(Gravity.CENTER);

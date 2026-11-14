@@ -126,6 +126,7 @@ public:
   Q_INVOKABLE void addToQueue(const QString &uri);
   Q_INVOKABLE void insertInQueue(const QVariantMap &track,int placement);
   Q_INVOKABLE bool editQueue(const QString &token,const QVariantList &order);
+  Q_INVOKABLE bool playQueueEntry(const QString &token, int index);
   QString queueEditToken() const;
   Q_INVOKABLE void transferTo(const QString &deviceId);
   Q_INVOKABLE void refresh();

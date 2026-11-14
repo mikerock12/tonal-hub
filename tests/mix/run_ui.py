@@ -65,6 +65,8 @@ Pane {id:harness;width:1000;height:800;padding:0;palette.button:"#263440";palett
     property string artistsText:"Vento Norte"
     property string coverUrl:""
     property string queueEditToken:"1"
+    property int playedEntry:-1
+    function playQueueEntry(token,index){if(token===queueEditToken)playedEntry=index}
     property var queue:[
      {name:"Luz de Vidro",artists:"Vento Norte",albumId:"a",durationMs:180000},
      {name:"Maré Baixa",artists:"Vento Norte",albumId:"a",durationMs:240000},
@@ -201,6 +203,7 @@ Pane {id:harness;width:1000;height:800;padding:0;palette.button:"#263440";palett
    editor.reload()
    const list=findChild(editor,"editableQueueList")
    tryCompare(list,"count",499)
+   verify(findChild(editor,"queueSummary").text.startsWith("500 mús."))
    list.positionViewAtEnd()
    tryVerify(()=>list.itemAtIndex(498)!==null)
    compare(list.itemAtIndex(498).name,"Faixa de teste 500")
@@ -211,8 +214,13 @@ Pane {id:harness;width:1000;height:800;padding:0;palette.button:"#263440";palett
    const card=queueFixture.createObject(harness)
    const editor=findChild(card,"fixtureQueueEditor")
    const summary=findChild(editor,"queueSummary")
-   compare(summary.text,"5 mús. · 3 álb. · 3 art. · 16min 0s")
-   tryVerify(()=>findChild(editor,"editableQueueList").count===5)
+   compare(summary.text,"6 mús. · 3 álb. · 3 art. · 16min 0s")
+   const list=findChild(editor,"editableQueueList")
+   tryCompare(list,"count",5)
+   tryVerify(()=>list.itemAtIndex(0)!==null)
+   const labels=findChild(list.itemAtIndex(0),"queueTrackLabels")
+   mouseDoubleClickSequence(labels,labels.width/2,labels.height/2)
+   compare(editor.player.playedEntry,0)
    captureSong(card,"desktop-fila-01514.png")
    editor.editing=true
    editor.toggleMarked(1)
@@ -230,7 +238,6 @@ Pane {id:harness;width:1000;height:800;padding:0;palette.button:"#263440";palett
    compare(editor.player.queue[0].name,"Luz de Vidro")
    editor.removeMarked()
    compare(editor.player.queue.map(t=>t.name).join("|"),"Luz de Vidro|A Última Rua|Farol")
-   const list=findChild(editor,"editableQueueList")
    wait(160)
    const handle=findChild(list.itemAtIndex(0),"queueDragHandle")
    const start=handle.mapToItem(list,handle.width/2,handle.height/2)
@@ -240,7 +247,7 @@ Pane {id:harness;width:1000;height:800;padding:0;palette.button:"#263440";palett
    mouseRelease(list,start.x,start.y+editor.rowHeight*2)
    compare(editor.player.queue.map(t=>t.name).join("|"),"A Última Rua|Farol|Luz de Vidro")
    verify(editor.player.editQueue(editor.loadedToken,[]))
-   compare(summary.text,"0 mús. · 0 álb. · 0 art. · 0min 0s")
+   compare(summary.text,"1 mús. · 0 álb. · 0 art. · 0min 0s")
    card.destroy()
   }
   function test_song_queue_preview(){personalPanel.showSong();tryCompare(personalPanel,"visible",true);let button=findChild(personalPanel,"songQueueButton");verify(button!==null);verify(button.visible);personalPanel.openQueue();compare(personalPanel.queuedRows.length,2);compare(personalPanel.queuedRows[0].title,"Current song");let dialog=findChild(personalPanel,"songQueueDialog");verify(dialog.visible);personalPanel.remixSong(true);compare(App.listeningMix.previewQueue.length,2);compare(App.listeningMix.appliedPosition,-1);App.listeningMix.applyPreview(personalPanel.position);compare(App.listeningMix.appliedPosition,12345);grabImage(dialog.contentItem).save("song-queue.png");dialog.close();personalPanel.close()}
