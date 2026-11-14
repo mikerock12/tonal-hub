@@ -1322,10 +1322,14 @@ bool Player::editQueue(const QString &token, const QVariantList &order) {
 bool Player::playQueueEntry(const QString &token, int index) {
   if (token.isEmpty() || token != queueEditToken() || index < -1 || index >= m_queue.size())
     return false;
-  auto rows = queueForEditing().mid(index + 1);
+  auto rows = queueForEditing();
   const auto uriAtIndex = index == -1 ? QVariant(m_trackUri) : m_queue[index].toMap().value("uri");
-  if (rows.isEmpty() || rows.first().toMap().value("uri") != uriAtIndex)
+  if (rows.size() != m_queue.size() + 1 || rows.at(index + 1).toMap().value("uri") != uriAtIndex)
     return false;
+  if (index >= 0) {
+    const auto selected = rows.takeAt(index + 1);
+    rows[0] = selected;
+  }
   QStringList uris;
   for (const auto &row : rows) {
     const auto uri = row.toMap().value("uri").toString();

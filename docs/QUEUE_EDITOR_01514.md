@@ -61,6 +61,8 @@ que a fila pode aparecer parcial.
 
 Desde a 0.16.2, o contador de músicas inclui a faixa atual. As contagens
 de álbuns e artistas e a duração continuam descrevendo as próximas faixas.
-Fora do modo Editar, dê dois cliques ou toques na faixa para começar por ela
-e manter as seguintes na mesma ordem. Na atual, o gesto reinicia a faixa.
-O gesto requer uma fila confirmada no motor do Tonalify.
+Desde a 0.16.3, fora do modo Editar, dois cliques ou toques iniciam a faixa
+escolhida e preservam todas as outras faixas pendentes na ordem original.
+Por exemplo, Atual → B → C → D passa a C → B → D ao escolher C. Se houver
+outra ocorrência de C na fila, ela permanece. Na faixa atual, o gesto
+reinicia a reprodução. O gesto requer uma fila confirmada no motor do Tonalify.
