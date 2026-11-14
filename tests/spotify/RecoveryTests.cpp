@@ -1260,6 +1260,15 @@ public:
     engine.available=true;
     player.m_isPlaying=false;QVariantList full;for(int i=0;i<500;++i)full<<row("AAAAAAAAAAAAAAAAAAAAAA");player.setOrderedQueue(full);player.insertInQueue(row("BBBBBBBBBBBBBBBBBBBBBB"),true);
     require(player.m_orderedRows.size()==500,"queue limit discarded original songs");
+    player.setOrderedQueue({row("AAAAAAAAAAAAAAAAAAAAAA"),row("BBBBBBBBBBBBBBBBBBBBBB"),
+      row("CCCCCCCCCCCCCCCCCCCCCC"),row("BBBBBBBBBBBBBBBBBBBBBB",true),row("DDDDDDDDDDDDDDDDDDDDDD")});
+    player.refreshQueue();
+    const auto playbackToken=player.queueEditToken();
+    require(player.playQueueEntry(playbackToken,2)&&player.m_lastUris==
+      QStringList{"spotify:track:BBBBBBBBBBBBBBBBBBBBBB","spotify:track:DDDDDDDDDDDDDDDDDDDDDD"}&&
+      player.preparedQueue().first().toMap()["mixExternal"].toBool(),
+      "double click must start the selected occurrence and keep its tail");
+    require(!player.playQueueEntry(playbackToken,0),"a stale queue row started another selection");
     std::cout<<"PASS queue-only transport while playing and paused, coalescing, duplicates and discoveries\n";
   }
   static void deadlines() {

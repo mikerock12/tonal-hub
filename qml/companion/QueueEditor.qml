@@ -49,7 +49,7 @@ ColumnLayout {
         const min = Math.floor(sec / 60)
         const time = min >= 60 ? Math.floor(min / 60) + "h " + min % 60 + "min"
                                : min + "min " + sec % 60 + "s"
-        return qsTr("%1 mús. · %2 álb. · %3 art. · %4").arg(tracks.length).arg(albums.size).arg(artists.size)
+        return qsTr("%1 mús. · %2 álb. · %3 art. · %4").arg(tracks.length + (player && player.hasTrack ? 1 : 0)).arg(albums.size).arg(artists.size)
             .arg(missing ? (ms ? "≥ " + time : "—") : time)
     }
 
@@ -180,6 +180,8 @@ ColumnLayout {
         cover: editor.player ? editor.player.coverUrl || "" : ""
         highlighted: true
         current: true
+        canPlay: editor.available && !editor.editing && editor.dragIndex < 0
+        onPlayRequested: editor.player.playQueueEntry(editor.loadedToken, -1)
     }
 
     Label {
@@ -227,6 +229,8 @@ ColumnLayout {
             selectable: editor.editing
             selected: marked
             canDrag: editor.available && entries.count > 1
+            canPlay: editor.available && !editor.editing && editor.dragIndex < 0
+            onPlayRequested: editor.player.playQueueEntry(editor.loadedToken, index)
             onMark: editor.toggleMarked(index)
             onDragMove: (sceneX, sceneY) => {
                 if (editor.dragIndex < 0) editor.dragFrom = editor.dragIndex = index
@@ -271,6 +275,8 @@ ColumnLayout {
         property bool selectable: false
         property bool selected: false
         property bool canDrag: false
+        property bool canPlay: false
+        signal playRequested()
         signal mark()
         signal dragMove(real x, real y)
         signal dragFinish(bool canceled)
@@ -299,6 +305,8 @@ ColumnLayout {
                 Image { anchors.fill: parent; source: track.cover; asynchronous: true; fillMode: Image.PreserveAspectCrop; sourceSize: Qt.size(76,76) }
             }
             ColumnLayout {
+                id: trackLabels
+                objectName: "queueTrackLabels"
                 Layout.fillWidth: true
                 spacing: 2
                 Label {
@@ -339,6 +347,11 @@ ColumnLayout {
                     onCanceled: { if (moved) track.dragFinish(true) }
                 }
             }
+        }
+        TapHandler {
+            parent: trackLabels
+            enabled: track.canPlay
+            onDoubleTapped: track.playRequested()
         }
     }
 }

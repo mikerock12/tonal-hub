@@ -374,6 +374,24 @@ public final class MainActivity extends Activity {
         return true;
     }
 
+    boolean playQueueEntry(ArrayList<JSONObject> rows,String anchor,int revision,boolean skipping) {
+        if(!canEditQueue()||revision!=queueRevision||!isCurrentTrack(anchor)||rows.isEmpty())return false;
+        if(queueFixture()){
+            replaceKnownQueue(rows);
+            currentTrack=rows.get(0);
+            currentUri=currentTrack.optString("uri");
+            return true;
+        }
+        if(!api.loggedIn()||rows.stream().anyMatch(row->!row.optString("uri").matches("spotify:track:[A-Za-z0-9]{22}")
+                ||row.optBoolean("is_local")||!row.optBoolean("is_playable",true)))return false;
+        if(skipping){
+            NativeBridge.repeatMode=RepeatMode.afterCommand(NativeBridge.repeatMode,"next");
+            saveRepeat();
+        }
+        playTracks(rows,0,"",rows.get(0));
+        return true;
+    }
+
     void insertInQueue(JSONObject track,QueuePlacement placement){
         if(!canEditQueue()||!track.optString("uri").matches("spotify:track:[A-Za-z0-9]{22}")){
             notice("Inicie uma seleção no Tonalify antes de editar a fila.");

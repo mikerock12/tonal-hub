@@ -10,7 +10,7 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
-**0.16.1 — Fila de até 500 músicas, contraste no menu Sobre e download Android pelo portal.**
+**0.16.2 — A fila conta a música atual e toca a faixa selecionada com dois cliques ou toques.**
 
 O limite conta a faixa atual. O Windows e o Android consultam o portal ao
 abrir e exibem as mudanças antes de oferecer o download.

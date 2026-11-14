@@ -58,3 +58,9 @@ No Android, a reprodução iniciada pela playlist tenta carregar a sequência
 completa até 500 faixas e a envia ao motor local. Se o catálogo estiver
 indisponível, a reprodução pelo contexto continua possível e o app avisa
 que a fila pode aparecer parcial.
+
+Desde a 0.16.2, o contador de músicas inclui a faixa atual. As contagens
+de álbuns e artistas e a duração continuam descrevendo as próximas faixas.
+Fora do modo Editar, dê dois cliques ou toques na faixa para começar por ela
+e manter as seguintes na mesma ordem. Na atual, o gesto reinicia a faixa.
+O gesto requer uma fila confirmada no motor do Tonalify.
