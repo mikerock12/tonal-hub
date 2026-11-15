@@ -10,6 +10,8 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
+**Windows 0.16.4 — Corrige a abertura do instalador baixado pelo atualizador.**
+
 **0.16.3 — Dois cliques ou toques iniciam a faixa escolhida e preservam as demais músicas da fila.**
 
 O limite conta a faixa atual. O Windows e o Android consultam o portal ao

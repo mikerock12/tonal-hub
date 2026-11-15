@@ -42,7 +42,7 @@ QNetworkRequest request(const QUrl &url) {
 }
 
 DesktopUpdate::DesktopUpdate(QObject *parent)
-    : QObject(parent), m_file(QDir::tempPath() + QStringLiteral("/Tonal-Update-XXXXXX.exe")),
+    : QObject(parent), m_staging(QDir::tempPath() + QStringLiteral("/Tonal-Update-XXXXXX")),
       m_installPath(installation()) {}
 
 DesktopUpdate::Release DesktopUpdate::parseRelease(const QByteArray &data) {
@@ -131,7 +131,12 @@ void DesktopUpdate::check(bool automatic) {
 
 void DesktopUpdate::download() {
   if (m_busy || m_ready || !installed() || m_release.version.isEmpty()) return;
-  if (!m_file.open()) {
+  if (!m_staging.isValid()) {
+    fail(tr("Não foi possível criar a pasta temporária da atualização."));
+    return;
+  }
+  m_file.setFileName(m_staging.filePath(m_release.fileName));
+  if (!m_file.open(QIODevice::WriteOnly | QIODevice::NewOnly)) {
     fail(tr("Não foi possível criar o arquivo da atualização."));
     return;
   }
@@ -174,6 +179,7 @@ void DesktopUpdate::fetchAsset(const QUrl &url, int redirects) {
       fail(tr("O download falhou ou o instalador não passou na verificação."));
       return;
     }
+    // QFile closes the Windows handle before the loader maps the executable.
     m_file.close();
     m_busy = false;
     m_ready = true;
@@ -200,12 +206,14 @@ void DesktopUpdate::install() {
   verified.close();
   const auto executable = QFileInfo(QCoreApplication::applicationFilePath()).completeBaseName();
   const auto restart = executable == "TonalHub" || executable == "IndieTonal" ? executable : QStringLiteral("Tonalify");
-  if (!QProcess::startDetached(m_file.fileName(),
-       {"/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CLOSEAPPLICATIONS",
-        "/TONALRESTART=" + restart, "/DIR=" + QDir::toNativeSeparators(m_installPath)})) {
-    status(tr("Não foi possível iniciar o instalador."));
+  QProcess installer;
+  installer.setProgram(QDir::toNativeSeparators(m_file.fileName()));
+  installer.setArguments({"/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CLOSEAPPLICATIONS",
+                          "/TONALRESTART=" + restart, "/DIR=" + QDir::toNativeSeparators(m_installPath)});
+  if (!installer.startDetached()) {
+    status(tr("Não foi possível iniciar o instalador. %1").arg(installer.errorString()));
     return;
   }
-  m_file.setAutoRemove(false);
+  m_staging.setAutoRemove(false);
   QCoreApplication::quit();
 }
