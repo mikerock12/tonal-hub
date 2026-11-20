@@ -66,3 +66,7 @@ escolhida e preservam todas as outras faixas pendentes na ordem original.
 Por exemplo, Atual → B → C → D passa a C → B → D ao escolher C. Se houver
 outra ocorrência de C na fila, ela permanece. Na faixa atual, o gesto
 reinicia a reprodução. O gesto requer uma fila confirmada no motor do Tonalify.
+
+Desde a 0.17.0, **Colocar como próxima da fila** sempre entra logo após a
+música atual e **Adicionar à fila** entra depois do bloco de próximas. Ver
+[TRANSITIONS_0170.md](TRANSITIONS_0170.md).

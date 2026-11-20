@@ -224,6 +224,17 @@ Item {
                        : qsTr("Descoberta 2+1: duas da fila, uma descoberta")
                 onClicked: root.applyMode("discovery")
             }
+            Personal.ActionIcon {
+                objectName: "transitionsButton"
+                anchors.verticalCenter: parent.verticalCenter
+                width: 36; height: 36
+                symbol: "transition"
+                accentInk: Theme.accent
+                filled: root.player.transitionsEnabled
+                description: root.player.transitionsEnabled ? qsTr("Transições ligadas: escolher efeito e tempo")
+                                                            : qsTr("Transições entre músicas: efeitos de DJ")
+                onClicked: { transitionsLoader.active = true; transitionsLoader.item.open() }
+            }
         }
 
         Row {
@@ -377,6 +388,19 @@ Item {
                 font.pixelSize: 12
                 font.weight: Font.DemiBold
                 anchors.verticalCenter: parent.verticalCenter
+            }
+        }
+    }
+    Loader {
+        id: transitionsLoader
+        active: false
+        sourceComponent: Component {
+            Personal.TransitionsDialog {
+                player: root.player
+                accent: Theme.accent
+                surface: Theme.elevated
+                ink: Theme.textPrimary
+                muted: Theme.textSecondary
             }
         }
     }

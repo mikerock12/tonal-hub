@@ -136,40 +136,41 @@ Item {
         anchors.margins: 16
         spacing: 6
 
+        // Cabeçalho da letra: só ícones. Alternadores ficam azuis quando ligados.
         Flow {
             width: parent.width
             spacing: 8
             Personal.ActionIcon {
+                objectName: "refreshLyricsButton"
+                symbol: "refresh"
+                description: qsTr("Atualizar letra")
+                enabled: root.status !== Lyrics.Loading
+                onClicked: { root.requestedTranslation = ""; App.lyrics.reload() }
+            }
+            Personal.ActionIcon {
                 symbol:"translate"
-                description:"Traduzir pt-BR"
                 objectName: "translateLyricsButton"
-                enabled: (root.synced || root.status === Lyrics.Plain) && !App.music.busy
+                accentInk: "#35a7ff"
+                filled: root.autoTranslate
+                description: root.autoTranslate ? qsTr("Tradução automática ligada: desligar") : qsTr("Tradução automática pt-BR: ligar")
                 onClicked: {
-                    root.autoTranslate = true
-                    root.requestedTranslation = ""
-                    showTranslation.checked = true
-                    root.translateCurrent()
+                    // Religar reaproveita a tradução já feita desta letra.
+                    root.autoTranslate = !root.autoTranslate
+                    if (root.autoTranslate) root.translateCurrent()
                 }
             }
-            Personal.ActionIcon{symbol:"expand";description:"Expandir letras em tela cheia";onClicked:fullscreen.present()}
-            Personal.ActionIcon{symbol:"font";description:"Fontes e cores";onClicked:appearance.open()}
-            CheckBox{text:"Sincronia";checked:App.music.syncEnabled;onToggled:App.music.syncEnabled=checked}
-            Button{text:"Exportar ajuste";onClicked:syncExport.open()}
+            Personal.ActionIcon{symbol:"font";description:qsTr("Fontes e cores");onClicked:appearance.open()}
+            Personal.ActionIcon{symbol:"expand";description:qsTr("Expandir letras em tela cheia");onClicked:fullscreen.present()}
+            Personal.ActionIcon {
+                objectName: "syncLyricsButton"
+                symbol: "sync"
+                accentInk: "#35a7ff"
+                filled: App.music.syncEnabled
+                description: App.music.syncEnabled ? qsTr("Sincronia ligada: desligar") : qsTr("Sincronia da letra: ligar")
+                onClicked: App.music.syncEnabled = !App.music.syncEnabled
+            }
+            Personal.ActionIcon{objectName:"exportSyncButton";symbol:"save";description:qsTr("Baixar o ajuste de sincronia");onClicked:syncExport.open()}
             ComboBox{model:backdrop.modes;currentIndex:Math.max(0,model.indexOf(App.music.background));onActivated:App.music.background=currentText}
-            Label {
-                objectName: "lyricsSourceLanguage"
-                text: qsTr("Idioma detectado automaticamente")
-                color: Theme.textSecondary
-                height: 40
-                verticalAlignment: Text.AlignVCenter
-            }
-            CheckBox {
-                id: showTranslation
-                text: qsTr("Mostrar tradução")
-                palette.windowText: Theme.textPrimary
-                checked: true
-                visible: root.hasTranslation
-            }
         }
         Label {
             width: parent.width
@@ -263,7 +264,7 @@ Item {
                     width: parent.width - 24
                     text: root.translationMatches ? (root.translationLines[line.index].translation || "") : ""
                     textFormat: Text.PlainText
-                    visible: showTranslation.checked && text.length > 0
+                    visible: root.autoTranslate && text.length > 0
                     wrapMode: Text.Wrap
                 }
             }

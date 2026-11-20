@@ -11,6 +11,8 @@ import android.widget.*;
 final class Ui {
     // Active theme colors (AppTheme.apply). Defaults are the original Tonal Azul.
     static int BG=0xff101112,CARD=0xff202224,PANEL=0xff18191b,TEXT=0xfff5f5f5,MUTED=0xffa5a8ad,BLUE=0xff009bd6,ACCENT_SOFT=0xff7ddbff,TINT=0xff263748,ON_ACCENT=0xff000000;
+    /** Alternadores da letra: azul fixo quando ligados (pedido do usuário), branco quando desligados. */
+    static final int TOGGLE_ON=0xff35a7ff;
     // Progress bar and thumb of the active theme.
     static int SEEK_TRACK=0xff404040,SEEK_START=0xff009bd6,SEEK_END=0xff009bd6,THUMB=0xfff5f5f5,THUMB_BORDER=0xfff5f5f5,SEEK_HEIGHT=4,THUMB_SIZE=14;
     static boolean HALLOWEEN,CHRISTMAS;
@@ -139,6 +141,8 @@ final class Ui {
                 case "chevron":canvas.drawLine(8,5,16,12,p);canvas.drawLine(16,12,8,19,p);break;
                 case "chart":canvas.drawLine(3,21,21,21,p);for(int i=0;i<3;i++){int x=5+i*6;canvas.drawRoundRect(x,15-i*5,x+3,20,1,1,p);}break;
                 case "save":canvas.drawLine(12,3,12,16,p);canvas.drawLine(7,11,12,16,p);canvas.drawLine(12,16,17,11,p);canvas.drawLine(4,18,4,21,p);canvas.drawLine(4,21,20,21,p);canvas.drawLine(20,21,20,18,p);break;
+                case "transition":{Path t=new Path();t.moveTo(2,6);t.cubicTo(10,6,14,18,22,18);t.moveTo(2,18);t.cubicTo(10,18,14,6,22,6);canvas.drawPath(t,p);canvas.drawLine(2,22,22,22,p);break;}
+                case "sync":canvas.drawCircle(12,12,8,p);canvas.drawLine(12,7,12,12,p);canvas.drawLine(12,12,16,14,p);canvas.drawLine(2,12,4,12,p);canvas.drawLine(20,12,22,12,p);break;
                 case "jam":canvas.drawCircle(8,7,3,p);canvas.drawCircle(19,8,2.5f,p);canvas.drawArc(2,13,14,27,180,180,false,p);canvas.drawLine(2,20,14,20,p);canvas.drawArc(14,14,24,26,230,130,false,p);break;
                 case "search":canvas.drawCircle(10,10,6,p);canvas.drawLine(15,15,21,21,p);break;
                 case "back":canvas.drawLine(15,4,7,12,p);canvas.drawLine(7,12,15,20,p);break;

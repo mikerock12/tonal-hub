@@ -100,7 +100,7 @@ def main():
         set_text('[00:00.00][00:01.00]Hello world','Letra TXT/LRC ou tradução com as mesmas linhas')
         click('IMPORTAR LETRA',contains=True);screenshot('05-lyric-stage')
         check('synced_lyrics_import_foreground_stage')
-        click('Traduzir pt-BR');click('Inglês')
+        click('Tradução automática ligada: desligar');click('Tradução automática pt-BR: ligar')
         # Metadata snapshot is collected after closing so debug intents never cover the dialog.
         end=time.monotonic()+40;translated=False
         while time.monotonic()<end:

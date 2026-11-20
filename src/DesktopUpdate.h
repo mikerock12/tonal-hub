@@ -1,8 +1,9 @@
 #pragma once
 
 #include <QCryptographicHash>
+#include <QFile>
 #include <QNetworkAccessManager>
-#include <QTemporaryFile>
+#include <QTemporaryDir>
 #include <QUrl>
 
 class DesktopUpdate : public QObject {
@@ -44,7 +45,8 @@ private:
   void fail(const QString &status);
   void status(const QString &text);
   QNetworkAccessManager m_network;
-  QTemporaryFile m_file;
+  QTemporaryDir m_staging;
+  QFile m_file;
   QCryptographicHash m_hash{QCryptographicHash::Sha256};
   QString m_installPath, m_status;
   Release m_release;

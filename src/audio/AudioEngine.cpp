@@ -1,4 +1,5 @@
 #include "AudioEngine.hpp"
+#include "playback/TransitionMixer.hpp"
 #include "AudioDiagnostics.hpp"
 #include "DspGraph.hpp"
 #include "FfmpegDecoder.hpp"
@@ -163,6 +164,19 @@ void AudioEngine::flushSpotify() {
   if (!m_local)
     m_flush = true;
 }
+void AudioEngine::armTransition(int effect, int remainingMs) {
+  std::lock_guard l(m_mutex);
+  if (m_local || !m_pipe)
+    return;
+  m_transitionEffect = effect;
+  m_transitionRemainingMs = remainingMs;
+}
+void AudioEngine::cancelTransition() {
+  std::lock_guard l(m_mutex);
+  m_transitionEffect = -1;
+  m_transitionCancel = true;
+  m_transitionCancelPending = true;
+}
 void AudioEngine::setSpotifyPaused(bool paused) {
   std::lock_guard l(m_mutex);
   if (!m_local)
@@ -289,6 +303,14 @@ void AudioEngine::run() {
   bool hasReplayGain = false;
   auto lastReport = std::chrono::steady_clock::now();
   AudioDiagnostics counters;
+  // Criado só na primeira transição (reserva ~5 MB para o fim da faixa).
+  std::unique_ptr<tonal::playback::TransitionMixer> mixer;
+  std::vector<float> mixInput;
+  auto publishTransition = [&] {
+    const int state = !mixer || !mixer->active() ? 0
+                      : mixer->state() == tonal::playback::TransitionMixer::State::Capturing ? 1 : 2;
+    m_transitionState.store(state);
+  };
   QString file, error;
   AudioSettings settings;
   auto rebuild = [&](double gain) {
@@ -336,6 +358,8 @@ void AudioEngine::run() {
     double seek;
     float target;
     uint64_t serial;
+    int transitionEffect, transitionRemainingMs;
+    bool transitionCancel;
     {
       std::lock_guard l(m_mutex);
       next = m_settings;
@@ -348,9 +372,15 @@ void AudioEngine::run() {
       seek = std::exchange(m_seek, -1.);
       target = m_volume;
       serial = m_generation.load();
+      transitionEffect = std::exchange(m_transitionEffect, -1);
+      transitionRemainingMs = m_transitionRemainingMs;
+      transitionCancel = std::exchange(m_transitionCancel, false);
     }
     if (serial != generation) {
       generation = serial;
+      if (mixer)
+        mixer->reset();
+      publishTransition();
       counters = {};
       output.close();
       opened = false;
@@ -418,6 +448,12 @@ void AudioEngine::run() {
         format = {};
       }
     }
+    if (transitionCancel) {
+      if (mixer)
+        mixer->reset();
+      publishTransition();
+      m_transitionCancelPending = false;
+    }
     if (ended && decoder && seek >= 0)
       ended = false;
     if ((!pipe && !decoder) || ended) {
@@ -461,6 +497,22 @@ void AudioEngine::run() {
       dsp.reset();
       drained = false;
       revision = -1;
+    }
+    // Seek, carga ou pulo do usuário descartam a transição em curso.
+    if (flush && mixer) {
+      mixer->reset();
+      publishTransition();
+    }
+    if (transitionEffect >= 0 && pipe && !decoder) {
+      if (!mixer)
+        mixer = std::make_unique<tonal::playback::TransitionMixer>(format.sampleRate);
+      else if (mixer->sampleRate() != format.sampleRate)
+        mixer->setSampleRate(format.sampleRate);
+      // O que já está na fila do OpenAL é passado: lê só o restante do fluxo.
+      const int64_t tail = int64_t(transitionRemainingMs) * format.sampleRate / 1000 -
+                           int64_t(output.queued()) * 512;
+      mixer->arm(tonal::playback::TransitionEffect(transitionEffect), tail);
+      publishTransition();
     }
     if (seek >= 0 && decoder) {
       output.clear();
@@ -522,13 +574,46 @@ void AudioEngine::run() {
           },
           Qt::QueuedConnection);
     }
-    if ((paused && local) || output.queued() >= 6) {
+    // Transição: lê o motor adiantado (fim da faixa A, depois B) e mescla.
+    const bool transition = pipe && mixer && mixer->active();
+    bool transitionEnded = false;
+    if (transition) {
+      while (mixer->wantsInput()) {
+        const int n = pipe->read(mixInput, 512);
+        if (n < 0) {
+          transitionEnded = true;
+          break;
+        }
+        if (n == 0)
+          break;
+        m_spotifyFrames += uint64_t(n);
+        mixer->push(mixInput.data(), size_t(n));
+      }
+      publishTransition();
+    }
+    if (!transitionEnded && ((paused && local) || output.queued() >= 6)) {
       std::this_thread::sleep_for(std::chrono::milliseconds(3));
       continue;
     }
     AudioFrame in;
     int got;
-    if (decoder)
+    if (transitionEnded) {
+      got = -1;
+    } else if (transition) {
+      in.format = format;
+      in.pts = pts;
+      in.samples.resize(512 * 2);
+      // Sem B a tempo (rede lenta ou fim da fila), o fim de A não para.
+      const bool starving = !paused && output.queued() <= 2;
+      got = int(mixer->pull(in.samples.data(), 512, starving));
+      in.samples.resize(size_t(got) * 2);
+      pts += got;
+      publishTransition();
+      if (got == 0) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(3));
+        continue;
+      }
+    } else if (decoder)
       got = decoder->read(in, error);
     else {
       in.format = format;

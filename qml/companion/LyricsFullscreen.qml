@@ -51,7 +51,7 @@ Window {
             ActionIcon{symbol:"close";description:"Sair da tela cheia";onClicked:screen.close()}
             ActionIcon{objectName:"fullscreenRefreshLyrics";symbol:"refresh";description:"Atualizar letra";enabled:!screen.controller.busy&&!screen.refreshBusy;onClicked:{screen.refreshRequested();if(screen.refreshAction)screen.refreshAction();else if(typeof screen.controller.reloadLyrics==="function")screen.controller.reloadLyrics();else screen.controller.fetchLyrics();screen.reveal()}}
             ComboBox{Layout.fillWidth:true;implicitHeight:42;font.pixelSize:14;palette.button:"#263440";palette.buttonText:"#f5f5f5";palette.text:"#f5f5f5";palette.base:"#171b24";palette.window:"#171b24";palette.windowText:"#f5f5f5";model:backdrop.modes;currentIndex:Math.max(0,model.indexOf(screen.controller.background));onActivated:{screen.controller.background=currentText;screen.reveal()} onPressedChanged:if(pressed)hide.stop()}
-            CheckBox{text:"Sincronia";font.pixelSize:14;palette.windowText:"#f5f5f5";palette.text:"#f5f5f5";checked:screen.controller.syncEnabled;onToggled:screen.controller.syncEnabled=checked}
+            ActionIcon{objectName:"fullscreenSyncToggle";symbol:"sync";accentInk:"#35a7ff";filled:screen.controller.syncEnabled;description:screen.controller.syncEnabled?"Sincronia ligada: desligar":"Sincronia da letra: ligar";onClicked:{screen.controller.syncEnabled=!screen.controller.syncEnabled;screen.reveal()}}
             ActionIcon{symbol:"font";description:"Fontes e cores";onClicked:{hide.stop();appearance.open()}}
         }
     }

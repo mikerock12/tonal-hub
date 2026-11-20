@@ -23,7 +23,8 @@ if(TONAL_ADVANCED_AUDIO)
         src/audio/OpenALOutput.cpp src/audio/OpenALOutput.hpp
         src/audio/NativePcmPipe.cpp src/audio/NativePcmPipe.hpp
         src/audio/IamfDecoderAdapter.cpp src/audio/IamfDecoderAdapter.hpp
-        src/audio/AudioEngine.cpp src/audio/AudioEngine.hpp)
+        src/audio/AudioEngine.cpp src/audio/AudioEngine.hpp
+        src/playback/TransitionMixer.cpp src/playback/TransitionMixer.hpp)
     target_include_directories(tonal_audio PUBLIC "${CMAKE_SOURCE_DIR}/src")
     target_link_libraries(tonal_audio PUBLIC Qt6::Core OpenAL::OpenAL FFmpeg::avutil FFmpeg::avcodec FFmpeg::avformat FFmpeg::avfilter FFmpeg::swresample)
     target_compile_definitions(tonal_audio PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)

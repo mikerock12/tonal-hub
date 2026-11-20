@@ -1,0 +1,34 @@
+{
+  "version": "0.17.0",
+  "date": "2026-11-20",
+  "androidVersionCode": 42,
+  "validation": {
+    "ctestWindows": "12/12 (inclui transition_mixer e spotify_recovery com Próxima + Adicionar)",
+    "transitionCoreWindowsMsvc": "PASS — 6 efeitos, saída finita ≤ 0 dBFS, duração A+B−mescla, B intacta depois, A some, B sobe, sem estalo, preenchimento sem B, endCapture, reset, adiantamento limitado",
+    "transitionCoreAndroidX86_64Avd": "PASS (mesmo teste compilado pelo NDK e executado na AVD)",
+    "qml": {"mix": 34, "lyrics": 7, "playlist": 3},
+    "androidJavaVariants": ["release", "benchmark", "comparison", "debug"],
+    "androidAudioTrackTransitionSuite": {
+      "device": "AVD Tonal_Local_20261015 (emulador, x86_64)",
+      "captureMsFor3sOfAudio": [35, 41],
+      "mixPlaybackMsFor8sOfB": [8004, 8003],
+      "drainWithoutNextTrack": true,
+      "cancelReturnsToDirectPath": true,
+      "underruns": 0
+    },
+    "androidUi": "tests/android/transitions_lyrics_smoke.py: diálogo, efeito salvo e reaberto, seis ícones no cabeçalho da letra, sincronia alterna; sem tradução na rede",
+    "windowsPortable": {"programsStarted": 3, "files": 1449, "zipCrc": true},
+    "apk": {"certificateSha256": "464ae7cf34f4f145541569db215f8fcdef5deda1be31921d8e366eed20aa22c2", "sameAs": "0.16.3", "alignment16KiB": true, "signatureV2": true}
+  },
+  "attempts": [
+    "O primeiro teste QML da letra falhou: religar a tradução descartava a tradução já feita e pedia outra. Corrigido nas três telas; o teste agora confere que nenhuma nova chamada é feita.",
+    "A primeira captura do diálogo Windows mostrou o rádio à direita e o ponto marcado invisível; corrigidos texto e paleta, conferido por captura.",
+    "O primeiro build Android falhou por uma quebra de linha literal numa string Java; corrigido antes dos APKs.",
+    "tests/mix/android_ui.py já estava desatualizado (procura a barra Agora removida na 0.15.1); não foi usado. O novo smoke cobre as telas da 0.17.0."
+  ],
+  "limits": [
+    "Sem Spotify autenticado tocando em aparelho físico, sem teste no POCO X7 Pro, sem medição acústica, de CPU ou de bateria das transições.",
+    "No Windows a sobreposição depende da posição informada pelo Spotify; no Android, da velocidade com que o motor entrega o fim da faixa.",
+    "Os efeitos não analisam BPM, tonalidade ou batida."
+  ]
+}

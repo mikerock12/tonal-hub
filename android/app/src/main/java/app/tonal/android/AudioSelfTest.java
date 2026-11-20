@@ -35,6 +35,44 @@ final class AudioSelfTest {
         require(AudioConfig.bufferMillis(1,true)>AudioConfig.bufferMillis(0,true)&&AudioConfig.bufferMillis(0,true)>AudioConfig.bufferMillis(2,true),"Perfis de buffer");
         require(AudioConfig.growBuffer(4000,48000,4096)==4096&&AudioConfig.growBuffer(12000,48000,24000)==12000,"Limites do buffer adaptativo");
     }
+    /** Mixer de transições na saída real: leitura adiantada sem bloquear, mescla 1:1 e drenagem sem a próxima faixa. */
+    static JSONObject transitions(Context context)throws Exception{
+        JSONObject report=new JSONObject();AudioOutput out=new AudioOutput();out.initialize(context,"transition-test");
+        try{
+            out.startStereo(44100);
+            float[] a=new float[44100*2*5],b=new float[44100*2*8];
+            for(int f=0;f<44100*5;f++){float v=(float)(.4*Math.sin(2*Math.PI*440*f/44100.));a[f*2]=v;a[f*2+1]=v;}
+            for(int f=0;f<44100*8;f++){float v=(float)(.4*Math.sin(2*Math.PI*660*f/44100.));b[f*2]=v;b[f*2+1]=v;}
+            int packet=4096,head=44100*2*2;
+            for(int i=0;i<head;i+=packet)out.write(Arrays.copyOfRange(a,i,Math.min(head,i+packet)));
+            int before=out.underruns();
+            for(int effect=0;effect<2;effect++){
+                require(out.armTransition(effect==0?0:2,3000),"armar transição "+effect);
+                long start=System.nanoTime();
+                for(int i=head;i<a.length;i+=packet)out.write(Arrays.copyOfRange(a,i,Math.min(a.length,i+packet)));
+                long captureMs=(System.nanoTime()-start)/1_000_000;
+                require(captureMs<1500,"leitura adiantada bloqueou: "+captureMs+" ms para 3 s de áudio");
+                require(out.transitionState()==2,"mescla não começou: "+out.transitionState());
+                start=System.nanoTime();
+                for(int i=0;i<b.length;i+=packet)out.write(Arrays.copyOfRange(b,i,Math.min(b.length,i+packet)));
+                long mixMs=(System.nanoTime()-start)/1_000_000;
+                require(out.transitionState()==0,"mescla não terminou");
+                report.put("effect"+effect+"CaptureMs",captureMs).put("effect"+effect+"PlaybackMs",mixMs);
+            }
+            // Sem a próxima faixa: o motor fecha o sink e o fim lido toca sozinho.
+            require(out.armTransition(4,3000),"armar transição sem próxima");
+            for(int i=head;i<a.length;i+=packet)out.write(Arrays.copyOfRange(a,i,Math.min(a.length,i+packet)));
+            require(out.drainTransition(),"drenagem recusada");
+            long until=android.os.SystemClock.elapsedRealtime()+8000;
+            while(out.transitionState()!=0&&android.os.SystemClock.elapsedRealtime()<until)Thread.sleep(50);
+            require(out.transitionState()==0,"drenagem não terminou");
+            // Cancelar descarta o que foi lido e volta ao caminho direto.
+            require(out.armTransition(5,3000),"armar para cancelar");out.write(Arrays.copyOfRange(a,head,head+packet*8));out.cancelTransition();
+            require(out.transitionState()==0,"cancelar manteve a transição");out.write(Arrays.copyOfRange(b,0,packet));
+            report.put("underruns",out.underruns()-before).put("pass",true);
+        }finally{out.release();}
+        return report;
+    }
     static void run(Context context){
         JSONObject report=new JSONObject();JSONArray checks=new JSONArray();
         try{

@@ -1234,6 +1234,16 @@ public:
     engine.confirm();
     require(!player.queueEditPending()&&!player.m_isPlaying&&transportWrites==0,"queue acknowledgement changed paused transport");
     player.m_isPlaying=true;
+    auto letters=[&]{QStringList result;for(const auto &v:player.queue())result<<v.toMap()["name"].toString().left(1);return result.join("");};
+    player.setOrderedQueue({row("AAAAAAAAAAAAAAAAAAAAAA"),row("BBBBBBBBBBBBBBBBBBBBBB")});
+    player.insertInQueue(row("CCCCCCCCCCCCCCCCCCCCCC"),1);
+    player.insertInQueue(row("DDDDDDDDDDDDDDDDDDDDDD"),2);
+    require(letters()=="CDB","an addition must play after the track placed as next");
+    player.insertInQueue(row("EEEEEEEEEEEEEEEEEEEEEE"),1);
+    player.insertInQueue(row("FFFFFFFFFFFFFFFFFFFFFF"),2);
+    require(letters()=="ECDFB","the latest next must lead and additions must follow the next block");
+    for(int i=0;i<6&&player.queueEditPending();++i)engine.confirm();
+    require(!player.queueEditPending(),"next/add edits were not confirmed");
     player.setOrderedQueue({row("AAAAAAAAAAAAAAAAAAAAAA"),row("BBBBBBBBBBBBBBBBBBBBBB",true)});
     player.insertInQueue(row("CCCCCCCCCCCCCCCCCCCCCC"),2);
     player.insertInQueue(row("DDDDDDDDDDDDDDDDDDDDDD"),2);

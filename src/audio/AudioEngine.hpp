@@ -65,6 +65,16 @@ public:
   void setSpotifyPaused(bool);
   bool spotifyPaused() const { std::lock_guard lock(m_mutex); return m_pause; }
   uint64_t spotifyFramesRead() const { return m_spotifyFrames.load(); }
+  // Transições da fila: só com o PCM do Tonalify passando por este motor.
+  bool spotifyPipeActive() const { std::lock_guard lock(m_mutex); return m_pipe != nullptr && !m_failed; }
+  // `remainingMs`: tempo audível que falta da faixa atual.
+  void armTransition(int effect, int remainingMs);
+  void cancelTransition();
+  // 0 parado, 1 lendo o fim da faixa, 2 mesclando.
+  int transitionState() const { return m_transitionState.load(); }
+  bool transitionContinuesOnLoad() const {
+    return m_transitionState.load() != 0 && !m_transitionCancelPending.load();
+  }
 signals:
   void settingsChanged();
   void diagnosticsChanged();
@@ -95,6 +105,10 @@ private:
   std::atomic<bool> m_quit{false};
   std::atomic<bool> m_visualizer{false};
   std::atomic<uint64_t> m_spotifyFrames{0};
+  int m_transitionEffect = -1, m_transitionRemainingMs = 0;
+  bool m_transitionCancel = false;
+  std::atomic<int> m_transitionState{0};
+  std::atomic<bool> m_transitionCancelPending{false};
   bool m_failed = false;
   std::thread m_thread;
   QString m_diagnostics = QStringLiteral("Aguardando áudio local");

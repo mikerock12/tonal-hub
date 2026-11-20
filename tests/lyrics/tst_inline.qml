@@ -11,6 +11,14 @@ Item {
         name: "InlineLyricTranslation"
         when: windowShown
         function test_climate_cards(){climate.open();tryCompare(climate,"visible",true);compare(climate.report.artistCount,1);compare(climate.report.themes[0].label,"rebeldia");grabImage(page).save("climate-cards.png");climate.close()}
+        function test_header_icons(){
+            for(const name of ["refreshLyricsButton","translateLyricsButton","syncLyricsButton","exportSyncButton"])verify(findChild(page,name)!==null,name)
+            const sync=findChild(page,"syncLyricsButton");const before=App.music.syncEnabled
+            compare(sync.filled,before);mouseClick(sync);compare(App.music.syncEnabled,!before);compare(sync.filled,!before)
+            mouseClick(sync);compare(App.music.syncEnabled,before)
+            // Atualizar ignora o cache e pede nova tradução; o teste restaura a chave para os demais casos.
+            const saved=page.requestedTranslation;const calls=App.lyrics.reloadCalls;mouseClick(findChild(page,"refreshLyricsButton"));compare(App.lyrics.reloadCalls,calls+1);compare(page.requestedTranslation,"");page.requestedTranslation=saved
+        }
         function test_manual_sync_toggle(){App.music.alignLyrics(1,15000);compare(App.music.syncOffset,-14000);App.music.syncEnabled=false;compare(App.music.lineAt(15000),-1);App.music.syncEnabled=true}
         function test_fullscreen_styles_and_controls() {
             const savedBusy=App.music.busy
@@ -60,7 +68,7 @@ Item {
             compare(App.music.lines[0].text, "Hello world")
             compare(App.music.lines.length, 3) // blank verse must not shift the translation
             verify(page.translationMatches)
-            verify(!button.enabled)
+            verify(button.filled)
             App.music.lines = [{time:-1,text:"Hello world",translation:"Olá mundo"},
                                {time:-1,text:""}, {time:-1,text:"A synthetic verse",translation:"Um verso sintético"}]
             App.music.busy = false
@@ -70,6 +78,18 @@ Item {
             tryCompare(translated, "text", "Olá mundo")
             verify(translated.visible)
             grabImage(page).save("translated-page.png")
+            // Header toggle: white/off hides the translation, blue/on shows it again
+            // without a new request when this exact lyric was already translated.
+            page.requestedTranslation=App.player.trackUri+"|"+App.lyrics.lines.map(row=>row.time+":"+row.text).join("
+")
+            const callsBeforeToggle=App.music.translateCalls
+            mouseClick(button)
+            verify(!button.filled)
+            tryCompare(translated, "visible", false)
+            mouseClick(button)
+            verify(button.filled)
+            tryCompare(translated, "visible", true)
+            compare(App.music.translateCalls, callsBeforeToggle)
             // Replacing the original version or changing tracks must hide stale translations.
             App.lyrics.lines = [{time:-1,text:"Another recording"}]
             tryCompare(page, "hasTranslation", false)
@@ -81,7 +101,6 @@ Item {
             App.lyrics.status = Lyrics.Loading
             App.lyrics.lines = []
             App.lyrics.changed()
-            verify(!button.enabled)
             App.music.current = ({uri:"spotify:track:next"})
             App.lyrics.lines = [{time:0,text:"Next synthetic song"}]
             App.lyrics.status = Lyrics.Synced
