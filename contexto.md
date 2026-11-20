@@ -10,7 +10,15 @@ aleatório, mesclagem de 3 a 10 s; "Colocar como próxima" sempre à frente de
 no cabeçalho da letra (azul ligado, branco desligado). Mixer C++ compartilhado
 lê o fim da faixa adiantado e mescla com o início da próxima; seis efeitos e
 testes sintéticos. Sem teste acústico, físico ou com Spotify real.
-Referência: [TRANSITIONS_0170.md](docs/TRANSITIONS_0170.md). Leia também [AGENTS.md](AGENTS.md).
+Referência: [TRANSITIONS_0170.md](docs/TRANSITIONS_0170.md).
+
+Publicação 0.17.0: PR53 mesclado em b3fd54bef693b58d813365baef2ed27d48af508f
+(CI 5/5), release v0.17.0 com APKs, instalador, ZIP e SHA256SUMS. Portal PR73 em
+9d86981, Worker 562006a9; downloads Windows e Android redirecionam à v0.17.0 com
+hash igual ao validado. Backup privado em
+https://drive.google.com/drive/folders/1iK5CeW5dxYkhdnqX4FTvxohsV4mq4wJr (partes
+de 7 MB, limite do conector). Nenhuma ferramenta nova instalada ou baixada no PC.
+Responsável: Claude. Leia também [AGENTS.md](AGENTS.md).
 
 ## Edição da fila sem recarregar a faixa 0.15.15
 
