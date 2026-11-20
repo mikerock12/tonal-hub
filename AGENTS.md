@@ -511,6 +511,13 @@ docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no
 - Letra: ícones no cabeçalho; tradução/sincronia azuis (#35A7FF) quando ligadas.
 - Não declarar teste acústico, CPU/bateria, aparelho físico ou Spotify real
   das transições sem evidência; os testes atuais usam tons sintéticos.
+- Entrega 0.17.0 (20/11/2026): PR53 merge b3fd54b, código de produto 825f50d,
+  release v0.17.0 (inclui a correção do atualizador da 0.16.4, que não teve
+  release própria). Portal PR73 merge 9d86981, Worker 562006a9. Backup privado
+  1iK5CeW5dxYkhdnqX4FTvxohsV4mq4wJr. O conector do Drive aceita até 10 MB por
+  envio após base64: arquivos grandes vão em partes de 7 MB com drive-parts.json;
+  APK universal e ZIP portátil ficam só na release (hashes registrados).
+  Evidências: docs/release-0170-tests.json e docs/artifacts-0170.json.
 
 ## Fila, contraste e distribuição 0.16.1
 
