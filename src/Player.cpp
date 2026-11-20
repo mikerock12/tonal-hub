@@ -1,4 +1,6 @@
 #include "Player.h"
+#include "playback/TransitionMixer.hpp"
+#include <QRandomGenerator>
 
 #include "AuthManager.h"
 #include "LibrespotProcess.h"
@@ -79,6 +81,16 @@ Player::Player(SpotifyApi *api, LibrespotProcess *librespot, AuthManager *auth,
                QObject *parent)
     : QObject(parent), m_api(api), m_librespot(librespot), m_auth(auth) {
   m_volume = qBound(0, QSettings().value(QStringLiteral("player/volume"), 60).toInt(), 100);
+  {
+    QSettings settings;
+    m_transitionsEnabled = settings.value(QStringLiteral("transitions/enabled"), false).toBool();
+    const auto effect = settings.value(QStringLiteral("transitions/effect"), QStringLiteral("random")).toString();
+    if (effect == QLatin1String("random") ||
+        tonal::playback::transitionEffectFromId(effect.toStdString()) != tonal::playback::TransitionEffect::Count)
+      m_transitionEffect = effect;
+    m_transitionSeconds = tonal::playback::clampTransitionSeconds(
+        settings.value(QStringLiteral("transitions/seconds"), 6).toInt());
+  }
 
   m_pollTimer.setSingleShot(true);
   connect(&m_pollTimer, &QTimer::timeout, this, &Player::refresh);
@@ -87,6 +99,7 @@ Player::Player(SpotifyApi *api, LibrespotProcess *librespot, AuthManager *auth,
   m_tickTimer.setInterval(100);
   connect(&m_tickTimer, &QTimer::timeout, this, [this] {
     emit positionChanged();
+    maybeArmTransition();
     if (m_durationMs > 0 && positionMs() >= m_durationMs)
       refreshSoon(300);
   });
@@ -172,6 +185,103 @@ void Player::setAudioEngine(tonal::audio::AudioEngine *engine) {
           &Player::positionChanged);
   connect(engine, &tonal::audio::AudioEngine::backendFailed, this,
           &Player::message);
+  connect(engine, &tonal::audio::AudioEngine::settingsChanged, this,
+          &Player::transitionsChanged);
+}
+
+// ---------------------------------------------------------------- transições
+
+QVariantList Player::transitionEffects() const {
+  struct Entry { const char *id, *name, *description; };
+  static const Entry entries[] = {
+      {"random", QT_TR_NOOP("Aleatório"), QT_TR_NOOP("Um efeito diferente a cada troca de música.")},
+      {"fade", QT_TR_NOOP("Fade cruzado"), QT_TR_NOOP("A música atual baixa enquanto a próxima sobe, sem buraco de volume.")},
+      {"echo", QT_TR_NOOP("Eco de despedida"), QT_TR_NOOP("A música atual se repete em ecos de um lado para o outro enquanto a próxima entra.")},
+      {"filter", QT_TR_NOOP("Troca de graves"), QT_TR_NOOP("O filtro fecha a música atual; a próxima entra sem graves até assumir a pista.")},
+      {"brake", QT_TR_NOOP("Freio de vinil"), QT_TR_NOOP("A música atual desacelera como um toca-discos desligado e a próxima cai em seguida.")},
+      {"reverb", QT_TR_NOOP("Banho de reverb"), QT_TR_NOOP("A música atual se dissolve num salão de reverb por baixo da próxima.")},
+      {"roll", QT_TR_NOOP("Loop acelerado"), QT_TR_NOOP("Trechos cada vez menores da música atual se repetem até a próxima explodir.")},
+  };
+  QVariantList result;
+  for (const auto &entry : entries)
+    result << QVariantMap{{"id", QString::fromLatin1(entry.id)},
+                          {"name", tr(entry.name)},
+                          {"description", tr(entry.description)}};
+  return result;
+}
+
+bool Player::transitionsAvailable() const {
+  return m_audio && m_audio->advancedEnabled();
+}
+
+void Player::setTransitionsEnabled(bool enabled) {
+  if (enabled == m_transitionsEnabled)
+    return;
+  m_transitionsEnabled = enabled;
+  QSettings().setValue(QStringLiteral("transitions/enabled"), enabled);
+  if (!enabled)
+    cancelTransition();
+  m_transitionStatus.clear();
+  emit transitionsChanged();
+}
+
+void Player::setTransitionEffect(const QString &effect) {
+  if (effect == m_transitionEffect ||
+      (effect != QLatin1String("random") &&
+       tonal::playback::transitionEffectFromId(effect.toStdString()) == tonal::playback::TransitionEffect::Count))
+    return;
+  m_transitionEffect = effect;
+  QSettings().setValue(QStringLiteral("transitions/effect"), effect);
+  emit transitionsChanged();
+}
+
+void Player::setTransitionSeconds(int seconds) {
+  seconds = tonal::playback::clampTransitionSeconds(seconds);
+  if (seconds == m_transitionSeconds)
+    return;
+  m_transitionSeconds = seconds;
+  QSettings().setValue(QStringLiteral("transitions/seconds"), seconds);
+  emit transitionsChanged();
+}
+
+// Pulos, seleções, seeks e troca de aparelho não terminam com efeito: o que
+// já estava sendo mesclado é descartado e a próxima carga limpa o buffer.
+void Player::cancelTransition() {
+  m_transitionGuard.restart();
+  if (m_audio && m_audio->transitionState() != 0)
+    m_audio->cancelTransition();
+}
+
+void Player::maybeArmTransition() {
+  if (!m_transitionsEnabled || !m_audio || localPlayback() || !m_isPlaying ||
+      !playingHere() || m_trackUri.isEmpty() || m_durationMs <= 0 ||
+      m_transitionArmedUri == m_trackUri || m_repeatWanted == QLatin1String("track") ||
+      !m_audio->spotifyPipeActive() || m_audio->transitionState() != 0)
+    return;
+  // Logo após seek, troca de faixa ou pulo a posição ainda está assentando.
+  if (m_transitionGuard.isValid() && m_transitionGuard.elapsed() < 2500)
+    return;
+  // Última música conhecida sem repetição: termina normalmente.
+  if (m_queueTrack == m_trackUri && !m_queuePartial && m_queue.isEmpty() &&
+      m_repeatWanted == QLatin1String("off"))
+    return;
+  const int remaining = m_durationMs - positionMs();
+  const auto plan = tonal::playback::planTransition(m_transitionSeconds, m_durationMs, remaining, 0);
+  if (!plan.arm)
+    return;
+  auto effect = tonal::playback::transitionEffectFromId(m_transitionEffect.toStdString());
+  if (effect == tonal::playback::TransitionEffect::Count)
+    effect = tonal::playback::pickRandomTransition(
+        tonal::playback::TransitionEffect(m_lastTransition < 0 ? int(tonal::playback::TransitionEffect::Count) : m_lastTransition),
+        QRandomGenerator::global()->generate());
+  m_transitionArmedUri = m_trackUri;
+  m_lastTransition = int(effect);
+  m_audio->armTransition(int(effect), remaining);
+  const auto id = QString::fromLatin1(tonal::playback::transitionEffectId(effect).data());
+  for (const auto &entry : transitionEffects())
+    if (entry.toMap().value("id") == id)
+      m_transitionStatus = tr("Última transição: %1").arg(entry.toMap().value("name").toString());
+  emit transitionsChanged();
 }
 
 QString Player::artistsText() const {
@@ -254,6 +364,7 @@ void Player::applyState(const QJsonObject &obj, bool acceptVolume) {
   const int displayedPosition = positionMs();
   if (uri != m_trackUri) {
     cancelSeek();
+    m_transitionGuard.restart();
     m_trackUri = uri;
     m_trackName = item.value(QStringLiteral("name")).toString();
     m_durationMs = item.value(QStringLiteral("duration_ms")).toInt();
@@ -829,6 +940,7 @@ void Player::next() {
   }
   cancelResume();
   cancelSeek();
+  cancelTransition();
   skipLeavesTrackRepeat();
   if (m_audio)
     m_audio->flushSpotify();
@@ -843,6 +955,7 @@ void Player::previous() {
     return;
   }
   cancelResume();
+  cancelTransition();
   // Igual ao app oficial: depois de 3 s volta ao início da faixa.
   if (positionMs() > 3000) {
     seek(0);
@@ -863,6 +976,10 @@ void Player::seek(int ms) {
   // o próprio "command=Seek(" descarta o buffer antigo nesse instante. Limpar
   // antes só abria um silêncio e depois tocava de novo o trecho antigo.
   ms = qBound(0, ms, qMax(0, m_durationMs));
+  cancelTransition();
+  // Voltar para antes do ponto da transição permite armá-la de novo.
+  if (m_durationMs - ms > m_transitionSeconds * 1000 + 1500)
+    m_transitionArmedUri.clear();
   ++m_seekGeneration;
   m_seekTarget = ms;
   m_seekClock.restart();
@@ -1138,6 +1255,7 @@ void Player::toggleLike() {
 void Player::playContext(const QString &contextUri, const QString &offsetUri,
                          int offsetIndex) {
   emit playbackRequested();
+  cancelTransition();
   ++m_transportGeneration;
   if (localPlayback())
     m_audio->returnToSpotify();
@@ -1155,6 +1273,7 @@ void Player::playContext(const QString &contextUri, const QString &offsetUri,
 
 void Player::playUris(const QStringList &uris, int offsetIndex) {
   emit playbackRequested();
+  cancelTransition();
   ++m_transportGeneration;
   if (localPlayback())
     m_audio->returnToSpotify();
@@ -1178,6 +1297,7 @@ void Player::playOrderedUris(const QStringList &uris) {
   if (uris.isEmpty())
     return;
   emit playbackRequested();
+  cancelTransition();
   cancelResume();
   if (localPlayback())
     m_audio->returnToSpotify();
@@ -1417,6 +1537,44 @@ void Player::finishQueueEdit(quint64 serial, bool accepted) {
   dispatchQueueEdit();
 }
 
+namespace {
+// queueAdded > 0: "Adicionar à fila" (ordem de inclusão); < 0: "Colocar como
+// próxima"; 0: faixa comum. A próxima escolhida entra logo após a atual e o
+// bloco de próximas contíguo fica sempre à frente das adições.
+qsizetype leadingNextEnd(const QVariantList &rows) {
+  qsizetype end = 1;
+  while (end < rows.size() && rows[end].toMap().value("queueAdded").toLongLong() < 0)
+    ++end;
+  return end;
+}
+qsizetype queueInsertionIndex(const QVariantList &rows, int placement) {
+  if (placement == 0)
+    return rows.size();
+  if (placement == 1)
+    return qMin<qsizetype>(1, rows.size());
+  qsizetype at = leadingNextEnd(rows);
+  qint64 lastAdded = 0;
+  for (qsizetype i = 1; i < rows.size(); ++i) {
+    const auto sequence = rows[i].toMap().value("queueAdded").toLongLong();
+    if (sequence > lastAdded) {
+      lastAdded = sequence;
+      at = qMax(at, i + 1);
+    }
+  }
+  return qMin(at, rows.size());
+}
+qint64 queueInsertionMarker(const QVariantList &rows, int placement) {
+  if (placement == 1)
+    return -1;
+  if (placement == 0)
+    return 0;
+  qint64 lastAdded = 0;
+  for (qsizetype i = 1; i < rows.size(); ++i)
+    lastAdded = qMax(lastAdded, rows[i].toMap().value("queueAdded").toLongLong());
+  return lastAdded + 1;
+}
+} // namespace
+
 void Player::insertInQueue(const QVariantMap &track, int placement) {
   if (!queueEditingAvailable()) {
     emit message(tr("A edição da fila requer o motor local do Tonalify."));
@@ -1470,18 +1628,8 @@ void Player::insertInQueue(const QVariantMap &track, int placement) {
       row["id"] = row.value("uri");
       if (!row.contains("title")) row["title"] = row.value("name");
       if (!row.contains("image")) row["image"] = row.value("coverUrl");
-      qsizetype at = placement == 0 ? rows.size() : 1;
-      qint64 lastAdded = 0;
-      if (placement == 2) {
-        for (qsizetype i = 1; i < rows.size(); ++i) {
-          const auto sequence = rows[i].toMap().value("queueAdded").toLongLong();
-          if (sequence > lastAdded) {
-            lastAdded = sequence;
-            at = i + 1;
-          }
-        }
-      }
-      row["queueAdded"] = placement == 2 ? lastAdded + 1 : 0;
+      const auto at = queueInsertionIndex(rows, placement);
+      row["queueAdded"] = queueInsertionMarker(rows, placement);
       rows.insert(at, row);
     }
     if (rows.size() > initialSize && commitQueueEdit(rows) && m_isPlaying)
@@ -1500,6 +1648,7 @@ void Player::insertInQueue(const QVariantMap &track, int placement) {
 
 
 void Player::transferTo(const QString &deviceId) {
+  cancelTransition();
   if (localPlayback())
     m_audio->returnToSpotify();
   cancelResume();

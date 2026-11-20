@@ -1,6 +1,16 @@
 # Contexto do Tonal Hub
 
-Atualizado em **14/11/2026**. Versão de trabalho **Windows 0.16.4 e Android 0.16.3**, versionCode 41. Leia também [AGENTS.md](AGENTS.md).
+Atualizado em **20/11/2026**. Versão de trabalho **Windows e Android 0.17.0**, versionCode 42.
+
+## Transições, próxima da fila e cabeçalho da letra 0.17.0
+
+Pedido do usuário em 20/11: efeitos de transição de DJ nas listas, fixo ou
+aleatório, mesclagem de 3 a 10 s; "Colocar como próxima" sempre à frente de
+"Adicionar à fila"; tradução automática, sincronia e baixar ajuste como ícones
+no cabeçalho da letra (azul ligado, branco desligado). Mixer C++ compartilhado
+lê o fim da faixa adiantado e mescla com o início da próxima; seis efeitos e
+testes sintéticos. Sem teste acústico, físico ou com Spotify real.
+Referência: [TRANSITIONS_0170.md](docs/TRANSITIONS_0170.md). Leia também [AGENTS.md](AGENTS.md).
 
 ## Edição da fila sem recarregar a faixa 0.15.15
 

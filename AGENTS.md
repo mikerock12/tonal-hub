@@ -5,7 +5,7 @@ afetada antes de alterar o produto. Estado documental: 25/10/2026, builds Window
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
-Estado atual: 07/11/2026, entrega Windows/Android 0.15.13. As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
+Estado atual: 20/11/2026, entrega Windows/Android 0.17.0 (ver seção 0.17.0 ao final). As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
 
 ## Autoria, Git e privacidade
 
@@ -491,6 +491,26 @@ docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no
   sem usar o motor de áudio. Instalar após ação do usuário e verificar
   tamanho e SHA-256. No Android, confirmação e abertura pelo instalador
   do sistema. VersionCode 38.
+
+## Transições e fila 0.17.0
+
+- Ler docs/TRANSITIONS_0170.md. Núcleo `src/playback/TransitionMixer.cpp`
+  compartilhado (Windows AudioEngine; Android JNI em libtonal_muse). Buffers
+  reservados no construtor; push/pull sem alocação, sem rede/banco/UI.
+- Seis efeitos + Aleatório (sem repetir o anterior), 3–10 s, até 1/3 da faixa.
+  Pulos, seleções, seeks e troca de aparelho cancelam; pausa preserva.
+  Sem transição em repetição de uma faixa, arquivo local, IndieTonal ou Connect remoto.
+- Windows: o `command=Load` da troca natural não limpa o buffer enquanto o
+  mixer está ativo (`transitionContinuesOnLoad`); o Player cancela antes de
+  pulos/seleções. Requer processamento de áudio ligado.
+- Android: gatilho pelos eventos do motor (`onTrackInfo`, posição), também em
+  segundo plano; escrita não bloqueante enquanto lê o fim de A; drenagem se
+  o sink fechar no fim natural. versionCode 42.
+- Fila: `queueAdded` < 0 marca "Colocar como próxima" (logo após a atual);
+  adições entram depois do bloco contíguo de próximas. Windows e Android iguais.
+- Letra: ícones no cabeçalho; tradução/sincronia azuis (#35A7FF) quando ligadas.
+- Não declarar teste acústico, CPU/bateria, aparelho físico ou Spotify real
+  das transições sem evidência; os testes atuais usam tons sintéticos.
 
 ## Fila, contraste e distribuição 0.16.1
 

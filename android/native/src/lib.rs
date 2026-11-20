@@ -182,6 +182,10 @@ pub extern "system" fn Java_app_tonal_android_NativeBridge_nativeStart(mut env: 
                                 if key_failures>=2 && generation==GENERATION.load(Ordering::SeqCst) {key_failures=0;first_failure=None;status(generation,"Falha Spotify: músicas indisponíveis em sequência; reconectando sem pular a fila.");}
                             },
                             PlayerEvent::Playing{..} => {key_failures=0;first_failure=None;},
+                            // Duração da faixa que começa: as transições armam pelo PCM, também em segundo plano.
+                            PlayerEvent::TrackChanged{audio_item} => {
+                                if generation==GENERATION.load(Ordering::SeqCst) {if let Some(vm)=JVM.get(){if let Ok(env)=vm.attach_current_thread_permanently(){if let Ok(uri)=env.new_string(audio_item.track_id.to_uri().unwrap_or_default()){let uri=env.auto_local(uri);let _=call_void("onTrackInfo","(JLjava/lang/String;I)V",&[JValue::Long(generation as jlong),JValue::Object(uri.as_ref()),JValue::Int(audio_item.duration_ms.min(i32::MAX as u32) as i32)]);}}}}
+                            },
                             // Jam membership pushed by the service (see spirc handle_session_update).
                             PlayerEvent::SessionClientChanged{client_id,client_name,..} if client_id=="tonal-jam" && client_name.len()<=65536 => {
                                 if let Ok(update)=serde_json::from_str::<serde_json::Value>(client_name){jam_result(generation,&serde_json::json!({"event":"session_update","update":update}));}

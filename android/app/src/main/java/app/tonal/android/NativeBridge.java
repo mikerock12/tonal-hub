@@ -23,7 +23,7 @@ public final class NativeBridge {
     public static void start(String token,String cache,int bitrate,boolean normalize){spotifyEngine=true;nativeStart(token,cache,bitrate,normalize);}
     public static void command(String command){
         synchronized(intent){intent.command(command,playing);}
-        if(PlaybackIntent.movesAudio(command))audio.discontinuity();
+        if(PlaybackIntent.movesAudio(command)){Transitions.cancel();audio.discontinuity();}
         if(command.equals("pause")||command.equals("stop")){audio.pause();playing=false;}
         repeatMode=RepeatMode.afterCommand(repeatMode,command);
         Consumer<String> listener=commandListener;if(listener!=null)listener.accept(command);
@@ -45,7 +45,13 @@ public final class NativeBridge {
     public static void onNativeStatus(long epoch,String value){if(epoch==generation)onStatus(value);}
     public static void onProgress(long epoch,String uri,int position,boolean active){
         if(epoch!=generation)return;
-        main.post(()->{if(epoch!=generation)return;synchronized(intent){intent.progress(uri,position,active);}java.util.function.BiConsumer<String,Integer> observer=progressObserver;if(observer!=null)observer.accept(uri,position);});
+        long eventAt=android.os.SystemClock.elapsedRealtime();
+        main.post(()->{if(epoch!=generation)return;synchronized(intent){intent.progress(uri,position,active);}java.util.function.BiConsumer<String,Integer> observer=progressObserver;if(observer!=null)observer.accept(uri,position);Transitions.onProgress(uri,position,active,eventAt);});
+    }
+    /** Faixa carregada pelo motor, com a duração do catálogo (TrackChanged). */
+    public static void onTrackInfo(long epoch,String uri,int duration){
+        if(epoch!=generation)return;
+        main.post(()->{if(epoch==generation)Transitions.onTrack(uri,duration);});
     }
     public static native void playFile(String path);
     static final AudioOutput audio = new AudioOutput();
@@ -78,7 +84,18 @@ public final class NativeBridge {
     }
     public static void onAudioFormat(int rate,int channels) { audio.open(rate,channels); playing=true; onStatus("Reproduzindo"); }
     public static void onAudioResume() { if(spotifyEngine&&!intent.desired){sendCommand("pause");return;}audio.resume(); playing=true; onStatus("Reproduzindo"); }
-    public static void onAudioPause() { audio.pause(); playing=false; onStatus("Pausado"); }
+    public static void onAudioPause() {
+        // Fim natural com transição: o motor fecha o sink, mas o fim da faixa
+        // já lido continua tocando até a próxima chegar ou a mescla terminar.
+        boolean continuing;synchronized(intent){continuing=spotifyEngine&&intent.desired;}
+        if(continuing&&audio.drainTransition())return;
+        audio.pause(); playing=false; onStatus("Pausado");
+    }
+    /** A mescla terminou sem a próxima faixa (fim da fila ou sink ainda parado). */
+    static void onTransitionDrained(){
+        boolean stopped;synchronized(intent){stopped=!intent.desired;}
+        if(stopped||android.os.SystemClock.elapsedRealtime()-lastPcm>250){audio.pause();playing=false;onStatus("Pausado");}
+    }
     /** Engine closed the sink only to load another track; runs right after onAudioPause. */
     public static void onAudioDiscontinuity() { audio.discontinuity(); }
     private static final ThreadLocal<Boolean> audioPriority=ThreadLocal.withInitial(()->false);

@@ -42,6 +42,13 @@ class Player : public QObject {
   Q_PROPERTY(bool queuePartial READ queuePartial NOTIFY queueChanged)
   Q_PROPERTY(QString queueEditToken READ queueEditToken NOTIFY queueChanged)
   Q_PROPERTY(QVariantList devices READ devices NOTIFY devicesChanged)
+  // Transições entre as músicas da fila (efeitos de DJ).
+  Q_PROPERTY(bool transitionsEnabled READ transitionsEnabled WRITE setTransitionsEnabled NOTIFY transitionsChanged)
+  Q_PROPERTY(QString transitionEffect READ transitionEffect WRITE setTransitionEffect NOTIFY transitionsChanged)
+  Q_PROPERTY(int transitionSeconds READ transitionSeconds WRITE setTransitionSeconds NOTIFY transitionsChanged)
+  Q_PROPERTY(QVariantList transitionEffects READ transitionEffects CONSTANT)
+  Q_PROPERTY(bool transitionsAvailable READ transitionsAvailable NOTIFY transitionsChanged)
+  Q_PROPERTY(QString transitionStatus READ transitionStatus NOTIFY transitionsChanged)
 
 public:
   Player(SpotifyApi *api, LibrespotProcess *librespot, AuthManager *auth,
@@ -99,6 +106,15 @@ public:
   QVariantList knownQueueForJam() const;
   void setQueueCapacityExceeded(bool exceeded);
   QVariantList devices() const { return m_devices; }
+  bool transitionsEnabled() const { return m_transitionsEnabled; }
+  void setTransitionsEnabled(bool enabled);
+  QString transitionEffect() const { return m_transitionEffect; }
+  void setTransitionEffect(const QString &effect);
+  int transitionSeconds() const { return m_transitionSeconds; }
+  void setTransitionSeconds(int seconds);
+  QVariantList transitionEffects() const;
+  bool transitionsAvailable() const;
+  QString transitionStatus() const { return m_transitionStatus; }
 
   Q_INVOKABLE void togglePlay();
   Q_INVOKABLE void pause();
@@ -134,6 +150,7 @@ public:
   Q_INVOKABLE void refreshDevices();
 
 signals:
+  void transitionsChanged();
   void playbackRequested();
   void trackChanged();
   void stateChanged();
@@ -227,6 +244,14 @@ private:
   void reapplyRepeat(const QString &deviceId);
   void skipLeavesTrackRepeat();
   bool queueFromOrderedRows();
+  void maybeArmTransition();
+  void cancelTransition();
+  bool m_transitionsEnabled = false;
+  QString m_transitionEffect = QStringLiteral("random");
+  int m_transitionSeconds = 6;
+  int m_lastTransition = -1;
+  QString m_transitionArmedUri, m_transitionStatus;
+  QElapsedTimer m_transitionGuard;
   QElapsedTimer m_positionClock;
   QElapsedTimer m_transportIntentClock;
   uint64_t m_transportGeneration = 0;

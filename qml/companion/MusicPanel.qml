@@ -316,6 +316,7 @@ Dialog {
                     ActionIcon{accentInk:panel.tone.accent;objectName:"songRepeat";visible:!!panel.transportPlayer&&typeof panel.transportPlayer.cycleRepeat==="function";symbol:panel.transportPlayer&&panel.transportPlayer.repeatMode==="track"?"repeat1":"repeat";filled:!!panel.transportPlayer&&panel.transportPlayer.repeatMode!=="off";description:!panel.transportPlayer||panel.transportPlayer.repeatMode==="off"?"Repetir a fila":panel.transportPlayer.repeatMode==="context"?"Repetindo a fila: repetir só esta música":"Repetindo esta música: desligar repetição";onClicked:panel.transportPlayer.cycleRepeat()}
                     ActionIcon{accentInk:panel.tone.accent;objectName:"songDiscovery";visible:panel.quickModes;enabled:!panel.mixController||!panel.mixController.busy;symbol:"discover";description:panel.mixController&&panel.mixController.busy?panel.mixController.status:"Descoberta 2+1: duas da fila, uma descoberta / desligar";filled:!!panel.mixController&&panel.mixController.discoveryEnabled;onClicked:panel.applySongMode(2)}
                     ActionIcon{accentInk:panel.tone.accent;objectName:"songQueueButton";visible:panel.quickModes;symbol:"queue";description:"Fila: ver, preparar com prévia e aplicar";onClicked:panel.openQueue()}
+                    ActionIcon{accentInk:panel.tone.accent;objectName:"songTransitionsButton";visible:panel.quickModes&&!!panel.transportPlayer&&typeof panel.transportPlayer.transitionsEnabled!=="undefined";symbol:"transition";filled:!!panel.transportPlayer&&!!panel.transportPlayer.transitionsEnabled;description:"Transições entre músicas: efeitos de DJ e tempo de mesclagem";onClicked:songTransitions.open()}
                     ActionIcon{accentInk:panel.tone.accent;objectName:"songJamButton";visible:panel.quickModes;symbol:"jam";description:"Jam com amigos";onClicked:panel.jamRequested()}
                 }
                 RowLayout {
@@ -344,15 +345,14 @@ Dialog {
                         }
                         ColumnLayout {width:songPages.width;height:songPages.height;spacing:8
                 RowLayout {
+                    // Cabeçalho da letra: só ícones; alternadores azuis quando ligados.
                     ActionIcon { accentInk:panel.tone.accent;symbol:"refresh";description:"Atualizar letra"; enabled: !panel.controller.busy; onClicked:{panel.translatedTrack="";if(typeof panel.controller.reloadLyrics==="function")panel.controller.reloadLyrics();else panel.controller.fetchLyrics()} }
-                    Label { text:"Idioma automático"; color:"#a5a8ad" }
-                    ActionIcon { accentInk:panel.tone.accent;symbol:"translate";description:"Traduzir pt-BR"; enabled: !panel.controller.busy && panel.controller.lines.length>0; onClicked:{panel.translatedTrack="";panel.autoTranslation=true;panel.ensureLyrics()} }
+                    ActionIcon { objectName:"songTranslateToggle";accentInk:"#35a7ff";filled:panel.autoTranslation;symbol:"translate";description:panel.autoTranslation?"Tradução automática ligada: desligar":"Tradução automática pt-BR: ligar"; onClicked:{panel.autoTranslation=!panel.autoTranslation;if(panel.autoTranslation)panel.ensureLyrics()} }
                     ActionIcon { accentInk:panel.tone.accent;symbol:"font";description:"Fontes e cores";onClicked:appearance.open() }
                     ActionIcon { accentInk:panel.tone.accent;symbol:"expand";description:"Expandir letras em tela cheia";onClicked:fullscreen.present() }
+                    ActionIcon { objectName:"songSyncToggle";accentInk:"#35a7ff";filled:panel.controller.syncEnabled;symbol:"sync";description:panel.controller.syncEnabled?"Sincronia ligada: desligar":"Sincronia da letra: ligar";onClicked:panel.controller.syncEnabled=!panel.controller.syncEnabled }
+                    ActionIcon { objectName:"songExportSync";symbol:"save";description:"Baixar o ajuste de sincronia";onClicked:syncExport.open() }
                     ActionIcon {symbol:"plus";description:"Importar / editar letra";onClicked:editDialog.open()}
-                    CheckBox { text: "Sincronia"; checked:panel.controller.syncEnabled;onToggled:panel.controller.syncEnabled=checked }
-
-                    ActionIcon{symbol:"save";description:"Exportar ajuste de sincronia";onClicked:syncExport.open()}
                 }
                 Label { text: panel.controller.lyricStatus; textFormat: Text.PlainText; wrapMode: Text.WordWrap; Layout.fillWidth: true; color: "#b5c9d6" }
                 Label { text: "Buscar envia título/artista ao LRCLIB; traduzir envia a letra ao Google Tradutor. Letra/versão e tradução podem não estar disponíveis."; wrapMode: Text.WordWrap; Layout.fillWidth: true; font.pixelSize: 11; color: "#a3b8c8" }
@@ -375,7 +375,7 @@ Dialog {
                             width: lyrics.width-18;height:versePair.implicitHeight
                             Column {id:versePair;width:parent.width;spacing:6
                                 StyledVerse{width:parent.width;text:modelData.text;appearance:panel.controller.lyricStyle;playing:panel.playing&&panel.visible}
-                                StyledVerse{width:parent.width;text:modelData.translation || "";visible:text.length>0;translation:true;appearance:panel.controller.lyricStyle;playing:panel.playing&&panel.visible}
+                                StyledVerse{width:parent.width;text:modelData.translation || "";visible:panel.autoTranslation&&text.length>0;translation:true;appearance:panel.controller.lyricStyle;playing:panel.playing&&panel.visible}
                             }
                             MouseArea{anchors.fill:parent;onClicked:panel.controller.alignLyrics(index,panel.position)}
 
@@ -403,6 +403,8 @@ Dialog {
         }
     }
     }
+    Loader{id:songTransitionsLoader;active:false;sourceComponent:Component{TransitionsDialog{player:panel.transportPlayer;accent:panel.tone.accent;surface:panel.tone.panel;ink:panel.tone.text;muted:panel.tone.textSecondary}}}
+    QtObject{id:songTransitions;function open(){songTransitionsLoader.active=true;songTransitionsLoader.item.open()}}
     Dialog{id:queueDialog;objectName:"songQueueDialog";title:panel.queueEdited?"Prévia da nova fila":"Fila de reprodução";modal:true;parent:Overlay.overlay;anchors.centerIn:parent;width:Math.min(640,parent.width-32);height:Math.min(620,parent.height-48);standardButtons:Dialog.Close
         onClosed:{panel.pendingRemix=false;panel.queueLoading=false;panel.queueEdited=false;panel.songQueueSource=[]}
         palette.window:panel.tone.panel;palette.windowText:panel.tone.text;palette.text:panel.tone.text;palette.button:panel.tone.accentDeep;palette.buttonText:panel.tone.text

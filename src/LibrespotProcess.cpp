@@ -588,8 +588,12 @@ void LibrespotProcess::handleLine(const QString &line) {
         m_audio->setSpotifyPaused(false);
       else if (line.contains(QLatin1String("command=Load {")))
         m_audio->setSpotifyPaused(line.contains(QLatin1String("play: false")));
+      // Na troca natural com transição, o Load seguinte é a faixa B que o
+      // mixer já está mesclando: limpar aqui cortaria a mescla. Pulos e
+      // seleções do usuário cancelam a transição antes (Player).
       if (line.contains(QLatin1String("command=Seek(")) ||
-          line.contains(QLatin1String("command=Load {")))
+          (line.contains(QLatin1String("command=Load {")) &&
+           !m_audio->transitionContinuesOnLoad()))
         m_audio->flushSpotify();
     }
     if (line.contains(QLatin1String("Loading <")) ||

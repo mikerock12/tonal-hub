@@ -100,6 +100,8 @@ jobs:
           out/ci-playlist/core-checks
           g++ -std=c++20 -O2 -Isrc tests/mix/CoreChecks.cpp src/playback/ListeningMixCore.cpp src/playlist/TextPlaylistCore.cpp -o out/ci-playlist/mix-checks
           out/ci-playlist/mix-checks
+          g++ -std=c++20 -O2 -Wall -Wextra -Isrc tests/playback/TransitionChecks.cpp src/playback/TransitionMixer.cpp -o out/ci-playlist/transition-checks
+          out/ci-playlist/transition-checks
       - name: Reject unsolicited playback and late recovery
         run: |
           mkdir -p out/ci-playback

@@ -10,6 +10,15 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
+**0.17.0 — Transições de DJ entre as músicas da fila.**
+
+Ligue **Transições** e escolha um efeito fixo ou Aleatório: Fade cruzado, Eco
+de despedida, Troca de graves, Freio de vinil, Banho de reverb ou Loop
+acelerado, com mesclagem de 3 a 10 segundos. **Colocar como próxima** agora
+fica sempre à frente de **Adicionar à fila**, e a letra ganhou um cabeçalho só
+de ícones, com tradução automática e sincronia azuis quando ligadas.
+[Transições, fila e letra](docs/TRANSITIONS_0170.md).
+
 **Windows 0.16.4 — Corrige a abertura do instalador baixado pelo atualizador.**
 
 **0.16.3 — Dois cliques ou toques iniciam a faixa escolhida e preservam as demais músicas da fila.**

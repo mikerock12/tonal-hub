@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.17.0 — 20/11/2026
+
+- Transições entre as músicas da fila no Windows e no Android: Fade cruzado, Eco de despedida, Troca de graves, Freio de vinil, Banho de reverb e Loop acelerado, ou Aleatório. Mesclagem de 3 a 10 segundos, com as duas músicas tocando juntas.
+- **Colocar como próxima da fila** sempre fica logo após a música atual; **Adicionar à fila** entra depois das próximas escolhidas.
+- Letra: atualizar, tradução automática, fontes, tela cheia, sincronia e baixar o ajuste viraram ícones no cabeçalho. Tradução e sincronia ficam azuis quando ligadas e brancas quando desligadas.
+- Inclui a correção do atualizador Windows da 0.16.4.
+- Detalhes e limites em docs/TRANSITIONS_0170.md.
+
 ## 0.15.13 — 07/11/2026
 
 - Descoberta 2+1 volta a encontrar músicas quando o Spotify não informa o gênero do artista, o que hoje acontece com todos os artistas testados. Usa os estilos das outras faixas da seleção e, se preciso, consulta o MusicBrainz sem adivinhar homônimos, guardando o resultado no aparelho.

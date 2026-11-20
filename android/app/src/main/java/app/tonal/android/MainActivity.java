@@ -85,6 +85,7 @@ public final class MainActivity extends Activity {
         if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=android.content.pm.PackageManager.PERMISSION_GRANTED)requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},10);
         loadDsp();
         if(BuildConfig.DEBUG&&getIntent().getBooleanExtra("audioSuite",false))api.worker.execute(()->AudioSelfTest.run(this));
+        if(BuildConfig.DEBUG&&getIntent().getBooleanExtra("transitionSuite",false))new Thread(()->{JSONObject result;try{result=AudioSelfTest.transitions(this);}catch(Throwable error){result=new JSONObject();MusicStore.put(result,"pass",false);MusicStore.put(result,"error",String.valueOf(error));}try{java.nio.file.Files.write(new File(getExternalFilesDir(null),"transition-checks.json").toPath(),result.toString().getBytes(StandardCharsets.UTF_8));}catch(IOException ignored){}android.util.Log.i("TonalTest","TRANSITION_SUITE "+result);},"TonalTransitionSuite").start();
         if(BuildConfig.DEBUG&&getIntent().getBooleanExtra("streamingBenchmark",false)){
             String uri=getIntent().getStringExtra("trackUri");
             Consumer<String> autoPlay=new Consumer<>(){public void accept(String value){if(value.startsWith("Pronto •")){NativeBridge.listeners.remove(this);if(uri!=null)NativeBridge.command(uri);}}};
@@ -392,6 +393,23 @@ public final class MainActivity extends Activity {
         return true;
     }
 
+    // _queueAdded > 0: "Adicionar à fila" em ordem de inclusão; < 0: "Colocar como
+    // próxima"; 0: faixa comum. A próxima escolhida entra logo após a atual e o
+    // bloco contíguo de próximas fica sempre à frente das adições (igual ao Windows).
+    static int queueInsertionIndex(java.util.List<JSONObject> rows,QueuePlacement placement){
+        if(placement==QueuePlacement.LAST)return rows.size();
+        if(placement==QueuePlacement.NEXT)return Math.min(1,rows.size());
+        int at=1;while(at<rows.size()&&rows.get(at).optLong("_queueAdded")<0)at++;
+        long lastAdded=0;
+        for(int i=1;i<rows.size();i++){long sequence=rows.get(i).optLong("_queueAdded");if(sequence>lastAdded){lastAdded=sequence;at=Math.max(at,i+1);}}
+        return Math.min(at,rows.size());
+    }
+    static long queueInsertionMarker(java.util.List<JSONObject> rows,QueuePlacement placement){
+        if(placement==QueuePlacement.NEXT)return -1;
+        if(placement==QueuePlacement.LAST)return 0;
+        long lastAdded=0;for(int i=1;i<rows.size();i++)lastAdded=Math.max(lastAdded,rows.get(i).optLong("_queueAdded"));
+        return lastAdded+1;
+    }
     void insertInQueue(JSONObject track,QueuePlacement placement){
         if(!canEditQueue()||!track.optString("uri").matches("spotify:track:[A-Za-z0-9]{22}")){
             notice("Inicie uma seleção no Tonalify antes de editar a fila.");
@@ -418,18 +436,8 @@ public final class MainActivity extends Activity {
                     String key=keys.next();
                     MusicStore.put(item,key,insertion.track().opt(key));
                 }
-                int at=insertion.placement()==QueuePlacement.LAST?rows.size():1;
-                long lastAdded=0;
-                if(insertion.placement()==QueuePlacement.ADDED){
-                    for(int i=1;i<rows.size();i++){
-                        long sequence=rows.get(i).optLong("_queueAdded");
-                        if(sequence>lastAdded){
-                            lastAdded=sequence;
-                            at=i+1;
-                        }
-                    }
-                }
-                MusicStore.put(item,"_queueAdded",insertion.placement()==QueuePlacement.ADDED?lastAdded+1:0);
+                int at=queueInsertionIndex(rows,insertion.placement());
+                MusicStore.put(item,"_queueAdded",queueInsertionMarker(rows,insertion.placement()));
                 rows.add(at,item);
                 added++;
             }

@@ -49,7 +49,7 @@ final class AudioOutput {
     synchronized void initialize(Context ctx,String preferences){
         if(context!=null)return;context=ctx.getApplicationContext();manager=context.getSystemService(AudioManager.class);
         preferenceName=preferences;
-        config=AudioConfig.load(prefs(),routeKey);applyDsp();
+        config=AudioConfig.load(prefs(),routeKey);applyDsp();if(preferences.equals("settings"))Transitions.load(prefs());
         manager.registerAudioDeviceCallback(new AudioDeviceCallback(){
             @Override public void onAudioDevicesAdded(AudioDeviceInfo[] devices){refreshRoute();}
             @Override public void onAudioDevicesRemoved(AudioDeviceInfo[] devices){synchronized(AudioOutput.this){if(preferred!=null)for(AudioDeviceInfo d:devices)if(d.getId()==preferred.getId())preferred=null;}refreshRoute();}
@@ -124,19 +124,126 @@ final class AudioOutput {
     }
     int sampleRate(){return rate;}
     void write(float[] samples){
-        AudioTrack current;float[] rendered;long start=System.nanoTime();
-        synchronized(this){current=track;if(current==null)return;rendered=dsp.render(samples);}
+        if(mixActive&&channels==2){writeTransition(samples);return;}
+        float[] rendered=render(samples);
+        if(rendered!=null)output(rendered,0,true);
+    }
+    private float[] render(float[] samples){
+        float[] rendered;long start=System.nanoTime();
+        synchronized(this){if(track==null)return null;rendered=dsp.render(samples);}
         visualize(rendered);
         long elapsed=System.nanoTime()-start;dspNanos.addAndGet(elapsed);blocks.incrementAndGet();maxDspNanos.accumulateAndGet(elapsed,Math::max);
         if(elapsed>samples.length*1_000_000_000L/(Math.max(1,channels)*rate))overBudgetBlocks.incrementAndGet();
-        int offset=0,retries=0;
+        return rendered;
+    }
+    /** Escreve a partir de `offset`; retorna quantas amostras saíram. Sem bloquear, para quando o buffer enche. */
+    private int output(float[] rendered,int offset,boolean blocking){
+        AudioTrack current=track;if(current==null)return rendered.length-offset;
+        int start=offset,retries=0;
         while(offset<rendered.length&&current==track){
             int count;
-            try{count=BuildConfig.DEBUG&&testDeadObject.getAndSet(false)?AudioTrack.ERROR_DEAD_OBJECT:current.write(rendered,offset,rendered.length-offset,AudioTrack.WRITE_BLOCKING);}catch(IllegalStateException error){if(current!=track)return;throw error;}
-            if(count==AudioTrack.ERROR_DEAD_OBJECT&&retries++<2){synchronized(this){if(current!=track)return;boolean wasPaused=paused;releaseTrack(false);createTrack();recoveries++;current=track;if(wasPaused)pause();}continue;}
-            if(count<0){if(current!=track)return;throw new IllegalStateException("Saída de áudio falhou ("+count+")");}
+            try{count=BuildConfig.DEBUG&&testDeadObject.getAndSet(false)?AudioTrack.ERROR_DEAD_OBJECT:current.write(rendered,offset,rendered.length-offset,blocking?AudioTrack.WRITE_BLOCKING:AudioTrack.WRITE_NON_BLOCKING);}catch(IllegalStateException error){if(current!=track)return rendered.length-start;throw error;}
+            if(count==AudioTrack.ERROR_DEAD_OBJECT&&retries++<2){synchronized(this){if(current!=track)return rendered.length-start;boolean wasPaused=paused;releaseTrack(false);createTrack();recoveries++;current=track;if(wasPaused)pause();}continue;}
+            if(count<0){if(current!=track)return rendered.length-start;throw new IllegalStateException("Saída de áudio falhou ("+count+")");}
             if(count==0)break;offset+=count;frames.addAndGet(count/2);if(current==track)writtenFrames+=count/2;adapt(current);
+            if(!blocking&&offset<rendered.length)break;
         }
+        return offset-start;
+    }
+
+    // ------------------------------------------------------------ transições
+    // O mixer C++ guarda o fim da faixa A lido adiantado e o mescla com o
+    // começo de B. Enquanto lê A, a escrita não bloqueia, para o motor
+    // decodificar mais rápido que o tempo real; na mescla volta a ser 1:1.
+    private final Object mixLock=new Object(),writeLock=new Object();
+    private long mixer;
+    private volatile boolean mixActive;
+    private volatile Thread drainer;
+    private volatile long inputSerial;
+    private float[] pendingOut;private int pendingOffset;
+    private volatile boolean dropPending;
+    boolean armTransition(int effect,long remainingMs){
+        if(!TransitionNative.READY)return false;
+        synchronized(this){if(track==null||channels!=2||localSource||paused)return false;}
+        synchronized(mixLock){
+            if(mixer==0)mixer=TransitionNative.create(rate);
+            if(mixer==0)return false;
+            boolean armed=TransitionNative.arm(mixer,effect,remainingMs*rate/1000);
+            if(armed)mixActive=true;
+            return armed;
+        }
+    }
+    void cancelTransition(){
+        synchronized(mixLock){if(mixer!=0)TransitionNative.reset(mixer);mixActive=false;dropPending=true;}
+        Thread running=drainer;if(running!=null)running.interrupt();
+    }
+    int transitionState(){synchronized(mixLock){return mixer==0?0:TransitionNative.state(mixer);}}
+    private void writeTransition(float[] samples){
+        inputSerial++;
+        synchronized(writeLock){
+            if(dropPending){pendingOut=null;dropPending=false;}
+            int off=0;
+            while(true){
+                float[] chunk=null;int state;
+                synchronized(mixLock){
+                    if(mixer==0){mixActive=false;state=0;}
+                    else{
+                        while(off<samples.length){int used=TransitionNative.push(mixer,samples,off,samples.length-off);if(used<=0)break;off+=used;}
+                        state=TransitionNative.state(mixer);
+                        if(pendingOut==null&&state!=0)chunk=TransitionNative.pull(mixer,2048,false);
+                    }
+                }
+                if(pendingOut!=null){
+                    boolean blocking=state!=1;
+                    pendingOffset+=output(pendingOut,pendingOffset,blocking);
+                    if(pendingOffset>=pendingOut.length)pendingOut=null;
+                    else if(!blocking)return; // buffer cheio: deixa o motor entregar mais do fim de A
+                    continue;
+                }
+                if(chunk!=null&&chunk.length>0){float[] rendered=render(chunk);if(rendered==null)return;pendingOut=rendered;pendingOffset=0;continue;}
+                if(state==0){
+                    mixActive=false;
+                    if(off<samples.length){float[] rest=java.util.Arrays.copyOfRange(samples,off,samples.length);float[] rendered=render(rest);if(rendered!=null)output(rendered,0,true);}
+                    return;
+                }
+                return; // aguardando mais PCM do motor
+            }
+        }
+    }
+    /** O motor fechou o sink no fim natural: toca o restante de A (e mescla com B se chegar). */
+    boolean drainTransition(){
+        if(!mixActive)return false;
+        synchronized(this){if(track==null||paused)return false;}
+        if(drainer!=null)return true;
+        final long serial=inputSerial;
+        synchronized(mixLock){if(mixer!=0)TransitionNative.endCapture(mixer);}
+        Thread worker=new Thread(()->{
+            boolean finished=false;
+            try{
+                android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);
+                while(!Thread.currentThread().isInterrupted()&&serial==inputSerial){
+                    synchronized(this){if(paused||track==null)break;}
+                    boolean wrote=false;
+                    synchronized(writeLock){
+                        if(serial!=inputSerial)break;
+                        if(dropPending){pendingOut=null;dropPending=false;}
+                        if(pendingOut==null){
+                            float[] chunk;int state;
+                            synchronized(mixLock){state=mixer==0?0:TransitionNative.state(mixer);chunk=state==0?null:TransitionNative.pull(mixer,1024,true);}
+                            if(chunk==null||chunk.length==0){synchronized(mixLock){if(mixer!=0&&TransitionNative.state(mixer)!=3)TransitionNative.reset(mixer);}mixActive=false;finished=true;break;}
+                            pendingOut=render(chunk);pendingOffset=0;if(pendingOut==null)break;
+                        }
+                        int n=output(pendingOut,pendingOffset,false);pendingOffset+=n;wrote=n>0;
+                        if(pendingOffset>=pendingOut.length)pendingOut=null;
+                    }
+                    if(!wrote)Thread.sleep(5);
+                }
+            }catch(InterruptedException ignored){}
+            finally{drainer=null;}
+            if(finished&&serial==inputSerial&&this==NativeBridge.audio)NativeBridge.onTransitionDrained();
+        },"TonalTransitionDrain");
+        drainer=worker;worker.start();
+        return true;
     }
     synchronized void pause(){
         if(track==null||paused)return;paused=true;int serial=++transition;lastTransition=SystemClock.elapsedRealtime();
@@ -179,7 +286,7 @@ final class AudioOutput {
         }
         shaper=null;paused=false;staleTail=false;
     }
-    synchronized void release(){releaseTrack(true);dsp.close();}
+    synchronized void release(){releaseTrack(true);dsp.close();cancelTransition();}
     synchronized boolean isPlaying(){return track!=null&&track.getPlayState()==AudioTrack.PLAYSTATE_PLAYING;}
     synchronized int underruns(){return previousUnderruns+(track==null?0:track.getUnderrunCount());}
     AudioDeviceInfo[] devices(){return manager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);}
