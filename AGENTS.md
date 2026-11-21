@@ -545,6 +545,9 @@ docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no
   Não decidir por módulos de terceiros: o Warsaw foi falso positivo (continuou
   injetado sem falhas após reiniciar). Não parar/alterar software de segurança.
 - Android segue 0.17.1 (versionCode 43).
+- Entrega Windows 0.17.2 (21/11/2026): PR57 merge af19fd3, código de produto
+  4d74018, release v0.17.2 (sem APK), portal PR75 merge 3505fe0 com APK fixado
+  na v0.17.1, Worker 6f30a2be, backup privado 1l4GeRgmc8A9cTgsB2CkpssjAk_sryu-E.
 
 ## Fila, contraste e distribuição 0.16.1
 

@@ -1,0 +1,33 @@
+{
+  "platform": "Windows",
+  "version": "0.17.2",
+  "assets": [
+    {
+      "bytes": 89129222,
+      "name": "Tonal-Hub-0.17.2.0-Windows-x64-Setup.exe",
+      "sha256": "39f8b79cfc29d9a92b60a98a988f49eb7985b401dd56ef2acbc1a8d281531282"
+    },
+    {
+      "bytes": 121148087,
+      "name": "Tonal-Hub-0.17.2-local.zip",
+      "sha256": "ac8d1699a01d0875c3d60007182835d26ff2b5c69acb7ed3e9f8745333407b1e"
+    }
+  ],
+  "productCode": "4d74018",
+  "productMerge": "af19fd33b7850ed262af8c2419203496e589f0b3",
+  "release": "https://github.com/mikerock12/tonal-hub/releases/tag/v0.17.2",
+  "androidUnchanged": "v0.17.1",
+  "portal": {
+    "pullRequest": 75,
+    "merge": "3505fe0",
+    "worker": "6f30a2be-c660-48d5-b7a9-9e9214bdfe33",
+    "windowsRedirectToV0172": true,
+    "androidPinnedV0171": true,
+    "hashesMatch": true
+  },
+  "ci": {
+    "pullRequest": 57,
+    "checks": "4/4"
+  },
+  "privateBackupFolder": "1l4GeRgmc8A9cTgsB2CkpssjAk_sryu-E"
+}
