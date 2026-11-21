@@ -1520,10 +1520,8 @@ impl Future for PlayerInternal {
                                             error!(
                                                 "Skipping to next track, unable to decode samples for track <{track_id:?}>: {e:?}"
                                             );
-                                            self.send_event(PlayerEvent::EndOfTrack {
-                                                track_id,
-                                                play_request_id,
-                                            })
+                                            let position_ms = *stream_position_ms;
+                                            self.tonal_end_of_track(track_id, play_request_id, position_ms)
                                         }
                                     }
                                 }
@@ -1535,10 +1533,8 @@ impl Future for PlayerInternal {
                             error!(
                                 "Skipping to next track, unable to get next packet for track <{track_id:?}>: {e:?}"
                             );
-                            self.send_event(PlayerEvent::EndOfTrack {
-                                track_id,
-                                play_request_id,
-                            })
+                            let position_ms = *stream_position_ms;
+                            self.tonal_end_of_track(track_id, play_request_id, position_ms)
                         }
                     }
                 } else {
@@ -1600,6 +1596,25 @@ fn tonal_track_marker(position_ms: u32) -> Vec<u8> {
 }
 
 impl PlayerInternal {
+    /// Tonal: o Spirc só conhece a posição pelos eventos (a cada 1 s) e trata
+    /// um fim de faixa mais de 2 s antes da duração como falta de dados
+    /// (pausa e recarrega a faixa). Com a leitura adiantada das transições o
+    /// decodificador chega ao fim segundos antes do som, numa rajada sem
+    /// eventos de posição: o fim real virava "falta de dados" e o fim da
+    /// própria faixa era recarregado e entrava na mescla no lugar da próxima.
+    /// A posição exata do decodificador segue logo antes do fim.
+    fn tonal_end_of_track(&mut self, track_id: SpotifyUri, play_request_id: u64, position_ms: u32) {
+        self.send_event(PlayerEvent::PositionChanged {
+            play_request_id,
+            track_id: track_id.clone(),
+            position_ms,
+        });
+        self.send_event(PlayerEvent::EndOfTrack {
+            track_id,
+            play_request_id,
+        })
+    }
+
     fn ensure_sink_running(&mut self) {
         if self.sink_status != SinkStatus::Running {
             trace!("== Starting sink ==");
@@ -1855,6 +1870,22 @@ impl PlayerInternal {
             }
 
             None => {
+                // Tonal: a posição exata do decodificador vai junto do fim (ver
+                // tonal_end_of_track); com as transições o fim é lido adiantado.
+                if let PlayerState::Playing {
+                    ref track_id,
+                    play_request_id,
+                    stream_position_ms,
+                    ..
+                } = self.state
+                {
+                    let track_id = track_id.clone();
+                    self.send_event(PlayerEvent::PositionChanged {
+                        play_request_id,
+                        track_id,
+                        position_ms: stream_position_ms,
+                    });
+                }
                 self.state.playing_to_end_of_track();
                 if let PlayerState::EndOfTrack {
                     ref track_id,

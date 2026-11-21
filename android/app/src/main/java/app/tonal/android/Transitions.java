@@ -22,6 +22,8 @@ final class Transitions {
     static volatile String status="";
     private static final Handler main=new Handler(Looper.getMainLooper());
     private static String trackUri="",armedUri="";
+    // Ocorrência no PCM (sequência de marcadores) já armada e o pedido em curso.
+    private static long armedSequence=-1,armedId,shownId;
     private static long durationMs,guardUntil;
     private static int lastEffect=-1;
     private static Runnable scheduled;
@@ -44,12 +46,32 @@ final class Transitions {
 
     /** Chamado na thread principal quando o motor carrega uma faixa (TrackChanged). */
     static void onTrack(String uri,int duration){
-        if(!uri.equals(trackUri)){unschedule();guardUntil=SystemClock.elapsedRealtime()+2500;}
+        // Cada carga é uma ocorrência nova, inclusive a mesma música de novo.
+        unschedule();guardUntil=SystemClock.elapsedRealtime()+2500;
         trackUri=uri;durationMs=duration;
     }
+    /** Só uma mescla concluída com B audível vira "Última transição". */
+    private static void updateResult(){
+        if(armedId==0||shownId==armedId)return;
+        long[] t=NativeBridge.audio.transitionTrace();
+        if(t==null||t[TransitionNative.T_ID]!=armedId)return;
+        long phase=t[TransitionNative.T_PHASE];
+        if(phase!=TransitionNative.PHASE_COMPLETED&&phase!=TransitionNative.PHASE_ABORTED)return;
+        shownId=armedId;
+        int effect=(int)t[TransitionNative.T_EFFECT];
+        if(phase==TransitionNative.PHASE_COMPLETED&&TransitionNative.overlapVerified(t)&&effect>=0&&effect<TransitionNative.NAMES.length)
+            status="Última transição: "+TransitionNative.NAMES[effect];
+        else if(t[TransitionNative.T_REASON]==TransitionNative.REASON_NEXT_NOT_PREPARED)
+            status="Última troca sem efeito: a próxima música não chegou a tempo";
+        else if(t[TransitionNative.T_REASON]==TransitionNative.REASON_NO_EXACT_BOUNDARY)
+            status="Última troca sem efeito: o começo da próxima não foi identificado";
+    }
+    private static long occurrence(){return NativeBridge.audio.markersSeen?NativeBridge.audio.trackSequence:-2;}
     /** Eventos de posição do motor (Playing/PositionChanged/Seeked), na thread principal. */
     static void onProgress(String uri,int position,boolean active,long eventAt){
-        if(!enabled||!TransitionNative.READY||!active||!uri.equals(trackUri)||durationMs<=0||uri.equals(armedUri)||scheduled!=null)return;
+        updateResult();
+        boolean armed=NativeBridge.audio.markersSeen?occurrence()==armedSequence:uri.equals(armedUri);
+        if(!enabled||!TransitionNative.READY||!active||!uri.equals(trackUri)||durationMs<=0||armed||scheduled!=null)return;
         if(NativeBridge.repeatMode==RepeatMode.TRACK||!NativeBridge.spotifyEngine)return;
         int state=NativeBridge.audio.transitionState();
         if(state==1||state==2)return;
@@ -69,16 +91,18 @@ final class Transitions {
     }
     private static void arm(String uri,long duration,int position,long eventAt){
         synchronized(NativeBridge.intent){if(!NativeBridge.intent.desired)return;}
-        if(!enabled||!uri.equals(trackUri)||uri.equals(armedUri)||!NativeBridge.playing)return;
+        boolean armed=NativeBridge.audio.markersSeen?occurrence()==armedSequence:uri.equals(armedUri);
+        if(!enabled||!uri.equals(trackUri)||armed||!NativeBridge.playing)return;
         long upcoming=remaining(duration,position,eventAt);
         long audible=upcoming+NativeBridge.audio.transitionLatencyMs();
         long[] plan=TransitionNative.plan(seconds,introSeconds,duration,audible,Math.max(0,upcoming));
         if(plan==null||plan.length<4||plan[0]==0)return;
         int chosen=TransitionNative.index(effect);
         if(chosen<0)chosen=TransitionNative.pickRandom(lastEffect<0?TransitionNative.IDS.length:lastEffect,(int)(Math.random()*Integer.MAX_VALUE));
-        if(NativeBridge.audio.armTransition(chosen,plan[1],plan[2],plan[3])){
-            armedUri=uri;lastEffect=chosen;status="Última transição: "+TransitionNative.NAMES[chosen];
-        }
+        long id=NativeBridge.audio.armTransition(chosen,plan[1],plan[2],plan[3]);
+        if(id!=0){
+            armedUri=uri;armedSequence=occurrence();armedId=id;lastEffect=chosen;
+        }else guardUntil=SystemClock.elapsedRealtime()+1000;  // recusado: nova tentativa logo depois
     }
     /** Quanto da faixa o motor ainda não entregou: pela contagem desde o marcador, senão pelo evento. */
     private static long remaining(long duration,int position,long eventAt){
@@ -89,7 +113,7 @@ final class Transitions {
     private static void unschedule(){if(scheduled!=null){main.removeCallbacks(scheduled);scheduled=null;}}
     /** Pulos, seleções e seeks trocam na hora, sem efeito. */
     static void cancel(){
-        main.post(()->{unschedule();guardUntil=SystemClock.elapsedRealtime()+2500;armedUri="";});
+        main.post(()->{unschedule();guardUntil=SystemClock.elapsedRealtime()+2500;armedUri="";armedSequence=-1;});
         NativeBridge.audio.cancelTransition();
     }
     /** Configurações das transições: ligar, efeito fixo ou aleatório e tempo de mesclagem. */

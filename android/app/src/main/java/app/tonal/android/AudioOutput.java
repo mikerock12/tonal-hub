@@ -159,11 +159,18 @@ final class AudioOutput {
     // fim de A continua soando enquanto o motor carrega a próxima faixa, e a
     // mescla já encontra B guardada. Depois da mescla a pré-rolagem de B fica
     // como um atraso constante (transitionLatencyMs), descontado na interface.
+    // Desde a 0.17.4: a saída reutiliza o mesmo float[] (pullInto, sem alocar
+    // por bloco), o mixer é recriado quando a taxa muda e cada pedido tem um id
+    // conferido no trace (aceite, mescla com B, conclusão ou motivo do aborto).
     private final Object mixLock=new Object();
     private long mixer;
     private volatile boolean mixActive;
     private volatile int latencyFrames;
     private Thread writer;
+    private final float[] mixOut=new float[1024*2];
+    private long transitionIds;
+    /** Começos de faixa marcados pelo librespot: identifica cada ocorrência no PCM. */
+    volatile long trackSequence;
     // Marcador de começo de faixa do librespot (vendor/librespot-playback): chega
     // pela mesma thread e na mesma ordem do PCM. Dá o fim exato de A e a posição
     // exata da faixa no PCM já entregue (quadros desde o marcador).
@@ -173,25 +180,44 @@ final class AudioOutput {
     volatile int markerBoundaries;
     void boundary(int positionMs){
         markersSeen=true;trackStartMs=positionMs;trackFrames=0;
-        synchronized(mixLock){if(mixer!=0&&mixActive){if(TransitionNative.state(mixer)==1)markerBoundaries++;TransitionNative.boundary(mixer);mixLock.notifyAll();}}
+        // A próxima faixa começa do início. Um marcador no meio é a MESMA faixa
+        // retomada (recuperação de buffering do motor): continua sendo A.
+        boolean resumed=positionMs>1000;
+        if(!resumed)trackSequence++;
+        synchronized(mixLock){
+            if(mixer!=0&&mixActive){
+                if(resumed)TransitionNative.resumeCapture(mixer);
+                else{if(TransitionNative.state(mixer)==1)markerBoundaries++;TransitionNative.boundary(mixer);}
+                mixLock.notifyAll();
+            }
+        }
     }
     /** Seek ou outra escolha: a contagem desde o marcador deixa de valer até o próximo. */
     void forgetTrackPosition(){trackFrames=-1;}
     /** Posição da faixa no PCM já entregue pelo motor; -1 quando desconhecida. */
     long trackPositionMs(){long counted=trackFrames;return counted<0?-1:trackStartMs+counted*1000L/Math.max(1,rate);}
-    boolean armTransition(int effect,long upcomingMs,long outroMs,long introMs){
-        if(!TransitionNative.READY)return false;
-        synchronized(this){if(track==null||channels!=2||localSource||paused)return false;}
+    /** Retorna o id do pedido aceito pelo mixer (0: recusado). O resultado sai em transitionTrace(). */
+    long armTransition(int effect,long upcomingMs,long outroMs,long introMs){
+        if(!TransitionNative.READY)return 0;
+        int current;
+        synchronized(this){if(track==null||channels!=2||localSource||paused)return 0;current=rate;}
         synchronized(mixLock){
-            if(mixer==0)mixer=TransitionNative.create(rate);
-            if(mixer==0)return false;
-            if(!TransitionNative.arm(mixer,effect,upcomingMs*rate/1000,outroMs*rate/1000,introMs*rate/1000,markersSeen))return false;
+            // Mixer de outra taxa (saída reaberta a 48 kHz, por exemplo): recria,
+            // fora do PCM e só sem transição ativa (o escritor confere o handle sob este lock).
+            if(mixer!=0&&!mixActive&&TransitionNative.rate(mixer)!=current){TransitionNative.destroy(mixer);mixer=0;}
+            if(mixer==0)mixer=TransitionNative.create(current);
+            if(mixer==0)return 0;
+            long id=++transitionIds;
+            // O fim de A é sempre o próximo marcador do librespot embarcado; sem ele não há efeito.
+            if(!TransitionNative.arm(mixer,effect,upcomingMs*current/1000,outroMs*current/1000,introMs*current/1000,true,id))return 0;
             mixActive=true;latencyFrames=(int)TransitionNative.latency(mixer);
             if(writer==null||!writer.isAlive()){writer=new Thread(this::writerLoop,"TonalTransitionOut");writer.start();}
             mixLock.notifyAll();
-            return true;
+            return id;
         }
     }
+    /** O que a última transição realmente fez (TransitionNative.T_*); null sem mixer. */
+    long[] transitionTrace(){synchronized(mixLock){return mixer==0?null:TransitionNative.trace(mixer);}}
     void cancelTransition(){
         synchronized(mixLock){if(mixer!=0)TransitionNative.reset(mixer);mixActive=false;latencyFrames=0;mixLock.notifyAll();}
     }
@@ -232,11 +258,13 @@ final class AudioOutput {
             float[] chunk;
             synchronized(mixLock){
                 if(!mixActive||mixer==0)break;
-                chunk=TransitionNative.pull(mixer,1024);
+                int got=TransitionNative.pullInto(mixer,mixOut,mixOut.length/2);
                 latencyFrames=(int)TransitionNative.latency(mixer);
-                if(chunk.length==0&&TransitionNative.state(mixer)==0){mixActive=false;latencyFrames=0;drained=true;mixLock.notifyAll();break;}
+                if(got==0&&TransitionNative.state(mixer)==0){mixActive=false;latencyFrames=0;drained=true;mixLock.notifyAll();break;}
                 mixLock.notifyAll();
-                if(chunk.length==0){try{mixLock.wait(4);}catch(InterruptedException interrupted){break;}continue;}
+                if(got==0){try{mixLock.wait(4);}catch(InterruptedException interrupted){break;}continue;}
+                // Bloco cheio usa o próprio buffer reutilizado; só um bloco parcial (fim) copia.
+                chunk=got*2==mixOut.length?mixOut:java.util.Arrays.copyOf(mixOut,got*2);
             }
             float[] rendered=render(chunk);
             if(rendered==null)continue;
