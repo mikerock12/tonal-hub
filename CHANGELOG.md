@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.17.4 — 21/11/2026
+
+- **Android:** as transições voltam a mesclar a música atual com a próxima. Causa: lido em rajada durante a transição, o fim da música atual era tratado pelo motor como falta de dados. O motor pausava e recarregava o fim da própria música, que entrava na mescla no lugar da próxima. Por isso a atual baixava ou oscilava e a próxima começava depois, sem efeito. Agora o fim chega com a posição exata e segue direto para a próxima.
+- A mescla só começa quando o começo da próxima música já chegou. Se ela atrasar, a atual segue sem efeito e a mescla encurta. Sem o mínimo de 1,5 s, a troca é normal, sem efeito, nunca a atual com efeito sobre silêncio.
+- "Última transição" só aparece depois que as duas músicas tocaram juntas. A mesma música duas vezes seguidas também tem transição.
+- Android: menos trabalho por bloco de áudio na transição, sem alocação de memória por bloco; o mixer acompanha a troca de taxa de amostragem.
+- Testado com o Spotify real no Windows: três transições naturais (fade, eco, freio) com as duas músicas na mescla e sem falhas de áudio. Detalhes e limites em docs/TRANSITIONS_0170.md.
+
 ## 0.17.3 — 21/11/2026
 
 - Transições de verdade: a música atual e a próxima se misturam no fim, com o efeito. Antes o app estimava errado onde a música atual acabava. O volume dela só baixava ou oscilava, e a próxima entrava depois, sem efeito.

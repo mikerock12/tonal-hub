@@ -164,14 +164,51 @@ void AudioEngine::flushSpotify() {
   if (!m_local)
     m_flush = true;
 }
-void AudioEngine::armTransition(int effect, int upcomingMs, int outroMs, int introMs) {
-  std::lock_guard l(m_mutex);
-  if (m_local || !m_pipe)
-    return;
-  m_transitionEffect = effect;
-  m_transitionUpcomingMs = upcomingMs;
-  m_transitionOutroMs = outroMs;
-  m_transitionIntroMs = introMs;
+uint64_t AudioEngine::armTransition(int effect, int upcomingMs, int outroMs, int introMs) {
+  uint64_t id;
+  {
+    std::lock_guard l(m_mutex);
+    if (m_local || !m_pipe)
+      return 0;
+    m_transitionEffect = effect;
+    m_transitionUpcomingMs = upcomingMs;
+    m_transitionOutroMs = outroMs;
+    m_transitionIntroMs = introMs;
+    id = m_transitionRequest = ++m_transitionNextId;
+  }
+  std::lock_guard t(m_traceMutex);
+  m_traceRequest = id;
+  return id;
+}
+QVariantMap AudioEngine::transitionTrace() const {
+  std::lock_guard t(m_traceMutex);
+  const auto &trace = m_trace;
+  const double rate = std::max(1, trace.sampleRate);
+  auto ms = [rate](int64_t frames) { return qint64(double(frames) * 1000.0 / rate); };
+  return {{"request", qint64(m_traceRequest)},
+          {"rejectedRequest", qint64(m_traceRejected)},
+          {"rejection", QString::fromLatin1(tonal::playback::transitionReasonId(
+                            tonal::playback::TransitionReason(m_traceRejection)).data())},
+          {"id", qint64(trace.id)},
+          {"phase", QString::fromLatin1(tonal::playback::transitionPhaseId(trace.phase).data())},
+          {"reason", QString::fromLatin1(tonal::playback::transitionReasonId(trace.reason).data())},
+          {"effect", trace.effect},
+          {"sampleRate", trace.sampleRate},
+          {"exactBoundary", trace.exactBoundary},
+          {"configuredOutroMs", ms(trace.configuredOutro)},
+          {"configuredIntroMs", ms(trace.configuredIntro)},
+          {"outroMs", ms(trace.outro)},
+          {"introMs", ms(trace.intro)},
+          {"overlapMs", ms(trace.overlap)},
+          {"boundarySeen", trace.boundaryFrame >= 0},
+          {"preparedBMs", ms(trace.preparedB)},
+          {"waitedMs", ms(trace.waitedFrames)},
+          {"mixedFrames", qint64(trace.mixedFrames)},
+          {"bFrames", qint64(trace.bFrames)},
+          {"missingBFrames", qint64(trace.missingBFrames)},
+          {"energyA", trace.energyA},
+          {"energyB", trace.energyB},
+          {"overlapVerified", trace.overlapVerified()}};
 }
 void AudioEngine::noteSpotifyVolumeChange(int fromPercent, int toPercent) {
   std::lock_guard l(m_mutex);
@@ -327,12 +364,19 @@ void AudioEngine::run() {
       trackFrames = 0;
       trackStartMs = startMs;
       m_trackMarkers = true;
+      // Um marcador no meio da faixa é a mesma ocorrência retomada.
+      if (startMs <= 1000)
+        ++m_trackSequence;
     }
     const int rate = std::max(1, format.sampleRate);
     m_trackPositionMs = trackFrames < 0 ? -1 : int(trackStartMs + trackFrames * 1000 / rate);
     return boundary;
   };
   auto publishTransition = [&] {
+    if (mixer) {
+      std::lock_guard t(m_traceMutex);
+      m_trace = mixer->trace();
+    }
     const int state = !mixer || !mixer->active() ? 0
                       : mixer->state() == MixState::Armed ? 1
                       : mixer->state() == MixState::Mixing ? 2 : 3;
@@ -397,6 +441,7 @@ void AudioEngine::run() {
     float target;
     uint64_t serial;
     int transitionEffect, transitionUpcomingMs, transitionOutroMs, transitionIntroMs;
+    uint64_t transitionRequest;
     bool transitionCancel;
     std::vector<std::pair<int, int>> volumeNotes;
     {
@@ -415,6 +460,7 @@ void AudioEngine::run() {
       transitionUpcomingMs = m_transitionUpcomingMs;
       transitionOutroMs = m_transitionOutroMs;
       transitionIntroMs = m_transitionIntroMs;
+      transitionRequest = m_transitionRequest;
       volumeNotes.swap(m_volumeNotes);
       transitionCancel = std::exchange(m_transitionCancel, false);
     }
@@ -561,9 +607,15 @@ void AudioEngine::run() {
       const int64_t upcoming = int64_t(transitionUpcomingMs) * format.sampleRate / 1000;
       const int64_t outro = int64_t(transitionOutroMs) * format.sampleRate / 1000;
       const int64_t intro = int64_t(transitionIntroMs) * format.sampleRate / 1000;
-      // Com o marcador o fim de A é exato; sem ele (librespot antigo) vale a estimativa.
-      mixer->arm(tonal::playback::TransitionEffect(transitionEffect), upcoming, outro, intro,
-                 pipe->markersSeen());
+      // O fim de A é sempre o próximo marcador do librespot empacotado: a
+      // estimativa só decide quando começar a ler. Sem marcador não há efeito
+      // (o buffer enche e A segue normal), nunca A mesclada com ela mesma.
+      if (!mixer->arm(tonal::playback::TransitionEffect(transitionEffect), upcoming, outro, intro, true,
+                      transitionRequest)) {
+        std::lock_guard t(m_traceMutex);
+        m_traceRejected = transitionRequest;
+        m_traceRejection = int(mixer->lastRejection());
+      }
       publishTransition();
     }
     // Volume novo já vale no librespot, mas o buffer ainda tem o antigo:
@@ -654,11 +706,16 @@ void AudioEngine::run() {
         m_spotifyFrames += uint64_t(n);
         if (n > 0)
           mixer->push(mixInput.data(), size_t(n));
-        // A próxima faixa começa no quadro seguinte: fim exato de A.
+        // A próxima faixa começa no quadro seguinte: fim exato de A. Um
+        // marcador no meio (mesma faixa retomada) não é B.
         if (trackBoundary(n)) {
-          if (mixer->waitingBoundary())
-            ++m_transitionBoundaries;
-          mixer->boundary();
+          if (trackStartMs > 1000) {
+            mixer->resumeCapture();
+          } else {
+            if (mixer->waitingBoundary())
+              ++m_transitionBoundaries;
+            mixer->boundary();
+          }
         }
         if (n == 0)
           break;

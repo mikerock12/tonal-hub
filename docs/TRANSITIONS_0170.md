@@ -178,3 +178,123 @@ Continuam pendentes: teste com Spotify real (o marcador sai do librespot
 compilado, mas não foi ouvido com uma conta), aparelho físico e medições
 acústicas, de CPU ou bateria.
 
+
+## 0.17.4 — correção estrutural (21/11/2026)
+
+O usuário relatou de novo, na 0.17.3, que as transições só baixavam ou
+oscilavam a música atual e a próxima começava sem efeito. A correção seguiu o
+plano estrutural que ele escreveu (identificação TH-001 a TH-010) e foi
+medida, desta vez, com o Spotify real no Windows.
+
+### Causa no Android (confirmada no código)
+
+O librespot embarcado no Android tem uma recuperação de buffering do Tonal
+(0.15.x, `vendor/librespot-connect/src/spirc.rs`): um fim de faixa mais de 2 s
+antes da duração é tratado como falta de dados. Ele pausa, espera 5 s e
+recarrega a mesma faixa na última posição conhecida. O Spirc só conhece essa
+posição pelos eventos, um por segundo.
+
+Na transição o mixer lê o fim de A de uma vez, em fração de segundo, sem novos
+eventos de posição. O fim real chegava com a posição conhecida segundos atrás
+e virava "falta de dados".
+
+O que se ouvia:
+
+1. A tocava com o efeito sobre silêncio no lugar de B (baixando ou oscilando).
+2. A recarga de A, alguns segundos antes do fim, entrava na mescla no lugar
+   de B.
+3. Depois A terminava de novo e B começava sem efeito.
+
+No Windows o librespot usa o Spirc original, sem essa recuperação. Por isso o
+teste com Spotify real abaixo mesclou A e B certo.
+
+Correções:
+
+* `vendor/librespot-playback/src/player.rs` (`tonal_end_of_track`): todo fim de
+  faixa vai precedido da posição exata do decodificador (`PositionChanged`).
+  O fim natural chega com a posição na duração e segue para a próxima. Uma
+  falta de dados verdadeira continua sendo recuperada, agora a partir da
+  posição real.
+* Se o motor ainda assim pausar e retomar a mesma faixa durante uma transição,
+  o marcador da retomada tem posição maior que zero. Ele não conta como B nem
+  como nova ocorrência: `TransitionMixer::resumeCapture()` volta a ler A até o
+  marcador real de B (Windows e Android).
+
+### Mixer (TH-001, TH-008, TH-010)
+
+* **B pronta antes da mescla.** A mescla só começa com o começo de B guardado
+  (1 s, ou toda a entrada se for menor; `kTransitionReadyMs`). Sem B a tempo,
+  A segue sem efeito e a região encolhe, sempre terminando no último quadro de
+  A. Se não sobrar 1,5 s (`kTransitionMinOverlapMs`), a troca é normal, sem
+  efeito: A inteira e depois B, com o motivo `next-not-prepared`. Nunca A com
+  efeito sobre silêncio no lugar de B.
+* **Registro da transição** (`TransitionTrace`): id do pedido, fase (armada,
+  mesclando, concluída, abortada), motivo, durações pedidas e efetivas, quadro
+  do marcador, B guardada no início, espera, quadros mesclados, quadros com B,
+  quadros em que B faltou e energia de A e de B na mescla. Sem dados pessoais.
+* A rampa de entrada de B tem 10 ms em qualquer taxa (`round(taxa × 0,010)`,
+  antes 441 quadros fixos).
+* O fim de A é sempre o próximo marcador do librespot empacotado. A estimativa
+  só decide quando começar a ler. Sem marcador o buffer enche e não há efeito.
+
+### Windows (TH-003, TH-004)
+
+* `AudioEngine::armTransition` devolve o id do pedido. O aceite, a mescla, a
+  conclusão ou o motivo do aborto chegam depois por `transitionTrace()`, sem
+  esperar na thread da interface.
+* "Última transição" só aparece depois de uma mescla concluída com B audível.
+  Um aborto por falta de B mostra "Última troca sem efeito". Um pedido recusado
+  pode ser tentado de novo.
+* Cada ocorrência no PCM (sequência de marcadores) tem sua transição. A mesma
+  música duas vezes seguidas também mescla. A duração exibida só é usada se a
+  posição do Spotify bater com a contagem de PCM da ocorrência atual.
+
+### Android (TH-004, TH-005, TH-007)
+
+* `pullInto` escreve num `float[]` reutilizado. `push` lê direto do array do
+  motor (região crítica JNI). Não há mais vetor nem array novo por bloco na
+  saída da transição.
+* O mixer é recriado quando a saída reabre em outra taxa (antes ficava na
+  taxa antiga).
+* A ocorrência vem da sequência de marcadores, e o status segue o trace, como
+  no Windows.
+
+### Testes da 0.17.4
+
+* **Núcleo** (`TransitionChecks`), A em 440 Hz e B em 660 Hz:
+  * Nos seis efeitos e três formatos, as duas soam na mesma mescla
+    (Goertzel). O trace prova B em todos os quadros da entrada, com 0 faltando.
+  * Com B atrasada 0; 0,1; 0,5; 1; 3; 4,8 e 7 s depois do começo planejado da
+    mescla, nunca entra silêncio no lugar de B. Até 3 s a mescla encolhe; a
+    partir de 4,8 s a troca é normal, A inteira e depois B.
+  * Recuperação no meio: a faixa retomada continua sendo A e a mescla usa a B
+    real.
+  * 48 e 96 kHz.
+  * Motivos e ids estáveis.
+* **Motor Windows real** com produtor sintético: a mescla tem B pronta e 0
+  quadros faltando.
+* **Spotify real no Windows**:
+  * Comando: `TonalSpotifyRecoveryTests --live-session --verify-natural-transitions`.
+  * Aparelho de diagnóstico isolado, cópia da sessão salva, saída OpenAL nula
+    (nada soa nas caixas), preferências só em memória.
+  * Três transições naturais seguidas num álbum, sem reprodução prévia na conta:
+    * Fade 6/6 s: mescla de 6 s, 2,5 s de B guardados, 0 quadros de B
+      faltando, 0 falhas de áudio.
+    * Eco 6/9 s: mescla de 9 s, 2,5 s de B, 0 faltando, 0 falhas.
+    * Freio 9/4 s: mescla de 9 s, 2,5 s de B, 0 faltando, 0 falhas.
+  * Isso mede o PCM entregue pelo motor real à saída, não o som num aparelho
+    físico.
+* **AVD Android** (`AudioSelfTest`): AudioTrack real, trace com A e B na
+  mescla, retomada no meio e ocorrência por marcador. Resultados em
+  docs/release-0174-tests.json.
+
+### Limites
+
+* O Android não tem login na AVD. A correção do Spirc foi conferida no código
+  e o caminho Java/JNI na AVD, mas não com o Spotify real no Android. O
+  primeiro teste real é o do usuário no celular.
+* Sem medição acústica (loopback), Bluetooth, carro, CPU ou bateria.
+* TH-006 (fila sem bloqueio entre o motor e a saída Android) e TH-009 (eventos
+  de transporte tipados em vez das linhas do log do librespot) continuam como
+  na 0.17.3. O produtor Android ainda espera quando o buffer da pré-rolagem
+  enche, fora da thread de saída.

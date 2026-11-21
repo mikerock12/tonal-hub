@@ -5,7 +5,7 @@ afetada antes de alterar o produto. Estado documental: 25/10/2026, builds Window
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
-Estado atual: 21/11/2026, Windows 0.17.3 e Android 0.17.3 (ver seções 0.17.0 a 0.17.3 ao final). As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
+Estado atual: 21/11/2026, Windows 0.17.4 e Android 0.17.4 (ver seções 0.17.0 a 0.17.4 ao final). As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
 
 ## Autoria, Git e privacidade
 
@@ -568,6 +568,22 @@ docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no
   do APK), backup privado 1YMQg-tNvsiZuiUML58LIN7F5QlmfUnLb. O teste de toque
   duplo da fila espaça os toques em 120 ms (DOUBLE_TAP_MIN_TIME de 40 ms).
   Evidências: docs/release-0173-tests.json e docs/artifacts-0173.json.
+
+## Transições estruturais 0.17.4
+
+- Ler a seção 0.17.4 de docs/TRANSITIONS_0170.md. Android: o Spirc vendorizado
+  trata um EndOfTrack >2 s antes da duração como falta de dados (pausa, recarrega).
+  Todo fim de faixa vai precedido da posição exata (`tonal_end_of_track` em
+  player.rs). Nunca remover isso enquanto houver leitura adiantada.
+- Marcador com posição > 1 s = mesma faixa retomada: `resumeCapture`, sem nova
+  ocorrência. A mescla só começa com B guardada (`kTransitionReadyMs`); sem o
+  mínimo de 1,5 s, troca normal com motivo. Nunca A com efeito sobre silêncio.
+- O fim de A é sempre o próximo marcador (arm com exact=true nas duas plataformas).
+  Status "Última transição" só com trace concluído e `overlapVerified`.
+  Ocorrência = sequência de marcadores, não URI. versionCode 45.
+- Spotify real no Windows: `TonalSpotifyRecoveryTests --live-session
+  --verify-natural-transitions` (aparelho isolado, OpenAL nulo, álbum por contexto;
+  pula se a conta já estiver tocando). Android real e acústica não testados.
 
 ## Fila, contraste e distribuição 0.16.1
 

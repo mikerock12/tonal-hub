@@ -31,6 +31,22 @@ std::vector<float> tone(double hz, double seconds, float amplitude) {
   return out;
 }
 
+// Amplitude de uma frequência no canal esquerdo (Goertzel), para separar A e B.
+double tonePresence(const std::vector<float> &pcm, size_t fromFrame, size_t toFrame, double hz) {
+  const double w = 2 * std::numbers::pi * hz / rate, c = 2 * std::cos(w);
+  double s1 = 0, s2 = 0;
+  size_t n = 0;
+  for (size_t i = fromFrame; i < toFrame && i * 2 < pcm.size(); ++i, ++n) {
+    const double s0 = pcm[i * 2] + c * s1 - s2;
+    s2 = s1;
+    s1 = s0;
+  }
+  if (!n)
+    return 0;
+  const double power = s1 * s1 + s2 * s2 - c * s1 * s2;
+  return 2 * std::sqrt(std::max(0.0, power)) / double(n);
+}
+
 double rms(const std::vector<float> &pcm, size_t fromFrame, size_t toFrame) {
   double sum = 0;
   size_t n = 0;
@@ -45,6 +61,7 @@ struct Run {
   int64_t overlap = 0, outro = 0, intro = 0;
   size_t latencyAfter = 0;
   bool finite = true, bounded = true, stalledWhileArmed = false;
+  TransitionTrace trace;
 };
 
 struct Options {
@@ -66,7 +83,7 @@ Run simulate(TransitionEffect effect, const std::vector<float> &a, const std::ve
   const size_t prefix = aFrames - size_t(armBeforeEndSeconds * rate);
   run.out.assign(a.begin(), a.begin() + ptrdiff_t(prefix * 2));
   const int64_t estimate = int64_t(aFrames - prefix) + int64_t(o.estimateError * rate);
-  require(mixer.arm(effect, estimate, int64_t(o.outro * rate), int64_t(o.intro * rate), o.exact), "arm");
+  require(mixer.arm(effect, estimate, int64_t(o.outro * rate), int64_t(o.intro * rate), o.exact, 7), "arm");
   size_t aRead = prefix, bRead = 0;
   bool marked = false;
   int blocksSinceAEnd = -1;
@@ -113,6 +130,7 @@ Run simulate(TransitionEffect effect, const std::vector<float> &a, const std::ve
     if (got == 0 && bRead >= bFrames && aRead >= aFrames)
       break;
   }
+  run.trace = mixer.trace();
   for (float v : run.out) {
     run.finite = run.finite && std::isfinite(v);
     run.bounded = run.bounded && std::fabs(v) <= 1.0f;
@@ -191,6 +209,19 @@ int main() {
       require(run.mixStart == aEnd - region, "the mix region ends exactly at the end of A");
       require(!run.stalledWhileArmed, "output never stalls during the transition");
       require(endsWithB(run, a, b, intro), "B starts `intro` before the end of A and then plays intact");
+      require(run.trace.id == 7 && run.trace.phase == TransitionPhase::Completed && run.trace.overlapVerified() &&
+                  run.trace.missingBFrames == 0 && run.trace.bFrames == int64_t(intro) &&
+                  run.trace.preparedB >= std::min<int64_t>(intro, rate) && run.trace.overlap == int64_t(region),
+              "trace proves A and B in the same mix");
+      // 440 Hz = A, 660 Hz = B: as duas soam juntas na metade final da entrada de B.
+      require(tonePresence(run.out, aEnd - intro / 2, aEnd - intro / 4, 660) > 0.1,
+              "B (660 Hz) is clearly present inside the mix");
+      // (No freio A muda de altura: a presença dela é conferida pelo RMS abaixo.)
+      require(effect == TransitionEffect::VinylBrake ||
+                  tonePresence(run.out, run.mixStart, run.mixStart + rate / 4, 440) > 0.3,
+              "A (440 Hz) is present when the mix starts");
+      require(tonePresence(run.out, run.mixStart - rate / 2, run.mixStart, 660) < 0.005,
+              "no B before the mix");
       require(run.latencyAfter > size_t(rate * 2) && run.latencyAfter <= size_t(rate * 3),
               "B keeps a bounded preroll after the mix");
       bool before = true;
@@ -232,6 +263,39 @@ int main() {
     Options late;
     late.bDelayBlocks = 65;
     require(!simulate(effect, a, b, 12.0, late).stalledWhileArmed, "late B never stalls the output");
+    // B atrasada em relação ao começo planejado da mescla (6 s antes do fim de
+    // A): nunca A com efeito sobre silêncio. A espera sem efeito, a região
+    // encolhe; sem o mínimo de 1,5 s a troca é normal.
+    for (const double delay : {0.0, 0.1, 0.5, 1.0, 3.0, 4.8, 7.0}) {
+      Options o;
+      o.bDelayBlocks = int((12.0 - 6.0 + delay) * rate / 512);
+      const auto run = simulate(effect, a, b, 12.0, o);
+      const auto aOnly = simulate(effect, a, silence, 12.0, o);
+      require(!run.stalledWhileArmed && run.finite, "late B: output continues");
+      require(run.trace.missingBFrames == 0, "late B: never mixes A with silence in place of B");
+      if (run.trace.phase == TransitionPhase::Completed) {
+        require(delay < 4.6 && run.trace.overlapVerified() && run.trace.preparedB >= rate,
+                "late B: mix starts only with B prepared");
+        require(endsWithB(run, a, b, size_t(run.trace.intro)), "late B: B aligned to the shortened mix");
+        require(tonePresence(run.out, aEnd - size_t(run.trace.intro) / 2, aEnd, 660) > 0.1,
+                "late B: B audible inside the shortened mix");
+        bool dryA = true;
+        const size_t start = aEnd - size_t(run.trace.overlap);
+        for (size_t k = aEnd - size_t(12.0 * rate); k < start; ++k)
+          dryA = dryA && aOnly.out[k * 2] == a[k * 2];
+        require(dryA, "late B: A untouched until the real mix start");
+      } else {
+        require(delay > 4.4 && run.trace.phase == TransitionPhase::Aborted &&
+                    run.trace.reason == TransitionReason::NextNotPrepared && run.trace.mixedFrames == 0,
+                "late B: no B for a minimal mix aborts the effect");
+        bool plain = run.out.size() == a.size() + b.size();
+        for (size_t k = 0; plain && k < a.size(); k += 3)
+          plain = run.out[k] == a[k];
+        for (size_t k = 0; plain && k < b.size(); k += 3)
+          plain = run.out[a.size() + k] == b[k];
+        require(plain, "late B: plain A then B, continuous, no fake mix");
+      }
+    }
     std::printf("effect %s ok\n", transitionEffectId(effect).data());
   }
 
@@ -276,6 +340,8 @@ int main() {
     for (size_t k = 0; plain && k < b.size(); k += 7)
       plain = run.out[longA.size() + k] == b[k];
     require(plain, "no marker before the buffer fills: plain playback, no fake mix");
+    require(run.trace.phase == TransitionPhase::Aborted && run.trace.reason == TransitionReason::NoExactBoundary,
+            "missing marker is reported");
   }
 
   // Limitador: duas faixas correlacionadas quase em fundo de escala.
@@ -349,7 +415,8 @@ int main() {
     require(last, "C enters at its own intro and plays intact");
   }
 
-  // Fim da fila: o motor para antes do previsto e A termina com o efeito.
+  // Fim da fila: o motor para antes do previsto e B nunca chega. Sem B não há
+  // efeito (nada de mescla falsa): A toca inteira uma vez e o motivo fica no trace.
   {
     TransitionMixer mixer(rate);
     require(mixer.arm(TransitionEffect::Echo, 6 * rate, 3 * rate, 3 * rate, true), "arm without B");
@@ -360,22 +427,86 @@ int main() {
     for (int i = 0; i < 2000 && mixer.active(); ++i)
       total += mixer.pull(out.data(), 512);
     require(!mixer.active() && total == size_t(4 * rate), "endCapture finishes A once");
+    require(mixer.trace().phase == TransitionPhase::Aborted &&
+                mixer.trace().reason == TransitionReason::NextNotPrepared && mixer.trace().energyA == 0,
+            "without B the effect is not applied");
+  }
+  // Android: o motor pausou no meio (recuperação de buffering) e retomou a
+  // mesma faixa. O trecho retomado é A, não B: a captura continua até o
+  // marcador real de B, e a mescla usa a B verdadeira.
+  {
+    TransitionMixer mixer(rate);
+    require(mixer.arm(TransitionEffect::Fade, 9 * rate, 6 * rate, 6 * rate, true), "arm before a recovery pause");
+    const size_t split = size_t(4 * rate);
+    mixer.push(a.data(), split);
+    mixer.endCapture();
+    mixer.resumeCapture();
+    mixer.push(a.data() + split * 2, aEnd - split);
+    mixer.boundary();
+    size_t pushed = 0;
+    std::vector<float> out(512 * 2), program;
+    for (int i = 0; i < 200000; ++i) {
+      while (mixer.wantsInput() && pushed < b.size() / 2)
+        pushed += mixer.push(b.data() + pushed * 2, std::min<size_t>(1024, b.size() / 2 - pushed));
+      const size_t got = mixer.pull(out.data(), 512);
+      program.insert(program.end(), out.begin(), out.begin() + ptrdiff_t(got * 2));
+      if (!got && pushed >= b.size() / 2)
+        break;
+    }
+    require(mixer.trace().phase == TransitionPhase::Completed && mixer.trace().overlapVerified() &&
+                mixer.trace().boundaryFrame == int64_t(aEnd),
+            "resumed A is captured as A; the real B is mixed");
+    require(program.size() / 2 == aEnd + b.size() / 2 - size_t(6 * rate) &&
+                tonePresence(program, aEnd - size_t(3 * rate), aEnd - size_t(1.5 * rate), 660) > 0.1,
+            "after a recovery pause the mix still has the real B");
   }
   {
     TransitionMixer mixer(rate);
     require(mixer.arm(TransitionEffect::Fade, 2 * rate, 2 * rate, 2 * rate), "arm before reset");
     mixer.push(a.data(), 1000);
-    require(!mixer.arm(TransitionEffect::Fade, 2 * rate, rate, rate), "cannot arm twice");
+    require(!mixer.arm(TransitionEffect::Fade, 2 * rate, rate, rate, false, 9), "cannot arm twice");
+    require(mixer.lastRejection() == TransitionReason::Busy && mixer.trace().phase == TransitionPhase::Armed,
+            "refusal keeps the running trace");
     mixer.reset();
+    require(mixer.trace().phase == TransitionPhase::Aborted && mixer.trace().reason == TransitionReason::Cancelled,
+            "reset reports the cancelled transition");
     require(!mixer.active() && mixer.latencyFrames() == 0, "reset clears everything");
     require(!mixer.arm(TransitionEffect::Count, 2 * rate, rate, rate), "invalid effect is refused");
+    require(mixer.lastRejection() == TransitionReason::InvalidRequest, "invalid request reason");
     require(!mixer.arm(TransitionEffect::Fade, 100, 100, 100), "too short tail is refused");
+    require(mixer.lastRejection() == TransitionReason::BufferCapacity, "capacity reason");
     require(mixer.arm(TransitionEffect::BeatRoll, 2 * rate, rate, rate, true), "re-arm after reset");
   }
+  // Taxas diferentes: as durações valem em milissegundos.
+  for (const int other : {48000, 96000}) {
+    TransitionMixer mixer(other);
+    const auto ta = std::vector<float>(size_t(10 * other) * 2, 0.4f), tb = std::vector<float>(size_t(8 * other) * 2, 0.3f);
+    require(mixer.arm(TransitionEffect::Fade, 0, 4 * other, 6 * other, true, 3), "arm at other rate");
+    mixer.push(ta.data(), ta.size() / 2);
+    mixer.boundary();
+    size_t pushed = 0, total = 0;
+    std::vector<float> out(512 * 2);
+    for (int i = 0; i < 100000 && (mixer.active() || pushed < tb.size() / 2); ++i) {
+      while (mixer.wantsInput() && pushed < tb.size() / 2)
+        pushed += mixer.push(tb.data() + pushed * 2, std::min<size_t>(1024, tb.size() / 2 - pushed));
+      const size_t got = mixer.pull(out.data(), 512);
+      total += got;
+      if (!got && pushed >= tb.size() / 2)
+        break;
+    }
+    require(mixer.trace().overlap == 6 * other && mixer.trace().sampleRate == other &&
+                mixer.trace().phase == TransitionPhase::Completed && mixer.trace().overlapVerified(),
+            "durations follow the sample rate");
+    require(total == size_t(10 * other + 8 * other - 6 * other), "program length at other rate");
+  }
+  require(transitionPhaseId(TransitionPhase::Completed) == "completed" &&
+              transitionReasonId(TransitionReason::NextNotPrepared) == "next-not-prepared",
+          "stable report ids");
+
   if (failures) {
     std::printf("%d transition check(s) failed\n", failures);
     return 1;
   }
-  std::printf("PASS transition mixer: 6 effects x 3 shapes, exact boundary vs wrong estimate, preroll, late B, full buffer, two transitions, limiter, endCapture, reset\n");
+  std::printf("PASS transition mixer: 6 effects x 3 shapes with A 440 Hz + B 660 Hz in the same mix, B late 0-7 s after the planned start (gate/abort), exact boundary vs wrong estimate, preroll, full buffer, two transitions, limiter, endCapture, reset, trace, 48/96 kHz\n");
   return 0;
 }

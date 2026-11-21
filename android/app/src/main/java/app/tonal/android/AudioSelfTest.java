@@ -54,7 +54,7 @@ final class AudioSelfTest {
             require(Math.abs(counted-6000)<50,"posição exata desde o marcador: "+counted+" ms");
             int before=out.underruns(),boundaries=out.markerBoundaries;
             // Estimativa 2,5 s curta de propósito (o erro da 0.17.1): o fim de A vem do marcador.
-            require(out.armTransition(0,3500,3000,4000),"armar a primeira transição");
+            require(out.armTransition(0,3500,3000,4000)!=0,"armar a primeira transição");
             long start=System.nanoTime();
             for(int i=head;i<a.length;i+=packet)out.write(Arrays.copyOfRange(a,i,Math.min(a.length,i+packet)));
             long captureMs=(System.nanoTime()-start)/1_000_000;
@@ -70,9 +70,14 @@ final class AudioSelfTest {
             long bMs=(System.nanoTime()-start)/1_000_000;
             int latency=out.transitionLatencyMs();
             require(out.transitionState()==3&&latency>=2000&&latency<=3200,"pré-rolagem depois da mescla: "+out.transitionState()+" "+latency+" ms");
-            report.put("captureMs",captureMs).put("bWriteMs",bMs).put("latencyAfterMixMs",latency);
+            long[] trace=out.transitionTrace();
+            require(trace!=null&&trace[TransitionNative.T_PHASE]==TransitionNative.PHASE_COMPLETED&&TransitionNative.overlapVerified(trace)
+                    &&trace[TransitionNative.T_MISSING_B]==0&&trace[TransitionNative.T_PREPARED_B]>=44100,
+                "a mescla não provou A e B juntas: "+java.util.Arrays.toString(trace));
+            report.put("captureMs",captureMs).put("bWriteMs",bMs).put("latencyAfterMixMs",latency)
+                .put("preparedBMs",trace[TransitionNative.T_PREPARED_B]*1000/44100).put("bFramesInMix",trace[TransitionNative.T_B_FRAMES]);
             // Segunda transição com o atraso da primeira no buffer: o fim de B já está guardado.
-            require(out.armTransition(2,0,2000,2000),"armar com o atraso da anterior");
+            require(out.armTransition(2,0,2000,2000)!=0,"armar com o atraso da anterior");
             out.boundary(0);  // o fim de B é o que já está no buffer
             start=System.nanoTime();
             for(int i=0;i<a.length;i+=packet)out.write(Arrays.copyOfRange(a,i,Math.min(a.length,i+packet)));
@@ -81,15 +86,34 @@ final class AudioSelfTest {
             report.put("secondWriteMs",(System.nanoTime()-start)/1_000_000).put("latencyAfterSecondMs",latency2);
             // Sem a próxima faixa: o motor fecha o sink e o fim lido toca sozinho.
             out.cancelTransition();
-            require(out.armTransition(4,4000,2000,3000),"armar transição sem próxima");
+            require(out.armTransition(4,4000,2000,3000)!=0,"armar transição sem próxima");
             float[] tail=Arrays.copyOfRange(b,0,44100*2*3);
             for(int i=0;i<tail.length;i+=packet)out.write(Arrays.copyOfRange(tail,i,Math.min(tail.length,i+packet)));
             require(out.continuesThroughEngineStop(),"fim natural recusado");
             long until=android.os.SystemClock.elapsedRealtime()+8000;
             while(out.transitionState()!=0&&android.os.SystemClock.elapsedRealtime()<until)Thread.sleep(50);
             require(out.transitionState()==0,"o fim lido não terminou");
+            // Recuperação de buffering no meio (motor pausa e retoma A no mesmo ponto):
+            // o trecho retomado continua sendo A; a mescla usa a B de verdade.
+            long sequence=out.trackSequence;
+            require(out.armTransition(0,6000,2000,2000)!=0,"armar antes da recuperação");
+            for(int i=0;i<44100*2*3;i+=packet)out.write(Arrays.copyOfRange(a,i,Math.min(44100*2*3,i+packet)));
+            require(out.continuesThroughEngineStop(),"pausa de recuperação recusada");
+            out.boundary(3000);
+            require(out.trackSequence==sequence,"retomada no meio virou outra ocorrência");
+            for(int i=44100*2*3;i<44100*2*6;i+=packet)out.write(Arrays.copyOfRange(a,i,Math.min(44100*2*6,i+packet)));
+            out.boundary(0);
+            require(out.trackSequence==sequence+1,"a próxima faixa não virou uma nova ocorrência");
+            for(int i=0;i<44100*2*5;i+=packet)out.write(Arrays.copyOfRange(b,i,Math.min(44100*2*5,i+packet)));
+            until=android.os.SystemClock.elapsedRealtime()+10000;
+            while(out.transitionState()!=3&&out.transitionState()!=0&&android.os.SystemClock.elapsedRealtime()<until)Thread.sleep(50);
+            long[] resumed=out.transitionTrace();
+            require(resumed!=null&&resumed[TransitionNative.T_PHASE]==TransitionNative.PHASE_COMPLETED&&TransitionNative.overlapVerified(resumed)
+                    &&resumed[TransitionNative.T_BOUNDARY]==44100L*6,"recuperação no meio: "+java.util.Arrays.toString(resumed));
+            report.put("recoveryResumeVerified",true);
+            out.cancelTransition();
             // Cancelar descarta o que foi lido e volta ao caminho direto.
-            require(out.armTransition(5,4000,2000,2000),"armar para cancelar");out.write(Arrays.copyOfRange(b,0,packet*8));out.cancelTransition();
+            require(out.armTransition(5,4000,2000,2000)!=0,"armar para cancelar");out.write(Arrays.copyOfRange(b,0,packet*8));out.cancelTransition();
             require(out.transitionState()==0&&out.transitionLatencyMs()==0,"cancelar manteve a transição");out.write(Arrays.copyOfRange(b,0,packet));
             report.put("underruns",out.underruns()-before).put("pass",true);
         }finally{out.release();}

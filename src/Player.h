@@ -252,6 +252,7 @@ private:
   void skipLeavesTrackRepeat();
   bool queueFromOrderedRows();
   void maybeArmTransition();
+  void updateTransitionResult();
   void cancelTransition();
   bool m_transitionsEnabled = false;
   QString m_transitionEffect = QStringLiteral("random");
@@ -259,6 +260,12 @@ private:
   int m_lastTransition = -1;
   QString m_transitionArmedUri, m_transitionStatus;
   QElapsedTimer m_transitionGuard;
+  // Ocorrência no PCM (sequência de marcadores do librespot) armada e a que
+  // a faixa exibida comprovadamente descreve; -1 = nenhuma.
+  qint64 m_transitionArmedSeq = -1, m_trackInfoSeq = -1;
+  // Pedido enviado ao motor e o último resultado já mostrado.
+  quint64 m_transitionRequest = 0, m_transitionShown = 0;
+  QElapsedTimer m_transitionRequestClock;
   QElapsedTimer m_positionClock;
   QElapsedTimer m_transportIntentClock;
   uint64_t m_transportGeneration = 0;
