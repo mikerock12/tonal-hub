@@ -19,6 +19,20 @@ Dialog {
         Label { text: "Versão " + Qt.application.version; color: about.foreground }
         Label {
             Layout.fillWidth: true
+            visible: typeof graphicsSafety !== "undefined"
+            color: graphicsSafety && graphicsSafety.fallback ? "#f0b44c" : about.foreground
+            wrapMode: Text.WordWrap
+            text: typeof graphicsSafety === "undefined" ? "" :
+                  "Desenho da tela: " + (graphicsSafety.activeApi || "Direct3D") +
+                  (graphicsSafety.fallback ? " (o DirectX falhou neste PC)" : "")
+        }
+        Button {
+            visible: typeof graphicsSafety !== "undefined" && graphicsSafety.fallback
+            text: "Tentar DirectX de novo na próxima abertura"
+            onClicked: graphicsSafety.retryDirectX()
+        }
+        Label {
+            Layout.fillWidth: true
             color: about.foreground
             text: "Projeto original de Matheus Nunes (natheus). Tonal Hub mantido por Maicon Nunes (mikerock12). Licença MIT."
             wrapMode: Text.WordWrap

@@ -1,0 +1,22 @@
+{
+  "version": "0.17.2",
+  "platform": "Windows",
+  "date": "2026-11-20",
+  "report": "Após instalar a 0.17.1 os apps abriam e fechavam sozinhos (APPCRASH dxgi.dll 0xC0000005 +0x3d900).",
+  "investigation": {
+    "tonal0171Installed": "caía antes de reiniciar, abre depois",
+    "tonal0162And0163": "caíam (funcionavam antes)",
+    "unrelatedDirect3DApp": "caía no mesmo deslocamento",
+    "minimalD3D11ProbeNoQt": {"beforeReboot": "caía ao criar o swapchain (flip 0xC0000005, blt 0xC0000096)", "afterReboot": "60 quadros"},
+    "dxgiTextModifiedInMemory": {"beforeReboot": 222, "afterReboot": 0, "control_d3d11": 0, "warpAlsoModified": true},
+    "warsawModuleInjected": {"beforeReboot": true, "afterReboot": true, "treatedAsCause": false},
+    "openglOrSoftware": "funcionavam com o Direct3D falhando"
+  },
+  "validation": {
+    "ctestWindows": "12/12",
+    "qml": {"mix": 34, "lyrics": 7, "playlist": 3},
+    "fallbackScenariosTempDir": ["queda do Direct3D → OpenGL com aviso", "queda do OpenGL → software com aviso", "boot novo → tenta Direct3D", "abertura normal confirma", "fechar em 0,9 s não vira falso positivo", "Tonalify e IndieTonal com o mesmo comportamento"],
+    "windowsPortable": {"programsStarted": 3, "files": 1450, "zipCrc": true}
+  },
+  "limits": ["A primeira queda não pode ser evitada; a troca vale da abertura seguinte.", "A falha real não foi reproduzida depois do reinício; os cenários usam estado simulado.", "A origem da alteração do dxgi.dll não foi identificada."]
+}

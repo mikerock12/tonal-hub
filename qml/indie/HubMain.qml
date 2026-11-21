@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import "qrc:/companion/qml/companion" as Personal
 ApplicationWindow {
     id: window
     width: 1020; height: 620; minimumWidth: 760; minimumHeight: 500
@@ -8,6 +9,7 @@ ApplicationWindow {
     palette.text: "#f2f6fa"; palette.windowText: "#f2f6fa"; palette.button: "#2d414f"; palette.buttonText: "#f2f6fa"; palette.base: "#253340"; palette.highlight: "#0caac9"
     palette.placeholderText: "#9aaebb"
     AboutUpdate { id: updates }
+    Personal.GraphicsNotice {}
     ColumnLayout {
         anchors.fill: parent; anchors.margins: 32; spacing: 24
         Label { text: "Tonal Hub"; font.pixelSize: 34; font.bold: true }
