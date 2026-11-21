@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.17.3 — 21/11/2026
+
+- Transições de verdade: a música atual e a próxima se misturam no fim, com o efeito. Antes o app estimava errado onde a música atual acabava. O volume dela só baixava ou oscilava, e a próxima entrava depois, sem efeito.
+- O motor do Spotify agora marca no próprio áudio onde cada música começa, e a mescla termina exatamente no último instante da música atual.
+- Novo controle **Começo da próxima na mescla**, de 3 a 10 s: quanto da próxima música toca por baixo da atual. O antigo tempo de mesclagem virou **Fim da música atual com o efeito**.
+- Windows e Android. Detalhes e limites em docs/TRANSITIONS_0170.md.
+
 ## 0.17.2 Windows — 20/11/2026
 
 - Se o DirectX do Windows derrubar o app ao abrir a janela, a abertura seguinte usa OpenGL (ou renderização por software, se o OpenGL também cair) e mostra um aviso com o motivo, a placa de vídeo e o renderizador em uso.

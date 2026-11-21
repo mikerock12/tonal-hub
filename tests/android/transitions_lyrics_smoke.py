@@ -1,4 +1,4 @@
-"""0.17.0 na AVD dedicada: diálogo de transições, persistência da escolha e cabeçalho da letra só com ícones.
+"""0.17.0/0.17.3 na AVD dedicada: diálogo de transições (fim da atual e começo da próxima), persistência da escolha e cabeçalho da letra só com ícones.
 
 Usa a fixture sintética (mixUiFixture) do pacote de teste; não toca em aparelho físico nem no Spotify.
 """
@@ -28,14 +28,14 @@ def main():
     assert node('Freio de vinil',prefix=True).get('enabled')=='false','efeitos ficam desativados com as transições desligadas'
     tap('Mesclar o fim de cada música com o começo da próxima')
     assert node('Freio de vinil',prefix=True).get('enabled')=='true'
-    tap('Eco de despedida',prefix=True);node('Tempo de mesclagem: 6 s')
+    tap('Eco de despedida',prefix=True);node('Fim da música atual com o efeito: 6 s');node('Começo da próxima na mescla: 6 s')
     assert node('Eco de despedida',prefix=True).get('checked')=='true'
     ui.screen('01-transitions-dialog.png');tap('CONCLUIR') if any(n.get('text','')=='CONCLUIR' for n in ui.dump()) else tap('Concluir')
     # Reabrir mostra a escolha salva.
     tap('Transições entre músicas: efeitos de DJ')
     assert node('Mesclar o fim de cada música com o começo da próxima').get('checked')=='true'
     assert node('Eco de despedida',prefix=True).get('checked')=='true'
-    report['transitions_dialog']={'enabled':True,'effect':'echo','seconds':6,'persisted':True}
+    report['transitions_dialog']={'enabled':True,'effect':'echo','seconds':6,'intro_seconds':6,'persisted':True}
     tap('CONCLUIR') if any(n.get('text','')=='CONCLUIR' for n in ui.dump()) else tap('Concluir')
     # Página da letra: desliza para a segunda seção da página da música.
     for _ in range(3):

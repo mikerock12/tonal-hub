@@ -76,9 +76,18 @@ impl Sink for AndroidSink {
     }
     fn write(&mut self, packet: AudioPacket, _: &mut Converter) -> SinkResult<()> {
         if self.generation != GENERATION.load(Ordering::SeqCst) { return Err(SinkError::NotConnected("Stopped".into())); }
-        if let AudioPacket::Samples(samples) = packet {
-            let floats: Vec<f32> = samples.iter().map(|x|*x as f32).collect();
-            pcm(&floats)?;
+        match packet {
+            AudioPacket::Samples(samples) => {
+                let floats: Vec<f32> = samples.iter().map(|x|*x as f32).collect();
+                pcm(&floats)?;
+            }
+            // Marcador do começo de faixa (vendor/librespot-playback, start_playback):
+            // chega na mesma thread e na mesma ordem do PCM.
+            AudioPacket::Raw(bytes) if bytes.len()==8 && bytes[..4]==0x7FA0_7A1Bu32.to_le_bytes() => {
+                let position=u32::from_le_bytes([bytes[4],bytes[5],bytes[6],bytes[7]])&0x3F_FFFF;
+                call_void("onTrackBoundary","(I)V",&[JValue::Int(position as i32)]).map_err(SinkError::OnWrite)?;
+            }
+            AudioPacket::Raw(_) => {}
         }
         Ok(())
     }

@@ -46,7 +46,10 @@ class Player : public QObject {
   // Transições entre as músicas da fila (efeitos de DJ).
   Q_PROPERTY(bool transitionsEnabled READ transitionsEnabled WRITE setTransitionsEnabled NOTIFY transitionsChanged)
   Q_PROPERTY(QString transitionEffect READ transitionEffect WRITE setTransitionEffect NOTIFY transitionsChanged)
+  // Fim da música atual com o efeito (3–10 s).
   Q_PROPERTY(int transitionSeconds READ transitionSeconds WRITE setTransitionSeconds NOTIFY transitionsChanged)
+  // Quanto do começo da próxima entra na mescla (3–10 s).
+  Q_PROPERTY(int transitionIntroSeconds READ transitionIntroSeconds WRITE setTransitionIntroSeconds NOTIFY transitionsChanged)
   Q_PROPERTY(QVariantList transitionEffects READ transitionEffects CONSTANT)
   Q_PROPERTY(bool transitionsAvailable READ transitionsAvailable NOTIFY transitionsChanged)
   Q_PROPERTY(QString transitionStatus READ transitionStatus NOTIFY transitionsChanged)
@@ -114,6 +117,8 @@ public:
   void setTransitionEffect(const QString &effect);
   int transitionSeconds() const { return m_transitionSeconds; }
   void setTransitionSeconds(int seconds);
+  int transitionIntroSeconds() const { return m_transitionIntroSeconds; }
+  void setTransitionIntroSeconds(int seconds);
   QVariantList transitionEffects() const;
   bool transitionsAvailable() const;
   QString transitionStatus() const { return m_transitionStatus; }
@@ -250,7 +255,7 @@ private:
   void cancelTransition();
   bool m_transitionsEnabled = false;
   QString m_transitionEffect = QStringLiteral("random");
-  int m_transitionSeconds = 6;
+  int m_transitionSeconds = 6, m_transitionIntroSeconds = 6;
   int m_lastTransition = -1;
   QString m_transitionArmedUri, m_transitionStatus;
   QElapsedTimer m_transitionGuard;

@@ -90,6 +90,8 @@ Player::Player(SpotifyApi *api, LibrespotProcess *librespot, AuthManager *auth,
       m_transitionEffect = effect;
     m_transitionSeconds = tonal::playback::clampTransitionSeconds(
         settings.value(QStringLiteral("transitions/seconds"), 6).toInt());
+    m_transitionIntroSeconds = tonal::playback::clampTransitionSeconds(
+        settings.value(QStringLiteral("transitions/introSeconds"), 6).toInt());
   }
 
   m_pollTimer.setSingleShot(true);
@@ -244,6 +246,15 @@ void Player::setTransitionSeconds(int seconds) {
   emit transitionsChanged();
 }
 
+void Player::setTransitionIntroSeconds(int seconds) {
+  seconds = tonal::playback::clampTransitionSeconds(seconds);
+  if (seconds == m_transitionIntroSeconds)
+    return;
+  m_transitionIntroSeconds = seconds;
+  QSettings().setValue(QStringLiteral("transitions/introSeconds"), seconds);
+  emit transitionsChanged();
+}
+
 // Pulos, seleções, seeks e troca de aparelho não terminam com efeito: o que
 // já estava sendo mesclado é descartado e a próxima carga limpa o buffer.
 void Player::cancelTransition() {
@@ -269,11 +280,16 @@ void Player::maybeArmTransition() {
   if (m_queueTrack == m_trackUri && !m_queuePartial && m_queue.isEmpty() &&
       m_repeatWanted == QLatin1String("off"))
     return;
-  // positionMs() é a do librespot (já entregue ao motor de áudio); o som está
-  // atrás pelo atraso da pré-rolagem anterior.
-  const int upcoming = m_durationMs - positionMs();
+  // Posição exata: quadros desta faixa lidos desde o marcador de começo de
+  // faixa do librespot. A da Web API é extrapolada e pode errar em segundos;
+  // fica só como reserva (sem marcador ou depois de um seek). O som está atrás
+  // do que foi lido pelo atraso da pré-rolagem anterior.
+  const int engine = m_audio->spotifyTrackPositionMs();
+  const bool exact = engine >= 0 && engine <= m_durationMs + 2000;
+  const int upcoming = qMax(0, m_durationMs - (exact ? engine : positionMs()));
   const int audible = upcoming + m_audio->transitionLatencyMs();
-  const auto plan = tonal::playback::planTransition(m_transitionSeconds, m_durationMs, audible, upcoming);
+  const auto plan = tonal::playback::planTransition(m_transitionSeconds, m_transitionIntroSeconds, m_durationMs,
+                                                    audible, upcoming);
   if (!plan.arm)
     return;
   auto effect = tonal::playback::transitionEffectFromId(m_transitionEffect.toStdString());
@@ -283,7 +299,7 @@ void Player::maybeArmTransition() {
         QRandomGenerator::global()->generate());
   m_transitionArmedUri = m_trackUri;
   m_lastTransition = int(effect);
-  m_audio->armTransition(int(effect), int(plan.upcomingMs), int(plan.overlapMs));
+  m_audio->armTransition(int(effect), int(plan.upcomingMs), int(plan.outroMs), int(plan.introMs));
   const auto id = QString::fromLatin1(tonal::playback::transitionEffectId(effect).data());
   for (const auto &entry : transitionEffects())
     if (entry.toMap().value("id") == id)
@@ -992,7 +1008,7 @@ void Player::seek(int ms) {
   ms = qBound(0, ms, qMax(0, m_durationMs));
   cancelTransition();
   // Voltar para antes do ponto da transição permite armá-la de novo.
-  if (m_durationMs - ms > m_transitionSeconds * 1000 + 1500)
+  if (m_durationMs - ms > qMax(m_transitionSeconds, m_transitionIntroSeconds) * 1000 + 1500)
     m_transitionArmedUri.clear();
   ++m_seekGeneration;
   m_seekTarget = ms;

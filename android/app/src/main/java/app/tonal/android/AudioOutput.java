@@ -124,6 +124,7 @@ final class AudioOutput {
     }
     int sampleRate(){return rate;}
     void write(float[] samples){
+        long counted=trackFrames;if(counted>=0)trackFrames=counted+samples.length/Math.max(1,channels);
         if(mixActive&&channels==2){writeTransition(samples);return;}
         float[] rendered=render(samples);
         if(rendered!=null)output(rendered,0,true);
@@ -163,13 +164,28 @@ final class AudioOutput {
     private volatile boolean mixActive;
     private volatile int latencyFrames;
     private Thread writer;
-    boolean armTransition(int effect,long upcomingMs,long overlapMs){
+    // Marcador de começo de faixa do librespot (vendor/librespot-playback): chega
+    // pela mesma thread e na mesma ordem do PCM. Dá o fim exato de A e a posição
+    // exata da faixa no PCM já entregue (quadros desde o marcador).
+    private volatile long trackFrames=-1;
+    private volatile int trackStartMs;
+    volatile boolean markersSeen;
+    volatile int markerBoundaries;
+    void boundary(int positionMs){
+        markersSeen=true;trackStartMs=positionMs;trackFrames=0;
+        synchronized(mixLock){if(mixer!=0&&mixActive){if(TransitionNative.state(mixer)==1)markerBoundaries++;TransitionNative.boundary(mixer);mixLock.notifyAll();}}
+    }
+    /** Seek ou outra escolha: a contagem desde o marcador deixa de valer até o próximo. */
+    void forgetTrackPosition(){trackFrames=-1;}
+    /** Posição da faixa no PCM já entregue pelo motor; -1 quando desconhecida. */
+    long trackPositionMs(){long counted=trackFrames;return counted<0?-1:trackStartMs+counted*1000L/Math.max(1,rate);}
+    boolean armTransition(int effect,long upcomingMs,long outroMs,long introMs){
         if(!TransitionNative.READY)return false;
         synchronized(this){if(track==null||channels!=2||localSource||paused)return false;}
         synchronized(mixLock){
             if(mixer==0)mixer=TransitionNative.create(rate);
             if(mixer==0)return false;
-            if(!TransitionNative.arm(mixer,effect,upcomingMs*rate/1000,overlapMs*rate/1000))return false;
+            if(!TransitionNative.arm(mixer,effect,upcomingMs*rate/1000,outroMs*rate/1000,introMs*rate/1000,markersSeen))return false;
             mixActive=true;latencyFrames=(int)TransitionNative.latency(mixer);
             if(writer==null||!writer.isAlive()){writer=new Thread(this::writerLoop,"TonalTransitionOut");writer.start();}
             mixLock.notifyAll();

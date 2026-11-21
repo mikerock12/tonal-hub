@@ -10,6 +10,8 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
+**0.17.3 — Transições que mesclam de verdade:** a música atual e a próxima tocam juntas no fim, com o efeito, terminando exatamente no último instante da atual. Novo controle de quanto do começo da próxima entra na mescla (3 a 10 s). [Detalhes](docs/TRANSITIONS_0170.md).
+
 **Windows 0.17.2 — Se o DirectX do Windows falhar ao abrir, o app troca para OpenGL e avisa o motivo.** [Detalhes](docs/WINDOWS_GRAPHICS_0172.md).
 
 **0.17.1 — Transições fluidas:** o fim da música atual e o começo da próxima ficam no buffer antes da mescla, sem travar nem pausar.

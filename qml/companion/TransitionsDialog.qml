@@ -3,8 +3,9 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 // Transições entre as músicas da fila: liga/desliga, efeito fixo ou
-// aleatório e tempo de mesclagem (3 a 10 s). As escolhas valem para toda
-// lista de reprodução tocada pelo Tonalify neste computador.
+// aleatório, quanto do fim da música atual recebe o efeito e quanto do
+// começo da próxima entra na mescla (3 a 10 s cada). As escolhas valem para
+// toda lista de reprodução tocada pelo Tonalify neste computador.
 Dialog {
     id: dialog
     objectName: "transitionsDialog"
@@ -82,7 +83,7 @@ Dialog {
                     }
                 }
             }
-            Label { text: qsTr("Tempo de mesclagem: %1 s").arg(seconds.value); font.bold: true; color: dialog.ink }
+            Label { text: qsTr("Fim da música atual com o efeito: %1 s").arg(seconds.value); font.bold: true; color: dialog.ink }
             Slider {
                 id: seconds
                 objectName: "transitionSeconds"
@@ -92,12 +93,22 @@ Dialog {
                 value: dialog.player.transitionSeconds
                 onMoved: dialog.player.transitionSeconds = Math.round(value)
             }
+            Label { text: qsTr("Começo da próxima na mescla: %1 s").arg(intro.value); font.bold: true; color: dialog.ink }
+            Slider {
+                id: intro
+                objectName: "transitionIntroSeconds"
+                Layout.fillWidth: true
+                from: 3; to: 10; stepSize: 1; snapMode: Slider.SnapAlways
+                enabled: dialog.player.transitionsEnabled
+                value: dialog.player.transitionIntroSeconds
+                onMoved: dialog.player.transitionIntroSeconds = Math.round(value)
+            }
             Label {
                 Layout.fillWidth: true
                 wrapMode: Text.Wrap
                 color: dialog.muted
                 font.pixelSize: 12
-                text: qsTr("A mesclagem começa alguns segundos antes do fim da música e a próxima entra por baixo. Pular, escolher outra música ou buscar um trecho troca na hora, sem efeito. Não vale para a última música da fila, para a repetição de uma música só nem para arquivos locais.")
+                text: qsTr("A próxima música começa a tocar por baixo da atual pelo tempo escolhido e as duas terminam a mescla juntas, no último instante da atual. O efeito ocupa o fim da música atual. Pular, escolher outra música ou buscar um trecho troca na hora, sem efeito. Não vale para a última música da fila, para a repetição de uma música só nem para arquivos locais.")
             }
             Label {
                 Layout.fillWidth: true

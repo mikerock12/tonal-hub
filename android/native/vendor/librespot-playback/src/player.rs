@@ -1588,6 +1588,17 @@ impl Future for PlayerInternal {
     }
 }
 
+/// Tonal: um quadro estéreo f32 (8 bytes) que nunca é áudio: o canal
+/// esquerdo é um NaN sinalizador fixo e o direito um NaN silencioso com a
+/// posição inicial em ms nos 22 bits de carga. Quem lê o PCM remove o quadro.
+pub const TONAL_TRACK_MARKER: u32 = 0x7FA0_7A1B;
+fn tonal_track_marker(position_ms: u32) -> Vec<u8> {
+    let mut bytes = Vec::with_capacity(8);
+    bytes.extend_from_slice(&TONAL_TRACK_MARKER.to_le_bytes());
+    bytes.extend_from_slice(&(0x7FC0_0000u32 | position_ms.min(0x3F_FFFF)).to_le_bytes());
+    bytes
+}
+
 impl PlayerInternal {
     fn ensure_sink_running(&mut self) {
         if self.sink_status != SinkStatus::Running {
@@ -1889,6 +1900,13 @@ impl PlayerInternal {
 
         if start_playback {
             self.ensure_sink_running();
+            // Tonal: marca no próprio fluxo de PCM onde esta faixa começa, antes
+            // da primeira amostra dela. O mixer de transições usa isso como o fim
+            // exato da faixa anterior (a posição informada não é exata).
+            let _ = self.sink.write(
+                AudioPacket::Raw(tonal_track_marker(position_ms)),
+                &mut self.converter,
+            );
             self.send_event(PlayerEvent::Playing {
                 track_id: track_id.clone(),
                 play_request_id,

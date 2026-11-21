@@ -23,7 +23,7 @@ public final class NativeBridge {
     public static void start(String token,String cache,int bitrate,boolean normalize){spotifyEngine=true;nativeStart(token,cache,bitrate,normalize);}
     public static void command(String command){
         synchronized(intent){intent.command(command,playing);}
-        if(PlaybackIntent.movesAudio(command)){Transitions.cancel();audio.discontinuity();}
+        if(PlaybackIntent.movesAudio(command)){Transitions.cancel();audio.discontinuity();audio.forgetTrackPosition();}
         if(command.equals("pause")||command.equals("stop")){audio.pause();playing=false;}
         repeatMode=RepeatMode.afterCommand(repeatMode,command);
         Consumer<String> listener=commandListener;if(listener!=null)listener.accept(command);
@@ -98,6 +98,8 @@ public final class NativeBridge {
         boolean stopped;synchronized(intent){stopped=!intent.desired;}
         if(stopped||android.os.SystemClock.elapsedRealtime()-lastPcm>250){audio.pause();playing=false;onStatus("Pausado");}
     }
+    /** Começo exato de uma faixa no PCM (marcador do librespot), antes da primeira amostra dela. */
+    public static void onTrackBoundary(int positionMs){if(spotifyEngine)audio.boundary(positionMs);}
     /** Engine closed the sink only to load another track; runs right after onAudioPause. */
     public static void onAudioDiscontinuity() { audio.discontinuity(); }
     private static final ThreadLocal<Boolean> audioPriority=ThreadLocal.withInitial(()->false);

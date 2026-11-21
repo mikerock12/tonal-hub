@@ -5,7 +5,7 @@ afetada antes de alterar o produto. Estado documental: 25/10/2026, builds Window
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
-Estado atual: 20/11/2026, Windows 0.17.2 e Android 0.17.1 (ver seções 0.17.0, 0.17.1 e 0.17.2 ao final). As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
+Estado atual: 21/11/2026, Windows 0.17.3 e Android 0.17.3 (ver seções 0.17.0 a 0.17.3 ao final). As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
 
 ## Autoria, Git e privacidade
 
@@ -548,6 +548,21 @@ docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no
 - Entrega Windows 0.17.2 (21/11/2026): PR57 merge af19fd3, código de produto
   4d74018, release v0.17.2 (sem APK), portal PR75 merge 3505fe0 com APK fixado
   na v0.17.1, Worker 6f30a2be, backup privado 1l4GeRgmc8A9cTgsB2CkpssjAk_sryu-E.
+
+## Transições com marcador exato 0.17.3
+
+- O fim de A no PCM vem do marcador de começo de faixa que o librespot grava
+  em `start_playback` (quadro f32 esquerda 0x7FA07A1B, direita NaN com a
+  posição em ms). Android: vendor/librespot-playback + AndroidSink →
+  `NativeBridge.onTrackBoundary`. Windows: prepare-librespot-windows.py corrige
+  o librespot-playback 0.8.0 fixado; NativePcmPipe remove o quadro.
+- Nunca voltar a posicionar a mescla só pela posição da Web API: ela erra em
+  segundos e o fim de A virava "B" (A oscilava e B entrava crua). Sem marcador
+  e com buffer cheio, tocar sem efeito; a estimativa só vale sem marcador.
+- Duas durações 3–10 s: fim da atual com efeito (`transitionSeconds`) e começo
+  da próxima na mescla (`transitionIntroSeconds` / `transitionIntroSeconds`
+  nas prefs). Ambas terminam no último quadro de A. versionCode 44.
+- Sem teste com Spotify real, aparelho físico ou medição acústica.
 
 ## Fila, contraste e distribuição 0.16.1
 

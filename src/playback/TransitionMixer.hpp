@@ -13,6 +13,11 @@
 //     antecipação, que só atua se a soma A+B passar de 0 dBFS.
 //  4. Depois da mescla B segue do FIFO. A pré-rolagem vira um atraso
 //     constante entre o motor e o som (latencyFrames), que a UI desconta.
+// Desde a 0.17.3 o fim de A vem de um marcador exato do motor (boundary(),
+// emitido pelo librespot ao começar cada faixa) em vez da estimativa pela
+// posição, e há duas durações: `outro` (fim de A com o efeito) e `intro`
+// (quanto do começo de B entra por baixo de A). A região da mescla é a maior
+// das duas e termina exatamente no último quadro de A.
 // Buffers reservados no construtor; push/pull não alocam. Sem rede, banco ou UI.
 #include <array>
 #include <cstddef>
@@ -48,14 +53,16 @@ int clampTransitionSeconds(int seconds);
 TransitionEffect pickRandomTransition(TransitionEffect previous, uint32_t random);
 
 // Quando armar. `audibleRemainingMs` = quanto falta de A até o fim no som;
-// `upcomingMs` = quanto de A o motor ainda não entregou.
+// `upcomingMs` = quanto de A o motor ainda não entregou (estimativa).
 struct TransitionPlan {
   bool arm = false;
   int64_t upcomingMs = 0;  // restante de A ainda no motor
-  int64_t overlapMs = 0;   // duração da mesclagem
+  int64_t outroMs = 0;     // fim de A com o efeito
+  int64_t introMs = 0;     // começo de B injetado na mescla
+  int64_t regionMs() const { return outroMs > introMs ? outroMs : introMs; }
 };
-TransitionPlan planTransition(int seconds, int64_t durationMs, int64_t audibleRemainingMs,
-                              int64_t upcomingMs);
+TransitionPlan planTransition(int outroSeconds, int introSeconds, int64_t durationMs,
+                              int64_t audibleRemainingMs, int64_t upcomingMs);
 
 class TransitionMixer {
 public:
@@ -64,13 +71,19 @@ public:
   void setSampleRate(int sampleRate);
   int sampleRate() const { return m_rate; }
 
-  // `upcomingFrames`: quanto de A o motor ainda vai entregar. O que já está
-  // no FIFO (atraso de uma transição anterior) também é de A e entra no buffer.
-  bool arm(TransitionEffect effect, int64_t upcomingFrames, int64_t overlapFrames);
+  // `upcomingFrames`: estimativa de quanto de A o motor ainda vai entregar. O
+  // que já está no FIFO (atraso de uma transição anterior) também é de A.
+  // Com `exactBoundary` o fim de A é o próximo boundary() (a estimativa só
+  // serve de referência); sem ele, A termina em FIFO + upcomingFrames.
+  bool arm(TransitionEffect effect, int64_t upcomingFrames, int64_t outroFrames, int64_t introFrames,
+           bool exactBoundary = false);
+  // O motor começou outra faixa: o próximo quadro de push() já é de B.
+  void boundary();
   // Seek, troca de faixa pelo usuário, flush ou nova sessão: descarta tudo.
   void reset();
   // O motor terminou A antes do previsto: A acaba no que já foi lido.
   void endCapture();
+  bool waitingBoundary() const { return m_waitBoundary; }
 
   State state() const { return m_state; }
   bool capturing() const { return m_state != State::Idle && m_tailCount < m_tailTarget; }
@@ -86,7 +99,9 @@ public:
   size_t latencyFrames() const;
   TransitionEffect effect() const { return m_effect; }
   double progress() const;
-  int64_t overlapFrames() const { return m_overlap; }
+  int64_t overlapFrames() const { return m_overlap; }  // região da mescla
+  int64_t outroFrames() const { return m_outro; }
+  int64_t introFrames() const { return m_intro; }
   int64_t mixStartFrame() const { return m_mixStart; }
   float limiterGain() const { return m_gain; }
 
@@ -109,6 +124,7 @@ private:
   };
 
   void finishMixing();
+  void placeRegion(int64_t end);
   void renderAhead(int64_t until);
   void mixFrame(float bL, float bR, bool haveB, float &outL, float &outR);
   void tailAt(double position, float &l, float &r) const;
@@ -117,11 +133,13 @@ private:
 
   int m_rate = 44100;
   State m_state = State::Idle;
-  TransitionEffect m_effect = TransitionEffect::Fade;
+  TransitionEffect m_effect = TransitionEffect::Fade, m_effectWanted = TransitionEffect::Fade;
 
   std::vector<float> m_tail;  // A ainda não tocada (FIFO anterior + restante)
   int64_t m_tailTarget = 0, m_tailCount = 0, m_tailPlayed = 0;
   int64_t m_mixStart = 0, m_overlap = 0;
+  int64_t m_outro = 0, m_intro = 0, m_outroWanted = 0, m_introWanted = 0;
+  bool m_waitBoundary = false, m_brakeStarted = false;
   int64_t m_rendered = 0, m_mixed = 0;  // quadros da mescla renderizados/tocados
   double m_brakeRead = 0;               // leitura fracionária de A no freio
 
