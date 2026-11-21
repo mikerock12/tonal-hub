@@ -1,0 +1,34 @@
+{
+  "version": "0.17.3",
+  "date": "2026-11-21",
+  "androidVersionCode": 44,
+  "report": "Usuário (0.17.1): todas as transições só baixavam ou oscilavam o volume da música atual no final e a próxima começava sem efeito nenhum.",
+  "cause": "O fim da faixa A no PCM era estimado por duração − posição (Web API extrapolada no Windows, eventos do motor no Android). Com a estimativa curta, o fim real de A entrava no lugar de B: A era mesclada com ela mesma e B começava crua depois da mescla. Reproduzido em TransitionChecks com a estimativa 4 s curta.",
+  "fix": [
+    "librespot marca o começo de cada faixa no fluxo de PCM (quadro f32 0x7FA07A1B + NaN com posição em ms), Android vendorizado e Windows via prepare-librespot-windows.py (librespot-playback 0.8.0, SHA-256 88258620…98af6).",
+    "O mixer espera o marcador e fixa a região no último quadro de A; buffer cheio sem marcador toca sem efeito.",
+    "Duas durações de 3 a 10 s: fim da atual com o efeito e começo da próxima na mescla.",
+    "Posição exata para armar, contada desde o marcador."
+  ],
+  "validation": {
+    "transitionCore": "PASS Windows MSVC e Android x86_64 na AVD: 6 efeitos × 3 formatos (6/6, 4/9, 9/3 s), estimativa errada −4/−2/+3/+5 s com marcador, defeito da 0.17.1 reproduzido sem marcador, buffer cheio sem marcador, B atrasada, duas transições, limitador, endCapture, reset",
+    "windowsEngineIntegration": {"markerRecognized": true, "estimateErrorMs": -3000, "boundariesFromMarker": 1, "underruns": 0, "latencyAfterMixMs": 2501, "bPositionRestartsAtMarker": true},
+    "librespotWindowsBinary": {"markerConstantPresent": true, "previousBinaryHadMarker": false, "buildMinutes": 1.2},
+    "androidNativeLibraries": {"onTrackBoundaryInArm64AndX86_64": true},
+    "androidAudioTrackAvd": {"estimateErrorMs": -2500, "endOfAFromMarker": true, "captureMs": 17, "underruns": 0, "latencyAfterMixMs": 2506, "latencyAfterSecondMs": 2498},
+    "androidTransitionsDialogAvd": {"outroAndIntroControls": true, "persisted": true},
+    "androidQueueEditorAvd": "5/5 cenários em duas execuções seguidas. Antes, duas execuções logo após o boot e as suítes pesadas falharam na fila de 500 faixas; o Java da main passou no mesmo ambiente e esta versão passou em seguida, sem mudança de código: sensibilidade a tempo do teste.",
+    "queueDoubleTapTestFix": "O teste enviava dois `input tap` em sequência; o GestureDetector ignora um segundo toque com menos de 40 ms (DOUBLE_TAP_MIN_TIME) e cada toque levava 41–61 ms. Reproduzido no CI e na AVD; com 120 ms entre os toques o toque duplo funciona. Falha só do teste.",
+    "ctestWindows": "12/12 (79,27 s)",
+    "qml": {"mix": 34},
+    "windowsPortable": {"programsStarted": 3, "files": 1439, "zipCrc": true, "privateFiles": 0},
+    "apk": {"certificateSha256": "464ae7cf34f4f145541569db215f8fcdef5deda1be31921d8e366eed20aa22c2", "alignment16KiB": true, "versionCode": 44},
+    "ciPullRequest59": "5/5 após repetir android-components (toque duplo da fila, ver acima)"
+  },
+  "limits": [
+    "O marcador sai do librespot compilado, mas não foi ouvido com uma conta Spotify: sem streaming autenticado, aparelho físico, medição acústica, de CPU ou bateria.",
+    "Os efeitos não analisam BPM, tonalidade nem batida.",
+    "Depois de um seek a posição exata deixa de valer até a próxima faixa; a mescla continua usando o marcador."
+  ],
+  "toolsInstalled": "Nenhum aplicativo ou ferramenta instalado ou baixado no PC; usados Visual Studio, Rust, NDK, Gradle, Qt e Python já existentes. O crate librespot-playback 0.8.0 veio do cache local do Cargo."
+}
