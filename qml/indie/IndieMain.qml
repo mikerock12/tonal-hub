@@ -6,6 +6,7 @@ import QtQuick.Dialogs
 
 ApplicationWindow {
     AboutUpdate { id: updates }
+    Personal.GraphicsNotice {}
     id: window
     width: 1180; height: 820; minimumWidth: 800; minimumHeight: 600
     visible: true; title: hubMode ? "Tonal Hub" : "IndieTonal"

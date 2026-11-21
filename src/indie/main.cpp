@@ -20,10 +20,12 @@
 #include <QQuickWindow>
 #include <QTimer>
 #include <QWindow>
+#include "../GraphicsSafety.h"
 extern "C" {
 #include <libavutil/log.h>
 }
 int main(int argc, char **argv) {
+  tonal::GraphicsSafety graphics("IndieTonal");
   QGuiApplication app(argc, argv);
   QGuiApplication::setFont(QFont(QStringLiteral("Segoe UI"), 10));
   QCoreApplication::setOrganizationName("Tonal");
@@ -102,6 +104,7 @@ int main(int argc, char **argv) {
   QObject::connect(&historyTimer,&QTimer::timeout,&app,[&] {if(audio){music.stories()->setPlaying(audio->localPlaying());music.pulse(audio->localPlaying(),audio->positionMs());}});historyTimer.start();
   if(audio)QObject::connect(&music,&MusicCompanion::seekRequested,audio.get(),&tonal::audio::AudioEngine::seekLocal);
   engine.rootContext()->setContextProperty("audio", audio.get());
+  engine.rootContext()->setContextProperty("graphicsSafety", &graphics);
   engine.rootContext()->setContextProperty("hubMode", hubMode);
   engine.rootContext()->setContextProperty("initialQuery", query);
   QObject::connect(
@@ -109,6 +112,7 @@ int main(int argc, char **argv) {
       [] { QCoreApplication::exit(2); }, Qt::QueuedConnection);
   engine.load(
       QUrl(hubMode ? "qrc:/indie/HubMain.qml" : "qrc:/indie/IndieMain.qml"));
+  graphics.watch(engine);
   int localFileArg = args.indexOf("--local-file");
   if (audio && localFileArg >= 0)
     QTimer::singleShot(0, &app, [&] {

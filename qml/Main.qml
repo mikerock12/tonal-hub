@@ -247,6 +247,20 @@ ApplicationWindow {
             textFormat: Text.PlainText
             text: desktopUpdate.releaseNotes
         }
+        Label {
+            width: parent.width
+            visible: typeof graphicsSafety !== "undefined"
+            color: graphicsSafety && graphicsSafety.fallback ? "#f0b44c" : Theme.textSecondary
+            wrapMode: Text.WordWrap
+            text: typeof graphicsSafety === "undefined" ? "" :
+                  qsTr("Desenho da tela: %1%2").arg(graphicsSafety.activeApi || qsTr("Direct3D"))
+                  .arg(graphicsSafety.fallback ? qsTr(" (o DirectX falhou neste PC)") : "")
+        }
+        Button {
+            visible: typeof graphicsSafety !== "undefined" && graphicsSafety.fallback
+            text: qsTr("Tentar DirectX de novo na próxima abertura")
+            onClicked: graphicsSafety.retryDirectX()
+        }
         Button {
             visible: !desktopUpdate.installed && !!desktopUpdate.availableVersion
             text: qsTr("Abrir downloads do portal")
@@ -499,4 +513,8 @@ ApplicationWindow {
         bootstrap()
         if(Qt.application.arguments.indexOf("--audio-settings") >= 0) audioPanel.open()
     }
+    // Aviso quando o DirectX do Windows falhou e o app trocou de renderizador.
+    Loader { parent: Overlay.overlay; anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top; z: 1001
+             active: typeof graphicsSafety !== "undefined" && graphicsSafety.noticePending
+             source: "qrc:/companion/qml/companion/GraphicsNotice.qml" }
 }

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.17.2 Windows — 20/11/2026
+
+- Se o DirectX do Windows derrubar o app ao abrir a janela, a abertura seguinte usa OpenGL (ou renderização por software, se o OpenGL também cair) e mostra um aviso com o motivo, a placa de vídeo e o renderizador em uso.
+- Em Sobre aparece com o que a tela está sendo desenhada e o botão "Tentar DirectX de novo". Depois de reiniciar o Windows o DirectX é tentado de novo sozinho.
+- Caso real de 20/11: o `dxgi.dll` estava alterado na memória e derrubava qualquer app Direct3D; reiniciar resolveu. O Warsaw foi descartado como causa. Detalhes em docs/WINDOWS_GRAPHICS_0172.md.
+- Android continua na 0.17.1.
+
 ## 0.17.1 — 20/11/2026
 
 - Transições sem travar nem pausar: o fim da música atual e o começo da próxima ficam guardados antes da mescla, a saída toca do buffer enquanto o Spotify carrega a próxima, e a mescla começa no ponto certo com as duas prontas.

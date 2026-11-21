@@ -5,7 +5,7 @@ afetada antes de alterar o produto. Estado documental: 25/10/2026, builds Window
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
-Estado atual: 20/11/2026, entrega Windows/Android 0.17.1 (ver seções 0.17.0 e 0.17.1 ao final). As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
+Estado atual: 20/11/2026, Windows 0.17.2 e Android 0.17.1 (ver seções 0.17.0, 0.17.1 e 0.17.2 ao final). As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
 
 ## Autoria, Git e privacidade
 
@@ -535,6 +535,16 @@ docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no
   release v0.17.1, portal PR74 merge 249eca6, Worker 209a7b91, backup privado
   10mYdEA1r9MrB8BGL6elMTTVgocgZKUDD (partes de 7 MB). Evidências em
   docs/release-0171-tests.json e docs/artifacts-0171.json.
+
+## Renderização Windows 0.17.2
+
+- Ler docs/WINDOWS_GRAPHICS_0172.md. `src/GraphicsSafety.h` nos três programas:
+  marcador antes da janela, confirmação 3 s após o primeiro quadro ou no
+  fechamento normal; queda → OpenGL → software; boot novo → tenta Direct3D.
+- A troca deve ser sempre visível (aviso, Sobre e registro), pedido do usuário.
+  Não decidir por módulos de terceiros: o Warsaw foi falso positivo (continuou
+  injetado sem falhas após reiniciar). Não parar/alterar software de segurança.
+- Android segue 0.17.1 (versionCode 43).
 
 ## Fila, contraste e distribuição 0.16.1
 

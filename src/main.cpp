@@ -18,6 +18,7 @@
 #include <QJsonDocument>
 
 #include "App.h"
+#include "GraphicsSafety.h"
 #include "DesktopUpdate.h"
 #include "MediaControls.h"
 #include "NetworkFactory.h"
@@ -25,6 +26,7 @@
 int main(int argc, char *argv[])
 {
     MediaControls::setAppUserModelId();
+    tonal::GraphicsSafety graphics("Tonalify");
 
     QGuiApplication app(argc, argv);
     QGuiApplication::setOrganizationName(QStringLiteral("Tonal"));
@@ -76,10 +78,12 @@ int main(int argc, char *argv[])
         DesktopUpdate desktopUpdate;
         QQmlApplicationEngine engine;
         engine.rootContext()->setContextProperty(QStringLiteral("desktopUpdate"), &desktopUpdate);
+        engine.rootContext()->setContextProperty(QStringLiteral("graphicsSafety"), &graphics);
         engine.setNetworkAccessManagerFactory(&networkFactory);
         QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
                          &app, [] { QCoreApplication::exit(-1); }, Qt::QueuedConnection);
         engine.loadFromModule("Tonal", "Main");
+        graphics.watch(engine);
         if (!isolated)
             QTimer::singleShot(1800, &desktopUpdate, [&desktopUpdate]{ desktopUpdate.check(true); });
         QObject::connect(&instance,&QLocalServer::newConnection,&app,[&]{
