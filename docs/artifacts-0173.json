@@ -1,0 +1,26 @@
+{
+  "version": "0.17.3",
+  "assets": [
+    {"name": "Tonal-Hub-0.17.3.0-Windows-x64-Setup.exe", "sha256": "fd6bfc6c64064ff3a117997bb6d6692e3f924c7f5223e2a9ec41a12c69b2b61b", "bytes": 89135037},
+    {"name": "Tonal-Hub-0.17.3-local.zip", "sha256": "5f2243fdf0f1d983dc7e2da91a5b8389558861e4c904905ca9d5c20b8f497f1a", "bytes": 124403059},
+    {"name": "Tonal-Android-0.17.3-arm64-v8a.apk", "sha256": "52b0369fdc58313073206518c78470f363b29d5a72ce9b92d2b7dbd998d4039c", "bytes": 38347674},
+    {"name": "Tonal-Android-0.17.3-local.apk", "sha256": "32cc7b5328f38bc1310ca52c5c5f7e40c47792202e2cb63a66be5f73ec76f715", "bytes": 66565131}
+  ],
+  "androidVersionCode": 44,
+  "productCode": "c2c6aa6",
+  "productMerge": "8ac31bed2b697d691a957e0dbaa332d6ac68a632",
+  "librespotWindowsSha256": "4c0601d5599ffb3be10c7b67489b7c6746fb7fccb980a6e3a442be823dcc3bce",
+  "certificateSha256": "464ae7cf34f4f145541569db215f8fcdef5deda1be31921d8e366eed20aa22c2",
+  "alignment": 16384,
+  "release": "https://github.com/mikerock12/tonal-hub/releases/tag/v0.17.3",
+  "portal": {
+    "pullRequest": 76,
+    "merge": "012f1e2",
+    "worker": "4f98344b-97cd-441a-936a-635516b58c54",
+    "downloadsRedirectToV0173": true,
+    "androidPinRemoved": true,
+    "hashesMatch": true
+  },
+  "ci": {"pullRequest": 59, "checks": "5/5"},
+  "privateBackupFolder": "1YMQg-tNvsiZuiUML58LIN7F5QlmfUnLb"
+}
