@@ -1,4 +1,4 @@
-# Transições entre músicas, fila e letra — 0.17.0 / 0.17.1
+# Transições entre músicas, fila e letra — 0.17.0 / 0.17.1 / 0.17.3
 
 ## Transições de DJ
 
@@ -117,3 +117,64 @@ antes de ela soar, porque o Spotify já a considera em reprodução; se outro
 aparelho Spotify Connect pular a música no Windows, até 2,5 s da anterior ainda
 podem tocar; uma mudança de volume no Windows enquanto o pedido ainda não chegou
 ao librespot pode oscilar por uma fração de segundo.
+
+## 0.17.3 — fim exato da faixa e começo da próxima ajustável
+
+Relato do usuário na 0.17.1: todas as transições só baixavam ou faziam oscilar
+o volume da música atual no final, e a próxima começava sem efeito nenhum.
+
+Causa: o mixer decidia onde a faixa A terminava dentro do fluxo de PCM por uma
+estimativa: duração menos a posição informada. No Windows essa posição vem da
+Web API do Spotify e é extrapolada pelo relógio, podendo errar em segundos; no
+Android vem dos eventos de posição do motor. Quando a estimativa era curta, o
+fim real de A ficava fora do buffer e entrava no lugar de B: a mescla misturava
+A com ela mesma (A desce e o próprio fim sobe, a "oscilação"), e a B de verdade
+só começava depois da mescla, crua. O teste `TransitionChecks` reproduz esse
+caso com a estimativa 4 s curta.
+
+Correção:
+
+1. **Marcador exato no librespot.** Em `start_playback` o librespot grava no
+   próprio fluxo, antes da primeira amostra de cada faixa, um quadro estéreo
+   f32 que nunca é áudio: esquerda `0x7FA07A1B` (NaN sinalizador) e direita
+   NaN silencioso com a posição inicial em ms. Android:
+   `android/native/vendor/librespot-playback` e `AndroidSink` chamam
+   `NativeBridge.onTrackBoundary` na mesma thread e ordem do PCM. Windows:
+   `packaging/prepare-librespot-windows.py` aplica o mesmo trecho ao
+   `librespot-playback` 0.8.0 fixado por SHA-256; `NativePcmPipe` remove o
+   quadro e o `AudioEngine` o repassa ao mixer.
+2. **O mixer espera o marcador.** Armado, ele lê A até o marcador (buffer de
+   até 30 s, cerca de 10 MB a 44,1 kHz, reservado uma única vez). A região da
+   mescla é posicionada pelo quadro exato do fim de A e a mescla só começa
+   quando ele chega. Se o buffer encher sem marcador, A e B tocam inteiras, sem
+   efeito, em vez de misturar A com ela mesma. Com um librespot sem marcador,
+   a estimativa antiga continua valendo.
+3. **Duas durações.** *Fim da música atual com o efeito* (3–10 s, o antigo
+   tempo de mesclagem) e *Começo da próxima na mescla* (3–10 s, novo). A
+   próxima entra por baixo da atual pelo tempo escolhido, com rampa de 10 ms,
+   e as duas terminam a mescla juntas, no último quadro da atual. A região é a
+   maior das duas; o efeito ocupa o fim da atual. Freio de vinil termina a
+   frenagem em 70% do trecho da atual, e o Loop acelerado corta em 82%, para a
+   próxima já estar soando quando a atual para.
+4. **Posição exata para armar.** Windows e Android contam os quadros lidos desde
+   o marcador (`AudioEngine::spotifyTrackPositionMs`,
+   `AudioOutput.trackPositionMs`). Depois de um seek a contagem deixa de valer
+   até a próxima faixa e volta a valer a posição informada.
+
+Testes da 0.17.3:
+
+* Núcleo: seis efeitos em três formatos (6/6, 4/9 e 9/3 s), com B alinhada
+  exatamente `intro` antes do fim de A e intacta depois. Estimativas erradas
+  em −4, −2, +3 e +5 s com o marcador. O defeito reproduzido sem marcador.
+  Buffer cheio sem marcador, duas transições seguidas, limitador e `endCapture`.
+* Motor Windows real com o librespot simulado emitindo o marcador e a
+  estimativa 3 s errada: fim de A pelo marcador, posição de B recomeçando nele,
+  0 underruns.
+* QML: o diálogo tem os dois controles, de 3 a 10 s.
+* Android: AVD com AudioTrack real e o marcador. Resultado em
+  docs/release-0173-tests.json.
+
+Continuam pendentes: teste com Spotify real (o marcador sai do librespot
+compilado, mas não foi ouvido com uma conta), aparelho físico e medições
+acústicas, de CPU ou bateria.
+

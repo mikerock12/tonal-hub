@@ -16,9 +16,12 @@ extern "C" JNIEXPORT jlong JNICALL Java_app_tonal_android_TransitionNative_creat
 extern "C" JNIEXPORT void JNICALL Java_app_tonal_android_TransitionNative_destroy(JNIEnv *, jclass, jlong handle) {
   delete mixer(handle);
 }
-extern "C" JNIEXPORT jboolean JNICALL Java_app_tonal_android_TransitionNative_arm(JNIEnv *, jclass, jlong handle, jint effect, jlong upcomingFrames, jlong overlapFrames) {
+extern "C" JNIEXPORT jboolean JNICALL Java_app_tonal_android_TransitionNative_arm(JNIEnv *, jclass, jlong handle, jint effect, jlong upcomingFrames, jlong outroFrames, jlong introFrames, jboolean exact) {
   if (!handle || effect < 0 || effect >= tonal::playback::kTransitionEffectCount) return JNI_FALSE;
-  return mixer(handle)->arm(tonal::playback::TransitionEffect(effect), upcomingFrames, overlapFrames) ? JNI_TRUE : JNI_FALSE;
+  return mixer(handle)->arm(tonal::playback::TransitionEffect(effect), upcomingFrames, outroFrames, introFrames, exact == JNI_TRUE) ? JNI_TRUE : JNI_FALSE;
+}
+extern "C" JNIEXPORT void JNICALL Java_app_tonal_android_TransitionNative_boundary(JNIEnv *, jclass, jlong handle) {
+  if (handle) mixer(handle)->boundary();
 }
 extern "C" JNIEXPORT void JNICALL Java_app_tonal_android_TransitionNative_reset(JNIEnv *, jclass, jlong handle) {
   if (handle) mixer(handle)->reset();
@@ -59,11 +62,11 @@ extern "C" JNIEXPORT jfloatArray JNICALL Java_app_tonal_android_TransitionNative
 extern "C" JNIEXPORT jlong JNICALL Java_app_tonal_android_TransitionNative_latency(JNIEnv *, jclass, jlong handle) {
   return handle ? jlong(mixer(handle)->latencyFrames()) : 0;
 }
-extern "C" JNIEXPORT jlongArray JNICALL Java_app_tonal_android_TransitionNative_plan(JNIEnv *env, jclass, jint seconds, jlong duration, jlong audible, jlong upcoming) {
-  const auto plan = tonal::playback::planTransition(seconds, duration, audible, upcoming);
-  jlong values[3] = {plan.arm ? 1 : 0, plan.upcomingMs, plan.overlapMs};
-  jlongArray result = env->NewLongArray(3);
-  if (result) env->SetLongArrayRegion(result, 0, 3, values);
+extern "C" JNIEXPORT jlongArray JNICALL Java_app_tonal_android_TransitionNative_plan(JNIEnv *env, jclass, jint outroSeconds, jint introSeconds, jlong duration, jlong audible, jlong upcoming) {
+  const auto plan = tonal::playback::planTransition(outroSeconds, introSeconds, duration, audible, upcoming);
+  jlong values[4] = {plan.arm ? 1 : 0, plan.upcomingMs, plan.outroMs, plan.introMs};
+  jlongArray result = env->NewLongArray(4);
+  if (result) env->SetLongArrayRegion(result, 0, 4, values);
   return result;
 }
 extern "C" JNIEXPORT jint JNICALL Java_app_tonal_android_TransitionNative_pickRandom(JNIEnv *, jclass, jint previous, jint random) {

@@ -105,7 +105,10 @@ adb("shell", "am", "force-stop", PACKAGE)
 adb("shell", "am", "start", "-W", "-n", ACTIVITY, "--ez", "queueEditorFixture", "true")
 nodes = wait_for("Agora · Mix Fixture 1", "Mix Fixture 3", "Mix Fixture 4")
 x, y = center(nodes, "Mix Fixture 3")
-adb("shell", f"input tap {x} {y}; input tap {x} {y}")
+# GestureDetector ignores a second tap less than 40 ms after the first
+# (DOUBLE_TAP_MIN_TIME); one `input tap` can take about that long, so space the
+# taps by 120 ms, still well inside the 300 ms double-tap window.
+adb("shell", f"input tap {x} {y}; sleep 0.12; input tap {x} {y}")
 nodes = wait_for("Agora · Mix Fixture 3", "Mix Fixture 2", "Mix Fixture 4", "Mix Fixture 5", "Mix Fixture 6",
                  "5 mús. · 1 álb. · 1 art. · 12min 0s")
 assert_order(nodes, "Agora · Mix Fixture 3", "Mix Fixture 2", "Mix Fixture 4", "Mix Fixture 5", "Mix Fixture 6")

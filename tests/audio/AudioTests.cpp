@@ -369,8 +369,10 @@ void spotifyPauseTest()
 #endif
 }
 // Motor real (pipe → mixer → DSP → OpenAL nulo) com um produtor que imita o
-// librespot: entrega A mais rápido que o tempo real, demora 0,8 s para começar
-// B e depois entrega B. A saída não pode ter falhas durante a transição.
+// librespot corrigido: marca o começo de cada faixa no PCM, entrega A mais
+// rápido que o tempo real, demora 0,8 s para começar B e depois entrega B. A
+// estimativa passada ao armar está 3 s errada de propósito (como a da Web API
+// na 0.17.1): o fim de A tem de vir do marcador, sem falhas na saída.
 void spotifyTransitionTest()
 {
 #ifdef _WIN32
@@ -389,11 +391,14 @@ void spotifyTransitionTest()
     child.start(QCoreApplication::applicationFilePath(), {"--pipe-transition-child"});
     check(child.waitForStarted(), "synthetic transition producer starts");
     engine.spotifyStarted();
-    constexpr uint64_t aFrames = 44100ull * 12;
+    constexpr uint64_t aFrames = 130ull * 4096;  // o produtor escreve blocos de 4096
     check(spin([&] { return engine.spotifyFramesRead() > 44100ull * 5; }, 9000), "track A plays from the pipe");
+    check(engine.spotifyTrackMarkers(), "the start-of-track marker is recognized");
     const int before = engine.metrics().value("underruns").toInt();
     const auto read = engine.spotifyFramesRead();
-    engine.armTransition(0, int((aFrames - read) * 1000 / 44100), 3000);
+    const int position = engine.spotifyTrackPositionMs();
+    check(std::abs(position - int(read * 1000 / 44100)) < 100, "exact track position counted from the marker");
+    engine.armTransition(0, int((aFrames - read) * 1000 / 44100) - 3000, 3000, 4000);
     QElapsedTimer clock;
     clock.start();
     bool sawArmed = false, sawMixing = false;
@@ -407,10 +412,15 @@ void spotifyTransitionTest()
         return latencyAfter > 0 && clock.elapsed() > 9000;
     }, 16000);
     const int after = engine.metrics().value("underruns").toInt();
+    const int bPosition = engine.spotifyTrackPositionMs();
+    const auto total = engine.spotifyFramesRead();
     child.kill();
     child.waitForFinished();
     engine.stopSpotify();
     check(sawArmed && sawMixing, "the engine armed and mixed the transition");
+    check(engine.transitionBoundaries() == 1, "the end of A came from the marker, not from the wrong estimate");
+    check(bPosition >= 0 && std::abs(bPosition - int((total - aFrames) * 1000 / 44100)) < 100,
+          "B's position restarts at its own marker");
     check(latencyAfter >= 2000 && latencyAfter <= 3200, "B keeps the bounded preroll after the mix");
     check(after == before, "no output underrun while reading ahead, waiting for B and mixing");
     std::cout << "PASS Windows engine transition: read-ahead, late B, mix and preroll without underruns ("
@@ -647,6 +657,10 @@ int main(int argc, char **argv)
     {
         _setmode(_fileno(stdout), _O_BINARY);
         auto write = [](double hz, int seconds) {
+            // Marcador de começo de faixa do librespot corrigido (posição 0).
+            const uint32_t marker[2] = {0x7FA07A1Bu, 0x7FC00000u};
+            if (fwrite(marker, sizeof(marker), 1, stdout) != 1)
+                return false;
             std::vector<float> block(4096 * 2);
             for (int64_t f = 0; f < int64_t(44100) * seconds; f += 4096) {
                 for (int i = 0; i < 4096; ++i) {

@@ -1,6 +1,8 @@
 # Contexto do Tonal Hub
 
-Atualizado em **20/11/2026**. Versão de trabalho **Windows 0.17.2 e Android 0.17.1**, versionCode 43.
+Atualizado em **21/11/2026**. Versão de trabalho **Windows 0.17.3 e Android 0.17.3**, versionCode 44.
+
+0.17.3: o usuário relatou que as transições só baixavam ou oscilavam o volume da atual e a próxima começava sem efeito. Causa: o fim de A no PCM vinha de uma estimativa (duração − posição da Web API/eventos), errada em segundos, e o fim real de A entrava no lugar de B. Agora o librespot (Android vendorizado; Windows via prepare-librespot-windows.py) marca o começo de cada faixa no fluxo, o mixer fixa o fim de A nesse quadro e há duas durações: fim da atual com efeito e começo da próxima na mescla (3–10 s cada). Ver a seção 0.17.3 de [TRANSITIONS_0170.md](docs/TRANSITIONS_0170.md).
 
 Windows 0.17.2: após instalar a 0.17.1 os apps fechavam sozinhos por queda no `dxgi.dll`. Investigado: código do dxgi alterado na memória afetava qualquer app Direct3D, inclusive versões antigas e uma sonda sem Qt; reiniciar resolveu; Warsaw descartado (continua injetado sem falhas). Agora a abertura seguinte troca para OpenGL/software com aviso visível. Ver [WINDOWS_GRAPHICS_0172.md](docs/WINDOWS_GRAPHICS_0172.md). Publicação: PR57 merge af19fd3 (CI 4/4), release v0.17.2 só Windows, portal PR75 em 3505fe0 (Windows na v0.17.2, APK na v0.17.1), backup privado https://drive.google.com/drive/folders/1l4GeRgmc8A9cTgsB2CkpssjAk_sryu-E. Nenhuma ferramenta nova instalada ou baixada; as sondas Direct3D foram compiladas com o Visual Studio já existente, fora do repositório.
 

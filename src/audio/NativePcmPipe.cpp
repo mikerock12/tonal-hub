@@ -74,19 +74,47 @@ int NativePcmPipe::read(std::vector<float> &samples, int frames)
         m_pending.resize(old + got);
         m_streamOffset = (m_streamOffset + got) % 8;
     }
-    const auto bytes = m_pending.size() / 8 * 8;
+    auto bytes = m_pending.size() / 8 * 8;
+    size_t skip = 0;
+    if (!m_boundary)
+    {
+        // Track marker: left = signalling NaN 0x7FA07A1B, right = quiet NaN
+        // carrying the start position. librespot's f64->f32 never produces it.
+        for (size_t at = 0; at < bytes; at += 8)
+        {
+            uint32_t left, right;
+            std::memcpy(&left, m_pending.data() + at, 4);
+            std::memcpy(&right, m_pending.data() + at + 4, 4);
+            if (left == 0x7FA07A1Bu && (right & 0xFFC00000u) == 0x7FC00000u)
+            {
+                m_boundary = m_markersSeen = true;
+                m_boundaryPositionMs = right & 0x3FFFFFu;
+                bytes = at;
+                skip = 8;
+                break;
+            }
+        }
+    }
     samples.resize(bytes / 4);
     if (bytes)
-    {
         std::memcpy(samples.data(), m_pending.data(), bytes);
-        m_pending.erase(m_pending.begin(), m_pending.begin() + bytes);
-    }
+    if (bytes + skip)
+        m_pending.erase(m_pending.begin(), m_pending.begin() + ptrdiff_t(bytes + skip));
 #endif
     return int(samples.size() / 2);
+}
+bool NativePcmPipe::takeBoundary(uint32_t &positionMs)
+{
+    if (!m_boundary)
+        return false;
+    m_boundary = false;
+    positionMs = m_boundaryPositionMs;
+    return true;
 }
 void NativePcmPipe::discard()
 {
     m_pending.clear();
+    m_boundary = false;
 #ifdef _WIN32
     DWORD n = 0;
     char data[8192];

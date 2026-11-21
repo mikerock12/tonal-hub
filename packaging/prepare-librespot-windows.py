@@ -1,4 +1,4 @@
-"""Prepare the pinned upstream CLI with Tonal's shared queue-only command."""
+"""Prepare the pinned upstream CLI with Tonal's queue-only command and track marker."""
 import hashlib
 import os
 from pathlib import Path
@@ -15,6 +15,7 @@ VERSION = "0.8.0"
 PINS = {
     "librespot": "030c5e98cc06f20283b5948ae23bdac1de0dec58dee2c5ec4c8dafc7aaa796ab",
     "librespot-connect": "4b2a21e9e19b906c6676b1a515fc5529d5414f69049f5a167dfb2ea3206e5a27",
+    "librespot-playback": "88258620bf3e6808ea1fadd11639648d77c06280b9f5a4c9d14ea79f6f998af6",
 }
 
 
@@ -39,6 +40,7 @@ def replace(text, before, after):
 
 cli = source("librespot")
 connect = source("librespot-connect")
+playback = source("librespot-playback")
 shutil.copyfile(ROOT / "android/native/vendor/librespot-connect/src/queue_edit.rs",
                 connect / "src/queue_edit.rs")
 shutil.copyfile(ROOT / "packaging/librespot-queue-stdin.rs", cli / "src/tonal_queue.rs")
@@ -57,6 +59,35 @@ text = replace(text, "        match cmd {\n            SpircCommand::Shutdown", 
             }
             SpircCommand::Shutdown""")
 spirc.write_text(text, encoding="utf-8")
+
+# Same start-of-track marker as android/native/vendor/librespot-playback: one
+# 8-byte f32 frame written to the pipe before the first sample of each track.
+# AudioEngine strips it and uses it as the exact end of the previous track.
+player = playback / "src/player.rs"
+text = player.read_text(encoding="utf-8")
+text = replace(text, """        if start_playback {
+            self.ensure_sink_running();
+            self.send_event(PlayerEvent::Playing {""", """        if start_playback {
+            self.ensure_sink_running();
+            // Tonal: exact start of this track inside the PCM stream (transitions).
+            let _ = self.sink.write(
+                AudioPacket::Raw(tonal_track_marker(position_ms)),
+                &mut self.converter,
+            );
+            self.send_event(PlayerEvent::Playing {""")
+text = replace(text, "impl PlayerInternal {\n    fn ensure_sink_running(&mut self) {", """/// Tonal: signalling NaN on the left, quiet NaN carrying the start position
+/// (ms, 22 bits) on the right. Never audio; the reader removes the frame.
+pub const TONAL_TRACK_MARKER: u32 = 0x7FA0_7A1B;
+fn tonal_track_marker(position_ms: u32) -> Vec<u8> {
+    let mut bytes = Vec::with_capacity(8);
+    bytes.extend_from_slice(&TONAL_TRACK_MARKER.to_le_bytes());
+    bytes.extend_from_slice(&(0x7FC0_0000u32 | position_ms.min(0x3F_FFFF)).to_le_bytes());
+    bytes
+}
+
+impl PlayerInternal {
+    fn ensure_sink_running(&mut self) {""")
+player.write_text(text, encoding="utf-8")
 
 main = cli / "src/main.rs"
 text = main.read_text(encoding="utf-8")
@@ -81,13 +112,15 @@ main.write_text(text + "\nmod tonal_queue;\n", encoding="utf-8")
 
 manifest = cli / "Cargo.toml"
 with manifest.open("a", encoding="utf-8") as output:
-    output.write('\n[patch.crates-io]\nlibrespot-connect = { path = "../librespot-connect-0.8.0" }\n')
+    output.write('\n[patch.crates-io]\nlibrespot-connect = { path = "../librespot-connect-0.8.0" }\n'
+                 'librespot-playback = { path = "../librespot-playback-0.8.0" }\n')
 lock = cli / "Cargo.lock"
 text = lock.read_text(encoding="utf-8")
-text, count = re.subn(
-    r'(name = "librespot-connect"\nversion = "0\.8\.0"\n)source = "[^"]+"\nchecksum = "[^"]+"\n',
-    r"\1", text,
-)
-if count != 1:
-    raise RuntimeError("Unexpected upstream librespot-connect lock entry")
+for crate in ("librespot-connect", "librespot-playback"):
+    text, count = re.subn(
+        rf'(name = "{crate}"\nversion = "0\.8\.0"\n)source = "[^"]+"\nchecksum = "[^"]+"\n',
+        r"\1", text,
+    )
+    if count != 1:
+        raise RuntimeError(f"Unexpected upstream {crate} lock entry")
 lock.write_text(text, encoding="utf-8")

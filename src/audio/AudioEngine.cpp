@@ -164,13 +164,14 @@ void AudioEngine::flushSpotify() {
   if (!m_local)
     m_flush = true;
 }
-void AudioEngine::armTransition(int effect, int upcomingMs, int overlapMs) {
+void AudioEngine::armTransition(int effect, int upcomingMs, int outroMs, int introMs) {
   std::lock_guard l(m_mutex);
   if (m_local || !m_pipe)
     return;
   m_transitionEffect = effect;
   m_transitionUpcomingMs = upcomingMs;
-  m_transitionOverlapMs = overlapMs;
+  m_transitionOutroMs = outroMs;
+  m_transitionIntroMs = introMs;
 }
 void AudioEngine::noteSpotifyVolumeChange(int fromPercent, int toPercent) {
   std::lock_guard l(m_mutex);
@@ -314,6 +315,23 @@ void AudioEngine::run() {
   std::unique_ptr<tonal::playback::TransitionMixer> mixer;
   std::vector<float> mixInput;
   using MixState = tonal::playback::TransitionMixer::State;
+  // Quadros da faixa atual lidos desde o marcador (-1: desconhecido).
+  int64_t trackFrames = -1;
+  uint32_t trackStartMs = 0;
+  auto trackBoundary = [&](int frames) {
+    if (trackFrames >= 0 && frames > 0)
+      trackFrames += frames;
+    uint32_t startMs = 0;
+    const bool boundary = pipe && pipe->takeBoundary(startMs);
+    if (boundary) {
+      trackFrames = 0;
+      trackStartMs = startMs;
+      m_trackMarkers = true;
+    }
+    const int rate = std::max(1, format.sampleRate);
+    m_trackPositionMs = trackFrames < 0 ? -1 : int(trackStartMs + trackFrames * 1000 / rate);
+    return boundary;
+  };
   auto publishTransition = [&] {
     const int state = !mixer || !mixer->active() ? 0
                       : mixer->state() == MixState::Armed ? 1
@@ -378,7 +396,7 @@ void AudioEngine::run() {
     double seek;
     float target;
     uint64_t serial;
-    int transitionEffect, transitionUpcomingMs, transitionOverlapMs;
+    int transitionEffect, transitionUpcomingMs, transitionOutroMs, transitionIntroMs;
     bool transitionCancel;
     std::vector<std::pair<int, int>> volumeNotes;
     {
@@ -395,12 +413,16 @@ void AudioEngine::run() {
       serial = m_generation.load();
       transitionEffect = std::exchange(m_transitionEffect, -1);
       transitionUpcomingMs = m_transitionUpcomingMs;
-      transitionOverlapMs = m_transitionOverlapMs;
+      transitionOutroMs = m_transitionOutroMs;
+      transitionIntroMs = m_transitionIntroMs;
       volumeNotes.swap(m_volumeNotes);
       transitionCancel = std::exchange(m_transitionCancel, false);
     }
     if (serial != generation) {
       generation = serial;
+      trackFrames = -1;
+      m_trackPositionMs = -1;
+      m_trackMarkers = false;
       if (mixer)
         mixer->reset();
       publishTransition();
@@ -521,7 +543,12 @@ void AudioEngine::run() {
       drained = false;
       revision = -1;
     }
-    // Seek, carga ou pulo do usuário descartam a transição em curso.
+    // Seek, carga ou pulo do usuário descartam a transição em curso; a posição
+    // contada desde o marcador deixa de valer até o próximo começo de faixa.
+    if (flush) {
+      trackFrames = -1;
+      m_trackPositionMs = -1;
+    }
     if (flush && mixer) {
       mixer->reset();
       publishTransition();
@@ -532,8 +559,11 @@ void AudioEngine::run() {
       else if (mixer->sampleRate() != format.sampleRate)
         mixer->setSampleRate(format.sampleRate);
       const int64_t upcoming = int64_t(transitionUpcomingMs) * format.sampleRate / 1000;
-      const int64_t overlap = int64_t(transitionOverlapMs) * format.sampleRate / 1000;
-      mixer->arm(tonal::playback::TransitionEffect(transitionEffect), upcoming, overlap);
+      const int64_t outro = int64_t(transitionOutroMs) * format.sampleRate / 1000;
+      const int64_t intro = int64_t(transitionIntroMs) * format.sampleRate / 1000;
+      // Com o marcador o fim de A é exato; sem ele (librespot antigo) vale a estimativa.
+      mixer->arm(tonal::playback::TransitionEffect(transitionEffect), upcoming, outro, intro,
+                 pipe->markersSeen());
       publishTransition();
     }
     // Volume novo já vale no librespot, mas o buffer ainda tem o antigo:
@@ -621,10 +651,17 @@ void AudioEngine::run() {
           transitionEnded = true;
           break;
         }
+        m_spotifyFrames += uint64_t(n);
+        if (n > 0)
+          mixer->push(mixInput.data(), size_t(n));
+        // A próxima faixa começa no quadro seguinte: fim exato de A.
+        if (trackBoundary(n)) {
+          if (mixer->waitingBoundary())
+            ++m_transitionBoundaries;
+          mixer->boundary();
+        }
         if (n == 0)
           break;
-        m_spotifyFrames += uint64_t(n);
-        mixer->push(mixInput.data(), size_t(n));
       }
       publishTransition();
     }
@@ -671,6 +708,7 @@ void AudioEngine::run() {
       got = pipe->read(in.samples, 512);
       if (got > 0)
         m_spotifyFrames += uint64_t(got);
+      trackBoundary(got);
       pts += in.frames();
     }
     if (got < 0) {

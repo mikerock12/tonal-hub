@@ -69,8 +69,17 @@ public:
   uint64_t spotifyFramesRead() const { return m_spotifyFrames.load(); }
   // Transições da fila: só com o PCM do Tonalify passando por este motor.
   bool spotifyPipeActive() const { std::lock_guard lock(m_mutex); return m_pipe != nullptr && !m_failed; }
-  // `upcomingMs`: quanto da faixa atual o librespot ainda não entregou.
-  void armTransition(int effect, int upcomingMs, int overlapMs);
+  // `upcomingMs`: estimativa de quanto da faixa atual o librespot ainda não
+  // entregou; `outroMs` = fim dela com o efeito; `introMs` = começo da
+  // próxima injetado na mescla. Com o marcador do librespot o fim é exato.
+  void armTransition(int effect, int upcomingMs, int outroMs, int introMs);
+  // Posição da faixa atual no PCM já lido, contada desde o marcador de começo
+  // de faixa do librespot. -1 quando desconhecida (sem marcador ou após seek).
+  int spotifyTrackPositionMs() const { return m_trackPositionMs.load(); }
+  // O librespot deste pipe já marcou algum começo de faixa.
+  bool spotifyTrackMarkers() const { return m_trackMarkers.load(); }
+  // Quantas transições tiveram o fim de A fixado pelo marcador (diagnóstico).
+  int transitionBoundaries() const { return m_transitionBoundaries.load(); }
   // Áudio entregue pelo motor e ainda não tocado (pré-rolagem das transições).
   int transitionLatencyMs() const { return m_transitionLatencyMs.load(); }
   // O volume do Spotify é aplicado no librespot, antes do buffer: durante o
@@ -112,7 +121,10 @@ private:
   std::atomic<bool> m_quit{false};
   std::atomic<bool> m_visualizer{false};
   std::atomic<uint64_t> m_spotifyFrames{0};
-  int m_transitionEffect = -1, m_transitionUpcomingMs = 0, m_transitionOverlapMs = 0;
+  int m_transitionEffect = -1, m_transitionUpcomingMs = 0, m_transitionOutroMs = 0, m_transitionIntroMs = 0;
+  std::atomic<int> m_trackPositionMs{-1};
+  std::atomic<bool> m_trackMarkers{false};
+  std::atomic<int> m_transitionBoundaries{0};
   std::vector<std::pair<int, int>> m_volumeNotes;
   std::atomic<int> m_transitionLatencyMs{0};
   bool m_transitionCancel = false;
