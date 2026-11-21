@@ -584,6 +584,10 @@ docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no
 - Spotify real no Windows: `TonalSpotifyRecoveryTests --live-session
   --verify-natural-transitions` (aparelho isolado, OpenAL nulo, álbum por contexto;
   pula se a conta já estiver tocando). Android real e acústica não testados.
+- Entrega 0.17.4 (21/11/2026): PR61 merge 7b7b125 (CI 5/5 + visual), código de produto
+  dc8eddd, release v0.17.4 com Windows e APKs, portal PR77 merge f3bcf9b (Worker
+  efb6b362), backup privado 1p_5Zq_DdLgzS6Bo8aDiljktN_UmeAo5g (33 arquivos, partes de
+  7 MB). Evidências: docs/release-0174-tests.json e docs/artifacts-0174.json.
 
 ## Fila, contraste e distribuição 0.16.1
 
