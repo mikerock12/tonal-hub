@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.17.1 — 20/11/2026
+
+- Transições sem travar nem pausar: o fim da música atual e o começo da próxima ficam guardados antes da mescla, a saída toca do buffer enquanto o Spotify carrega a próxima, e a mescla começa no ponto certo com as duas prontas.
+- Um limitador com antecipação substitui a saturação suave: fora dos picos da soma, as músicas mantêm volume e qualidade originais.
+- No Windows a leitura antecipada não deixa mais a saída sem áudio; o volume continua respondendo na hora durante o buffer.
+- Detalhes em docs/TRANSITIONS_0170.md.
+
 ## 0.17.0 — 20/11/2026
 
 - Transições entre as músicas da fila no Windows e no Android: Fade cruzado, Eco de despedida, Troca de graves, Freio de vinil, Banho de reverb e Loop acelerado, ou Aleatório. Mesclagem de 3 a 10 segundos, com as duas músicas tocando juntas.

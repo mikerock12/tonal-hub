@@ -1,0 +1,26 @@
+{
+  "version": "0.17.1",
+  "date": "2026-11-20",
+  "androidVersionCode": 43,
+  "report": "Usuário: o som travava, depois vinha a transição e ainda havia uma pausa antes da música seguinte (0.17.0).",
+  "causes": [
+    "Windows: leitura antecipada sem limite por ciclo deixava a fila do OpenAL (~70 ms) esvaziar.",
+    "Android: a saída só era escrita dentro das chamadas do motor; durante a carga de B o fim de A não tocava.",
+    "Ambos: a mescla começava quando A terminava de ser lida; com B atrasada o efeito rodava com silêncio."
+  ],
+  "validation": {
+    "ctestWindows": "12/12",
+    "transitionCore": "PASS Windows MSVC e Android x86_64 na AVD: 6 efeitos, pré-rolagem 2,5 s, B atrasada sem travar, duas transições seguidas, limitador ≤ 0,999 com variação suave, endCapture, reset",
+    "windowsEngineIntegration": {"producerBDelayMs": 800, "underruns": 0, "latencyAfterMixMs": 2503},
+    "androidAudioTrackAvd": {"captureMsFor6s": 3, "bDelayMs": 1000, "underruns": 0, "latencyAfterMixMs": 2507, "latencyAfterSecondMs": 2499},
+    "qml": {"mix": 34, "lyrics": 7, "playlist": 3},
+    "androidUiSmoke": true,
+    "windowsPortable": {"programsStarted": 3, "files": 1449, "zipCrc": true},
+    "apk": {"certificateSha256": "464ae7cf34f4f145541569db215f8fcdef5deda1be31921d8e366eed20aa22c2", "alignment16KiB": true}
+  },
+  "limits": [
+    "Sem Spotify autenticado em aparelho físico, sem medição acústica, de CPU ou bateria.",
+    "O título da próxima música pode aparecer alguns segundos antes de ela soar.",
+    "No Windows, um pulo feito em outro aparelho Spotify Connect pode deixar tocar até 2,5 s da anterior."
+  ]
+}

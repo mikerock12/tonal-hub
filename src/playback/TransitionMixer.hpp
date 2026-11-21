@@ -1,13 +1,19 @@
 #pragma once
 // Transições entre músicas da fila (Windows e Android).
 //
-// O mixer recebe o PCM estéreo float32 intercalado do motor antes do DSP.
-// Ao ser armado perto do fim da faixa A, ele lê o restante de A adiantado
-// (o motor decodifica mais rápido que o tempo real) e guarda esse trecho.
-// Quando o PCM da faixa B começa a chegar, A e B tocam juntas durante a
-// mesclagem, cada uma com o seu efeito. Depois da mesclagem o PCM volta a
-// passar direto. Nenhuma operação de processamento aloca memória: os buffers
-// são reservados no construtor. Não há rede, banco ou UI aqui.
+// O mixer fica entre o PCM estéreo float32 do motor e o DSP/saída. Desde a
+// 0.17.1 ele trabalha com antecedência:
+//  1. Armado alguns segundos antes do fim da faixa A (mescla + pré-rolagem),
+//     ele lê o restante de A de uma vez (o motor decodifica mais rápido que o
+//     tempo real) e, logo depois, o começo da faixa B, até `prerollFrames`.
+//  2. Enquanto isso a saída continua tocando A do próprio buffer, sem depender
+//     do ritmo do motor.
+//  3. A mescla começa num ponto fixo do fim de A, com B já guardada. Cada
+//     bloco é renderizado à frente da saída e passa por um limitador com
+//     antecipação, que só atua se a soma A+B passar de 0 dBFS.
+//  4. Depois da mescla B segue do FIFO. A pré-rolagem vira um atraso
+//     constante entre o motor e o som (latencyFrames), que a UI desconta.
+// Buffers reservados no construtor; push/pull não alocam. Sem rede, banco ou UI.
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -29,6 +35,8 @@ enum class TransitionEffect : int {
 constexpr int kTransitionEffectCount = int(TransitionEffect::Count);
 constexpr int kTransitionMinSeconds = 3;
 constexpr int kTransitionMaxSeconds = 10;
+// Quanto do começo de B fica guardado antes da mescla começar.
+constexpr int kTransitionPrerollMs = 2500;
 
 std::string_view transitionEffectId(TransitionEffect effect);
 // Retorna Count quando o identificador é desconhecido.
@@ -39,46 +47,48 @@ int clampTransitionSeconds(int seconds);
 // o anterior. `random` é qualquer inteiro de 32 bits do chamador.
 TransitionEffect pickRandomTransition(TransitionEffect previous, uint32_t random);
 
-// Quando armar. Retorna os milissegundos do restante de A que ainda estão no
-// fluxo (após descontar o que já está na saída) ou -1 se ainda não é a hora.
-// `remainingMs` = duração - posição audível; `bufferedMs` = áudio já na saída.
+// Quando armar. `audibleRemainingMs` = quanto falta de A até o fim no som;
+// `upcomingMs` = quanto de A o motor ainda não entregou.
 struct TransitionPlan {
   bool arm = false;
-  int64_t tailMs = 0;     // quanto de A ler adiantado
-  int64_t overlapMs = 0;  // duração da mesclagem desejada
+  int64_t upcomingMs = 0;  // restante de A ainda no motor
+  int64_t overlapMs = 0;   // duração da mesclagem
 };
-TransitionPlan planTransition(int seconds, int64_t durationMs, int64_t remainingMs,
-                              int64_t bufferedMs);
+TransitionPlan planTransition(int seconds, int64_t durationMs, int64_t audibleRemainingMs,
+                              int64_t upcomingMs);
 
 class TransitionMixer {
 public:
-  enum class State { Idle, Capturing, Mixing };
+  enum class State { Idle, Armed, Mixing };
   explicit TransitionMixer(int sampleRate = 44100);
   void setSampleRate(int sampleRate);
   int sampleRate() const { return m_rate; }
 
-  // Lê `tailFrames` de A adiantados; a mesclagem dura o que sobrar deles.
-  bool arm(TransitionEffect effect, int64_t tailFrames);
+  // `upcomingFrames`: quanto de A o motor ainda vai entregar. O que já está
+  // no FIFO (atraso de uma transição anterior) também é de A e entra no buffer.
+  bool arm(TransitionEffect effect, int64_t upcomingFrames, int64_t overlapFrames);
   // Seek, troca de faixa pelo usuário, flush ou nova sessão: descarta tudo.
   void reset();
-  // O motor parou de entregar A antes do previsto (sink fechado no fim
-  // natural): mescla com o que já foi lido.
+  // O motor terminou A antes do previsto: A acaba no que já foi lido.
   void endCapture();
 
   State state() const { return m_state; }
-  // Há algo armado, em mesclagem ou ainda no FIFO: use push/pull.
+  bool capturing() const { return m_state != State::Idle && m_tailCount < m_tailTarget; }
+  // Há algo armado, em mesclagem ou guardado no FIFO: use push/pull.
   bool active() const { return m_state != State::Idle || m_fifoCount > 0; }
   bool wantsInput() const;
   // Aceita até `frames` quadros; retorna quantos guardou.
   size_t push(const float *interleaved, size_t frames);
-  // Produz até `frames` quadros. Na mesclagem, sem B disponível, retorna 0,
-  // a menos que `padMissing` seja verdadeiro (usa silêncio no lugar de B
-  // para não interromper o fim de A, sem consumir B).
-  size_t pull(float *out, size_t frames, bool padMissing);
-  size_t bufferedFrames() const;
+  // Produz até `frames` quadros. Antes da mescla toca A do buffer; na mescla
+  // nunca para (sem B a tempo usa silêncio no lugar dela, sem consumi-la).
+  size_t pull(float *out, size_t frames);
+  // Áudio já entregue pelo motor e ainda não tocado.
+  size_t latencyFrames() const;
   TransitionEffect effect() const { return m_effect; }
   double progress() const;
   int64_t overlapFrames() const { return m_overlap; }
+  int64_t mixStartFrame() const { return m_mixStart; }
+  float limiterGain() const { return m_gain; }
 
 private:
   struct Biquad {
@@ -87,7 +97,6 @@ private:
     void lowpass(double rate, double hz, double q);
     void highpass(double rate, double hz, double q);
     float run(int channel, float x);
-    void clear() { z1 = {}; z2 = {}; }
   };
   struct Comb {
     std::vector<float> line;
@@ -99,24 +108,30 @@ private:
     size_t index = 0;
   };
 
-  void beginMixing();
   void finishMixing();
+  void renderAhead(int64_t until);
   void mixFrame(float bL, float bR, bool haveB, float &outL, float &outR);
   void tailAt(double position, float &l, float &r) const;
   void clearEffects();
+  void fifoPop(float &l, float &r);
 
   int m_rate = 44100;
   State m_state = State::Idle;
   TransitionEffect m_effect = TransitionEffect::Fade;
 
-  std::vector<float> m_tail;  // trecho final de A
-  int64_t m_tailTarget = 0, m_tailCount = 0;
-  double m_tailRead = 0;      // posição de leitura de A (fracionária no freio)
-  int64_t m_tailStart = 0;    // posição de A quando a mesclagem começou
-  int64_t m_overlap = 0, m_mixed = 0;
+  std::vector<float> m_tail;  // A ainda não tocada (FIFO anterior + restante)
+  int64_t m_tailTarget = 0, m_tailCount = 0, m_tailPlayed = 0;
+  int64_t m_mixStart = 0, m_overlap = 0;
+  int64_t m_rendered = 0, m_mixed = 0;  // quadros da mescla renderizados/tocados
+  double m_brakeRead = 0;               // leitura fracionária de A no freio
 
-  std::vector<float> m_fifo;  // PCM de B ainda não reproduzido
-  size_t m_fifoHead = 0, m_fifoCount = 0;
+  std::vector<float> m_fifo;  // B (ou A sem transição) ainda não tocada
+  size_t m_fifoHead = 0, m_fifoCount = 0, m_fifoCapacity = 0, m_fifoLimit = 0;
+
+  // Mescla renderizada à frente da saída + limitador com antecipação.
+  std::vector<float> m_render;
+  std::vector<float> m_blockNeed;
+  float m_gain = 1, m_limiterSlope = 0;
 
   // Efeitos
   std::vector<float> m_delayL, m_delayR;

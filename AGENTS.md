@@ -5,7 +5,7 @@ afetada antes de alterar o produto. Estado documental: 25/10/2026, builds Window
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
-Estado atual: 20/11/2026, entrega Windows/Android 0.17.0 (ver seção 0.17.0 ao final). As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
+Estado atual: 20/11/2026, entrega Windows/Android 0.17.1 (ver seções 0.17.0 e 0.17.1 ao final). As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
 
 ## Autoria, Git e privacidade
 
@@ -518,6 +518,19 @@ docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no
   envio após base64: arquivos grandes vão em partes de 7 MB com drive-parts.json;
   APK universal e ZIP portátil ficam só na release (hashes registrados).
   Evidências: docs/release-0170-tests.json e docs/artifacts-0170.json.
+
+## Transições com buffer 0.17.1
+
+- Arma quando faltam mescla + 2,5 s + 0,5 s no som; lê todo o restante de A e
+  até 2,5 s de B antes da mescla. A mescla começa num ponto fixo do fim de A.
+- A saída nunca depende do ritmo do motor: Windows lê no máximo 8 blocos por
+  ciclo; Android usa a thread TonalTransitionOut e escrita não bloqueante.
+- Limitador com antecipação (256 quadros, teto 0,999) só durante a mescla; não
+  reintroduzir saturação. A pré-rolagem vira atraso constante: UI desconta
+  `transitionLatencyMs`; Windows compensa o volume do librespot nesse trecho.
+- Testes: TransitionChecks (B atrasada, duas transições, limitador), AudioTests
+  spotifyTransitionTest (motor Windows real, 0 underruns), transitionSuite na AVD.
+  Android versionCode 43. Sem teste com Spotify real ou aparelho físico.
 
 ## Fila, contraste e distribuição 0.16.1
 

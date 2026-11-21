@@ -1,4 +1,4 @@
-# Transições entre músicas, fila e letra — 0.17.0
+# Transições entre músicas, fila e letra — 0.17.0 / 0.17.1
 
 ## Transições de DJ
 
@@ -73,3 +73,47 @@ página da música; Android: página da música). Tradução automática e
 sincronia são alternadores: azul (#35A7FF) ligado, branco desligado.
 Desligar a tradução oculta as linhas traduzidas sem apagar a tradução.
 Na tela cheia do Windows, a sincronia também virou ícone.
+
+## 0.17.1 — buffer antes da transição
+
+O usuário relatou na 0.17.0: o som travava, depois vinha a transição e ainda
+havia uma pausa antes da música seguinte. Causas encontradas no código:
+
+* Windows: ao armar, o laço de áudio lia o fim da faixa A sem limite enquanto
+  o librespot entregava dados; a fila do OpenAL (cerca de 70 ms) esvaziava.
+* Android: a saída só era escrita dentro das chamadas do motor; quando ele
+  parava para carregar B, o fim de A guardado ficava sem tocar.
+* Nos dois: a mescla começava assim que A terminava de ser lida; se B demorasse,
+  o efeito rodava com silêncio no lugar dela e B entrava depois.
+
+Funcionamento desde a 0.17.1 (núcleo C++ igual nas duas plataformas):
+
+1. O mixer é armado quando faltam mescla + 2,5 s + 0,5 s de A no som.
+2. Lê todo o restante de A e, em seguida, até 2,5 s do começo de B, enquanto a
+   saída continua tocando A do próprio buffer. Windows: no máximo 8 blocos por
+   ciclo, a saída é atendida a cada ciclo. Android: thread de saída própria e
+   escrita não bloqueante do motor até o limite do buffer.
+3. A mescla começa num ponto fixo do fim de A, com B já guardada. Os quadros são
+   renderizados à frente da saída e passam por um limitador com antecipação de
+   256 quadros, que só reduz o ganho se a soma A+B passasse de 0 dBFS (antes era
+   uma saturação suave). Fora disso, A e B saem exatamente como chegaram.
+4. Depois da mescla, os 2,5 s de B ficam como atraso constante entre o motor e o
+   som. A barra, a letra e os controles de mídia descontam esse atraso; a
+   próxima transição reaproveita o buffer. Pular, buscar ou escolher outra
+   música descarta o buffer e o atraso some.
+5. Windows: o volume do Spotify é aplicado no librespot, antes do buffer. O motor
+   compensa o trecho guardado (curva logarítmica de 60 dB do librespot) para a
+   mudança soar na hora. Android usa o volume do sistema, sem atraso.
+
+Testes da 0.17.1: núcleo com B atrasada (sem travar), duas transições seguidas,
+limitador ≤ 0,999 com variação suave, `endCapture`; motor Windows real com um
+produtor que demora 0,8 s para entregar B (0 underruns, pré-rolagem 2,5 s);
+AudioTrack real na AVD com B atrasada 1 s (leitura de 6 s de A em 3 ms, 0
+underruns, segunda transição com o atraso da primeira). Continuam pendentes o
+teste com Spotify real, no aparelho físico, e medições acústicas.
+
+Limites conhecidos: o título da próxima música pode aparecer alguns segundos
+antes de ela soar, porque o Spotify já a considera em reprodução; se outro
+aparelho Spotify Connect pular a música no Windows, até 2,5 s da anterior ainda
+podem tocar; uma mudança de volume no Windows enquanto o pedido ainda não chegou
+ao librespot pode oscilar por uma fração de segundo.

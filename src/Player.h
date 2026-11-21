@@ -32,7 +32,8 @@ class Player : public QObject {
   Q_PROPERTY(bool shuffle READ shuffle NOTIFY stateChanged)
   Q_PROPERTY(QString repeatMode READ repeatMode NOTIFY stateChanged)
   Q_PROPERTY(int volume READ volume NOTIFY volumeChanged)
-  Q_PROPERTY(int positionMs READ positionMs NOTIFY positionChanged)
+  // Posição no som: desconta a pré-rolagem das transições.
+  Q_PROPERTY(int positionMs READ displayPositionMs NOTIFY positionChanged)
   Q_PROPERTY(bool liked READ liked NOTIFY likedChanged)
   Q_PROPERTY(QString activeDeviceId READ activeDeviceId NOTIFY stateChanged)
   Q_PROPERTY(QString activeDeviceName READ activeDeviceName NOTIFY stateChanged)
@@ -88,6 +89,7 @@ public:
   }
   int volume() const { return m_volume; }
   int positionMs() const;
+  int displayPositionMs() const;
   bool liked() const { return !localPlayback() && m_liked; }
   QString activeDeviceId() const { return m_activeDeviceId; }
   QString activeDeviceName() const {

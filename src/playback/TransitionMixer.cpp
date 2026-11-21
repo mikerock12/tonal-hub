@@ -6,22 +6,16 @@
 
 namespace tonal::playback {
 namespace {
-constexpr size_t kFifoFrames = 32768;
-constexpr size_t kFifoLow = 2048;
-constexpr int kExtraTailSeconds = 4;
+constexpr int kTailSeconds = 18;       // mescla máx. + pré-rolagem + atraso anterior + folga
+constexpr int64_t kRenderFrames = 8192; // mescla renderizada à frente da saída
+constexpr int64_t kBlock = 32;          // granularidade do limitador
+constexpr int64_t kLookBlocks = 8;      // antecipação de 256 quadros (~6 ms)
+constexpr float kCeiling = 0.999f;
 constexpr double kPi = std::numbers::pi;
 
 double smooth(double from, double to, double x) {
   const double t = std::clamp((x - from) / (to - from), 0.0, 1.0);
   return t * t * (3 - 2 * t);
-}
-// Mantém picos da soma A+B abaixo de 0 dBFS sem cortar seco.
-float soft(float x) {
-  const float a = std::fabs(x);
-  if (a <= 0.9f)
-    return x;
-  const float shaped = 0.9f + 0.1f * std::tanh((a - 0.9f) / 0.1f);
-  return std::copysign(shaped, x);
 }
 constexpr std::array<std::string_view, kTransitionEffectCount> kIds{
     "fade", "echo", "filter", "brake", "reverb", "roll"};
@@ -51,24 +45,22 @@ TransitionEffect pickRandomTransition(TransitionEffect previous, uint32_t random
   return TransitionEffect(pick >= previousIndex ? pick + 1 : pick);
 }
 
-TransitionPlan planTransition(int seconds, int64_t durationMs, int64_t remainingMs,
-                              int64_t bufferedMs) {
+TransitionPlan planTransition(int seconds, int64_t durationMs, int64_t audibleRemainingMs,
+                              int64_t upcomingMs) {
   TransitionPlan plan;
-  if (durationMs <= 0 || remainingMs <= 0)
+  if (durationMs <= 0 || audibleRemainingMs <= 0)
     return plan;
-  bufferedMs = std::max<int64_t>(0, bufferedMs);
   const int64_t overlap = std::min<int64_t>(clampTransitionSeconds(seconds) * 1000LL, durationMs / 3);
   if (overlap < 1500)
     return plan;
-  constexpr int64_t cushion = 250;
-  if (remainingMs > overlap + bufferedMs + cushion)
+  // Arma com folga para ler o fim de A e guardar o começo de B antes da mescla.
+  if (audibleRemainingMs > overlap + kTransitionPrerollMs + 500)
     return plan;
-  const int64_t tail = remainingMs - bufferedMs;
-  if (tail < 1000)
+  if (audibleRemainingMs < 1000 || upcomingMs < 0)
     return plan;
   plan.arm = true;
-  plan.tailMs = tail;
-  plan.overlapMs = std::min(tail, overlap);
+  plan.upcomingMs = upcomingMs;
+  plan.overlapMs = std::min(audibleRemainingMs, overlap);
   return plan;
 }
 
@@ -109,8 +101,12 @@ void TransitionMixer::setSampleRate(int sampleRate) {
     return;
   }
   m_rate = sampleRate;
-  m_tail.assign(size_t(kTransitionMaxSeconds + kExtraTailSeconds) * size_t(m_rate) * 2, 0.f);
-  m_fifo.assign(kFifoFrames * 2, 0.f);
+  m_tail.assign(size_t(kTailSeconds) * size_t(m_rate) * 2, 0.f);
+  m_fifoLimit = size_t(int64_t(m_rate) * kTransitionPrerollMs / 1000);
+  m_fifoCapacity = m_fifoLimit + 16384;
+  m_fifo.assign(m_fifoCapacity * 2, 0.f);
+  m_render.assign(size_t(kRenderFrames) * 2, 0.f);
+  m_blockNeed.assign(size_t(kRenderFrames / kBlock), 1.f);
   m_delayFrames = size_t(m_rate * 0.36);
   m_delayL.assign(m_delayFrames, 0.f);
   m_delayR.assign(m_delayFrames, 0.f);
@@ -142,92 +138,93 @@ void TransitionMixer::clearEffects() {
   }
   m_rollStart = m_rollLength = m_rollPhase = 0;
   m_rollStage = -1;
+  m_brakeRead = 0;
 }
 
 void TransitionMixer::reset() {
-  m_state = State::Idle;
-  m_tailTarget = m_tailCount = m_tailStart = 0;
-  m_tailRead = 0;
-  m_overlap = m_mixed = 0;
+  finishMixing();
   m_fifoHead = m_fifoCount = 0;
   clearEffects();
 }
 
-void TransitionMixer::endCapture() {
-  if (m_state != State::Capturing)
-    return;
-  m_tailTarget = m_tailCount;
-  beginMixing();
+void TransitionMixer::finishMixing() {
+  m_state = State::Idle;
+  m_tailTarget = m_tailCount = m_tailPlayed = 0;
+  m_mixStart = m_overlap = m_rendered = m_mixed = 0;
+  m_gain = 1;
+  m_limiterSlope = 0;
 }
 
-bool TransitionMixer::arm(TransitionEffect effect, int64_t tailFrames) {
-  // O FIFO ainda guarda áudio anterior ao trecho de A: tente no próximo ciclo.
-  if (m_state != State::Idle || m_fifoCount > 0 || int(effect) < 0 ||
-      int(effect) >= kTransitionEffectCount)
+void TransitionMixer::fifoPop(float &l, float &r) {
+  l = m_fifo[m_fifoHead * 2];
+  r = m_fifo[m_fifoHead * 2 + 1];
+  m_fifoHead = (m_fifoHead + 1) % m_fifoCapacity;
+  --m_fifoCount;
+}
+
+bool TransitionMixer::arm(TransitionEffect effect, int64_t upcomingFrames, int64_t overlapFrames) {
+  if (m_state != State::Idle || int(effect) < 0 || int(effect) >= kTransitionEffectCount ||
+      upcomingFrames < 0 || overlapFrames <= 0)
     return false;
-  const int64_t capacity = int64_t(m_tail.size() / 2);
-  if (tailFrames < m_rate / 2)
+  const int64_t total = int64_t(m_fifoCount) + upcomingFrames;
+  if (total < m_rate / 2 || total > int64_t(m_tail.size() / 2))
     return false;
   clearEffects();
+  // O FIFO guarda A já entregue e ainda não tocada: vira o começo do buffer.
+  int64_t count = 0;
+  while (m_fifoCount > 0) {
+    fifoPop(m_tail[size_t(count * 2)], m_tail[size_t(count * 2 + 1)]);
+    ++count;
+  }
+  m_fifoHead = 0;
   m_effect = effect;
-  m_tailTarget = std::min(tailFrames, capacity);
-  m_tailCount = m_tailStart = m_mixed = m_overlap = 0;
-  m_tailRead = 0;
-  m_state = State::Capturing;
+  m_tailCount = count;
+  m_tailTarget = total;
+  m_tailPlayed = 0;
+  m_overlap = std::min(overlapFrames, total);
+  if (m_overlap < m_rate / 4)
+    m_effect = TransitionEffect::Fade;
+  m_mixStart = total - m_overlap;
+  m_rendered = m_mixed = 0;
+  m_gain = 1;
+  m_state = State::Armed;
   return true;
 }
 
-bool TransitionMixer::wantsInput() const {
-  switch (m_state) {
-  case State::Capturing:
-    return m_tailCount < m_tailTarget;
-  case State::Mixing:
-    return m_fifoCount < kFifoLow;
-  case State::Idle:
-    return false;
+void TransitionMixer::endCapture() {
+  if (m_state == State::Idle || m_tailCount >= m_tailTarget)
+    return;
+  m_tailTarget = m_tailCount;
+  if (m_state == State::Armed) {
+    m_overlap = std::min(m_overlap, m_tailTarget - m_tailPlayed);
+    m_mixStart = m_tailTarget - m_overlap;
+    if (m_overlap <= 0)
+      finishMixing();
   }
-  return false;
+}
+
+bool TransitionMixer::wantsInput() const {
+  if (m_state != State::Idle && m_tailCount < m_tailTarget)
+    return true;
+  return m_fifoCount < m_fifoLimit;
 }
 
 size_t TransitionMixer::push(const float *in, size_t frames) {
   size_t used = 0;
-  if (m_state == State::Capturing) {
-    const size_t room = size_t(m_tailTarget - m_tailCount);
-    const size_t take = std::min(room, frames);
+  if (m_state != State::Idle && m_tailCount < m_tailTarget) {
+    const size_t take = std::min(size_t(m_tailTarget - m_tailCount), frames);
     std::copy(in, in + take * 2, m_tail.begin() + ptrdiff_t(m_tailCount * 2));
     m_tailCount += int64_t(take);
     used = take;
-    if (m_tailCount >= m_tailTarget)
-      beginMixing();
   }
-  while (used < frames && m_fifoCount < kFifoFrames) {
-    const size_t tail = (m_fifoHead + m_fifoCount) % kFifoFrames;
-    m_fifo[tail * 2] = in[used * 2];
-    m_fifo[tail * 2 + 1] = in[used * 2 + 1];
+  while (used < frames && m_fifoCount < m_fifoCapacity) {
+    const size_t slot = (m_fifoHead + m_fifoCount) % m_fifoCapacity;
+    m_fifo[slot * 2] = in[used * 2];
+    m_fifo[slot * 2 + 1] = in[used * 2 + 1];
     ++m_fifoCount;
     ++used;
   }
   return used;
-}
-
-void TransitionMixer::beginMixing() {
-  m_tailStart = int64_t(m_tailRead);
-  m_overlap = m_tailCount - m_tailStart;
-  m_mixed = 0;
-  if (m_overlap <= 0) {
-    finishMixing();
-    return;
-  }
-  if (m_overlap < m_rate / 4)
-    m_effect = TransitionEffect::Fade;
-  m_state = State::Mixing;
-}
-
-void TransitionMixer::finishMixing() {
-  m_state = State::Idle;
-  m_tailTarget = m_tailCount = m_tailStart = 0;
-  m_tailRead = 0;
-  m_overlap = m_mixed = 0;
 }
 
 double TransitionMixer::progress() const {
@@ -236,23 +233,51 @@ double TransitionMixer::progress() const {
   return double(m_mixed) / double(m_overlap);
 }
 
-size_t TransitionMixer::bufferedFrames() const {
-  const int64_t tail = m_state == State::Idle ? 0 : std::max<int64_t>(0, m_tailCount - int64_t(m_tailRead));
-  return size_t(tail) + m_fifoCount;
+size_t TransitionMixer::latencyFrames() const {
+  // Enquanto A chega, o atraso é de A; depois, do que já chegou de B.
+  if (capturing())
+    return size_t(std::max<int64_t>(0, m_tailCount - m_tailPlayed));
+  return m_fifoCount + size_t(m_state == State::Mixing ? m_rendered - m_mixed : 0);
 }
 
 void TransitionMixer::tailAt(double position, float &l, float &r) const {
-  const int64_t last = std::max<int64_t>(0, m_tailCount - 1);
-  position = std::clamp(position, 0.0, double(last));
+  // A ainda não lida (motor atrasado) soa como silêncio, sem repetir amostras.
+  if (position < 0 || position > double(m_tailCount - 1) || m_tailCount <= 0) {
+    l = r = 0;
+    return;
+  }
   const int64_t i = int64_t(position);
-  const int64_t j = std::min(i + 1, last);
+  const int64_t j = std::min(i + 1, m_tailCount - 1);
   const float t = float(position - double(i));
   l = m_tail[size_t(i * 2)] * (1 - t) + m_tail[size_t(j * 2)] * t;
   r = m_tail[size_t(i * 2 + 1)] * (1 - t) + m_tail[size_t(j * 2 + 1)] * t;
 }
 
+void TransitionMixer::renderAhead(int64_t until) {
+  until = std::min({until, m_overlap, m_mixed + kRenderFrames});
+  while (m_rendered < until) {
+    float bL = 0, bR = 0;
+    const bool haveB = m_fifoCount > 0;
+    if (haveB)
+      fifoPop(bL, bR);
+    float l, r;
+    mixFrame(bL, bR, haveB, l, r);
+    const size_t slot = size_t(m_rendered % kRenderFrames);
+    m_render[slot * 2] = l;
+    m_render[slot * 2 + 1] = r;
+    const size_t block = size_t((m_rendered / kBlock) % (kRenderFrames / kBlock));
+    if (m_rendered % kBlock == 0)
+      m_blockNeed[block] = 1.f;
+    const float peak = std::max(std::fabs(l), std::fabs(r));
+    if (peak > kCeiling)
+      m_blockNeed[block] = std::min(m_blockNeed[block], kCeiling / peak);
+    ++m_rendered;
+  }
+}
+
 void TransitionMixer::mixFrame(float bL, float bR, bool haveB, float &outL, float &outR) {
-  const double p = double(m_mixed) / double(m_overlap);
+  const int64_t frame = m_rendered;
+  const double p = double(frame) / double(m_overlap);
   float aL = 0, aR = 0;
   double gB = 1;
   const bool updateFilters = m_filterCountdown-- <= 0;
@@ -260,7 +285,7 @@ void TransitionMixer::mixFrame(float bL, float bR, bool haveB, float &outL, floa
     m_filterCountdown = 32;
   switch (m_effect) {
   case TransitionEffect::Fade: {
-    tailAt(double(m_tailStart + m_mixed), aL, aR);
+    tailAt(double(m_mixStart + frame), aL, aR);
     const double gA = std::cos(p * kPi / 2);
     aL *= float(gA);
     aR *= float(gA);
@@ -268,7 +293,7 @@ void TransitionMixer::mixFrame(float bL, float bR, bool haveB, float &outL, floa
     break;
   }
   case TransitionEffect::Echo: {
-    tailAt(double(m_tailStart + m_mixed), aL, aR);
+    tailAt(double(m_mixStart + frame), aL, aR);
     const double dry = 1 - smooth(0.2, 0.62, p);
     const double send = smooth(0.0, 0.35, p) * (1 - smooth(0.55, 0.7, p));
     const double feedback = 0.6 * (1 - smooth(0.78, 1.0, p));
@@ -285,7 +310,7 @@ void TransitionMixer::mixFrame(float bL, float bR, bool haveB, float &outL, floa
     break;
   }
   case TransitionEffect::FilterSweep: {
-    tailAt(double(m_tailStart + m_mixed), aL, aR);
+    tailAt(double(m_mixStart + frame), aL, aR);
     if (updateFilters) {
       m_lowA.lowpass(m_rate, 18000 * std::pow(250.0 / 18000.0, smooth(0, 0.85, p)), 1.05);
       m_highB.highpass(m_rate, 1800 * std::pow(25.0 / 1800.0, smooth(0.25, 0.95, p)), 0.707);
@@ -303,10 +328,10 @@ void TransitionMixer::mixFrame(float bL, float bR, bool haveB, float &outL, floa
     if (p < brakeEnd) {
       const double q = p / brakeEnd;
       const double speed = std::pow(1 - q, 1.6);
-      if (m_mixed == 0)
-        m_tailRead = double(m_tailStart);
-      tailAt(m_tailRead, aL, aR);
-      m_tailRead += speed;
+      if (frame == 0)
+        m_brakeRead = double(m_mixStart);
+      tailAt(m_brakeRead, aL, aR);
+      m_brakeRead += speed;
       if (updateFilters)
         m_lowA.lowpass(m_rate, 300 + 17700 * speed, 0.707);
       const double gA = 1 - smooth(0.75, 1.0, q);
@@ -323,7 +348,7 @@ void TransitionMixer::mixFrame(float bL, float bR, bool haveB, float &outL, floa
     break;
   }
   case TransitionEffect::ReverbWash: {
-    tailAt(double(m_tailStart + m_mixed), aL, aR);
+    tailAt(double(m_mixStart + frame), aL, aR);
     const double dry = 1 - smooth(0.15, 0.6, p);
     const double send = smooth(0.0, 0.4, p) * (1 - smooth(0.6, 0.75, p));
     const float feedback = float(0.86 * (1 - 0.35 * smooth(0.7, 1.0, p)));
@@ -361,12 +386,12 @@ void TransitionMixer::mixFrame(float bL, float bR, bool haveB, float &outL, floa
         stage = int64_t(i);
     const double length = lengths[size_t(stage)];
     if (stage == 0) {
-      tailAt(double(m_tailStart + m_mixed), aL, aR);
+      tailAt(double(m_mixStart + frame), aL, aR);
     } else if (length > 0) {
       if (stage != m_rollStage) {
         m_rollLength = std::max<int64_t>(64, int64_t(length * m_rate));
         if (m_rollStage <= 0)
-          m_rollStart = m_tailStart + m_mixed;
+          m_rollStart = m_mixStart + frame;
         m_rollStart = std::clamp<int64_t>(m_rollStart, 0, std::max<int64_t>(0, m_tailCount - m_rollLength));
         m_rollPhase = 0;
         m_rollStage = stage;
@@ -387,47 +412,63 @@ void TransitionMixer::mixFrame(float bL, float bR, bool haveB, float &outL, floa
   }
   if (!haveB)
     bL = bR = 0;
-  outL = soft(float(aL + bL * gB));
-  outR = soft(float(aR + bR * gB));
+  // Sem saturação: o limitador com antecipação cuida dos picos da soma.
+  outL = float(aL + bL * gB);
+  outR = float(aR + bR * gB);
 }
 
-size_t TransitionMixer::pull(float *out, size_t frames, bool padMissing) {
+size_t TransitionMixer::pull(float *out, size_t frames) {
   size_t produced = 0;
+  const float release = 1.f / float(m_rate / 12);  // ~80 ms
   while (produced < frames) {
-    if (m_state == State::Capturing) {
-      // Antes da mesclagem, A toca sem efeito enquanto o restante é lido.
-      if (int64_t(m_tailRead) >= m_tailCount)
+    if (m_state == State::Armed) {
+      if (m_tailPlayed >= m_mixStart) {
+        m_state = State::Mixing;
+        continue;
+      }
+      // Antes da mescla, A toca sem efeito do próprio buffer.
+      if (m_tailPlayed >= m_tailCount)
         break;
-      const auto i = size_t(int64_t(m_tailRead));
-      out[produced * 2] = m_tail[i * 2];
-      out[produced * 2 + 1] = m_tail[i * 2 + 1];
-      m_tailRead += 1;
+      out[produced * 2] = m_tail[size_t(m_tailPlayed * 2)];
+      out[produced * 2 + 1] = m_tail[size_t(m_tailPlayed * 2 + 1)];
+      ++m_tailPlayed;
       ++produced;
       continue;
     }
     if (m_state == State::Mixing) {
-      const bool haveB = m_fifoCount > 0;
-      if (!haveB && !padMissing)
-        break;
-      float bL = 0, bR = 0;
-      if (haveB) {
-        bL = m_fifo[m_fifoHead * 2];
-        bR = m_fifo[m_fifoHead * 2 + 1];
-        m_fifoHead = (m_fifoHead + 1) % kFifoFrames;
-        --m_fifoCount;
+      renderAhead(m_mixed + kLookBlocks * kBlock + 1);
+      if (m_mixed % kBlock == 0) {
+        // Desce o ganho a tempo do pico mais próximo; nunca acima do necessário.
+        float slope = 0;
+        for (int64_t b = 1; b <= kLookBlocks; ++b) {
+          const int64_t start = m_mixed + b * kBlock;
+          if (start >= m_rendered)
+            break;
+          const float need = m_blockNeed[size_t((start / kBlock) % (kRenderFrames / kBlock))];
+          if (need < m_gain)
+            slope = std::max(slope, (m_gain - need) / float(b * kBlock));
+        }
+        m_limiterSlope = slope;
       }
-      mixFrame(bL, bR, haveB, out[produced * 2], out[produced * 2 + 1]);
+      const float need = m_blockNeed[size_t((m_mixed / kBlock) % (kRenderFrames / kBlock))];
+      if (m_limiterSlope > 0)
+        m_gain -= m_limiterSlope;
+      else
+        m_gain += (1.f - m_gain) * release;
+      m_gain = std::min(m_gain, need);
+      const size_t slot = size_t(m_mixed % kRenderFrames);
+      out[produced * 2] = m_render[slot * 2] * m_gain;
+      out[produced * 2 + 1] = m_render[slot * 2 + 1] * m_gain;
       ++produced;
-      if (++m_mixed >= m_overlap)
+      if (++m_mixed >= m_overlap) {
+        m_tailPlayed = m_tailTarget;
         finishMixing();
+      }
       continue;
     }
     if (m_fifoCount == 0)
       break;
-    out[produced * 2] = m_fifo[m_fifoHead * 2];
-    out[produced * 2 + 1] = m_fifo[m_fifoHead * 2 + 1];
-    m_fifoHead = (m_fifoHead + 1) % kFifoFrames;
-    --m_fifoCount;
+    fifoPop(out[produced * 2], out[produced * 2 + 1]);
     ++produced;
   }
   return produced;

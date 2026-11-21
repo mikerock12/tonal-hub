@@ -16,9 +16,9 @@ extern "C" JNIEXPORT jlong JNICALL Java_app_tonal_android_TransitionNative_creat
 extern "C" JNIEXPORT void JNICALL Java_app_tonal_android_TransitionNative_destroy(JNIEnv *, jclass, jlong handle) {
   delete mixer(handle);
 }
-extern "C" JNIEXPORT jboolean JNICALL Java_app_tonal_android_TransitionNative_arm(JNIEnv *, jclass, jlong handle, jint effect, jlong tailFrames) {
+extern "C" JNIEXPORT jboolean JNICALL Java_app_tonal_android_TransitionNative_arm(JNIEnv *, jclass, jlong handle, jint effect, jlong upcomingFrames, jlong overlapFrames) {
   if (!handle || effect < 0 || effect >= tonal::playback::kTransitionEffectCount) return JNI_FALSE;
-  return mixer(handle)->arm(tonal::playback::TransitionEffect(effect), tailFrames) ? JNI_TRUE : JNI_FALSE;
+  return mixer(handle)->arm(tonal::playback::TransitionEffect(effect), upcomingFrames, overlapFrames) ? JNI_TRUE : JNI_FALSE;
 }
 extern "C" JNIEXPORT void JNICALL Java_app_tonal_android_TransitionNative_reset(JNIEnv *, jclass, jlong handle) {
   if (handle) mixer(handle)->reset();
@@ -26,13 +26,16 @@ extern "C" JNIEXPORT void JNICALL Java_app_tonal_android_TransitionNative_reset(
 extern "C" JNIEXPORT void JNICALL Java_app_tonal_android_TransitionNative_endCapture(JNIEnv *, jclass, jlong handle) {
   if (handle) mixer(handle)->endCapture();
 }
-// 0 parado, 1 lendo o fim da faixa, 2 mesclando, 3 esvaziando o FIFO.
+extern "C" JNIEXPORT jboolean JNICALL Java_app_tonal_android_TransitionNative_wantsInput(JNIEnv *, jclass, jlong handle) {
+  return handle && mixer(handle)->wantsInput() ? JNI_TRUE : JNI_FALSE;
+}
+// 0 parado, 1 armada (lendo A / aguardando a mescla), 2 mesclando, 3 só o atraso no FIFO.
 extern "C" JNIEXPORT jint JNICALL Java_app_tonal_android_TransitionNative_state(JNIEnv *, jclass, jlong handle) {
   if (!handle) return 0;
   auto *m = mixer(handle);
   if (!m->active()) return 0;
   switch (m->state()) {
-  case TransitionMixer::State::Capturing: return 1;
+  case TransitionMixer::State::Armed: return 1;
   case TransitionMixer::State::Mixing: return 2;
   default: return 3;
   }
@@ -45,20 +48,20 @@ extern "C" JNIEXPORT jint JNICALL Java_app_tonal_android_TransitionNative_push(J
   env->ReleaseFloatArrayElements(samples, data, JNI_ABORT);
   return jint(used * 2);
 }
-extern "C" JNIEXPORT jfloatArray JNICALL Java_app_tonal_android_TransitionNative_pull(JNIEnv *env, jclass, jlong handle, jint frames, jboolean pad) {
+extern "C" JNIEXPORT jfloatArray JNICALL Java_app_tonal_android_TransitionNative_pull(JNIEnv *env, jclass, jlong handle, jint frames) {
   if (!handle || frames <= 0) return env->NewFloatArray(0);
   std::vector<float> out(size_t(frames) * 2);
-  const size_t got = mixer(handle)->pull(out.data(), size_t(frames), pad == JNI_TRUE);
+  const size_t got = mixer(handle)->pull(out.data(), size_t(frames));
   jfloatArray result = env->NewFloatArray(jsize(got * 2));
   if (result && got) env->SetFloatArrayRegion(result, 0, jsize(got * 2), out.data());
   return result;
 }
-extern "C" JNIEXPORT jlong JNICALL Java_app_tonal_android_TransitionNative_buffered(JNIEnv *, jclass, jlong handle) {
-  return handle ? jlong(mixer(handle)->bufferedFrames()) : 0;
+extern "C" JNIEXPORT jlong JNICALL Java_app_tonal_android_TransitionNative_latency(JNIEnv *, jclass, jlong handle) {
+  return handle ? jlong(mixer(handle)->latencyFrames()) : 0;
 }
-extern "C" JNIEXPORT jlongArray JNICALL Java_app_tonal_android_TransitionNative_plan(JNIEnv *env, jclass, jint seconds, jlong duration, jlong remaining, jlong buffered) {
-  const auto plan = tonal::playback::planTransition(seconds, duration, remaining, buffered);
-  jlong values[3] = {plan.arm ? 1 : 0, plan.tailMs, plan.overlapMs};
+extern "C" JNIEXPORT jlongArray JNICALL Java_app_tonal_android_TransitionNative_plan(JNIEnv *env, jclass, jint seconds, jlong duration, jlong audible, jlong upcoming) {
+  const auto plan = tonal::playback::planTransition(seconds, duration, audible, upcoming);
+  jlong values[3] = {plan.arm ? 1 : 0, plan.upcomingMs, plan.overlapMs};
   jlongArray result = env->NewLongArray(3);
   if (result) env->SetLongArrayRegion(result, 0, 3, values);
   return result;

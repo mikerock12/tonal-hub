@@ -85,7 +85,7 @@ App::App(QObject *parent)
         m_music->stories()->setPlaying(m_player->isPlaying()&&m_player->playingHere());
         const auto frames=m_audio->spotifyFramesRead();
         const bool actual=m_player->localPlayback()?m_audio->localPlaying():frames!=lastFrames;
-        m_music->pulse(m_player->isPlaying()&&m_player->playingHere()&&actual,m_player->positionMs());lastFrames=frames;
+        m_music->pulse(m_player->isPlaying()&&m_player->playingHere()&&actual,m_player->displayPositionMs());lastFrames=frames;
     });historyTimer->start();
     connect(m_music,&MusicCompanion::seekRequested,m_player,&Player::seek);
     connect(m_music,&MusicCompanion::queueRequested,this,[this](const QVariantList &tracks,int index) {

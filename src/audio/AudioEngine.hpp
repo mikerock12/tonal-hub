@@ -7,6 +7,8 @@
 #include <memory>
 #include <mutex>
 #include <thread>
+#include <utility>
+#include <vector>
 namespace tonal::audio {
 class NativePcmPipe;
 class AudioEngine : public QObject {
@@ -67,8 +69,13 @@ public:
   uint64_t spotifyFramesRead() const { return m_spotifyFrames.load(); }
   // Transições da fila: só com o PCM do Tonalify passando por este motor.
   bool spotifyPipeActive() const { std::lock_guard lock(m_mutex); return m_pipe != nullptr && !m_failed; }
-  // `remainingMs`: tempo audível que falta da faixa atual.
-  void armTransition(int effect, int remainingMs);
+  // `upcomingMs`: quanto da faixa atual o librespot ainda não entregou.
+  void armTransition(int effect, int upcomingMs, int overlapMs);
+  // Áudio entregue pelo motor e ainda não tocado (pré-rolagem das transições).
+  int transitionLatencyMs() const { return m_transitionLatencyMs.load(); }
+  // O volume do Spotify é aplicado no librespot, antes do buffer: durante o
+  // atraso da pré-rolagem o motor compensa para a mudança soar na hora.
+  void noteSpotifyVolumeChange(int fromPercent, int toPercent);
   void cancelTransition();
   // 0 parado, 1 lendo o fim da faixa, 2 mesclando.
   int transitionState() const { return m_transitionState.load(); }
@@ -105,7 +112,9 @@ private:
   std::atomic<bool> m_quit{false};
   std::atomic<bool> m_visualizer{false};
   std::atomic<uint64_t> m_spotifyFrames{0};
-  int m_transitionEffect = -1, m_transitionRemainingMs = 0;
+  int m_transitionEffect = -1, m_transitionUpcomingMs = 0, m_transitionOverlapMs = 0;
+  std::vector<std::pair<int, int>> m_volumeNotes;
+  std::atomic<int> m_transitionLatencyMs{0};
   bool m_transitionCancel = false;
   std::atomic<int> m_transitionState{0};
   std::atomic<bool> m_transitionCancelPending{false};

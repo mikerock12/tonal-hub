@@ -40,35 +40,46 @@ final class AudioSelfTest {
         JSONObject report=new JSONObject();AudioOutput out=new AudioOutput();out.initialize(context,"transition-test");
         try{
             out.startStereo(44100);
-            float[] a=new float[44100*2*5],b=new float[44100*2*8];
-            for(int f=0;f<44100*5;f++){float v=(float)(.4*Math.sin(2*Math.PI*440*f/44100.));a[f*2]=v;a[f*2+1]=v;}
-            for(int f=0;f<44100*8;f++){float v=(float)(.4*Math.sin(2*Math.PI*660*f/44100.));b[f*2]=v;b[f*2+1]=v;}
-            int packet=4096,head=44100*2*2;
+            float[] a=new float[44100*2*12],b=new float[44100*2*12];
+            for(int f=0;f<44100*12;f++){float v=(float)(.4*Math.sin(2*Math.PI*440*f/44100.));a[f*2]=v;a[f*2+1]=v;}
+            for(int f=0;f<44100*12;f++){float v=(float)(.4*Math.sin(2*Math.PI*660*f/44100.));b[f*2]=v;b[f*2+1]=v;}
+            int packet=4096,head=44100*2*6;
+            // A toca direto até faltarem 6 s (mescla 3 s + pré-rolagem 2,5 s + folga).
             for(int i=0;i<head;i+=packet)out.write(Arrays.copyOfRange(a,i,Math.min(head,i+packet)));
             int before=out.underruns();
-            for(int effect=0;effect<2;effect++){
-                require(out.armTransition(effect==0?0:2,3000),"armar transição "+effect);
-                long start=System.nanoTime();
-                for(int i=head;i<a.length;i+=packet)out.write(Arrays.copyOfRange(a,i,Math.min(a.length,i+packet)));
-                long captureMs=(System.nanoTime()-start)/1_000_000;
-                require(captureMs<1500,"leitura adiantada bloqueou: "+captureMs+" ms para 3 s de áudio");
-                require(out.transitionState()==2,"mescla não começou: "+out.transitionState());
-                start=System.nanoTime();
-                for(int i=0;i<b.length;i+=packet)out.write(Arrays.copyOfRange(b,i,Math.min(b.length,i+packet)));
-                long mixMs=(System.nanoTime()-start)/1_000_000;
-                require(out.transitionState()==0,"mescla não terminou");
-                report.put("effect"+effect+"CaptureMs",captureMs).put("effect"+effect+"PlaybackMs",mixMs);
-            }
-            // Sem a próxima faixa: o motor fecha o sink e o fim lido toca sozinho.
-            require(out.armTransition(4,3000),"armar transição sem próxima");
+            require(out.armTransition(0,6000,3000),"armar a primeira transição");
+            long start=System.nanoTime();
             for(int i=head;i<a.length;i+=packet)out.write(Arrays.copyOfRange(a,i,Math.min(a.length,i+packet)));
-            require(out.drainTransition(),"drenagem recusada");
+            long captureMs=(System.nanoTime()-start)/1_000_000;
+            require(captureMs<1000,"leitura adiantada bloqueou: "+captureMs+" ms para 6 s de áudio");
+            // O motor demora para começar B: a saída não pode parar nem a mescla começar antes.
+            Thread.sleep(1000);
+            require(out.transitionState()==1,"a mescla começou antes do ponto: "+out.transitionState());
+            start=System.nanoTime();
+            for(int i=0;i<b.length;i+=packet)out.write(Arrays.copyOfRange(b,i,Math.min(b.length,i+packet)));
+            long bMs=(System.nanoTime()-start)/1_000_000;
+            int latency=out.transitionLatencyMs();
+            require(out.transitionState()==3&&latency>=2000&&latency<=3200,"pré-rolagem depois da mescla: "+out.transitionState()+" "+latency+" ms");
+            report.put("captureMs",captureMs).put("bWriteMs",bMs).put("latencyAfterMixMs",latency);
+            // Segunda transição com o atraso da primeira no buffer: o fim de B já está guardado.
+            require(out.armTransition(2,0,2000),"armar com o atraso da anterior");
+            start=System.nanoTime();
+            for(int i=0;i<a.length;i+=packet)out.write(Arrays.copyOfRange(a,i,Math.min(a.length,i+packet)));
+            int latency2=out.transitionLatencyMs();
+            require(out.transitionState()==3&&latency2>=2000&&latency2<=3200,"segunda transição: "+out.transitionState()+" "+latency2+" ms");
+            report.put("secondWriteMs",(System.nanoTime()-start)/1_000_000).put("latencyAfterSecondMs",latency2);
+            // Sem a próxima faixa: o motor fecha o sink e o fim lido toca sozinho.
+            out.cancelTransition();
+            require(out.armTransition(4,4000,2000),"armar transição sem próxima");
+            float[] tail=Arrays.copyOfRange(b,0,44100*2*3);
+            for(int i=0;i<tail.length;i+=packet)out.write(Arrays.copyOfRange(tail,i,Math.min(tail.length,i+packet)));
+            require(out.continuesThroughEngineStop(),"fim natural recusado");
             long until=android.os.SystemClock.elapsedRealtime()+8000;
             while(out.transitionState()!=0&&android.os.SystemClock.elapsedRealtime()<until)Thread.sleep(50);
-            require(out.transitionState()==0,"drenagem não terminou");
+            require(out.transitionState()==0,"o fim lido não terminou");
             // Cancelar descarta o que foi lido e volta ao caminho direto.
-            require(out.armTransition(5,3000),"armar para cancelar");out.write(Arrays.copyOfRange(a,head,head+packet*8));out.cancelTransition();
-            require(out.transitionState()==0,"cancelar manteve a transição");out.write(Arrays.copyOfRange(b,0,packet));
+            require(out.armTransition(5,4000,2000),"armar para cancelar");out.write(Arrays.copyOfRange(b,0,packet*8));out.cancelTransition();
+            require(out.transitionState()==0&&out.transitionLatencyMs()==0,"cancelar manteve a transição");out.write(Arrays.copyOfRange(b,0,packet));
             report.put("underruns",out.underruns()-before).put("pass",true);
         }finally{out.release();}
         return report;

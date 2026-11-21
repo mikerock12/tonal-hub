@@ -1,6 +1,8 @@
 # Contexto do Tonal Hub
 
-Atualizado em **20/11/2026**. Versão de trabalho **Windows e Android 0.17.0**, versionCode 42.
+Atualizado em **20/11/2026**. Versão de trabalho **Windows e Android 0.17.1**, versionCode 43.
+
+0.17.1: o usuário relatou travamento, transição e pausa antes da próxima. Corrigido com leitura antecipada de A e de 2,5 s de B, saída independente do motor e limitador com antecipação. Ver a seção 0.17.1 de [TRANSITIONS_0170.md](docs/TRANSITIONS_0170.md).
 
 ## Transições, próxima da fila e cabeçalho da letra 0.17.0
 

@@ -10,6 +10,8 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
+**0.17.1 — Transições fluidas:** o fim da música atual e o começo da próxima ficam no buffer antes da mescla, sem travar nem pausar.
+
 **0.17.0 — Transições de DJ entre as músicas da fila.**
 
 Ligue **Transições** e escolha um efeito fixo ou Aleatório: Fade cruzado, Eco

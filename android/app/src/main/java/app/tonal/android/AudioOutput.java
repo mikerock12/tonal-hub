@@ -152,98 +152,87 @@ final class AudioOutput {
     }
 
     // ------------------------------------------------------------ transições
-    // O mixer C++ guarda o fim da faixa A lido adiantado e o mescla com o
-    // começo de B. Enquanto lê A, a escrita não bloqueia, para o motor
-    // decodificar mais rápido que o tempo real; na mescla volta a ser 1:1.
-    private final Object mixLock=new Object(),writeLock=new Object();
+    // Desde a 0.17.1 a transição tem saída própria: o motor só entrega PCM ao
+    // mixer C++ (lê o fim de A e o começo de B com antecedência, sem bloquear
+    // até o limite do buffer) e esta thread toca o que o mixer produz. Assim o
+    // fim de A continua soando enquanto o motor carrega a próxima faixa, e a
+    // mescla já encontra B guardada. Depois da mescla a pré-rolagem de B fica
+    // como um atraso constante (transitionLatencyMs), descontado na interface.
+    private final Object mixLock=new Object();
     private long mixer;
     private volatile boolean mixActive;
-    private volatile Thread drainer;
-    private volatile long inputSerial;
-    private float[] pendingOut;private int pendingOffset;
-    private volatile boolean dropPending;
-    boolean armTransition(int effect,long remainingMs){
+    private volatile int latencyFrames;
+    private Thread writer;
+    boolean armTransition(int effect,long upcomingMs,long overlapMs){
         if(!TransitionNative.READY)return false;
         synchronized(this){if(track==null||channels!=2||localSource||paused)return false;}
         synchronized(mixLock){
             if(mixer==0)mixer=TransitionNative.create(rate);
             if(mixer==0)return false;
-            boolean armed=TransitionNative.arm(mixer,effect,remainingMs*rate/1000);
-            if(armed)mixActive=true;
-            return armed;
+            if(!TransitionNative.arm(mixer,effect,upcomingMs*rate/1000,overlapMs*rate/1000))return false;
+            mixActive=true;latencyFrames=(int)TransitionNative.latency(mixer);
+            if(writer==null||!writer.isAlive()){writer=new Thread(this::writerLoop,"TonalTransitionOut");writer.start();}
+            mixLock.notifyAll();
+            return true;
         }
     }
     void cancelTransition(){
-        synchronized(mixLock){if(mixer!=0)TransitionNative.reset(mixer);mixActive=false;dropPending=true;}
-        Thread running=drainer;if(running!=null)running.interrupt();
+        synchronized(mixLock){if(mixer!=0)TransitionNative.reset(mixer);mixActive=false;latencyFrames=0;mixLock.notifyAll();}
     }
-    int transitionState(){synchronized(mixLock){return mixer==0?0:TransitionNative.state(mixer);}}
+    int transitionState(){synchronized(mixLock){return mixer==0||!mixActive?0:TransitionNative.state(mixer);}}
+    /** Áudio já entregue pelo motor e ainda não tocado por causa da transição. */
+    int transitionLatencyMs(){return mixActive?(int)(latencyFrames*1000L/Math.max(1,rate)):0;}
+    /** Motor parou de entregar no fim natural: a transição continua tocando o que já leu. */
+    boolean continuesThroughEngineStop(){
+        if(!mixActive)return false;
+        synchronized(mixLock){if(mixer!=0)TransitionNative.endCapture(mixer);mixLock.notifyAll();}
+        return true;
+    }
     private void writeTransition(float[] samples){
-        inputSerial++;
-        synchronized(writeLock){
-            if(dropPending){pendingOut=null;dropPending=false;}
-            int off=0;
-            while(true){
-                float[] chunk=null;int state;
-                synchronized(mixLock){
-                    if(mixer==0){mixActive=false;state=0;}
-                    else{
-                        while(off<samples.length){int used=TransitionNative.push(mixer,samples,off,samples.length-off);if(used<=0)break;off+=used;}
-                        state=TransitionNative.state(mixer);
-                        if(pendingOut==null&&state!=0)chunk=TransitionNative.pull(mixer,2048,false);
-                    }
-                }
-                if(pendingOut!=null){
-                    boolean blocking=state!=1;
-                    pendingOffset+=output(pendingOut,pendingOffset,blocking);
-                    if(pendingOffset>=pendingOut.length)pendingOut=null;
-                    else if(!blocking)return; // buffer cheio: deixa o motor entregar mais do fim de A
+        int off=0;
+        synchronized(mixLock){
+            // Bloqueia o motor só quando o buffer atinge o limite (pré-rolagem de B).
+            while(off<samples.length&&mixActive&&mixer!=0){
+                if(!TransitionNative.wantsInput(mixer)){
+                    try{mixLock.wait(50);}catch(InterruptedException interrupted){Thread.currentThread().interrupt();break;}
                     continue;
                 }
-                if(chunk!=null&&chunk.length>0){float[] rendered=render(chunk);if(rendered==null)return;pendingOut=rendered;pendingOffset=0;continue;}
-                if(state==0){
-                    mixActive=false;
-                    if(off<samples.length){float[] rest=java.util.Arrays.copyOfRange(samples,off,samples.length);float[] rendered=render(rest);if(rendered!=null)output(rendered,0,true);}
-                    return;
-                }
-                return; // aguardando mais PCM do motor
+                int used=TransitionNative.push(mixer,samples,off,samples.length-off);
+                if(used<=0)break;
+                off+=used;latencyFrames=(int)TransitionNative.latency(mixer);
+                mixLock.notifyAll();
             }
         }
+        if(off<samples.length){
+            // Transição cancelada ou encerrada: o restante segue pelo caminho direto.
+            float[] rest=off==0?samples:java.util.Arrays.copyOfRange(samples,off,samples.length);
+            float[] rendered=render(rest);if(rendered!=null)output(rendered,0,true);
+        }
     }
-    /** O motor fechou o sink no fim natural: toca o restante de A (e mescla com B se chegar). */
-    boolean drainTransition(){
-        if(!mixActive)return false;
-        synchronized(this){if(track==null||paused)return false;}
-        if(drainer!=null)return true;
-        final long serial=inputSerial;
-        synchronized(mixLock){if(mixer!=0)TransitionNative.endCapture(mixer);}
-        Thread worker=new Thread(()->{
-            boolean finished=false;
-            try{
-                android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);
-                while(!Thread.currentThread().isInterrupted()&&serial==inputSerial){
-                    synchronized(this){if(paused||track==null)break;}
-                    boolean wrote=false;
-                    synchronized(writeLock){
-                        if(serial!=inputSerial)break;
-                        if(dropPending){pendingOut=null;dropPending=false;}
-                        if(pendingOut==null){
-                            float[] chunk;int state;
-                            synchronized(mixLock){state=mixer==0?0:TransitionNative.state(mixer);chunk=state==0?null:TransitionNative.pull(mixer,1024,true);}
-                            if(chunk==null||chunk.length==0){synchronized(mixLock){if(mixer!=0&&TransitionNative.state(mixer)!=3)TransitionNative.reset(mixer);}mixActive=false;finished=true;break;}
-                            pendingOut=render(chunk);pendingOffset=0;if(pendingOut==null)break;
-                        }
-                        int n=output(pendingOut,pendingOffset,false);pendingOffset+=n;wrote=n>0;
-                        if(pendingOffset>=pendingOut.length)pendingOut=null;
-                    }
-                    if(!wrote)Thread.sleep(5);
-                }
-            }catch(InterruptedException ignored){}
-            finally{drainer=null;}
-            if(finished&&serial==inputSerial&&this==NativeBridge.audio)NativeBridge.onTransitionDrained();
-        },"TonalTransitionDrain");
-        drainer=worker;worker.start();
-        return true;
+    private void writerLoop(){
+        try{android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);}catch(SecurityException ignored){}
+        boolean drained=false;
+        while(true){
+            float[] chunk;
+            synchronized(mixLock){
+                if(!mixActive||mixer==0)break;
+                chunk=TransitionNative.pull(mixer,1024);
+                latencyFrames=(int)TransitionNative.latency(mixer);
+                if(chunk.length==0&&TransitionNative.state(mixer)==0){mixActive=false;latencyFrames=0;drained=true;mixLock.notifyAll();break;}
+                mixLock.notifyAll();
+                if(chunk.length==0){try{mixLock.wait(4);}catch(InterruptedException interrupted){break;}continue;}
+            }
+            float[] rendered=render(chunk);
+            if(rendered==null)continue;
+            // Sem bloquear: pausa ou cancelamento nunca prendem esta thread num write.
+            int off=0;
+            while(off<rendered.length&&mixActive){
+                int n=output(rendered,off,false);off+=n;
+                if(n==0)try{Thread.sleep(2);}catch(InterruptedException interrupted){break;}
+            }
+        }
+        synchronized(mixLock){if(Thread.currentThread()==writer)writer=null;}
+        if(drained&&this==NativeBridge.audio)NativeBridge.onTransitionDrained();
     }
     synchronized void pause(){
         if(track==null||paused)return;paused=true;int serial=++transition;lastTransition=SystemClock.elapsedRealtime();
