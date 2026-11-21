@@ -20,7 +20,20 @@ double smooth(double from, double to, double x) {
 }
 constexpr std::array<std::string_view, kTransitionEffectCount> kIds{
     "fade", "echo", "filter", "brake", "reverb", "roll"};
+constexpr std::array<std::string_view, 5> kPhases{"idle", "armed", "mixing", "completed", "aborted"};
+constexpr std::array<std::string_view, 7> kReasons{
+    "none", "busy", "invalid-request", "buffer-capacity", "no-exact-boundary", "next-not-prepared", "cancelled"};
 } // namespace
+
+std::string_view transitionPhaseId(TransitionPhase phase) {
+  const auto index = size_t(phase);
+  return index < kPhases.size() ? kPhases[index] : std::string_view{};
+}
+
+std::string_view transitionReasonId(TransitionReason reason) {
+  const auto index = size_t(reason);
+  return index < kReasons.size() ? kReasons[index] : std::string_view{};
+}
 
 std::string_view transitionEffectId(TransitionEffect effect) {
   const int index = int(effect);
@@ -106,6 +119,7 @@ void TransitionMixer::setSampleRate(int sampleRate) {
     return;
   }
   m_rate = sampleRate;
+  m_rampFrames = std::max<int64_t>(1, std::llround(m_rate * 0.010));
   m_tail.assign(size_t(kTailSeconds) * size_t(m_rate) * 2, 0.f);
   m_fifoLimit = size_t(int64_t(m_rate) * kTransitionPrerollMs / 1000);
   m_fifoCapacity = m_fifoLimit + 16384;
@@ -148,6 +162,8 @@ void TransitionMixer::clearEffects() {
 }
 
 void TransitionMixer::reset() {
+  if (m_state != State::Idle && m_trace.phase != TransitionPhase::Aborted)
+    abort(TransitionReason::Cancelled);
   finishMixing();
   m_fifoHead = m_fifoCount = 0;
   clearEffects();
@@ -163,6 +179,18 @@ void TransitionMixer::finishMixing() {
   m_limiterSlope = 0;
 }
 
+void TransitionMixer::abort(TransitionReason reason) {
+  m_trace.phase = TransitionPhase::Aborted;
+  m_trace.reason = reason;
+}
+
+bool TransitionMixer::bReady() const {
+  // O começo de B que a mescla usa logo de saída já está guardado.
+  const int64_t ready = int64_t(m_rate) * kTransitionReadyMs / 1000;
+  const int64_t need = std::max<int64_t>(1, std::min(m_intro, ready));
+  return int64_t(m_fifoCount) >= need || m_fifoCount >= m_fifoLimit;
+}
+
 void TransitionMixer::fifoPop(float &l, float &r) {
   l = m_fifo[m_fifoHead * 2];
   r = m_fifo[m_fifoHead * 2 + 1];
@@ -171,14 +199,31 @@ void TransitionMixer::fifoPop(float &l, float &r) {
 }
 
 bool TransitionMixer::arm(TransitionEffect effect, int64_t upcomingFrames, int64_t outroFrames,
-                          int64_t introFrames, bool exactBoundary) {
-  if (m_state != State::Idle || int(effect) < 0 || int(effect) >= kTransitionEffectCount ||
-      upcomingFrames < 0 || outroFrames <= 0 || introFrames <= 0)
+                          int64_t introFrames, bool exactBoundary, uint64_t id) {
+  if (m_state != State::Idle) {
+    m_rejection = TransitionReason::Busy;
     return false;
+  }
+  if (int(effect) < 0 || int(effect) >= kTransitionEffectCount || upcomingFrames < 0 || outroFrames <= 0 ||
+      introFrames <= 0) {
+    m_rejection = TransitionReason::InvalidRequest;
+    return false;
+  }
   const int64_t capacity = int64_t(m_tail.size() / 2);
   const int64_t total = int64_t(m_fifoCount) + upcomingFrames;
-  if (exactBoundary ? int64_t(m_fifoCount) >= capacity - m_rate : total < m_rate / 2 || total > capacity)
+  if (exactBoundary ? int64_t(m_fifoCount) >= capacity - m_rate : total < m_rate / 2 || total > capacity) {
+    m_rejection = TransitionReason::BufferCapacity;
     return false;
+  }
+  m_rejection = TransitionReason::None;
+  m_trace = {};
+  m_trace.id = id;
+  m_trace.phase = TransitionPhase::Armed;
+  m_trace.effect = int(effect);
+  m_trace.sampleRate = m_rate;
+  m_trace.exactBoundary = exactBoundary;
+  m_trace.configuredOutro = outroFrames;
+  m_trace.configuredIntro = introFrames;
   clearEffects();
   // O FIFO guarda A já entregue e ainda não tocada: vira o começo do buffer.
   int64_t count = 0;
@@ -211,6 +256,9 @@ void TransitionMixer::placeRegion(int64_t end) {
   m_intro = std::min(m_introWanted, m_overlap);
   m_effect = m_overlap < m_rate / 4 ? TransitionEffect::Fade : m_effectWanted;
   m_mixStart = end - m_overlap;
+  m_trace.outro = m_outro;
+  m_trace.intro = m_intro;
+  m_trace.overlap = m_overlap;
 }
 
 void TransitionMixer::boundary() {
@@ -219,6 +267,7 @@ void TransitionMixer::boundary() {
     return;
   m_waitBoundary = false;
   m_tailTarget = m_tailCount;
+  m_trace.boundaryFrame = m_tailCount;
   placeRegion(m_tailTarget);
 }
 
@@ -229,6 +278,16 @@ void TransitionMixer::endCapture() {
   m_tailTarget = m_tailCount;
   if (m_state == State::Armed)
     placeRegion(m_tailTarget);
+}
+
+void TransitionMixer::resumeCapture() {
+  if (m_state != State::Armed || m_trace.boundaryFrame >= 0 || m_trace.phase != TransitionPhase::Armed)
+    return;
+  m_waitBoundary = true;
+  m_tailTarget = int64_t(m_tail.size() / 2);
+  m_outroWanted = m_trace.configuredOutro;
+  m_introWanted = m_trace.configuredIntro;
+  placeRegion(m_tailTarget);
 }
 
 bool TransitionMixer::wantsInput() const {
@@ -250,6 +309,7 @@ size_t TransitionMixer::push(const float *in, size_t frames) {
       m_waitBoundary = false;
       m_outroWanted = m_introWanted = 0;
       placeRegion(m_tailTarget);
+      abort(TransitionReason::NoExactBoundary);
     }
   }
   while (used < frames && m_fifoCount < m_fifoCapacity) {
@@ -294,9 +354,14 @@ void TransitionMixer::renderAhead(int64_t until) {
   while (m_rendered < until) {
     float bL = 0, bR = 0;
     // B entra `intro` antes do fim de A; antes disso ela espera no FIFO.
-    const bool haveB = m_rendered >= bStart && m_fifoCount > 0;
-    if (haveB)
+    const bool wantB = m_rendered >= bStart;
+    const bool haveB = wantB && m_fifoCount > 0;
+    if (haveB) {
       fifoPop(bL, bR);
+      ++m_trace.bFrames;
+    } else if (wantB) {
+      ++m_trace.missingBFrames;  // motor atrasou B no meio da mescla
+    }
     float l, r;
     mixFrame(bL, bR, haveB, l, r);
     const size_t slot = size_t(m_rendered % kRenderFrames);
@@ -460,13 +525,16 @@ void TransitionMixer::mixFrame(float bL, float bR, bool haveB, float &outL, floa
   }
   if (!haveB) {
     bL = bR = 0;
-  } else if (t - bStart < 441) {
+  } else if (t - bStart < m_rampFrames) {
     // Rampa de 10 ms na entrada de B: nunca começa com um degrau.
-    gB *= double(t - bStart + 1) / 441.0;
+    gB *= double(t - bStart + 1) / double(m_rampFrames);
   }
+  const double wetL = bL * gB, wetR = bR * gB;
+  m_trace.energyA += double(aL) * aL + double(aR) * aR;
+  m_trace.energyB += wetL * wetL + wetR * wetR;
   // Sem saturação: o limitador com antecipação cuida dos picos da soma.
-  outL = float(aL + bL * gB);
-  outR = float(aR + bR * gB);
+  outL = float(aL + wetL);
+  outR = float(aR + wetR);
 }
 
 size_t TransitionMixer::pull(float *out, size_t frames) {
@@ -480,7 +548,28 @@ size_t TransitionMixer::pull(float *out, size_t frames) {
           finishMixing();  // sem região: A acabou, B segue do FIFO
           continue;
         }
-        m_state = State::Mixing;
+        if (bReady()) {
+          m_trace.phase = TransitionPhase::Mixing;
+          m_trace.preparedB = int64_t(m_fifoCount);
+          m_state = State::Mixing;
+          continue;
+        }
+        // B ainda não chegou: A segue sem efeito e a região encolhe (continua
+        // terminando no último quadro de A). Sem o mínimo, troca normal.
+        if (m_tailTarget - m_tailPlayed < int64_t(m_rate) * kTransitionMinOverlapMs / 1000) {
+          m_outroWanted = m_introWanted = 0;
+          placeRegion(m_tailTarget);
+          abort(TransitionReason::NextNotPrepared);
+          continue;
+        }
+        if (m_tailPlayed >= m_tailCount)
+          break;
+        out[produced * 2] = m_tail[size_t(m_tailPlayed * 2)];
+        out[produced * 2 + 1] = m_tail[size_t(m_tailPlayed * 2 + 1)];
+        ++m_tailPlayed;
+        ++produced;
+        ++m_trace.waitedFrames;
+        placeRegion(m_tailTarget);
         continue;
       }
       // Antes da mescla, A toca sem efeito do próprio buffer.
@@ -517,8 +606,10 @@ size_t TransitionMixer::pull(float *out, size_t frames) {
       out[produced * 2] = m_render[slot * 2] * m_gain;
       out[produced * 2 + 1] = m_render[slot * 2 + 1] * m_gain;
       ++produced;
-      if (++m_mixed >= m_overlap) {
+      m_trace.mixedFrames = ++m_mixed;
+      if (m_mixed >= m_overlap) {
         m_tailPlayed = m_tailTarget;
+        m_trace.phase = TransitionPhase::Completed;
         finishMixing();
       }
       continue;

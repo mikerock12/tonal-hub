@@ -18,6 +18,11 @@
 // posição, e há duas durações: `outro` (fim de A com o efeito) e `intro`
 // (quanto do começo de B entra por baixo de A). A região da mescla é a maior
 // das duas e termina exatamente no último quadro de A.
+// Desde a 0.17.4 a mescla só começa com o começo de B realmente guardado
+// (kTransitionReadyMs, ou toda a entrada se ela for menor). Sem B a tempo, A
+// continua sem efeito e a região encolhe; se não sobrar o mínimo, a troca é
+// normal, sem efeito, com o motivo registrado em trace(). Nunca A com efeito
+// sobre silêncio no lugar de B.
 // Buffers reservados no construtor; push/pull não alocam. Sem rede, banco ou UI.
 #include <array>
 #include <cstddef>
@@ -42,6 +47,45 @@ constexpr int kTransitionMinSeconds = 3;
 constexpr int kTransitionMaxSeconds = 10;
 // Quanto do começo de B fica guardado antes da mescla começar.
 constexpr int kTransitionPrerollMs = 2500;
+// Quanto de B precisa estar guardado para a mescla começar.
+constexpr int kTransitionReadyMs = 1000;
+// Mescla mais curta que isso não vale o efeito: troca normal.
+constexpr int kTransitionMinOverlapMs = 1500;
+
+// Fases e motivos registrados em trace(). Valores estáveis (JNI e relatórios).
+enum class TransitionPhase : int { Idle = 0, Armed, Mixing, Completed, Aborted };
+enum class TransitionReason : int {
+  None = 0,
+  Busy,              // já havia uma transição armada ou em mescla
+  InvalidRequest,    // efeito ou tempos inválidos
+  BufferCapacity,    // o fim de A não cabe no buffer
+  NoExactBoundary,   // o buffer encheu sem o marcador de começo de B
+  NextNotPrepared,   // B não chegou a tempo de uma mescla mínima
+  Cancelled,         // seek, pulo, seleção, troca de aparelho ou fim da sessão
+};
+std::string_view transitionPhaseId(TransitionPhase phase);
+std::string_view transitionReasonId(TransitionReason reason);
+
+// O que cada transição realmente fez, em quadros. Sem dados pessoais.
+struct TransitionTrace {
+  uint64_t id = 0;
+  TransitionPhase phase = TransitionPhase::Idle;
+  TransitionReason reason = TransitionReason::None;
+  int effect = -1;
+  int sampleRate = 0;
+  bool exactBoundary = false;
+  int64_t configuredOutro = 0, configuredIntro = 0;  // pedidos
+  int64_t outro = 0, intro = 0, overlap = 0;          // efetivos na mescla
+  int64_t boundaryFrame = -1;  // quadros de A lidos até o marcador
+  int64_t preparedB = 0;       // B guardada quando a mescla começou
+  int64_t waitedFrames = 0;    // A tocada sem efeito esperando B
+  int64_t mixedFrames = 0;     // quadros da mescla tocados
+  int64_t bFrames = 0;         // quadros da mescla com B
+  int64_t missingBFrames = 0;  // quadros em que B deveria soar e faltou
+  double energyA = 0, energyB = 0;  // soma dos quadrados de A (com efeito) e B (com ganho)
+  // A e B soaram juntas na mescla.
+  bool overlapVerified() const { return bFrames > 0 && energyB > 0 && energyA > 0; }
+};
 
 std::string_view transitionEffectId(TransitionEffect effect);
 // Retorna Count quando o identificador é desconhecido.
@@ -75,14 +119,19 @@ public:
   // que já está no FIFO (atraso de uma transição anterior) também é de A.
   // Com `exactBoundary` o fim de A é o próximo boundary() (a estimativa só
   // serve de referência); sem ele, A termina em FIFO + upcomingFrames.
+  // Retorna false com o motivo em trace(); `id` identifica o pedido no trace.
   bool arm(TransitionEffect effect, int64_t upcomingFrames, int64_t outroFrames, int64_t introFrames,
-           bool exactBoundary = false);
+           bool exactBoundary = false, uint64_t id = 0);
   // O motor começou outra faixa: o próximo quadro de push() já é de B.
   void boundary();
   // Seek, troca de faixa pelo usuário, flush ou nova sessão: descarta tudo.
   void reset();
   // O motor terminou A antes do previsto: A acaba no que já foi lido.
   void endCapture();
+  // O motor retomou a MESMA faixa depois de um endCapture() (recuperação de
+  // buffering, marcador com posição > 0): A continua sendo lida e o fim volta
+  // a ser o próximo boundary(). Sem efeito depois que a mescla começou.
+  void resumeCapture();
   bool waitingBoundary() const { return m_waitBoundary; }
 
   State state() const { return m_state; }
@@ -92,9 +141,13 @@ public:
   bool wantsInput() const;
   // Aceita até `frames` quadros; retorna quantos guardou.
   size_t push(const float *interleaved, size_t frames);
-  // Produz até `frames` quadros. Antes da mescla toca A do buffer; na mescla
-  // nunca para (sem B a tempo usa silêncio no lugar dela, sem consumi-la).
+  // Produz até `frames` quadros. Antes da mescla toca A do buffer; a mescla
+  // só começa com B guardada. Se o motor atrasar B no meio da mescla, a saída
+  // não para (o quadro sai sem B, que continua guardada) e trace() conta a falta.
   size_t pull(float *out, size_t frames);
+  const TransitionTrace &trace() const { return m_trace; }
+  // Motivo do último arm() recusado (o trace da transição em curso não muda).
+  TransitionReason lastRejection() const { return m_rejection; }
   // Áudio já entregue pelo motor e ainda não tocado.
   size_t latencyFrames() const;
   TransitionEffect effect() const { return m_effect; }
@@ -124,6 +177,8 @@ private:
   };
 
   void finishMixing();
+  void abort(TransitionReason reason);
+  bool bReady() const;
   void placeRegion(int64_t end);
   void renderAhead(int64_t until);
   void mixFrame(float bL, float bR, bool haveB, float &outL, float &outR);
@@ -132,7 +187,10 @@ private:
   void fifoPop(float &l, float &r);
 
   int m_rate = 44100;
+  int64_t m_rampFrames = 441;  // 10 ms na entrada de B
   State m_state = State::Idle;
+  TransitionTrace m_trace;
+  TransitionReason m_rejection = TransitionReason::None;
   TransitionEffect m_effect = TransitionEffect::Fade, m_effectWanted = TransitionEffect::Fade;
 
   std::vector<float> m_tail;  // A ainda não tocada (FIFO anterior + restante)
