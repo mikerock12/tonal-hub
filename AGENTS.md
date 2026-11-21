@@ -563,6 +563,11 @@ docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no
   da próxima na mescla (`transitionIntroSeconds` / `transitionIntroSeconds`
   nas prefs). Ambas terminam no último quadro de A. versionCode 44.
 - Sem teste com Spotify real, aparelho físico ou medição acústica.
+- Entrega 0.17.3 (21/11/2026): PR59 merge 8ac31be (CI 5/5), release v0.17.3
+  com Windows e APKs, portal PR76 merge 012f1e2 (Worker 4f98344b, sem fixação
+  do APK), backup privado 1YMQg-tNvsiZuiUML58LIN7F5QlmfUnLb. O teste de toque
+  duplo da fila espaça os toques em 120 ms (DOUBLE_TAP_MIN_TIME de 40 ms).
+  Evidências: docs/release-0173-tests.json e docs/artifacts-0173.json.
 
 ## Fila, contraste e distribuição 0.16.1
 
