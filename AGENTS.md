@@ -531,6 +531,10 @@ docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no
 - Testes: TransitionChecks (B atrasada, duas transições, limitador), AudioTests
   spotifyTransitionTest (motor Windows real, 0 underruns), transitionSuite na AVD.
   Android versionCode 43. Sem teste com Spotify real ou aparelho físico.
+- Entrega 0.17.1 (20/11/2026): PR55 merge 1f73844, código de produto c37e4ea,
+  release v0.17.1, portal PR74 merge 249eca6, Worker 209a7b91, backup privado
+  10mYdEA1r9MrB8BGL6elMTTVgocgZKUDD (partes de 7 MB). Evidências em
+  docs/release-0171-tests.json e docs/artifacts-0171.json.
 
 ## Fila, contraste e distribuição 0.16.1
 
