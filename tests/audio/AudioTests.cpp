@@ -398,7 +398,8 @@ void spotifyTransitionTest()
     const auto read = engine.spotifyFramesRead();
     const int position = engine.spotifyTrackPositionMs();
     check(std::abs(position - int(read * 1000 / 44100)) < 100, "exact track position counted from the marker");
-    engine.armTransition(0, int((aFrames - read) * 1000 / 44100) - 3000, 3000, 4000);
+    const auto request = engine.armTransition(0, int((aFrames - read) * 1000 / 44100) - 3000, 3000, 4000);
+    check(request > 0, "the arm request gets an id");
     QElapsedTimer clock;
     clock.start();
     bool sawArmed = false, sawMixing = false;
@@ -412,6 +413,7 @@ void spotifyTransitionTest()
         return latencyAfter > 0 && clock.elapsed() > 9000;
     }, 16000);
     const int after = engine.metrics().value("underruns").toInt();
+    const auto trace = engine.transitionTrace();
     const int bPosition = engine.spotifyTrackPositionMs();
     const auto total = engine.spotifyFramesRead();
     child.kill();
@@ -423,8 +425,12 @@ void spotifyTransitionTest()
           "B's position restarts at its own marker");
     check(latencyAfter >= 2000 && latencyAfter <= 3200, "B keeps the bounded preroll after the mix");
     check(after == before, "no output underrun while reading ahead, waiting for B and mixing");
-    std::cout << "PASS Windows engine transition: read-ahead, late B, mix and preroll without underruns ("
-              << latencyAfter << " ms)\n";
+    check(trace.value("id").toULongLong() == request && trace.value("phase").toString() == "completed" &&
+              trace.value("overlapVerified").toBool() && trace.value("missingBFrames").toLongLong() == 0 &&
+              trace.value("preparedBMs").toInt() >= 1000 && trace.value("bFrames").toLongLong() >= 44100 * 3,
+          "the trace proves A and B sounded together in the engine");
+    std::cout << "PASS Windows engine transition: read-ahead, late B, mix with B prepared ("
+              << trace.value("preparedBMs").toInt() << " ms) and preroll without underruns (" << latencyAfter << " ms)\n";
 #endif
 }
 void engineTest(const QString &dir)

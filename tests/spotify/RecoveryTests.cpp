@@ -458,6 +458,65 @@ public:
     }
     report["repeat_cycle"] = repeats;
   }
+  // Transições naturais reais: A termina sozinha e o motor mescla B. Mede pelo
+  // trace do mixer (quadros de A e de B na mesma mescla), sem gravar áudio. A
+  // saída é o OpenAL nulo (nada soa nas caixas); preferências só em memória.
+  static void verifyNaturalTransitionsLive(Player &player, tonal::audio::AudioEngine &audio,
+                                           const QStringList &order, QJsonObject &report) {
+    player.m_transitionsEnabled = true;
+    player.m_transitionSeconds = 6;
+    player.m_transitionIntroSeconds = 6;
+    const QStringList effects{"fade", "echo", "brake"};
+    QJsonArray runs;
+    int verified = 0;
+    for (int i = 0; i + 1 < order.size() && i < effects.size(); ++i) {
+      player.m_transitionEffect = effects[i];
+      if (i == 1) player.m_transitionIntroSeconds = 9;  // outra forma: entrada maior que a saída
+      if (i == 2) { player.m_transitionSeconds = 9; player.m_transitionIntroSeconds = 4; }
+      require(spin([&] { return player.trackUri() == order[i] && player.durationMs() > 60000 && player.isPlaying(); },
+                   30000),
+              "Live transition: track did not start");
+      wait(1500);
+      const auto before = audio.metrics().value("underruns").toInt();
+      const auto previous = audio.transitionTrace().value("id").toLongLong();
+      player.seek(player.durationMs() - 22000);
+      QElapsedTimer clock;
+      clock.start();
+      QJsonArray timeline;
+      QString lastPhase;
+      bool finished = spin([&] {
+        const auto trace = audio.transitionTrace();
+        const auto phase = trace.value("phase").toString();
+        if (trace.value("id").toLongLong() != previous && phase != lastPhase) {
+          lastPhase = phase;
+          timeline.append(QJsonObject{{"ms", qint64(clock.elapsed())}, {"phase", phase},
+                                      {"engineState", audio.transitionState()}});
+        }
+        return trace.value("id").toLongLong() != previous &&
+               (phase == QLatin1String("completed") || phase == QLatin1String("aborted"));
+      }, 45000);
+      const auto trace = audio.transitionTrace();
+      const bool advanced = spin([&] { return player.trackUri() == order[i + 1]; }, 15000);
+      wait(3000);  // B segue sozinha depois da mescla
+      QJsonObject run = QJsonObject::fromVariantMap(trace);
+      run["effectRequested"] = effects[i];
+      run["timeline"] = timeline;
+      run["finished"] = finished;
+      run["advancedToNext"] = advanced;
+      run["underrunsDelta"] = audio.metrics().value("underruns").toInt() - before;
+      run["status"] = player.transitionStatus();
+      run["markersSeen"] = audio.spotifyTrackMarkers();
+      runs.append(run);
+      if (finished && trace.value("phase").toString() == QLatin1String("completed") &&
+          trace.value("overlapVerified").toBool() && trace.value("missingBFrames").toLongLong() == 0 &&
+          run["underrunsDelta"].toInt() == 0 && advanced)
+        ++verified;
+    }
+    report["natural_transitions"] = runs;
+    report["natural_transitions_verified"] = verified;
+    report["output"] = "OpenAL null device (no physical/acoustic output)";
+    require(verified == runs.size() && runs.size() == 3, "Live natural transitions did not all mix A and B");
+  }
   static QJsonObject liveSession(bool readyOnly = false) {
     QJsonObject report{{"passed", false},
                        {"real_spotify_session", true},
@@ -499,7 +558,7 @@ public:
       QStringList tracks;
       if (!readyOnly) {
         received = false;
-        api.get("/me/player/recently-played", {{"limit", 10}},
+        api.get("/me/player/recently-played", {{"limit", 50}},
                 [&](int code, const QJsonDocument &doc) {
                   status = code;
                   for (const auto value : doc.object()["items"].toArray()) {
@@ -511,9 +570,24 @@ public:
                   }
                   received = true;
                 });
-        require(spin([&] { return received; }, 15000) && status == 200 &&
-                    tracks.size() >= 2,
-                "Could not obtain two tracks for the live playback test");
+        require(spin([&] { return received; }, 15000) && status == 200,
+                "Could not read recently played tracks");
+        if (tracks.size() < 4) {
+          // Reserva só de leitura: músicas curtidas, sem alterar a biblioteca.
+          received = false;
+          api.get("/me/tracks", {{"limit", 20}}, [&](int code, const QJsonDocument &doc) {
+            if (code == 200)
+              for (const auto value : doc.object()["items"].toArray()) {
+                const auto uri = value.toObject()["track"].toObject()["uri"].toString();
+                if (uri.startsWith("spotify:track:") && !tracks.contains(uri))
+                  tracks << uri;
+              }
+            received = true;
+          });
+          spin([&] { return received; }, 15000);
+        }
+        report["candidate_tracks"] = int(tracks.size());
+        require(tracks.size() >= 2, "Could not obtain two tracks for the live playback test");
       }
       const auto saved = QStandardPaths::writableLocation(
                              QStandardPaths::AppLocalDataLocation) +
@@ -601,14 +675,74 @@ public:
       require(spin([&] { return !player.localDeviceId().isEmpty(); }, 20000),
               "Live device not discovered");
       player.m_activeDeviceId.clear();
-      player.playUris(tracks.mid(0, 2));
-      require(spin(
-                  [&] {
-                    return audio.spotifyFramesRead() > 96000 &&
-                           player.isPlaying() && player.playingHere();
-                  },
-                  20000),
-              "Initial real Spotify PCM did not advance");
+      const bool naturalTransitions = QCoreApplication::arguments().contains("--verify-natural-transitions");
+      if (naturalTransitions)
+        require(tracks.size() >= 4, "Need four recent tracks for the natural transition check");
+      // Transições naturais: um álbum tocado pelo contexto (como uma coleção no
+      // app), com as faixas em ordem. Só leitura do catálogo.
+      QStringList natural;
+      QString albumUri;
+      if (naturalTransitions) {
+        for (const auto &uri : tracks.mid(0, 12)) {
+          QJsonObject track;
+          received = false;
+          api.get("/tracks/" + uri.section(':', 2), {}, [&](int code, const QJsonDocument &doc) {
+            if (code == 200) track = doc.object();
+            received = true;
+          });
+          spin([&] { return received; }, 15000);
+          const auto album = track["album"].toObject();
+          if (album["total_tracks"].toInt() < 5)
+            continue;
+          QJsonObject page;
+          received = false;
+          api.get("/albums/" + album["id"].toString() + "/tracks", {{"limit", 5}},
+                  [&](int code, const QJsonDocument &doc) {
+                    if (code == 200) page = doc.object();
+                    received = true;
+                  });
+          spin([&] { return received; }, 15000);
+          natural.clear();
+          for (const auto value : page["items"].toArray())
+            if (value.toObject()["duration_ms"].toInt() > 70000 && value.toObject()["is_playable"].toBool(true))
+              natural << value.toObject()["uri"].toString();
+          if (natural.size() >= 4) {
+            albumUri = album["uri"].toString();
+            break;
+          }
+        }
+        require(!albumUri.isEmpty() && natural.size() >= 4, "No album with four playable tracks found");
+        natural = natural.mid(0, 4);
+        player.playContext(albumUri, natural[0]);
+      } else {
+        player.playUris(tracks.mid(0, 2));
+      }
+      const bool initialPcm = spin(
+          [&] {
+            return audio.spotifyFramesRead() > 96000 &&
+                   player.isPlaying() && player.playingHere();
+          },
+          20000);
+      if (!initialPcm) {
+        report["initial_frames"] = qint64(audio.spotifyFramesRead());
+        report["initial_playing"] = player.isPlaying();
+        report["initial_playing_here"] = player.playingHere();
+        report["engine_status"] = engine.statusText();
+        report["engine_log"] = engine.recentLog();
+      }
+      require(initialPcm, "Initial real Spotify PCM did not advance");
+      if (naturalTransitions) {
+        verifyNaturalTransitionsLive(player, audio, natural, report);
+        player.cancelResume();
+        player.m_isPlaying = false;
+        received = false;
+        api.put("/me/player/pause", {{"device_id", player.localDeviceId()}}, {},
+                [&](int code, const QJsonDocument &) { status = code; received = true; });
+        spin([&] { return received; }, 15000);
+        engine.stop();
+        report["passed"] = true;
+        return report;
+      }
       if (QCoreApplication::arguments().contains("--verify-mix")) {
         verifyMixLive(api, player, audio, tracks, report);
         player.cancelResume();

@@ -1,5 +1,6 @@
 #pragma once
 #include "AudioSettings.hpp"
+#include "playback/TransitionMixer.hpp"
 #include <QObject>
 #include <QUrl>
 #include <QVariantMap>
@@ -71,8 +72,16 @@ public:
   bool spotifyPipeActive() const { std::lock_guard lock(m_mutex); return m_pipe != nullptr && !m_failed; }
   // `upcomingMs`: estimativa de quanto da faixa atual o librespot ainda não
   // entregou; `outroMs` = fim dela com o efeito; `introMs` = começo da
-  // próxima injetado na mescla. Com o marcador do librespot o fim é exato.
-  void armTransition(int effect, int upcomingMs, int outroMs, int introMs);
+  // próxima injetado na mescla. O fim de A é sempre o marcador do librespot
+  // (sem ele não há efeito). Retorna o id do pedido (0: recusado aqui); o
+  // aceite, a mescla e o resultado chegam depois em transitionTrace().
+  uint64_t armTransition(int effect, int upcomingMs, int outroMs, int introMs);
+  // Último pedido e o que a transição realmente fez (ids, fase, motivo,
+  // quadros de A e B na mescla). Seguro de qualquer thread.
+  QVariantMap transitionTrace() const;
+  // Começos de faixa marcados pelo librespot neste pipe: identifica cada
+  // ocorrência no PCM, inclusive a mesma música duas vezes seguidas.
+  uint64_t spotifyTrackSequence() const { return m_trackSequence.load(); }
   // Posição da faixa atual no PCM já lido, contada desde o marcador de começo
   // de faixa do librespot. -1 quando desconhecida (sem marcador ou após seek).
   int spotifyTrackPositionMs() const { return m_trackPositionMs.load(); }
@@ -124,7 +133,13 @@ private:
   int m_transitionEffect = -1, m_transitionUpcomingMs = 0, m_transitionOutroMs = 0, m_transitionIntroMs = 0;
   std::atomic<int> m_trackPositionMs{-1};
   std::atomic<bool> m_trackMarkers{false};
+  std::atomic<uint64_t> m_trackSequence{0};
   std::atomic<int> m_transitionBoundaries{0};
+  uint64_t m_transitionRequest = 0, m_transitionNextId = 0;  // sob m_mutex
+  mutable std::mutex m_traceMutex;
+  tonal::playback::TransitionTrace m_trace;                 // sob m_traceMutex
+  uint64_t m_traceRequest = 0, m_traceRejected = 0;         // sob m_traceMutex
+  int m_traceRejection = 0;
   std::vector<std::pair<int, int>> m_volumeNotes;
   std::atomic<int> m_transitionLatencyMs{0};
   bool m_transitionCancel = false;

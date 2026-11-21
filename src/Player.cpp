@@ -263,11 +263,68 @@ void Player::cancelTransition() {
     m_audio->cancelTransition();
 }
 
+// O motor responde depois (outra thread): aceito, mesclando, concluído ou
+// abortado com o motivo. Só uma mescla concluída com B audível vira status.
+void Player::updateTransitionResult() {
+  if (!m_audio || !m_transitionRequest)
+    return;
+  const auto trace = m_audio->transitionTrace();
+  const auto request = m_transitionRequest;
+  if (quint64(trace.value("rejectedRequest").toLongLong()) == request) {
+    // Recusado pelo mixer: nada foi armado; outra tentativa fica possível.
+    m_transitionRequest = 0;
+    m_transitionArmedSeq = -1;
+    m_transitionArmedUri.clear();
+    m_transitionGuard.restart();
+    return;
+  }
+  if (quint64(trace.value("id").toLongLong()) != request) {
+    // O pedido nunca chegou ao mixer (fonte trocada, arquivo local).
+    if (m_transitionRequestClock.isValid() && m_transitionRequestClock.elapsed() > 3000 &&
+        m_audio->transitionState() == 0) {
+      m_transitionRequest = 0;
+      m_transitionArmedSeq = -1;
+      m_transitionArmedUri.clear();
+    }
+    return;
+  }
+  const auto phase = trace.value("phase").toString();
+  if ((phase != QLatin1String("completed") && phase != QLatin1String("aborted")) || m_transitionShown == request)
+    return;
+  m_transitionShown = request;
+  m_transitionRequest = 0;
+  if (phase == QLatin1String("completed") && trace.value("overlapVerified").toBool()) {
+    const auto id = QString::fromLatin1(
+        tonal::playback::transitionEffectId(tonal::playback::TransitionEffect(trace.value("effect").toInt())).data());
+    for (const auto &entry : transitionEffects())
+      if (entry.toMap().value("id") == id)
+        m_transitionStatus = tr("Última transição: %1").arg(entry.toMap().value("name").toString());
+  } else {
+    // Cancelamentos (pulo, seek, seleção) não mudam o status.
+    const auto reason = trace.value("reason").toString();
+    if (reason == QLatin1String("next-not-prepared"))
+      m_transitionStatus = tr("Última troca sem efeito: a próxima música não chegou a tempo");
+    else if (reason == QLatin1String("no-exact-boundary"))
+      m_transitionStatus = tr("Última troca sem efeito: o começo da próxima não foi identificado");
+    else
+      return;
+  }
+  emit transitionsChanged();
+}
+
 void Player::maybeArmTransition() {
+  updateTransitionResult();
   if (!m_transitionsEnabled || !m_audio || localPlayback() || !m_isPlaying ||
       !playingHere() || m_trackUri.isEmpty() || m_durationMs <= 0 ||
-      m_transitionArmedUri == m_trackUri || m_repeatWanted == QLatin1String("track") ||
-      !m_audio->spotifyPipeActive())
+      m_repeatWanted == QLatin1String("track") || !m_audio->spotifyPipeActive() || m_transitionRequest)
+    return;
+  // Cada ocorrência no PCM tem sua transição, inclusive a mesma música duas
+  // vezes seguidas. A faixa exibida (duração) precisa descrever a ocorrência
+  // que o motor está lendo; sem marcadores, vale a URI.
+  const bool markers = m_audio->spotifyTrackMarkers();
+  const auto sequence = qint64(m_audio->spotifyTrackSequence());
+  if (markers ? (m_trackInfoSeq != sequence || m_transitionArmedSeq == sequence)
+              : m_transitionArmedUri == m_trackUri)
     return;
   // 1: lendo/aguardando a mescla; 2: mesclando. 3 é só o atraso da anterior.
   const int state = m_audio->transitionState();
@@ -297,14 +354,14 @@ void Player::maybeArmTransition() {
     effect = tonal::playback::pickRandomTransition(
         tonal::playback::TransitionEffect(m_lastTransition < 0 ? int(tonal::playback::TransitionEffect::Count) : m_lastTransition),
         QRandomGenerator::global()->generate());
+  const auto request = m_audio->armTransition(int(effect), int(plan.upcomingMs), int(plan.outroMs), int(plan.introMs));
+  if (!request)
+    return;
   m_transitionArmedUri = m_trackUri;
+  m_transitionArmedSeq = markers ? sequence : -1;
+  m_transitionRequest = request;
+  m_transitionRequestClock.restart();
   m_lastTransition = int(effect);
-  m_audio->armTransition(int(effect), int(plan.upcomingMs), int(plan.outroMs), int(plan.introMs));
-  const auto id = QString::fromLatin1(tonal::playback::transitionEffectId(effect).data());
-  for (const auto &entry : transitionEffects())
-    if (entry.toMap().value("id") == id)
-      m_transitionStatus = tr("Última transição: %1").arg(entry.toMap().value("name").toString());
-  emit transitionsChanged();
 }
 
 QString Player::artistsText() const {
@@ -490,6 +547,15 @@ void Player::applyState(const QJsonObject &obj, bool acceptVolume) {
   if (!seekSettling(remote)) {
     const bool smallBackward = sameTrack && wasPlaying && m_isPlaying && remote < displayedPosition && displayedPosition - remote <= 1500;
     setPositionBase(smallBackward ? displayedPosition : remote);
+  }
+  // A faixa informada descreve a ocorrência que o motor lê quando a posição
+  // do Spotify bate com a contagem de PCM desde o último marcador.
+  if (m_audio && playingHere()) {
+    const int engine = m_audio->spotifyTrackPositionMs();
+    if (engine >= 0 && qAbs(engine - remote) < 4000)
+      m_trackInfoSeq = qint64(m_audio->spotifyTrackSequence());
+    else if (!sameTrack || (engine >= 0 && remote + 4000 < engine))
+      m_trackInfoSeq = -1;
   }
   if (m_isPlaying)
     m_tickTimer.start();
@@ -1008,8 +1074,10 @@ void Player::seek(int ms) {
   ms = qBound(0, ms, qMax(0, m_durationMs));
   cancelTransition();
   // Voltar para antes do ponto da transição permite armá-la de novo.
-  if (m_durationMs - ms > qMax(m_transitionSeconds, m_transitionIntroSeconds) * 1000 + 1500)
+  if (m_durationMs - ms > qMax(m_transitionSeconds, m_transitionIntroSeconds) * 1000 + 1500) {
     m_transitionArmedUri.clear();
+    m_transitionArmedSeq = -1;
+  }
   ++m_seekGeneration;
   m_seekTarget = ms;
   m_seekClock.restart();
