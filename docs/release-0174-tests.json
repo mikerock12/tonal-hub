@@ -1,0 +1,108 @@
+{
+ "version": "0.17.4",
+ "date": "2026-11-21",
+ "androidVersionCode": 45,
+ "report": "Usuário (0.17.3): as transições ainda não funcionavam; a atual baixava ou oscilava e a próxima começava sem efeito. Plano estrutural do usuário: PLANO_CORRECAO_ESTRUTURAL_TRANSICOES_TONAL_HUB.md (TH-001 a TH-010).",
+ "cause": "Android: a recuperação de buffering do Spirc vendorizado (0.15.x) trata EndOfTrack mais de 2 s antes da duração como falta de dados. A leitura adiantada da transição chega ao fim de A em fração de segundo, sem eventos de posição (1 por segundo); o fim real virava falta de dados: pausa, recarga do fim de A 5 s depois, e esse trecho entrava na mescla no lugar de B. Em todas as plataformas a mescla podia começar sem B guardada (TH-001), com silêncio no lugar dela. Windows não tem a recuperação; o teste real lá mesclou certo.",
+ "fix": [
+  "player.rs tonal_end_of_track: posição exata do decodificador antes de todo EndOfTrack.",
+  "Marcador com posição > 1 s = mesma faixa retomada: resumeCapture, sem nova ocorrência (Windows e Android).",
+  "Mescla só com B guardada (1 s ou a entrada inteira); sem B a tempo A segue sem efeito e a região encolhe; abaixo de 1,5 s troca normal com motivo next-not-prepared.",
+  "TransitionTrace por pedido (fase, motivo, durações, B guardada, quadros com B e faltando, energia de A e B).",
+  "Windows: aceite assíncrono por id; status só com mescla concluída e A+B verificadas; ocorrência por sequência de marcadores e conferência da posição do Spotify com a contagem de PCM.",
+  "Android: pullInto em float[] reutilizado e push em região crítica (sem alocação por bloco), mixer recriado na troca de taxa, ocorrência por marcadores e status pelo trace.",
+  "Rampa de 10 ms em qualquer taxa; fim de A sempre pelo marcador (arm exato)."
+ ],
+ "validation": {
+  "transitionCore": "PASS Windows MSVC: 6 efeitos × 3 formatos com A 440 Hz e B 660 Hz na mesma mescla (Goertzel) e trace com 0 quadros de B faltando; B atrasada 0/0,1/0,5/1/3/4,8/7 s após o início planejado (mescla encurtada até 3 s, troca normal a partir de 4,8 s, nunca silêncio no lugar de B); retomada no meio; 48/96 kHz; estimativa errada; buffer cheio sem marcador; duas transições; limitador; endCapture; reset",
+  "windowsEngineIntegration": "PASS audio_integration: produtor sintético com marcador e estimativa 3 s errada, mescla concluída com B guardada e 0 quadros de B faltando, 0 underruns",
+  "windowsRealSpotify": {
+   "command": "TonalSpotifyRecoveryTests --live-session --verify-natural-transitions",
+   "setup": "aparelho de diagnóstico isolado, cópia da sessão salva, saída OpenAL nula (sem som), preferências só em memória, álbum tocado pelo contexto, conta sem reprodução ativa",
+   "naturalTransitions": [
+    {
+     "effectRequested": "fade",
+     "phase": "completed",
+     "configuredOutroMs": 6000,
+     "configuredIntroMs": 6000,
+     "overlapMs": 6000,
+     "preparedBMs": 2509,
+     "bFrames": 264600,
+     "missingBFrames": 0,
+     "waitedMs": 0,
+     "underrunsDelta": 0,
+     "advancedToNext": true,
+     "overlapVerified": true,
+     "markersSeen": true
+    },
+    {
+     "effectRequested": "echo",
+     "phase": "completed",
+     "configuredOutroMs": 6000,
+     "configuredIntroMs": 9000,
+     "overlapMs": 9000,
+     "preparedBMs": 2511,
+     "bFrames": 396900,
+     "missingBFrames": 0,
+     "waitedMs": 0,
+     "underrunsDelta": 0,
+     "advancedToNext": true,
+     "overlapVerified": true,
+     "markersSeen": true
+    },
+    {
+     "effectRequested": "brake",
+     "phase": "completed",
+     "configuredOutroMs": 9000,
+     "configuredIntroMs": 4000,
+     "overlapMs": 9000,
+     "preparedBMs": 2503,
+     "bFrames": 176400,
+     "missingBFrames": 0,
+     "waitedMs": 0,
+     "underrunsDelta": 0,
+     "advancedToNext": true,
+     "overlapVerified": true,
+     "markersSeen": true
+    }
+   ],
+   "verified": "3/3",
+   "measures": "PCM entregue pelo motor real à saída, não som em aparelho físico"
+  },
+  "ctestWindows": "12/12 (82,86 s)",
+  "androidAudioTrackAvd": {
+   "captureMs": 5,
+   "preparedBMs": 2507,
+   "bFramesInMix": 176400,
+   "latencyAfterMixMs": 2506,
+   "latencyAfterSecondMs": 2498,
+   "recoveryResumeVerified": true,
+   "underruns": 0,
+   "pass": true
+  },
+  "androidTransitionsDialogAvd": {
+   "outroAndIntroControls": true,
+   "persisted": true
+  },
+  "androidQueueEditorAvd": "5/5",
+  "windowsPortable": {
+   "programsStarted": 3,
+   "files": 1439,
+   "zipCrc": true,
+   "privateFiles": 0
+  },
+  "apk": {
+   "certificateSha256": "464ae7cf34f4f145541569db215f8fcdef5deda1be31921d8e366eed20aa22c2",
+   "alignment16KiB": true,
+   "versionCode": 45
+  },
+  "portalTests": "60/60"
+ },
+ "limits": [
+  "Android com Spotify real não testado: a AVD não tem login. A correção do Spirc foi conferida no código; o caminho Java/JNI na AVD com AudioTrack real.",
+  "Sem medição acústica (loopback), aparelho físico, Bluetooth, carro, CPU ou bateria.",
+  "TH-006 (fila sem bloqueio entre o motor e a saída Android) e TH-009 (eventos de transporte tipados) não foram reescritos; o produtor Android ainda espera quando a pré-rolagem enche, fora da thread de saída.",
+  "Os efeitos não analisam BPM, tonalidade nem batida."
+ ],
+ "toolsInstalled": "Nenhum aplicativo ou ferramenta instalado ou baixado no PC; usados Visual Studio, Rust, NDK, Gradle, Qt, Python, Inno Setup e AVD já existentes."
+}
