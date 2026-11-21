@@ -16,14 +16,17 @@ final class TransitionNative {
     static int index(String id){for(int i=0;i<IDS.length;i++)if(IDS[i].equals(id))return i;return -1;}
     static native long create(int rate);
     static native void destroy(long handle);
-    static native boolean arm(long handle,int effect,long tailFrames);
+    static native boolean arm(long handle,int effect,long upcomingFrames,long overlapFrames);
+    static native boolean wantsInput(long handle);
     static native void reset(long handle);
     static native void endCapture(long handle);
     static native int state(long handle);
     static native int push(long handle,float[] samples,int offset,int count);
-    static native float[] pull(long handle,int frames,boolean pad);
-    static native long buffered(long handle);
-    static native long[] plan(int seconds,long durationMs,long remainingMs,long bufferedMs);
+    static native float[] pull(long handle,int frames);
+    static native long latency(long handle);
+    /** {arm 0/1, upcomingMs, overlapMs}; mesmas regras do Windows. */
+    static native long[] plan(int seconds,long durationMs,long audibleRemainingMs,long upcomingMs);
+    static final int PREROLL_MS=2500;
     static native int pickRandom(int previous,int random);
     private TransitionNative(){}
 }

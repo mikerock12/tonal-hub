@@ -46,6 +46,8 @@ public final class NativeBridge {
     public static void onProgress(long epoch,String uri,int position,boolean active){
         if(epoch!=generation)return;
         long eventAt=android.os.SystemClock.elapsedRealtime();
+        // Pausa vinda de outro controle: com a transição o som está adiantado no buffer, pausa já.
+        if(!active&&audio.transitionState()!=0){audio.pause();playing=false;}
         main.post(()->{if(epoch!=generation)return;synchronized(intent){intent.progress(uri,position,active);}java.util.function.BiConsumer<String,Integer> observer=progressObserver;if(observer!=null)observer.accept(uri,position);Transitions.onProgress(uri,position,active,eventAt);});
     }
     /** Faixa carregada pelo motor, com a duração do catálogo (TrackChanged). */
@@ -88,7 +90,7 @@ public final class NativeBridge {
         // Fim natural com transição: o motor fecha o sink, mas o fim da faixa
         // já lido continua tocando até a próxima chegar ou a mescla terminar.
         boolean continuing;synchronized(intent){continuing=spotifyEngine&&intent.desired;}
-        if(continuing&&audio.drainTransition())return;
+        if(continuing&&audio.continuesThroughEngineStop())return;
         audio.pause(); playing=false; onStatus("Pausado");
     }
     /** A mescla terminou sem a próxima faixa (fim da fila ou sink ainda parado). */

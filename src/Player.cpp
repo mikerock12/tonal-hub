@@ -256,7 +256,11 @@ void Player::maybeArmTransition() {
   if (!m_transitionsEnabled || !m_audio || localPlayback() || !m_isPlaying ||
       !playingHere() || m_trackUri.isEmpty() || m_durationMs <= 0 ||
       m_transitionArmedUri == m_trackUri || m_repeatWanted == QLatin1String("track") ||
-      !m_audio->spotifyPipeActive() || m_audio->transitionState() != 0)
+      !m_audio->spotifyPipeActive())
+    return;
+  // 1: lendo/aguardando a mescla; 2: mesclando. 3 é só o atraso da anterior.
+  const int state = m_audio->transitionState();
+  if (state == 1 || state == 2)
     return;
   // Logo após seek, troca de faixa ou pulo a posição ainda está assentando.
   if (m_transitionGuard.isValid() && m_transitionGuard.elapsed() < 2500)
@@ -265,8 +269,11 @@ void Player::maybeArmTransition() {
   if (m_queueTrack == m_trackUri && !m_queuePartial && m_queue.isEmpty() &&
       m_repeatWanted == QLatin1String("off"))
     return;
-  const int remaining = m_durationMs - positionMs();
-  const auto plan = tonal::playback::planTransition(m_transitionSeconds, m_durationMs, remaining, 0);
+  // positionMs() é a do librespot (já entregue ao motor de áudio); o som está
+  // atrás pelo atraso da pré-rolagem anterior.
+  const int upcoming = m_durationMs - positionMs();
+  const int audible = upcoming + m_audio->transitionLatencyMs();
+  const auto plan = tonal::playback::planTransition(m_transitionSeconds, m_durationMs, audible, upcoming);
   if (!plan.arm)
     return;
   auto effect = tonal::playback::transitionEffectFromId(m_transitionEffect.toStdString());
@@ -276,7 +283,7 @@ void Player::maybeArmTransition() {
         QRandomGenerator::global()->generate());
   m_transitionArmedUri = m_trackUri;
   m_lastTransition = int(effect);
-  m_audio->armTransition(int(effect), remaining);
+  m_audio->armTransition(int(effect), int(plan.upcomingMs), int(plan.overlapMs));
   const auto id = QString::fromLatin1(tonal::playback::transitionEffectId(effect).data());
   for (const auto &entry : transitionEffects())
     if (entry.toMap().value("id") == id)
@@ -300,6 +307,13 @@ int Player::positionMs() const {
     return m_positionBase;
   const qint64 pos = m_positionBase + m_positionClock.elapsed();
   return int(m_durationMs > 0 ? qMin<qint64>(pos, m_durationMs) : pos);
+}
+
+int Player::displayPositionMs() const {
+  const int position = positionMs();
+  if (localPlayback() || !m_audio || !playingHere())
+    return position;
+  return qMax(0, position - m_audio->transitionLatencyMs());
 }
 
 void Player::setPositionBase(int ms) {
@@ -1006,6 +1020,10 @@ void Player::setVolume(int percent) {
   percent = qBound(0, percent, 100);
   if (percent == m_volume)
     return;
+  // Com a pré-rolagem das transições o librespot já está adiantado: o motor
+  // compensa o trecho guardado para o novo volume soar na hora.
+  if (m_audio && !localPlayback() && playingHere() && m_audio->transitionLatencyMs() > 0)
+    m_audio->noteSpotifyVolumeChange(m_volume, percent);
   m_volume = percent;
   ++m_volumeGeneration;
   m_volumeIntentClock.restart();

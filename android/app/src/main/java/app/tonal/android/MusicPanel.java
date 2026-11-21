@@ -84,7 +84,7 @@ final class MusicPanel {
     /** Repeat icon: accent when active, "1" badge for the current track. */
     private int shownRepeat=-1;
     private void refreshRepeat(){if(songRepeat==null)return;int mode=NativeBridge.repeatMode;shownRepeat=mode;songRepeat.setImageDrawable(new Ui.Symbol(RepeatMode.icon(mode),mode==RepeatMode.OFF?Ui.TEXT:Ui.BLUE));songRepeat.setContentDescription(RepeatMode.description(mode));songRepeat.setTooltipText(RepeatMode.description(mode));}
-    private int position(){return spotify==null?(int)IndiePlaybackService.position:activity instanceof MainActivity?((MainActivity)activity).currentPosition():NativeBridge.intent.position;}
+    private int position(){return spotify==null?(int)IndiePlaybackService.position:activity instanceof MainActivity?((MainActivity)activity).audiblePosition():NativeBridge.intent.position;}
     private void transport(String command){if(spotify==null)IndiePlaybackService.start(activity,command);else NativeBridge.command(command.equals("previous")?"prev":command);}
     private void songHero(LinearLayout content){
         LinearLayout hero=card(Ui.CARD);boolean wide=landscape();if(wide)ui.pad(hero,10,8);ImageView cover=new ImageView(activity);songCover=cover;songImage=store.current.optString("image");cover.setScaleType(ImageView.ScaleType.FIT_CENTER);int side=wide?ui.dp(48):Math.min(ui.dp(420),activity.getResources().getDisplayMetrics().widthPixels-ui.dp(76));

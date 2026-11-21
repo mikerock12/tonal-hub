@@ -219,7 +219,7 @@ void MediaControls::sync()
 
     // Enquanto toca, o painel do Windows anda com a posição sozinho. Só manda de novo quando o estado muda
     // ou a posição pula (seek, ou a consulta ao Spotify corrigiu a interpolação).
-    const int position = p->positionMs();
+    const int position = p->displayPositionMs();
     if (!statusChanged) {
         const qint64 expected = m_shownPosition + (p->isPlaying() ? m_shownClock.elapsed() : 0);
         if (qAbs(position - expected) <= 1500)

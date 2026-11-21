@@ -164,12 +164,19 @@ void AudioEngine::flushSpotify() {
   if (!m_local)
     m_flush = true;
 }
-void AudioEngine::armTransition(int effect, int remainingMs) {
+void AudioEngine::armTransition(int effect, int upcomingMs, int overlapMs) {
   std::lock_guard l(m_mutex);
   if (m_local || !m_pipe)
     return;
   m_transitionEffect = effect;
-  m_transitionRemainingMs = remainingMs;
+  m_transitionUpcomingMs = upcomingMs;
+  m_transitionOverlapMs = overlapMs;
+}
+void AudioEngine::noteSpotifyVolumeChange(int fromPercent, int toPercent) {
+  std::lock_guard l(m_mutex);
+  if (m_local || !m_pipe || fromPercent == toPercent || m_volumeNotes.size() > 64)
+    return;
+  m_volumeNotes.emplace_back(fromPercent, toPercent);
 }
 void AudioEngine::cancelTransition() {
   std::lock_guard l(m_mutex);
@@ -306,11 +313,24 @@ void AudioEngine::run() {
   // Criado só na primeira transição (reserva ~5 MB para o fim da faixa).
   std::unique_ptr<tonal::playback::TransitionMixer> mixer;
   std::vector<float> mixInput;
+  using MixState = tonal::playback::TransitionMixer::State;
   auto publishTransition = [&] {
     const int state = !mixer || !mixer->active() ? 0
-                      : mixer->state() == tonal::playback::TransitionMixer::State::Capturing ? 1 : 2;
+                      : mixer->state() == MixState::Armed ? 1
+                      : mixer->state() == MixState::Mixing ? 2 : 3;
     m_transitionState.store(state);
+    m_transitionLatencyMs.store(mixer && state ? int(int64_t(mixer->latencyFrames()) * 1000 /
+                                                     std::max(1, mixer->sampleRate()))
+                                               : 0);
   };
+  // Curva logarítmica de 60 dB do librespot (padrão da CLI) para converter
+  // percentuais de volume em ganho.
+  auto librespotGain = [](int percent) {
+    return percent <= 0 ? 0.0 : std::pow(10.0, (percent / 100.0 - 1.0) * 60.0 / 20.0);
+  };
+  struct VolumeSegment { int64_t frames; double ratio; };
+  std::vector<VolumeSegment> volumeSegments;
+  double volumeCompensation = 1;
   QString file, error;
   AudioSettings settings;
   auto rebuild = [&](double gain) {
@@ -358,8 +378,9 @@ void AudioEngine::run() {
     double seek;
     float target;
     uint64_t serial;
-    int transitionEffect, transitionRemainingMs;
+    int transitionEffect, transitionUpcomingMs, transitionOverlapMs;
     bool transitionCancel;
+    std::vector<std::pair<int, int>> volumeNotes;
     {
       std::lock_guard l(m_mutex);
       next = m_settings;
@@ -373,7 +394,9 @@ void AudioEngine::run() {
       target = m_volume;
       serial = m_generation.load();
       transitionEffect = std::exchange(m_transitionEffect, -1);
-      transitionRemainingMs = m_transitionRemainingMs;
+      transitionUpcomingMs = m_transitionUpcomingMs;
+      transitionOverlapMs = m_transitionOverlapMs;
+      volumeNotes.swap(m_volumeNotes);
       transitionCancel = std::exchange(m_transitionCancel, false);
     }
     if (serial != generation) {
@@ -508,12 +531,25 @@ void AudioEngine::run() {
         mixer = std::make_unique<tonal::playback::TransitionMixer>(format.sampleRate);
       else if (mixer->sampleRate() != format.sampleRate)
         mixer->setSampleRate(format.sampleRate);
-      // O que já está na fila do OpenAL é passado: lê só o restante do fluxo.
-      const int64_t tail = int64_t(transitionRemainingMs) * format.sampleRate / 1000 -
-                           int64_t(output.queued()) * 512;
-      mixer->arm(tonal::playback::TransitionEffect(transitionEffect), tail);
+      const int64_t upcoming = int64_t(transitionUpcomingMs) * format.sampleRate / 1000;
+      const int64_t overlap = int64_t(transitionOverlapMs) * format.sampleRate / 1000;
+      mixer->arm(tonal::playback::TransitionEffect(transitionEffect), upcoming, overlap);
       publishTransition();
     }
+    // Volume novo já vale no librespot, mas o buffer ainda tem o antigo:
+    // compensa só o trecho guardado e volta a 1 quando o novo chega.
+    if (!volumeNotes.empty() && mixer && mixer->active()) {
+      // + ~300 ms: o pedido de volume ainda leva esse tempo até chegar ao librespot.
+      const int64_t pending = int64_t(mixer->latencyFrames()) + int64_t(output.queued()) * 512 +
+                              format.sampleRate * 3 / 10;
+      for (const auto &[from, to] : volumeNotes) {
+        const double before = librespotGain(from);
+        if (before > 0 && pending > 0)
+          volumeSegments.push_back({pending, librespotGain(to) / before});
+      }
+    }
+    if (!mixer || !mixer->active())
+      volumeSegments.clear();
     if (seek >= 0 && decoder) {
       output.clear();
       if (!decoder->seek(seek, error)) {
@@ -574,11 +610,12 @@ void AudioEngine::run() {
           },
           Qt::QueuedConnection);
     }
-    // Transição: lê o motor adiantado (fim da faixa A, depois B) e mescla.
+    // Transição: lê o motor adiantado (fim de A e começo de B) num ritmo
+    // limitado por ciclo, para a saída nunca ficar sem áudio enquanto lê.
     const bool transition = pipe && mixer && mixer->active();
     bool transitionEnded = false;
     if (transition) {
-      while (mixer->wantsInput()) {
+      for (int reads = 0; reads < 8 && mixer->wantsInput(); ++reads) {
         const int n = pipe->read(mixInput, 512);
         if (n < 0) {
           transitionEnded = true;
@@ -592,7 +629,7 @@ void AudioEngine::run() {
       publishTransition();
     }
     if (!transitionEnded && ((paused && local) || output.queued() >= 6)) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(3));
+      std::this_thread::sleep_for(std::chrono::milliseconds(transition ? 1 : 3));
       continue;
     }
     AudioFrame in;
@@ -603,14 +640,27 @@ void AudioEngine::run() {
       in.format = format;
       in.pts = pts;
       in.samples.resize(512 * 2);
-      // Sem B a tempo (rede lenta ou fim da fila), o fim de A não para.
-      const bool starving = !paused && output.queued() <= 2;
-      got = int(mixer->pull(in.samples.data(), 512, starving));
+      got = int(mixer->pull(in.samples.data(), 512));
       in.samples.resize(size_t(got) * 2);
       pts += got;
+      for (int i = 0; i < got; ++i) {
+        double compensationTarget = 1;
+        for (auto &segment : volumeSegments) {
+          if (segment.frames > 0) {
+            compensationTarget *= segment.ratio;
+            --segment.frames;
+          }
+        }
+        volumeCompensation += (compensationTarget - volumeCompensation) * 0.003;  // ~8 ms
+        if (std::abs(volumeCompensation - 1) > 1e-6) {
+          in.samples[size_t(i) * 2] *= float(volumeCompensation);
+          in.samples[size_t(i) * 2 + 1] *= float(volumeCompensation);
+        }
+      }
+      std::erase_if(volumeSegments, [](const VolumeSegment &s) { return s.frames <= 0; });
       publishTransition();
       if (got == 0) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(3));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
         continue;
       }
     } else if (decoder)

@@ -1,3 +1,4 @@
+#include <thread>
 #include "audio/AudioEngine.hpp"
 #include "audio/AudioSettings.hpp"
 #include "audio/DspGraph.hpp"
@@ -367,6 +368,55 @@ void spotifyPauseTest()
     std::cout << "PASS paused Spotify engine drains native producer without blocking transport\n";
 #endif
 }
+// Motor real (pipe → mixer → DSP → OpenAL nulo) com um produtor que imita o
+// librespot: entrega A mais rápido que o tempo real, demora 0,8 s para começar
+// B e depois entrega B. A saída não pode ter falhas durante a transição.
+void spotifyTransitionTest()
+{
+#ifdef _WIN32
+    QTemporaryDir storage;
+    AudioEngine engine(nullptr, storage.path());
+    engine.setSetting("normalization", false);
+    const auto writer = engine.prepareSpotifyPipe();
+    check(writer != 0, "transition PCM writer");
+    QProcess child;
+    child.setCreateProcessArgumentsModifier([writer](QProcess::CreateProcessArguments *a) {
+        a->inheritHandles = true;
+        a->startupInfo->dwFlags |= STARTF_USESTDHANDLES;
+        a->startupInfo->hStdOutput = reinterpret_cast<HANDLE>(writer);
+        a->flags |= CREATE_NO_WINDOW;
+    });
+    child.start(QCoreApplication::applicationFilePath(), {"--pipe-transition-child"});
+    check(child.waitForStarted(), "synthetic transition producer starts");
+    engine.spotifyStarted();
+    constexpr uint64_t aFrames = 44100ull * 12;
+    check(spin([&] { return engine.spotifyFramesRead() > 44100ull * 5; }, 9000), "track A plays from the pipe");
+    const int before = engine.metrics().value("underruns").toInt();
+    const auto read = engine.spotifyFramesRead();
+    engine.armTransition(0, int((aFrames - read) * 1000 / 44100), 3000);
+    QElapsedTimer clock;
+    clock.start();
+    bool sawArmed = false, sawMixing = false;
+    int latencyAfter = 0;
+    spin([&] {
+        const int state = engine.transitionState();
+        sawArmed = sawArmed || state == 1;
+        sawMixing = sawMixing || state == 2;
+        if (sawMixing && state == 3)
+            latencyAfter = engine.transitionLatencyMs();
+        return latencyAfter > 0 && clock.elapsed() > 9000;
+    }, 16000);
+    const int after = engine.metrics().value("underruns").toInt();
+    child.kill();
+    child.waitForFinished();
+    engine.stopSpotify();
+    check(sawArmed && sawMixing, "the engine armed and mixed the transition");
+    check(latencyAfter >= 2000 && latencyAfter <= 3200, "B keeps the bounded preroll after the mix");
+    check(after == before, "no output underrun while reading ahead, waiting for B and mixing");
+    std::cout << "PASS Windows engine transition: read-ahead, late B, mix and preroll without underruns ("
+              << latencyAfter << " ms)\n";
+#endif
+}
 void engineTest(const QString &dir)
 {
     QTemporaryDir storage;
@@ -593,6 +643,30 @@ int main(int argc, char **argv)
         std::vector<float> pcm(8192 * 2, .125f);
         return fwrite(pcm.data(), sizeof(float), pcm.size(), stdout) == pcm.size() ? 0 : 1;
     }
+    if (argc > 1 && std::string(argv[1]) == "--pipe-transition-child")
+    {
+        _setmode(_fileno(stdout), _O_BINARY);
+        auto write = [](double hz, int seconds) {
+            std::vector<float> block(4096 * 2);
+            for (int64_t f = 0; f < int64_t(44100) * seconds; f += 4096) {
+                for (int i = 0; i < 4096; ++i) {
+                    const float v = float(0.3 * std::sin(2 * 3.14159265358979 * hz * double(f + i) / 44100));
+                    block[size_t(i) * 2] = block[size_t(i) * 2 + 1] = v;
+                }
+                if (fwrite(block.data(), sizeof(float), block.size(), stdout) != block.size())
+                    return false;
+            }
+            fflush(stdout);
+            return true;
+        };
+        if (!write(440, 12))
+            return 1;
+        std::this_thread::sleep_for(std::chrono::milliseconds(800));
+        if (!write(660, 12))
+            return 1;
+        std::this_thread::sleep_for(std::chrono::seconds(20));
+        return 0;
+    }
 #endif
     QCoreApplication app(argc, argv);
     app.setOrganizationName("TonalTests");
@@ -627,6 +701,7 @@ int main(int argc, char **argv)
         pauseRampTest(true);
         spatialSwitchTest();
         spotifyPauseTest();
+        spotifyTransitionTest();
         engineTest(dir);
         benchmark();
     }

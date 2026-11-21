@@ -46,26 +46,32 @@ final class Transitions {
     static void onProgress(String uri,int position,boolean active,long eventAt){
         if(!enabled||!TransitionNative.READY||!active||!uri.equals(trackUri)||durationMs<=0||uri.equals(armedUri)||scheduled!=null)return;
         if(NativeBridge.repeatMode==RepeatMode.TRACK||!NativeBridge.spotifyEngine)return;
+        int state=NativeBridge.audio.transitionState();
+        if(state==1||state==2)return;
         long now=SystemClock.elapsedRealtime();
         if(now<guardUntil)return;
         long overlap=Math.min(seconds*1000L,durationMs/3);
         if(overlap<1500)return;
-        long remaining=durationMs-position-(now-eventAt);
-        // Os eventos chegam a cada segundo: agenda o início exato da leitura adiantada.
-        if(remaining>overlap+1300||remaining<1000)return;
+        // A posição do motor é do PCM já entregue; o som está atrás pelo atraso da anterior.
+        long upcoming=durationMs-position-(now-eventAt);
+        long audible=upcoming+NativeBridge.audio.transitionLatencyMs();
+        long window=overlap+TransitionNative.PREROLL_MS+500;
+        // Os eventos chegam a cada segundo: agenda o momento exato de começar a ler.
+        if(audible>window+1300||audible<1000)return;
         final String target=uri;final long track=durationMs;
         scheduled=()->{scheduled=null;arm(target,track,position,eventAt);};
-        // 400 ms extras cobrem o buffer do AudioTrack enquanto o fim de A é lido.
-        main.postDelayed(scheduled,Math.max(0,remaining-overlap-400));
+        main.postDelayed(scheduled,Math.max(0,audible-window));
     }
     private static void arm(String uri,long duration,int position,long eventAt){
         synchronized(NativeBridge.intent){if(!NativeBridge.intent.desired)return;}
         if(!enabled||!uri.equals(trackUri)||uri.equals(armedUri)||!NativeBridge.playing)return;
-        long remaining=duration-position-(SystemClock.elapsedRealtime()-eventAt);
-        if(remaining<1000)return;
+        long upcoming=duration-position-(SystemClock.elapsedRealtime()-eventAt);
+        long audible=upcoming+NativeBridge.audio.transitionLatencyMs();
+        long[] plan=TransitionNative.plan(seconds,duration,audible,Math.max(0,upcoming));
+        if(plan==null||plan[0]==0)return;
         int chosen=TransitionNative.index(effect);
         if(chosen<0)chosen=TransitionNative.pickRandom(lastEffect<0?TransitionNative.IDS.length:lastEffect,(int)(Math.random()*Integer.MAX_VALUE));
-        if(NativeBridge.audio.armTransition(chosen,remaining)){
+        if(NativeBridge.audio.armTransition(chosen,plan[1],plan[2])){
             armedUri=uri;lastEffect=chosen;status="Última transição: "+TransitionNative.NAMES[chosen];
         }
     }
