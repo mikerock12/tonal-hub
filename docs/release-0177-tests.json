@@ -1,0 +1,46 @@
+{
+ "version": "0.17.7",
+ "date": "2026-11-23",
+ "androidVersionCode": 48,
+ "report": "Usuário: as transições não estão funcionando, não há efeito nenhum de uma música para outra.",
+ "identifiedFailure": "A janela de captura deixava cerca de 3 s entre o fim da decodificação de A e o ponto da mescla com 6/6 s. Uma carga lenta de B podia atingir o limite de 1,5 s e abortar com next-not-prepared. As fixtures anteriores entregavam B quase imediatamente.",
+ "fix": "Adicionados 6 s de antecedência à captura (LOAD_MARGIN_MS/kTransitionLoadMarginMs), compartilhados pelo planejamento Windows/Android. Com 6/6 s a janela passa de 9 para 15 s; a pré-rolagem de B continua 2,5 s e a mescla ainda exige B real.",
+ "reproduction": "Nova asserção de planejamento falhou antes da correção: slow next-track loading needs time before the mix. No simulador, a janela antiga aborta com B 8 s atrasada; a antecipada conclui com A+B e 0 quadros ausentes.",
+ "validation": {
+  "transitionCore": "PASS: 6 efeitos x 3 formas, carga lenta, limites, limitador, endCapture, recuperação, duas transições e 48/96 kHz",
+  "javaHost": "PLAYBACK_SAFETY_PASS 20080 checks",
+  "windowsFinal": "Build 0.17.7 e CTest 12/12 (81,55 s); três programas portáteis em smoke; ZIP 1439 arquivos/CRC e zero arquivos privados",
+  "androidTransitionAvd": {
+   "pass": true,
+   "earlyPlanAccepted": true,
+   "underruns": 0,
+   "directFallbacks": 0,
+   "queueWaits": 48,
+   "queueWaitMs": 1048,
+   "queueMaxSize": 256,
+   "latencyAfterMixMs": 2484,
+   "latencyAfterSecondMs": 2507,
+   "recoveryResumeVerified": true
+  },
+  "realWindowsSpotify": {
+   "firstAttempt": "3/3 mesclas com A+B e 0 quadros ausentes; reprovada por 1 underrun no eco",
+   "secondAttempt": "PASS 3/3: fade 6/6 s, eco 6/9 s e freio 9/4 s; A+B, 0 quadros ausentes, 0 underruns; OpenAL nulo",
+   "physicalAudio": false
+  },
+  "packages": {
+   "windowsPortablePrograms": 3,
+   "zipFiles": 1439,
+   "zipCrc": true,
+   "privateFiles": 0,
+   "androidVersionCode": 48,
+   "certificateSha256": "464ae7cf34f4f145541569db215f8fcdef5deda1be31921d8e366eed20aa22c2",
+   "alignment": 16384
+  }
+ },
+ "limits": [
+  "Sem Spotify real Android, aparelho físico, acústica, Bluetooth/carro ou benchmark novo.",
+  "A rota next-not-prepared foi reproduzida e corrigida; sem o trace do telefone não se afirma que foi a única causa possível do relato.",
+  "A validação Android usa PCM sintético na AVD e não é aceite físico do sintoma."
+ ],
+ "toolsInstalled": "Nenhum aplicativo ou ferramenta adicional instalado/baixado; usados MSVC, SDK/NDK/Gradle/AVD e dependências já existentes."
+}

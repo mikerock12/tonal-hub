@@ -70,8 +70,8 @@ TransitionPlan planTransition(int outroSeconds, int introSeconds, int64_t durati
   const int64_t region = std::max(outro, intro);
   if (region < 1500)
     return plan;
-  // Arma com folga para ler o fim de A e guardar o começo de B antes da mescla.
-  if (audibleRemainingMs > region + kTransitionPrerollMs + 500)
+  // Arma cedo para ler A e dar tempo à carga de B, sem aumentar o atraso de B.
+  if (audibleRemainingMs > region + kTransitionPrerollMs + kTransitionLoadMarginMs + 500)
     return plan;
   if (audibleRemainingMs < 1000 || upcomingMs < 0)
     return plan;

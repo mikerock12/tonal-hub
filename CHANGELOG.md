@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.17.7 — 23/11/2026
+
+- **Transições:** amplia em 6 s a antecedência da captura da música atual, dando mais tempo para o Spotify carregar a próxima antes da mescla. A janela anterior podia terminar em `next-not-prepared` e trocar sem efeito.
+- A pré-rolagem continua em 2,5 s, sem aumentar o atraso depois da mescla e sem permitir efeito sobre silêncio. Seeks, pulos e seleções continuam cancelando a transição.
+- Regressão com carga lenta de B, CTest 12/12, Java 20.080 checks e AVD sem underruns/fallbacks. Spotify real no Windows: 3/3 mesclas com A+B na repetição aprovada; a primeira tentativa registrou um underrun isolado. Sem Spotify real no Android, aparelho físico ou teste acústico.
+
 ## 0.17.6 — 23/11/2026
 
 - **Android:** corrige a regressão da 0.17.5 em que avançar pela seekbar podia deixar o áudio mudo e impedir novas transições. O app não descarta mais PCM indefinidamente enquanto espera um marcador de transporte que pode não chegar.
