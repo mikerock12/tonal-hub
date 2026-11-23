@@ -10,6 +10,8 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
+**0.17.7 — Transições com mais tempo de preparação:** a captura começa 6 s mais cedo para a próxima música carregar antes da mescla, evitando a troca sem efeito por `next-not-prepared`. A pré-rolagem de 2,5 s e a exigência de áudio real da próxima permanecem. [Detalhes](docs/TRANSITIONS_0170.md).
+
 **0.17.6 — Correção do seek Android:** avançar pela seekbar não deixa mais o áudio esperando indefinidamente por um marcador de transporte, e as transições voltam a poder ser armadas depois do seek. [Detalhes](docs/TRANSITIONS_0170.md).
 
 **0.17.5 — Motor e playlists mais robustos:** corrige o crash da página da música no Android, usa eventos tipados de transporte e fila limitada nas transições, permite adicionar playlists inteiras à fila e acrescentar textos revisados a playlists Spotify existentes pelo Text to Tonalify. [Detalhes](docs/TRANSITIONS_0170.md).

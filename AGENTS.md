@@ -622,3 +622,10 @@ docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no
 - O teste real Android não iniciou porque a AVD estava sem login após a limpeza dos testes anteriores. Não declarar seek/transições com Spotify real no Android nem aceite físico. Windows mantém o motor 0.17.5 já medido; recompilação da versão não é novo benchmark.
 - Android versionCode 47. Publicação/backup devem ser registrados somente após evidência correspondente.
 - Entrega 0.17.6 (23/11/2026): PR66 merge `d6739e95507a7c12ff3ff936b5b2ebe60111e9ab` (CI 5/5 + visual), código de produto `af2df8e6a6a8e34a68e356bf3e0d2db2bb324ee5`, release v0.17.6 com quatro binários; portal PR81 merge `933775e8d89be3f58702bdaee8c0b2f37e734d9a`, Worker `027e235f-3fd2-4deb-9999-b510d0fe1afc`, downloads/hashes/privado 401 conferidos. Backup privado `1fpxLJK8HIBzHl8BaGW0qIKr4aH561dAH`: ZIP de 403.360.272 bytes/384,7 MB exibidos, SHA-256 local `a738ec95d2540e99a91136a7525877e9fb4459c8fec336aee03272d1cc687545`, 16 arquivos, CRC/archives/bundles restaurados; pasta privada, proprietário `eu`, nenhum compartilhamento adicionado e hash remoto não fornecido. Evidências: docs/release-0176-tests.json e docs/artifacts-0176.json. Commits documentais posteriores não significam rebuild.
+
+
+## Preparação da próxima em transições 0.17.7
+
+- Ler a seção 0.17.7 de docs/TRANSITIONS_0170.md. A captura começa 6 s mais cedo para dar tempo à carga de B. A pré-rolagem continua 2,5 s; não aceitar mescla sem B nem reintroduzir efeito sobre silêncio.
+- Regressão com B 8 s atrasada: janela antiga aborta, antecipada conclui A+B com a mesma latência final. AVD 0 underruns/0 fallbacks; Java 20.080; CTest 12/12. Spotify real Windows 3/3 na repetição, após uma primeira tentativa com 1 underrun no eco. Sem Spotify real Android, aparelho físico ou acústica. Android versionCode 48.
+- Publicação e backup devem ser registrados somente após evidência correspondente.

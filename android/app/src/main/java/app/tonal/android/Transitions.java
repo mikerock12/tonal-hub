@@ -82,7 +82,7 @@ final class Transitions {
         // Posição do PCM já entregue; o som está atrás pelo atraso da anterior.
         long upcoming=remaining(durationMs,position,eventAt);
         long audible=upcoming+NativeBridge.audio.transitionLatencyMs();
-        long window=overlap+TransitionNative.PREROLL_MS+500;
+        long window=overlap+TransitionNative.PREROLL_MS+TransitionNative.LOAD_MARGIN_MS+500;
         // Os eventos chegam a cada segundo: agenda o momento exato de começar a ler.
         if(audible>window+1300||audible<1000)return;
         final String target=uri;final long track=durationMs;

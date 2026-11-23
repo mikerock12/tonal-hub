@@ -174,13 +174,15 @@ int main() {
 
   // Quando armar: região (maior das duas durações) + pré-rolagem de B + folga.
   require(!planTransition(6, 6, 200000, 30000, 30000).arm, "too early");
+  require(planTransition(6, 6, 200000, 14900, 12400).arm,
+          "slow next-track loading needs time before the mix");
   auto plan = planTransition(6, 6, 200000, 8900, 6400);
   require(plan.arm && plan.upcomingMs == 6400 && plan.outroMs == 6000 && plan.introMs == 6000,
           "arm with room for B preroll");
   plan = planTransition(4, 9, 200000, 11900, 9000);
   require(plan.arm && plan.outroMs == 4000 && plan.introMs == 9000 && plan.regionMs() == 9000,
           "a longer intro arms earlier");
-  require(!planTransition(4, 9, 200000, 12100, 9000).arm, "intro sets the arming window");
+  require(!planTransition(4, 9, 200000, 18100, 9000).arm, "intro sets the arming window");
   require(!planTransition(6, 6, 200000, 900, 900).arm, "too late");
   plan = planTransition(10, 10, 9000, 3000, 3000);
   require(plan.arm && plan.outroMs == 3000 && plan.introMs == 3000, "short track limits the mix to a third");
@@ -297,6 +299,23 @@ int main() {
       }
     }
     std::printf("effect %s ok\n", transitionEffectId(effect).data());
+  }
+
+  // Com a mesma carga lenta de B, a janela antiga aborta; capturar A mais cedo
+  // dá tempo de B chegar sem alterar a pré-rolagem nem aceitar silêncio no mix.
+  {
+    Options slow;
+    slow.bDelayBlocks = int(8.0 * rate / 512);
+    const auto oldWindow = simulate(TransitionEffect::Fade, a, b, 9.0, slow);
+    require(oldWindow.trace.phase == TransitionPhase::Aborted &&
+                oldWindow.trace.reason == TransitionReason::NextNotPrepared,
+            "fixture reproduces the old narrow loading window");
+    const auto earlyCapture = simulate(TransitionEffect::Fade, a, b, 15.0, slow);
+    require(earlyCapture.trace.phase == TransitionPhase::Completed && earlyCapture.trace.overlapVerified() &&
+                earlyCapture.trace.missingBFrames == 0 && earlyCapture.trace.preparedB >= rate,
+            "early capture completes the same slow-load transition");
+    require(earlyCapture.latencyAfter > size_t(rate * 2) && earlyCapture.latencyAfter <= size_t(rate * 3),
+            "early capture does not increase the post-mix preroll");
   }
 
   // Sem o marcador (motor antigo): continua usando a estimativa.

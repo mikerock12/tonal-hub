@@ -43,6 +43,8 @@ final class AudioSelfTest {
     static JSONObject transitions(Context context)throws Exception{
         JSONObject report=new JSONObject();AudioOutput out=new AudioOutput();out.initialize(context,"transition-test");
         try{
+            long[] early=TransitionNative.plan(6,6,200000,14900,12400);
+            require(early!=null&&early[0]==1&&early[1]==12400,"janela antecipada para carga lenta da próxima");
             out.startStereo(44100);
             float[] a=new float[44100*2*12],b=new float[44100*2*12];
             for(int f=0;f<44100*12;f++){float v=(float)(.4*Math.sin(2*Math.PI*440*f/44100.));a[f*2]=v;a[f*2+1]=v;}

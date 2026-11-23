@@ -23,6 +23,8 @@
 // continua sem efeito e a região encolhe; se não sobrar o mínimo, a troca é
 // normal, sem efeito, com o motivo registrado em trace(). Nunca A com efeito
 // sobre silêncio no lugar de B.
+// Desde a 0.17.7 a captura tem 6 s extras para a carga de B; a pré-rolagem
+// continua 2,5 s e a mescla ainda exige B real, sem aumentar o atraso final.
 // Buffers reservados no construtor; push/pull não alocam. Sem rede, banco ou UI.
 #include <array>
 #include <cstddef>
@@ -47,6 +49,8 @@ constexpr int kTransitionMinSeconds = 3;
 constexpr int kTransitionMaxSeconds = 10;
 // Quanto do começo de B fica guardado antes da mescla começar.
 constexpr int kTransitionPrerollMs = 2500;
+// Antecedência extra para o motor carregar B antes do ponto da mescla.
+constexpr int kTransitionLoadMarginMs = 6000;
 // Quanto de B precisa estar guardado para a mescla começar.
 constexpr int kTransitionReadyMs = 1000;
 // Mescla mais curta que isso não vale o efeito: troca normal.

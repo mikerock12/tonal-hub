@@ -43,7 +43,7 @@ final class TransitionNative {
     static native long latency(long handle);
     /** {arm 0/1, upcomingMs, outroMs, introMs}; mesmas regras do Windows. */
     static native long[] plan(int outroSeconds,int introSeconds,long durationMs,long audibleRemainingMs,long upcomingMs);
-    static final int PREROLL_MS=2500;
+    static final int PREROLL_MS=2500,LOAD_MARGIN_MS=6000;
     static native int pickRandom(int previous,int random);
     private TransitionNative(){}
 }

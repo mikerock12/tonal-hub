@@ -95,8 +95,9 @@ public final class PlaybackSafetyChecks {
         check(!receiver.contains("NativeBridge.command")&&!receiver.contains("startForegroundService")&&!receiver.contains("PlaybackService.start")&&!receiver.contains("startActivity"),"a media key with the player closed never starts playback or opens an app");
         for(String service:new String[]{"PlaybackService.java","IndiePlaybackService.java"})check(source(code+service).contains("MediaButtonReceiver.attach(media,this);media.setActive(true);"),"session registers the receiver before activation: "+service);
         transitionQueue();
-        String panel=source(code+"MusicPanel.java"),audio=source(code+"AudioOutput.java");
+        String panel=source(code+"MusicPanel.java"),audio=source(code+"AudioOutput.java"),transitions=source(code+"Transitions.java");
         check(panel.contains("if(closed||songPager!=pager)return")&&panel.contains("if(!closed&&songPager==pager)pager.showPage"),"cancelled touch cannot call a replaced SongPager");
+        check(transitions.contains("PREROLL_MS+TransitionNative.LOAD_MARGIN_MS+500"),"transition capture leaves time for slow next-track loading");
         check(!audio.contains("mixLock.wait(50)")&&!audio.contains("Thread.sleep(2)"),"transition output has no timed monitor wait or sleep polling");
         check(audio.contains("TransitionInputQueue")&&audio.contains("transportDiscontinuity"),"bounded PCM handoff and typed discontinuity are wired");
         System.out.println("PLAYBACK_SAFETY_PASS "+checks+" checks");

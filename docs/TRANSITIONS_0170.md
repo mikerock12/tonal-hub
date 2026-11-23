@@ -316,3 +316,14 @@ A proteção `transportChanging` da 0.17.5 descartava PCM até receber um evento
 Na AVD, o teste cobre PCM com marcador atrasado, flush e nova mescla concluída após o seek. Resultado: 0 underruns e 0 fallbacks diretos; a transição adicional elevou os contadores acumulados para 47 esperas/1.024 ms, sem falha de saída. Uma primeira fixture com apenas 3 s de A abortou corretamente por `next-not-prepared`; foi substituída por uma janela com 6 s de A e 8 s de B, sem afrouxar a exigência de mescla concluída.
 
 O teste de navegação com Spotify real não iniciou por falta de login na AVD após os testes anteriores. Sem teste físico, acústico ou validação Android real nesta correção.
+
+
+## 0.17.7 — antecedência para carregar a próxima (23/11/2026)
+
+O usuário relatou que as trocas naturais voltaram a não ter efeito. A janela de captura terminava cerca de três segundos antes do ponto da mescla; uma carga mais lenta de B chegava ao limite de 1,5 s e o mixer fazia a troca normal com `next-not-prepared`. As fixtures anteriores entregavam B quase imediatamente e não cobriam esse tempo de carga. Sem o trace do aparelho, essa rota de falha está confirmada no teste, mas não se afirma que foi a única causa possível no telefone.
+
+A captura agora começa até 6 s mais cedo (`kTransitionLoadMarginMs` / `LOAD_MARGIN_MS`). Com 6/6 s, a janela passa de 9 para 15 s antes do fim de A; com 10/10 s, de 13 para 19 s. A pré-rolagem de B depois da mescla continua 2,5 s, a exigência de B real permanece e seeks/pulos/seleções continuam cancelando o efeito. Não há rede, alocação nem trabalho de UI novo no callback PCM.
+
+Regressão: o planejamento antigo recusou a nova janela antes da correção. No teste com a mesma carga de B atrasada 8 s, a captura antiga de 9 s aborta e a de 15 s conclui com A+B, 0 quadros ausentes e a mesma pré-rolagem. AVD com AudioTrack real e PCM sintético: suíte completa aprovada, 0 underruns, 0 fallbacks diretos, 48 esperas/1.048 ms na fila, recuperação e transições consecutivas preservadas. Java host: 20.080 checks.
+
+Windows: CTest 12/12 (81,55 s). Spotify real com saída OpenAL nula: primeira tentativa concluiu 3/3 mesclas com A+B e 0 quadros ausentes, mas foi reprovada por 1 underrun no eco; repetição concluiu 3/3 com 0 underruns. O episódio fica registrado, sem declarar benchmark ou teste acústico. Android com Spotify real e aparelho físico não foram testados.
