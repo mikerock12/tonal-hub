@@ -22,7 +22,64 @@ public final class PlaybackSafetyChecks {
         Thread blocked=new Thread(()->{waiting.countDown();accepted.set(cancelled.put(b,TransitionInputQueue.PCM,0,1,stop::get));});blocked.start();waiting.await();
         long until=System.nanoTime()+2_000_000_000L;while(blocked.getState()!=Thread.State.WAITING&&System.nanoTime()<until)Thread.yield();stop.set(true);cancelled.wakeAll();blocked.join(2000);
         check(!blocked.isAlive()&&!accepted.get(),"full-queue wait is cancelled without accepting stale PCM");cancelled.release(cancelled.peek());
+        transitionQueueAudit();
     }
+    /**
+     * Auditoria TH-006 (F-01/F-02/F-03): 1M itens com marcadores e várias gerações,
+     * consumidor atrasado, interrupção do produtor e dois produtores (reinício do motor).
+     */
+    private static void transitionQueueAudit() throws Exception {
+        final int total=1_000_000;
+        TransitionInputQueue queue=new TransitionInputQueue(16);
+        java.util.concurrent.atomic.AtomicReference<Throwable> failure=new java.util.concurrent.atomic.AtomicReference<>();
+        Thread producer=new Thread(()->{try{
+            java.util.Random jitter=new java.util.Random(7);
+            for(int i=0;i<total;i++){
+                boolean marker=i%97==0;long epoch=i/250_000;
+                queue.put(marker?null:new float[]{i,-i},marker?TransitionInputQueue.BOUNDARY:TransitionInputQueue.PCM,i,epoch,()->false);
+                if(jitter.nextInt(5000)==0)Thread.sleep(1);
+            }}catch(Throwable error){failure.set(error);}},"F01-producer");
+        producer.start();
+        java.util.Random slow=new java.util.Random(11);long markers=0;
+        for(int i=0;i<total;i++){
+            TransitionInputQueue.Entry e;while((e=queue.peek())==null){if(failure.get()!=null)throw new AssertionError(failure.get());queue.awaitWork();}
+            boolean marker=i%97==0;
+            if(e.positionMs!=i||e.epoch!=i/250_000||(marker?e.event!=TransitionInputQueue.BOUNDARY||e.samples!=null:e.event!=TransitionInputQueue.PCM||e.samples[0]!=i))
+                throw new AssertionError("F-01 ordem/conteúdo no item "+i);
+            if(marker)markers++;
+            queue.release(e);
+            if(slow.nextInt(20000)==0)Thread.sleep(1);
+        }
+        producer.join(10000);
+        check(!producer.isAlive()&&failure.get()==null&&queue.isEmpty()&&markers==(total+96)/97,"F-01 1M itens sem perda, duplicata ou reordenação");
+        // F-02: fila cheia, o cancelamento libera o produtor em tempo limitado.
+        TransitionInputQueue full=new TransitionInputQueue(2);full.offer(new float[2],0,0,1);full.offer(new float[2],0,0,1);
+        java.util.concurrent.atomic.AtomicBoolean cancel=new java.util.concurrent.atomic.AtomicBoolean();
+        java.util.concurrent.atomic.AtomicLong waitedNanos=new java.util.concurrent.atomic.AtomicLong();
+        Thread waiter=new Thread(()->{long t=System.nanoTime();boolean ok=full.put(new float[2],0,0,1,cancel::get);waitedNanos.set(ok?-1:System.nanoTime()-t);});
+        waiter.start();long until=System.nanoTime()+2_000_000_000L;while(waiter.getState()!=Thread.State.WAITING&&System.nanoTime()<until)Thread.yield();
+        long cancelledAt=System.nanoTime();cancel.set(true);full.wakeAll();waiter.join(2000);
+        check(!waiter.isAlive()&&waitedNanos.get()>0&&System.nanoTime()-cancelledAt<500_000_000L,"F-02 cancelamento com fila cheia termina a espera em <500 ms");
+        // F-03: interrupção recusa sem aceitar e devolve o sinal de interrupção.
+        java.util.concurrent.atomic.AtomicBoolean interruptedKept=new java.util.concurrent.atomic.AtomicBoolean(),acceptedAfter=new java.util.concurrent.atomic.AtomicBoolean(true);
+        Thread interrupted=new Thread(()->{acceptedAfter.set(full.put(new float[2],0,0,1,()->false));interruptedKept.set(Thread.currentThread().isInterrupted());});
+        interrupted.start();until=System.nanoTime()+2_000_000_000L;while(interrupted.getState()!=Thread.State.WAITING&&System.nanoTime()<until)Thread.yield();
+        interrupted.interrupt();interrupted.join(2000);
+        check(!interrupted.isAlive()&&!acceptedAfter.get()&&interruptedKept.get()&&full.size()==2,"F-03 interrupção não aceita nem gira, e preserva o sinal");
+        // Dois produtores ao mesmo tempo (reinício do motor): nada perdido nem sobrescrito.
+        TransitionInputQueue shared=new TransitionInputQueue(8);final int each=100_000;
+        Thread[] producers=new Thread[2];
+        for(int p=0;p<2;p++){final int id=p;producers[p]=new Thread(()->{for(int i=0;i<each;i++)shared.put(new float[]{id,i},0,0,id,()->false);});producers[p].start();}
+        int[] next=new int[2];
+        for(int n=0;n<2*each;n++){
+            TransitionInputQueue.Entry e;while((e=shared.peek())==null)queueYield();
+            int id=(int)e.samples[0];if(e.epoch!=id||(int)e.samples[1]!=next[id])throw new AssertionError("produtores concorrentes: item perdido ou fora de ordem");
+            next[id]++;shared.release(e);
+        }
+        for(Thread t:producers)t.join(5000);
+        check(next[0]==each&&next[1]==each&&shared.isEmpty(),"dois produtores serializados sem perder itens");
+    }
+    private static void queueYield(){Thread.yield();}
     public static void main(String[] args) throws Exception {
         check(PositionSync.reconcile(12000,11500,true)==12000,"small stale progress cannot rewind playback");
         check(PositionSync.reconcile(12000,9000,true)==9000,"large external seeks remain possible");

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.17.8 — 23/11/2026 (auditoria TH-006/TH-009)
+
+- **Android:** corrige as transições sem efeito. Desde a 0.17.5 a fila entregava ao mixer só um pacote por bloco tocado. Com os pacotes reais do Spotify, a leitura adiantada não passava do tempo real e a mescla ficava vazia. A partir da segunda transição, armar descartava segundos da música atual. O atraso mostrado na tela (posição e letra) agora inclui o áudio guardado na fila.
+- **Windows:** o seek e o pulo não perdem mais o começo da nova posição (cerca de 0,4 s).
+- **Windows e Android:** no fim natural da fila, o fim já lido da última música (e de uma transição) toca até o fim, em vez de ser descartado como um stop do usuário.
+- Testes adversariais que falham na versão anterior: AVD com pacotes reais, motor Windows, mixer, vigia e fila Java. CTest 12/12 e Spotify real no Windows 3/3 (saída nula). Sem Spotify real no Android, aparelho físico ou teste acústico. Relatório em docs/audit/TH006_TH009_AUDIT.md.
+
 ## 0.17.7 — 23/11/2026
 
 - **Transições:** amplia em 6 s a antecedência da captura da música atual, dando mais tempo para o Spotify carregar a próxima antes da mescla. A janela anterior podia terminar em `next-not-prepared` e trocar sem efeito.

@@ -1,0 +1,47 @@
+{
+  "audit": "TH-006/TH-009",
+  "date": "2026-11-23",
+  "inputSha": "ca9afbb11ec6f89312a1922404b00ec5b99ee4c2",
+  "branch": "codex/audit-th006-th009",
+  "globalStatus": "IMPLEMENTADO_COM_VALIDACAO_PENDENTE",
+  "defectsConfirmed": [
+    {"id": "D1", "platform": "Android", "severity": "P0", "summary": "writer entregava um pacote por bloco tocado: captura no tempo real, região 0, troca sem efeito", "before": "FAIL (trace Armed, overlap 0)", "after": "PASS"},
+    {"id": "D2", "platform": "Android", "severity": "P0", "summary": "armTransition incrementava mixEpoch e descartava a fila a partir da segunda transição", "before": "não alcançado (D1 travou a primeira)", "after": "PASS (0 quadros perdidos em 2 transições)"},
+    {"id": "D3", "platform": "Android", "severity": "P1", "summary": "áudio da fila fora de transitionLatencyMs", "before": "6004 ms no app x 0 ms informados", "after": "2877 x 2877 ms"},
+    {"id": "D4", "platform": "Windows", "severity": "P1", "summary": "evento tipado esvaziava o pipe com o começo da nova posição", "before": "115473/132300 quadros", "after": "132300/132300"},
+    {"id": "D5", "platform": "Windows+Android", "severity": "P1", "summary": "fim natural da fila emitia UserStop e descartava o fim lido; NaturalStop exigiu ajuste do vigia Windows", "before": "vigia reiniciava o motor (teste natural-end FAIL)", "after": "PASS"},
+    {"id": "D6", "platform": "Android/C++", "severity": "P2", "summary": "trace ficava Armed para sempre com região vazia", "before": "FAIL (TransitionChecks)", "after": "PASS"},
+    {"id": "D7", "platform": "Android", "severity": "P2", "summary": "fila sem proteção para dois produtores", "before": "FAIL 3/3 (JVM)", "after": "PASS"},
+    {"id": "D8", "platform": "Android", "severity": "P2", "summary": "bloco antigo depois do flush, ordem na drenagem, writer morto prendendo o motor, resto do bloco perdido na pausa", "before": "revisão de código", "after": "corrigido; sem teste com barreiras determinísticas"}
+  ],
+  "runs": [
+    {"testId": "F-01..F-03+MPSC", "platform": "JVM", "result": "PASS", "checks": 20084, "evidence": "tests/android/PlaybackSafetyChecks.java"},
+    {"testId": "transition_mixer", "platform": "Windows C++", "result": "PASS", "note": "novo caso captura atrasada FAIL antes"},
+    {"testId": "CTest", "platform": "Windows", "result": "PASS", "passed": 12, "total": 12, "seconds": 84.24},
+    {"testId": "F-13 seek-event", "platform": "Windows", "result": "PASS", "beforeFramesRead": 115473, "afterFramesRead": 132300, "expected": 132300},
+    {"testId": "natural-end watchdog", "platform": "Windows", "result": "PASS", "before": "FAIL"},
+    {
+      "testId": "transitionRealSuite", "platform": "Android", "device": "AVD Tonal_Local_20261015 (emulador)",
+      "outputRoute": "AVD AudioTrack", "sampleRateHz": 44100, "sessionType": "synthetic", "packetFrames": 1024,
+      "transitionsCount": 2, "before": "FAIL", "result": "PASS",
+      "overlapMs": [4000, 4000], "preparedBMs": [2507, 2507], "missingBFrames": [0, 0],
+      "reportedLatencyMs": [2877, 2876], "backlogMs": [2877, 2876], "lostFrames": 0,
+      "audioUnderrunsDuringTransitions": 0, "audioUnderrunsAtEndOfStream": 1,
+      "producerWaitCount": 975, "producerWaitTotalMs": 34079, "producerWaitMaxMs": 7160.8,
+      "writerFailures": 0, "directFallbacks": 0,
+      "cpuPercentPerCore": null, "memoryPssMiB": null, "allocationsPerSecond": null, "gcPauseP99Ms": null, "writerBlockP99Ms": null
+    },
+    {"testId": "transitionSuite", "platform": "Android", "device": "AVD", "sessionType": "synthetic", "result": "PASS", "latencyAfterMixMs": 3225, "latencyAfterSecondMs": 3218, "preparedBMs": 2507, "underruns": 0, "directFallbacks": 0, "recoveryResumeVerified": true},
+    {
+      "testId": "verify-natural-transitions", "platform": "Windows", "sessionType": "real-authenticated", "outputRoute": "openal-null",
+      "physicalAudio": false, "credentialsLogged": false, "result": "PASS", "naturalTransitionsVerified": 3,
+      "transitions": [
+        {"effect": "fade", "outroMs": 6000, "introMs": 6000, "overlapMs": 6000, "preparedBMs": 2507, "missingBFrames": 0, "underrunsDelta": 0},
+        {"effect": "echo", "outroMs": 6000, "introMs": 9000, "overlapMs": 9000, "preparedBMs": 2504, "missingBFrames": 0, "underrunsDelta": 0},
+        {"effect": "brake", "outroMs": 9000, "introMs": 4000, "overlapMs": 9000, "preparedBMs": 2511, "missingBFrames": 0, "underrunsDelta": 0}
+      ]
+    }
+  ],
+  "notRun": ["F-05", "F-06", "F-07", "F-08", "F-16 (reinício real)", "F-17", "F-19", "F-20", "F-21", "Android Spotify real", "aparelho físico", "Bluetooth/carro", "acústica", "CPU/RAM/GC/p99", "fim natural da fila com motor real"],
+  "toolsInstalled": "nenhum"
+}

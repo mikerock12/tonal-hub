@@ -121,6 +121,9 @@ enum PlayerCommand {
     Play,
     Pause,
     Stop,
+    // Tonal: fim natural da fila. Para o player como Stop, sem o evento de
+    // transporte: o fim já lido da última faixa (e de uma transição) toca até o fim.
+    NaturalStop,
     Seek(u32),
     SetSession(Session),
     AddEventSender(mpsc::UnboundedSender<PlayerEvent>),
@@ -589,6 +592,10 @@ impl Player {
 
     pub fn stop(&self) {
         self.command(PlayerCommand::Stop)
+    }
+
+    pub fn stop_natural(&self) {
+        self.command(PlayerCommand::NaturalStop)
     }
 
     pub fn seek(&self, position_ms: u32) {
@@ -1710,6 +1717,10 @@ impl PlayerInternal {
 
     fn handle_player_stop(&mut self) {
         self.tonal_transport_event(TONAL_USER_STOP);
+        self.handle_player_stop_quiet();
+    }
+
+    fn handle_player_stop_quiet(&mut self) {
         match self.state {
             PlayerState::Playing {
                 ref track_id,
@@ -2405,6 +2416,8 @@ impl PlayerInternal {
 
             PlayerCommand::Stop => self.handle_player_stop(),
 
+            PlayerCommand::NaturalStop => self.handle_player_stop_quiet(),
+
             PlayerCommand::SetSession(session) => self.session = session,
 
             PlayerCommand::AddEventSender(sender) => self.event_senders.push(sender),
@@ -2623,6 +2636,7 @@ impl fmt::Debug for PlayerCommand {
             PlayerCommand::Play => f.debug_tuple("Play").finish(),
             PlayerCommand::Pause => f.debug_tuple("Pause").finish(),
             PlayerCommand::Stop => f.debug_tuple("Stop").finish(),
+            PlayerCommand::NaturalStop => f.debug_tuple("NaturalStop").finish(),
             PlayerCommand::Seek(position) => f.debug_tuple("Seek").field(&position).finish(),
             PlayerCommand::SetSession(_) => f.debug_tuple("SetSession").finish(),
             PlayerCommand::AddEventSender(_) => f.debug_tuple("AddEventSender").finish(),

@@ -327,3 +327,43 @@ A captura agora começa até 6 s mais cedo (`kTransitionLoadMarginMs` / `LOAD_MA
 Regressão: o planejamento antigo recusou a nova janela antes da correção. No teste com a mesma carga de B atrasada 8 s, a captura antiga de 9 s aborta e a de 15 s conclui com A+B, 0 quadros ausentes e a mesma pré-rolagem. AVD com AudioTrack real e PCM sintético: suíte completa aprovada, 0 underruns, 0 fallbacks diretos, 48 esperas/1.048 ms na fila, recuperação e transições consecutivas preservadas. Java host: 20.080 checks.
 
 Windows: CTest 12/12 (81,55 s). Spotify real com saída OpenAL nula: primeira tentativa concluiu 3/3 mesclas com A+B e 0 quadros ausentes, mas foi reprovada por 1 underrun no eco; repetição concluiu 3/3 com 0 underruns. O episódio fica registrado, sem declarar benchmark ou teste acústico. Android com Spotify real e aparelho físico não foram testados.
+
+## 0.17.8 — auditoria TH-006/TH-009 (23/11/2026)
+
+Relatório completo: `docs/audit/TH006_TH009_AUDIT.md`. Resultados: `docs/audit/TH006_TH009_TEST_RESULTS.json`.
+
+Uma suíte nova na AVD usa pacotes do tamanho real do librespot (1024 quadros) e entrega A, B e C sem pausa. Ela mostrou a causa provável do relato da 0.17.7, "não há efeito nenhum":
+- **Leitura adiantada no tempo real:** desde a 0.17.5 o writer Android entregava ao mixer um pacote por bloco tocado. Quando o marcador de B chegava, A já tinha tocado até ele, e a região de mescla ficava com 0 quadros.
+- **Segunda transição:** ao armar, a fila inteira era descartada (cerca de 6 s de A).
+- **Atraso fora da conta:** a fila não entrava no atraso informado à tela, com 6 s guardados contra 0 ms informados.
+- **Por que as fixtures antigas passavam:** usavam pacotes de 2048 quadros.
+
+Correções:
+- O writer entrega ao mixer tudo o que ele aceitar a cada ciclo.
+- Armar não muda a geração.
+- A fila tem 16 entradas e entra em `transitionLatencyMs()`.
+- A geração é conferida dentro do `trackLock`.
+- Uma falha do writer invalida a fila.
+- Um único lock protege os produtores.
+- Uma região vazia termina o trace com `next-not-prepared`.
+
+No Windows, o evento tipado não esvazia mais o pipe, que já contém a posição nova. Antes eram perdidos 0,38 s por seek.
+
+Nas duas plataformas, o fim natural da fila é `NaturalStop`, sem o evento de stop do usuário, e o fim já lido toca até o fim. O vigia do Windows trata `command=NaturalStop` como fim de reprodução esperada, sem reiniciar o motor.
+
+Antes e depois:
+- **AVD realista:**
+  - Antes: transição sem efeito.
+  - Depois: 2/2 mesclas de 4 s com 2,5 s de B guardados, 0 quadros perdidos, atraso informado igual ao real e 0 underruns durante as transições.
+- **Motor Windows:** 115.473 → 132.300 de 132.300 quadros depois do seek.
+- **Vigia:** reiniciava o motor; agora não reinicia.
+- **CTest:** 12/12.
+- **JVM:** 20.084 checagens, incluindo 1M itens e dois produtores.
+- **Spotify real no Windows:** 3/3 com A+B e 0 underruns, com OpenAL nulo.
+
+Pendente:
+- Android com Spotify real e aparelho físico.
+- Rotas e Bluetooth.
+- CPU, GC e p99.
+- Ciclos de AudioTrack e reabertura.
+- Fim natural da fila com o motor real.

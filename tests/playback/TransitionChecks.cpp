@@ -450,6 +450,28 @@ int main() {
                 mixer.trace().reason == TransitionReason::NextNotPrepared && mixer.trace().energyA == 0,
             "without B the effect is not applied");
   }
+  // Captura atrasada (Android 0.17.5–0.17.7, um pacote por bloco tocado): A já
+  // tocou até o marcador quando ele chega. Sem região não há efeito, e o trace
+  // tem de dizer isso em vez de ficar "armado" para sempre.
+  {
+    TransitionMixer mixer(rate);
+    require(mixer.arm(TransitionEffect::Fade, 9 * rate, 4 * rate, 4 * rate, true, 41), "arm with a slow capture");
+    std::vector<float> out(512 * 2);
+    size_t played = 0, pushed = 0;
+    for (size_t at = 0; at < size_t(4 * rate); at += 512) {
+      pushed += mixer.push(a.data() + at * 2, 512);
+      played += mixer.pull(out.data(), 512);
+    }
+    mixer.boundary();
+    for (size_t at = 0; at < size_t(2 * rate); at += 512) {
+      pushed += mixer.push(b.data() + at * 2, 512);
+      played += mixer.pull(out.data(), 512);
+    }
+    require(mixer.trace().overlap == 0 && mixer.trace().phase == TransitionPhase::Aborted &&
+                mixer.trace().reason == TransitionReason::NextNotPrepared && mixer.trace().id == 41,
+            "a boundary after A already played ends the trace as a plain switch with its reason");
+    require(played + mixer.latencyFrames() == pushed, "the late capture still plays A then B once");
+  }
   // Android: o motor pausou no meio (recuperação de buffering) e retomou a
   // mesma faixa. O trecho retomado é A, não B: a captura continua até o
   // marcador real de B, e a mescla usa a B verdadeira.
