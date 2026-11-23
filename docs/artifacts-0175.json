@@ -1,0 +1,43 @@
+{
+ "version": "0.17.5",
+ "assets": [
+  {"name": "Tonal-Hub-0.17.5.0-Windows-x64-Setup.exe", "sha256": "1b3678d190d53e887147076a825586645d0559d6c6a92a773ef3c8c52bbf29ad", "bytes": 89151782},
+  {"name": "Tonal-Hub-0.17.5-local.zip", "sha256": "1236d501337e4045d1a232849af2995c320a1ada8809c87d8c2eea899c40f902", "bytes": 121173750},
+  {"name": "Tonal-Android-0.17.5-arm64-v8a.apk", "sha256": "5044487276e10a66813a2547268863d400917e0255843b90045f9d9a919640d9", "bytes": 38380442},
+  {"name": "Tonal-Android-0.17.5-local.apk", "sha256": "2c62a29dc79b5242716ffba5a82809cf71da7bb14e66820f895cd48bd589d735", "bytes": 66614283}
+ ],
+ "androidVersionCode": 46,
+ "productCode": "6e4b5b8d6886483cf7cf96b545f5a9a9fb4e1eba",
+ "productMerge": "5521d56fec5ba2b7e75f8453071484cf0377f66d",
+ "librespotWindowsSha256": "f01ced52a15e5617303e756534639371245116e4e5e7cac521963505b05aa6f9",
+ "certificateSha256": "464ae7cf34f4f145541569db215f8fcdef5deda1be31921d8e366eed20aa22c2",
+ "alignment": 16384,
+ "release": "https://github.com/mikerock12/tonal-hub/releases/tag/v0.17.5",
+ "remoteAssetsVerified": true,
+ "portal": {
+  "pullRequest": 78,
+  "merge": "dd4c02185813f5637bea285be0a2035843b83e21",
+  "worker": "9cf4757d-24dc-4d20-97a3-9a3532a1eb01",
+  "downloadsRedirectToV0175": true,
+  "hashesMatch": true,
+  "privateArea401": true,
+  "tests": "60/60",
+  "productionNote": "Primeira consulta Windows retornou 503 transitório; repetição e APIs subsequentes 200, redirects 302 e página renderizada v0.17.5."
+ },
+ "ci": {
+  "pullRequest": 63,
+  "checks": "5/5",
+  "mainRun": 45097789438,
+  "androidVisualRun": 45097789350,
+  "androidVisualRegression": "success"
+ },
+ "privateBackup": {
+  "status": "blocked_auth",
+  "reason": "Google Drive MCP invalid_grant e navegador integrado sem sessão Google; nenhum upload declarado.",
+  "localFile": "out/Tonal-Hub-0.17.5-backup.zip",
+  "bytes": 403207985,
+  "sha256": "543e38207d22ec397836a81e1b19bea842cf09f73065215e2a38a61343794971",
+  "files": 18,
+  "localCrcAndRestoreVerified": true
+ }
+}

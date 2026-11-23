@@ -74,6 +74,11 @@
   "song_page_smoke.py histórico parou antes do caso novo por procurar a aba Letras, removida em versões anteriores; a regressão dedicada song_pager_race_smoke.py usa a navegação atual e passou.",
   "Uma espera inicial do relatório Android teve conversão /sdcard pelo Git Bash; o resultado foi lido diretamente do logcat/arquivo e não contado como aprovação."
  ],
+ "publication": {
+  "app": "PR63 merge 5521d56fec5ba2b7e75f8453071484cf0377f66d; CI 5/5 + visual; release v0.17.5 com assets/digests remotos conferidos",
+  "portal": "PR78 merge dd4c02185813f5637bea285be0a2035843b83e21; Worker 9cf4757d-24dc-4d20-97a3-9a3532a1eb01; APIs/hashes/redirects/página e privado 401 conferidos",
+  "backup": "ZIP local 403207985 bytes/18 arquivos, CRC/bundles/archives verificados; upload não realizado por invalid_grant e ausência de sessão Google"
+ },
  "limits": [
   "Sem aparelho físico, Spotify real no Android, escrita real em playlists, Bluetooth/carro, captura acústica, CPU/bateria ou benchmark novo.",
   "AVD usa tons e catálogo sintéticos; não prova desempenho ou correção acústica no POCO.",
