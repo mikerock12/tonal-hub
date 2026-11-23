@@ -105,6 +105,16 @@ enum PlayerCommand {
         play: bool,
         position_ms: u32,
     },
+    NaturalLoad {
+        track_id: SpotifyUri,
+        play: bool,
+        position_ms: u32,
+    },
+    ResumeLoad {
+        track_id: SpotifyUri,
+        play: bool,
+        position_ms: u32,
+    },
     Preload {
         track_id: SpotifyUri,
     },
@@ -543,6 +553,22 @@ impl Player {
 
     pub fn load(&self, track_id: SpotifyUri, start_playing: bool, position_ms: u32) {
         self.command(PlayerCommand::Load {
+            track_id,
+            play: start_playing,
+            position_ms,
+        });
+    }
+
+    pub fn load_natural(&self, track_id: SpotifyUri, start_playing: bool, position_ms: u32) {
+        self.command(PlayerCommand::NaturalLoad {
+            track_id,
+            play: start_playing,
+            position_ms,
+        });
+    }
+
+    pub fn load_resume(&self, track_id: SpotifyUri, start_playing: bool, position_ms: u32) {
+        self.command(PlayerCommand::ResumeLoad {
             track_id,
             play: start_playing,
             position_ms,
@@ -1595,7 +1621,25 @@ fn tonal_track_marker(position_ms: u32) -> Vec<u8> {
     bytes
 }
 
+pub const TONAL_TRANSPORT_MARKER: u32 = 0x7FA0_7A1C;
+const TONAL_USER_LOAD: u32 = 1;
+const TONAL_USER_SEEK: u32 = 2;
+const TONAL_USER_STOP: u32 = 3;
+fn tonal_transport_marker(event: u32) -> Vec<u8> {
+    let mut bytes = Vec::with_capacity(8);
+    bytes.extend_from_slice(&TONAL_TRANSPORT_MARKER.to_le_bytes());
+    bytes.extend_from_slice(&(0x7FC0_0000u32 | event).to_le_bytes());
+    bytes
+}
+
 impl PlayerInternal {
+    fn tonal_transport_event(&mut self, event: u32) {
+        let _ = self.sink.write(
+            AudioPacket::Raw(tonal_transport_marker(event)),
+            &mut self.converter,
+        );
+    }
+
     /// Tonal: o Spirc só conhece a posição pelos eventos (a cada 1 s) e trata
     /// um fim de faixa mais de 2 s antes da duração como falta de dados
     /// (pausa e recarrega a faixa). Com a leitura adiantada das transições o
@@ -1665,6 +1709,7 @@ impl PlayerInternal {
     }
 
     fn handle_player_stop(&mut self) {
+        self.tonal_transport_event(TONAL_USER_STOP);
         match self.state {
             PlayerState::Playing {
                 ref track_id,
@@ -2262,6 +2307,7 @@ impl PlayerInternal {
     }
 
     fn handle_command_seek(&mut self, position_ms: u32) -> PlayerResult {
+        self.tonal_transport_event(TONAL_USER_SEEK);
         // When we are still loading, the user may immediately ask to
         // seek to another position yet the decoder won't be ready for
         // that. In this case just restart the loading process but
@@ -2331,6 +2377,19 @@ impl PlayerInternal {
         debug!("command={cmd:?}");
         match cmd {
             PlayerCommand::Load {
+                track_id,
+                play,
+                position_ms,
+            } => {
+                self.tonal_transport_event(TONAL_USER_LOAD);
+                self.handle_command_load(track_id, None, play, position_ms)?
+            }
+            PlayerCommand::NaturalLoad {
+                track_id,
+                play,
+                position_ms,
+            }
+            | PlayerCommand::ResumeLoad {
                 track_id,
                 play,
                 position_ms,
@@ -2532,6 +2591,28 @@ impl fmt::Debug for PlayerCommand {
                 ..
             } => f
                 .debug_tuple("Load")
+                .field(&track_id)
+                .field(&play)
+                .field(&position_ms)
+                .finish(),
+            PlayerCommand::NaturalLoad {
+                track_id,
+                play,
+                position_ms,
+                ..
+            } => f
+                .debug_tuple("NaturalLoad")
+                .field(&track_id)
+                .field(&play)
+                .field(&position_ms)
+                .finish(),
+            PlayerCommand::ResumeLoad {
+                track_id,
+                play,
+                position_ms,
+                ..
+            } => f
+                .debug_tuple("ResumeLoad")
                 .field(&track_id)
                 .field(&play)
                 .field(&position_ms)

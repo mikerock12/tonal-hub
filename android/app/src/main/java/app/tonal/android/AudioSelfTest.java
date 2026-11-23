@@ -9,6 +9,7 @@ import org.json.*;
 /** Signal-level tests exercise the shipped native libraries, not a second model of the DSP. */
 final class AudioSelfTest {
     static void require(boolean condition,String message){if(!condition)throw new AssertionError(message);}
+    static void until(java.util.function.BooleanSupplier condition,String message)throws InterruptedException{long deadline=android.os.SystemClock.elapsedRealtime()+10000;while(!condition.getAsBoolean()&&android.os.SystemClock.elapsedRealtime()<deadline)Thread.sleep(5);require(condition.getAsBoolean(),message);}
     static float[] tone(int channels,int channel,double amplitude,double hz){float[] a=new float[48000*channels];for(int f=0;f<48000;f++)a[f*channels+channel]=(float)(amplitude*Math.sin(2*Math.PI*hz*f/48000));return a;}
     static double rms(float[] a,int channel,int channels){double e=0;int count=0;for(int i=24000*channels+channel;i<a.length;i+=channels){e+=a[i]*a[i];count++;}return Math.sqrt(e/count);}
     static Dsp.Settings setting(boolean enabled,boolean eq,float[] bands,float bass,boolean compressor,float ceiling,float gain,boolean hrtf){return new Dsp.Settings(enabled,eq,bands,bass,compressor,ceiling,gain,hrtf);}
@@ -63,10 +64,12 @@ final class AudioSelfTest {
             Thread.sleep(1000);
             require(out.transitionState()==1,"a mescla começou antes do ponto: "+out.transitionState());
             out.boundary(0);
+            until(()->out.markerBoundaries==boundaries+1,"o marcador não atravessou a fila na ordem");
             require(out.markerBoundaries==boundaries+1,"o fim de A não veio do marcador");
             start=System.nanoTime();
             for(int i=0;i<b.length;i+=packet)out.write(Arrays.copyOfRange(b,i,Math.min(b.length,i+packet)));
             require(Math.abs(out.trackPositionMs()-12000)<50,"posição de B recomeça no marcador: "+out.trackPositionMs());
+            until(()->out.transitionState()==3,"a primeira mescla não concluiu pela fila SPSC");
             long bMs=(System.nanoTime()-start)/1_000_000;
             int latency=out.transitionLatencyMs();
             require(out.transitionState()==3&&latency>=2000&&latency<=3200,"pré-rolagem depois da mescla: "+out.transitionState()+" "+latency+" ms");
@@ -81,6 +84,7 @@ final class AudioSelfTest {
             out.boundary(0);  // o fim de B é o que já está no buffer
             start=System.nanoTime();
             for(int i=0;i<a.length;i+=packet)out.write(Arrays.copyOfRange(a,i,Math.min(a.length,i+packet)));
+            until(()->out.transitionState()==3,"a segunda mescla não concluiu pela fila SPSC");
             int latency2=out.transitionLatencyMs();
             require(out.transitionState()==3&&latency2>=2000&&latency2<=3200,"segunda transição: "+out.transitionState()+" "+latency2+" ms");
             report.put("secondWriteMs",(System.nanoTime()-start)/1_000_000).put("latencyAfterSecondMs",latency2);
@@ -115,7 +119,8 @@ final class AudioSelfTest {
             // Cancelar descarta o que foi lido e volta ao caminho direto.
             require(out.armTransition(5,4000,2000,2000)!=0,"armar para cancelar");out.write(Arrays.copyOfRange(b,0,packet*8));out.cancelTransition();
             require(out.transitionState()==0&&out.transitionLatencyMs()==0,"cancelar manteve a transição");out.write(Arrays.copyOfRange(b,0,packet));
-            report.put("underruns",out.underruns()-before).put("pass",true);
+            out.prepareTransportChange();long blockedFrames=out.frames.get();out.write(Arrays.copyOfRange(a,0,packet));require(out.frames.get()==blockedFrames,"PCM antigo atravessou a troca de transporte");out.completeTransportChange();out.write(Arrays.copyOfRange(a,0,packet));require(out.frames.get()>blockedFrames,"PCM novo não retomou depois do evento tipado");
+            JSONObject output=out.testSnapshot();report.put("underruns",out.underruns()-before).put("queueWaits",output.getLong("transitionQueueWaits")).put("queueMaxSize",output.getInt("transitionQueueMaxSize")).put("queueWaitMs",output.getLong("transitionQueueWaitMs")).put("directFallbacks",output.getLong("transitionDirectFallbacks")).put("pass",true);
         }finally{out.release();}
         return report;
     }

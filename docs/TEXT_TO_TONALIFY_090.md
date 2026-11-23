@@ -83,3 +83,14 @@ A etapa Revisar ganhou **Só não encontradas**, com contagem e opção de edita
 ## Revisão 0.15.8
 
 **Só não encontradas** passa a listar todas as referências não selecionadas: além de **Não encontrada**, entram **Revisar versão** e qualquer faixa desmarcada. Antes, uma playlist de 100 músicas com 89 correspondências podia mostrar zero no filtro porque as 11 restantes estavam em Revisar versão. Os cartões da revisão e o diálogo **Versão** passam a mostrar música, artista, álbum e miniatura da capa no Android e no Windows. Verificado no QML e na AVD com entradas sintéticas; nenhuma playlist real foi escrita.
+
+
+## Identificação e playlist existente — 0.17.5
+
+O parser aceita **Música by Artista** e usa o artista padrão para confirmar quando a linha está em **Música — Artista** mesmo no modo automático. O ranking compara artistas sem artigo inicial, reconhece o artista principal entre colaboradores e trata sufixos de remaster/edição sem perder a identidade. Live, remix, acoustic, unplugged e demo são diferenciados nos dois sentidos: uma versão não pedida não substitui automaticamente a gravação desejada. Resultados fracos tentam a próxima consulta e a melhor candidata permanece disponível para revisão.
+
+Na etapa Personalizar, **Destino** permite escolher uma playlist Spotify existente em vez de criar outra. As referências revisadas são primeiro salvas como uma cópia local das adições. O envio consulta toda a sequência remota de partida e usa somente **POST /playlists/{id}/items**, acrescentando ao final; nunca usa PUT para substituir a playlist e não altera sua capa.
+
+`appendBase` guarda a sequência original e `appendBaseReady` diferencia uma base vazia de uma base ainda não confirmada. Se a resposta de um lote se perder, a retomada consulta o prefixo original e o sufixo já recebido antes de continuar. Mudanças externas ou paginação acima do limite existente de 12 páginas interrompem o envio sem novas escritas.
+
+Testes Windows e Android usam catálogo/transporte simulados, inclusive resposta 503 depois de o servidor aplicar o lote: a retomada não duplicou músicas, não criou outra playlist e fez zero PUT. Não houve escrita real em conta Spotify nesta entrega.

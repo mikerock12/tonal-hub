@@ -76,19 +76,33 @@ int NativePcmPipe::read(std::vector<float> &samples, int frames)
     }
     auto bytes = m_pending.size() / 8 * 8;
     size_t skip = 0;
-    if (!m_boundary)
+    if (m_event == EventKind::None)
     {
-        // Track marker: left = signalling NaN 0x7FA07A1B, right = quiet NaN
-        // carrying the start position. librespot's f64->f32 never produces it.
+        // Sinalizadores NaN nunca produzidos pela conversão f64->f32. O
+        // marcador 1B começa uma faixa; 1C é transporte aplicado pelo player.
         for (size_t at = 0; at < bytes; at += 8)
         {
             uint32_t left, right;
             std::memcpy(&left, m_pending.data() + at, 4);
             std::memcpy(&right, m_pending.data() + at + 4, 4);
-            if (left == 0x7FA07A1Bu && (right & 0xFFC00000u) == 0x7FC00000u)
+            if ((left == 0x7FA07A1Bu || left == 0x7FA07A1Cu) &&
+                (right & 0xFFC00000u) == 0x7FC00000u)
             {
-                m_boundary = m_markersSeen = true;
-                m_boundaryPositionMs = right & 0x3FFFFFu;
+                const uint32_t payload = right & 0x3FFFFFu;
+                if (left == 0x7FA07A1Bu)
+                {
+                    m_event = EventKind::TrackBoundary;
+                    m_markersSeen = true;
+                    m_boundaryPositionMs = payload;
+                }
+                else if (payload >= 1 && payload <= 3)
+                {
+                    m_event = payload == 1 ? EventKind::UserLoad
+                              : payload == 2 ? EventKind::UserSeek : EventKind::UserStop;
+                    m_boundaryPositionMs = 0;
+                }
+                else
+                    continue;
                 bytes = at;
                 skip = 8;
                 break;
@@ -103,18 +117,29 @@ int NativePcmPipe::read(std::vector<float> &samples, int frames)
 #endif
     return int(samples.size() / 2);
 }
+bool NativePcmPipe::takeEvent(Event &event)
+{
+    if (m_event == EventKind::None)
+        return false;
+    event.kind = m_event;
+    event.positionMs = m_boundaryPositionMs;
+    m_event = EventKind::None;
+    m_boundaryPositionMs = 0;
+    return true;
+}
 bool NativePcmPipe::takeBoundary(uint32_t &positionMs)
 {
-    if (!m_boundary)
+    if (m_event != EventKind::TrackBoundary)
         return false;
-    m_boundary = false;
-    positionMs = m_boundaryPositionMs;
+    Event event;
+    takeEvent(event);
+    positionMs = event.positionMs;
     return true;
 }
 void NativePcmPipe::discard()
 {
     m_pending.clear();
-    m_boundary = false;
+    m_event = EventKind::None;
 #ifdef _WIN32
     DWORD n = 0;
     char data[8192];

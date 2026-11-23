@@ -3,7 +3,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 OUT=ROOT/'out/text-playlist-ui';OUT.mkdir(parents=True,exist_ok=True)
 QT=Path(os.environ.get('QTDIR',ROOT/'out/tools/Qt/6.8.3/msvc2022_64'))
-for source in [ROOT/'qml/pages/TextPlaylistDialog.qml',Path(__file__).with_name('tst_playlist.qml')]:shutil.copyfile(source,OUT/source.name)
+for source in [ROOT/'qml/pages/TextPlaylistDialog.qml',ROOT/'qml/Playlists.qml',Path(__file__).with_name('tst_playlist.qml')]:shutil.copyfile(source,OUT/source.name)
 fonts=OUT/'fonts';fonts.mkdir(exist_ok=True)
 for name in ['segoeui.ttf','segoeuib.ttf','segoeuii.ttf','seguisb.ttf']:
     source=Path(os.environ['WINDIR'])/'Fonts'/name

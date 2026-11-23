@@ -36,6 +36,7 @@ public:
     Q_INVOKABLE bool setCover(const QUrl &);
     Q_INVOKABLE void clearCover();
     Q_INVOKABLE bool saveLocal(const QString &name,const QString &description,bool deduplicate=false);
+    Q_INVOKABLE bool setTargetPlaylist(const QString &id);
     Q_INVOKABLE bool loadSaved(const QString &id);
     Q_INVOKABLE void sync(bool publicPlaylist=false);
     Q_INVOKABLE void acknowledgeUncertainCreate();
@@ -48,6 +49,6 @@ private:
     void finish(const QString &);void patch(const QVariantMap &);
     QVariantList selectedTracks(bool deduplicate=false) const;
     MusicCompanion *m_music;Request m_request;QVariantList m_rows,m_upload;
-    QString m_status,m_detected,m_cover,m_saved,m_cloudId;
+    QString m_status,m_detected,m_cover,m_saved,m_cloudId,m_targetId;
     int m_generation=0,m_cursor=0,m_verifiedPages=0;bool m_busy=false,m_syncing=false;
 };

@@ -7,6 +7,7 @@ int main()
     try
     {
         pipeDiscardAlignmentTest();
+        pipeTransportEventTest();
         tonal::audio::AudioFrame frame;
         frame.samples = {.125f, -.25f};
         checkPcm(frame.validPcm(), "valid stereo PCM");

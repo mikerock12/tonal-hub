@@ -1,0 +1,83 @@
+{
+ "version": "0.17.5",
+ "date": "2026-11-22",
+ "androidVersionCode": 46,
+ "requests": [
+  "Diagnosticar e corrigir o NullPointerException do SongPager mostrado nos prints da versão Android 0.16.2.",
+  "Aplicar TH-006 e TH-009 do plano estrutural e reduzir falhas/volume residual nas transições.",
+  "Permitir adicionar playlists inteiras à fila.",
+  "Melhorar artistas/títulos no Text to Tonalify e acrescentar listas de texto a playlists existentes."
+ ],
+ "fixes": [
+  "Callbacks do MusicPanel capturam e conferem a instância do SongPager antes de responder a toques cancelados por render().",
+  "Android: fila SPSC limitada de 256 entradas para PCM/marcadores, epoch de cancelamento, writer reutilizado e métricas de contrapressão.",
+  "Android: trackLock separado serializa somente write/pause/flush/play/stop/release do AudioTrack.",
+  "Windows/Android: eventos UserLoad/UserSeek/UserStop no PCM, com NaturalLoad/ResumeLoad sem flush; logs não decidem mais descarte no Windows.",
+  "Android retém PCM antigo até a fronteira efetiva; Windows zera compensação temporária de volume ao cancelar/encerrar/mudar geração.",
+  "Playlists Spotify/pessoais entram na fila por edição transacional única, com ordem, duplicatas e limite de 500.",
+  "Text to Tonalify: parsing by/ordem invertida, artigos, colaboradores, remasters e distinção de versões; candidatas fracas tentam novas consultas.",
+  "Playlist existente: somente POST, appendBase + appendBaseReady, cópia local e conferência prefixo/sufixo antes de retomar."
+ ],
+ "validation": {
+  "portableCore": "PASS parser/ranking/bounds, incluindo artigos, colaboradores, remaster, live solicitado/não solicitado e fallback de consulta",
+  "javaHost": "PLAYBACK_SAFETY_PASS 20079 checks; 20000 entradas no stress SPSC e cancelamento de fila cheia",
+  "ctestWindowsFinal": "12/12, 81,25 s",
+  "ctestWindowsAfterEmptyBaseAndBatchGuards": "text_playlist_import + spotify_recovery PASS (2/2)",
+  "qml": {
+   "lyrics": "7/7",
+   "textPlaylist": "4/4, incluindo destino existente e criação normal",
+   "mixQueue": "35/35, incluindo playlist inteira adicionada à fila",
+   "themes": "267 checks, Halloween 3/3, Christmas 7/7"
+  },
+  "androidTransitionAvd": {
+   "firstAttempt": "FAIL native SIGSEGV em AudioTrack.releaseBuffer por escrita concorrente após drenagem; tombstone preservado e trackLock implementado",
+   "final": {
+    "pass": true,
+    "captureMs": 4,
+    "preparedBMs": 1021,
+    "latencyAfterMixMs": 2484,
+    "latencyAfterSecondMs": 2507,
+    "recoveryResumeVerified": true,
+    "underruns": 0,
+    "queueWaits": 6,
+    "queueMaxSize": 256,
+    "queueWaitMs": 101,
+    "directFallbacks": 0,
+    "transportGateVerified": true
+   }
+  },
+  "androidSongPagerRace": "PASS 30 gestos com renders concorrentes, sem Java/native crash; processo :indie preservado",
+  "androidTextPlaylist": "PASS criação + append existente; resposta 503 após lote aplicado; retomada sem duplicar, cloud_creates=0 e cloud_puts=0 no append; real_spotify_writes=0",
+  "androidQueueEditor": "5/5",
+  "androidTransitionsDialog": "PASS controles 6/6 s, persistência e cabeçalho de letras",
+  "apk": {
+   "arm64": {"bytes": 38380442, "sha256": "5044487276e10a66813a2547268863d400917e0255843b90045f9d9a919640d9"},
+   "universal": {"bytes": 66614283, "sha256": "2c62a29dc79b5242716ffba5a82809cf71da7bb14e66820f895cd48bd589d735"},
+   "versionCode": 46,
+   "certificateSha256": "464ae7cf34f4f145541569db215f8fcdef5deda1be31921d8e366eed20aa22c2",
+   "alignment16KiB": true,
+   "privateFilesOrTokens": 0
+  },
+  "portal": "60/60 + build + wrangler dry-run",
+  "windowsRealSpotify": {
+   "command": "TonalSpotifyRecoveryTests --live-session --verify-natural-transitions",
+   "verified": "3/3",
+   "transitions": [
+    {"effect": "fade", "outroMs": 6000, "introMs": 6000, "overlapMs": 6000, "preparedBMs": 2509, "missingBFrames": 0, "underrunsDelta": 0, "overlapVerified": true},
+    {"effect": "echo", "outroMs": 6000, "introMs": 9000, "overlapMs": 9000, "preparedBMs": 2504, "missingBFrames": 0, "underrunsDelta": 0, "overlapVerified": true},
+    {"effect": "brake", "outroMs": 9000, "introMs": 4000, "overlapMs": 9000, "preparedBMs": 2500, "missingBFrames": 0, "underrunsDelta": 0, "overlapVerified": true}
+   ],
+   "measures": "PCM do motor real no OpenAL nulo; sem saída acústica física"
+  }
+ },
+ "knownHarnessLimits": [
+  "song_page_smoke.py histórico parou antes do caso novo por procurar a aba Letras, removida em versões anteriores; a regressão dedicada song_pager_race_smoke.py usa a navegação atual e passou.",
+  "Uma espera inicial do relatório Android teve conversão /sdcard pelo Git Bash; o resultado foi lido diretamente do logcat/arquivo e não contado como aprovação."
+ ],
+ "limits": [
+  "Sem aparelho físico, Spotify real no Android, escrita real em playlists, Bluetooth/carro, captura acústica, CPU/bateria ou benchmark novo.",
+  "AVD usa tons e catálogo sintéticos; não prova desempenho ou correção acústica no POCO.",
+  "A conferência de append mantém o limite de 12 páginas e aborta sem escrever se a base inteira não puder ser lida."
+ ],
+ "toolsInstalled": "Nenhum aplicativo instalado. npm ci baixou 34 dependências locais já fixadas do portal para build/teste; demais ferramentas já existentes."
+}

@@ -191,6 +191,7 @@ Dialog {
                     Button {text:"Criar com Text to Tonalify…";onClicked:panel.textPlaylistRequested()}
                     Button {text:"Enviar / concluir no Spotify…";enabled:panel.selectedPlaylist.length>0;onClicked:panel.textPlaylistResume(panel.selectedPlaylist)}
                 }
+                Button {visible:panel.selectedPlaylist.length>0&&panel.transportPlayer!==null;text:"Adicionar esta playlist à fila";onClicked:panel.transportPlayer.insertTracksInQueue(panel.controller.playlistTracks(panel.selectedPlaylist),2)}
                 RowLayout {visible:panel.selectedPlaylist.length>0;Layout.fillWidth:true
                     property var info:{panel.revision;return panel.selectedPlaylist&&typeof panel.controller.playlistDetails==="function"?panel.controller.playlistDetails(panel.selectedPlaylist):({})}
                     Image {source:parent.info.cover || "";visible:source.toString().length>0;sourceSize.width:120;sourceSize.height:120;Layout.preferredWidth:90;Layout.preferredHeight:90;fillMode:Image.PreserveAspectFit}

@@ -5,7 +5,25 @@ public final class PlaybackSafetyChecks {
     private static int checks;
     private static void check(boolean value,String message){if(!value)throw new AssertionError(message);checks++;}
     private static String source(String path){try{return new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(path)),java.nio.charset.StandardCharsets.UTF_8);}catch(java.io.IOException e){throw new AssertionError("missing "+path);}}
-    public static void main(String[] args){
+    private static void transitionQueue() throws Exception {
+        TransitionInputQueue queue=new TransitionInputQueue(2);float[] a={1,2},b={3,4};
+        check(queue.offer(a,TransitionInputQueue.PCM,0,7),"queue accepts PCM");
+        check(queue.offer(null,TransitionInputQueue.BOUNDARY,0,7),"queue preserves marker order");
+        check(!queue.offer(b,TransitionInputQueue.PCM,0,7),"queue is bounded");
+        TransitionInputQueue.Entry entry=queue.peek();check(entry.samples==a&&entry.epoch==7,"PCM is first");queue.release(entry);
+        entry=queue.peek();check(entry.event==TransitionInputQueue.BOUNDARY,"marker follows prior PCM");queue.release(entry);
+        check(queue.isEmpty(),"released slots are reusable");
+        final int count=20000;TransitionInputQueue stress=new TransitionInputQueue(16);java.util.concurrent.atomic.AtomicReference<Throwable> failure=new java.util.concurrent.atomic.AtomicReference<>();
+        Thread producer=new Thread(()->{try{for(int i=0;i<count;i++)stress.put(new float[]{i},TransitionInputQueue.PCM,0,9,()->false);}catch(Throwable error){failure.set(error);}});
+        producer.start();
+        for(int i=0;i<count;i++){TransitionInputQueue.Entry current;while((current=stress.peek())==null){if(failure.get()!=null)break;Thread.yield();}check(current.samples[0]==i&&current.epoch==9,"SPSC stress order "+i);stress.release(current);}
+        producer.join(10000);check(!producer.isAlive()&&failure.get()==null&&stress.isEmpty(),"SPSC producer terminates without loss");
+        TransitionInputQueue cancelled=new TransitionInputQueue(1);cancelled.offer(a,TransitionInputQueue.PCM,0,1);java.util.concurrent.atomic.AtomicBoolean stop=new java.util.concurrent.atomic.AtomicBoolean();java.util.concurrent.atomic.AtomicBoolean accepted=new java.util.concurrent.atomic.AtomicBoolean(true);java.util.concurrent.CountDownLatch waiting=new java.util.concurrent.CountDownLatch(1);
+        Thread blocked=new Thread(()->{waiting.countDown();accepted.set(cancelled.put(b,TransitionInputQueue.PCM,0,1,stop::get));});blocked.start();waiting.await();
+        long until=System.nanoTime()+2_000_000_000L;while(blocked.getState()!=Thread.State.WAITING&&System.nanoTime()<until)Thread.yield();stop.set(true);cancelled.wakeAll();blocked.join(2000);
+        check(!blocked.isAlive()&&!accepted.get(),"full-queue wait is cancelled without accepting stale PCM");cancelled.release(cancelled.peek());
+    }
+    public static void main(String[] args) throws Exception {
         check(PositionSync.reconcile(12000,11500,true)==12000,"small stale progress cannot rewind playback");
         check(PositionSync.reconcile(12000,9000,true)==9000,"large external seeks remain possible");
         check(PositionSync.reconcile(12000,11500,false)==11500,"paused correction is respected");
@@ -76,6 +94,11 @@ public final class PlaybackSafetyChecks {
         check(manifest.contains("<receiver android:name=\".MediaButtonReceiver\"")&&manifest.contains("android.intent.action.MEDIA_BUTTON"),"media button receiver is declared");
         check(!receiver.contains("NativeBridge.command")&&!receiver.contains("startForegroundService")&&!receiver.contains("PlaybackService.start")&&!receiver.contains("startActivity"),"a media key with the player closed never starts playback or opens an app");
         for(String service:new String[]{"PlaybackService.java","IndiePlaybackService.java"})check(source(code+service).contains("MediaButtonReceiver.attach(media,this);media.setActive(true);"),"session registers the receiver before activation: "+service);
+        transitionQueue();
+        String panel=source(code+"MusicPanel.java"),audio=source(code+"AudioOutput.java");
+        check(panel.contains("if(closed||songPager!=pager)return")&&panel.contains("if(!closed&&songPager==pager)pager.showPage"),"cancelled touch cannot call a replaced SongPager");
+        check(!audio.contains("mixLock.wait(50)")&&!audio.contains("Thread.sleep(2)"),"transition output has no timed monitor wait or sleep polling");
+        check(audio.contains("TransitionInputQueue")&&audio.contains("transportDiscontinuity"),"bounded PCM handoff and typed discontinuity are wired");
         System.out.println("PLAYBACK_SAFETY_PASS "+checks+" checks");
     }
 }

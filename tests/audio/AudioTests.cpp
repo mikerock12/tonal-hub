@@ -715,6 +715,7 @@ int main(int argc, char **argv)
         outputTest();
         pipeTest();
         pipeDiscardAlignmentTest();
+        pipeTransportEventTest();
         iamfTest(dir);
         hrtfRenderTest();
         pauseRampTest(false);
