@@ -1,0 +1,47 @@
+{
+ "version": "0.17.7",
+ "assets": [
+  {"name": "Tonal-Hub-0.17.7.0-Windows-x64-Setup.exe", "sha256": "89d00d60345f1eb58566bcaf6b716bc677b40bd03e4c802d81808c28b14eec87", "bytes": 89146959},
+  {"name": "Tonal-Hub-0.17.7-local.zip", "sha256": "1408ab89dbcd50eab8a5f1f8f51a2fbc045deb4bd5d78262ee9caa8acf9ad487", "bytes": 121174819},
+  {"name": "Tonal-Android-0.17.7-arm64-v8a.apk", "sha256": "2cb55addbab873e58376bfae3d1cff6cf09b1f786eccaa59039a5db0b2d5c6f9", "bytes": 38381198},
+  {"name": "Tonal-Android-0.17.7-local.apk", "sha256": "2b2232e1015ef3ba0b813b9efd4d7dab81c135ea72502c3bee9ab7e4c038304a", "bytes": 66615039}
+ ],
+ "androidVersionCode": 48,
+ "productCode": "84bf3e3a821f2d60664e920cfb33bf0ec7e02bba",
+ "productMerge": "7422df085173e160c3a3f311b40b5f543f57b2db",
+ "certificateSha256": "464ae7cf34f4f145541569db215f8fcdef5deda1be31921d8e366eed20aa22c2",
+ "alignment": 16384,
+ "release": "https://github.com/mikerock12/tonal-hub/releases/tag/v0.17.7",
+ "remoteAssetsVerified": true,
+ "portal": {
+  "pullRequest": 83,
+  "merge": "50c771949c8e0fc47d15762fe6d11813e642a80f",
+  "worker": "c675e3a7-9c21-4de9-98c9-53b8450b3a82",
+  "downloadsRedirectToV0177": true,
+  "hashesMatch": true,
+  "privateArea401": true,
+  "tests": "60/60",
+  "productionNote": "Primeira consulta automatizada recebeu 403 do edge; repetição com curl recebeu 503 transitório e, após nova tentativa, APIs/nomes/hashes/redirects foram aprovados. Página 200, catálogo v0.17.7 e privado 401."
+ },
+ "ci": {
+  "pullRequest": 68,
+  "checks": "5/5",
+  "mainRun": 45201974604,
+  "androidVisualRun": 45201974441,
+  "androidVisualRegression": "success"
+ },
+ "privateBackup": {
+  "status": "uploaded_verified",
+  "folder": "1j-glW_ZkM8VSVSrJhDaIKKQrtFfoA3mv",
+  "url": "https://drive.google.com/drive/folders/1j-glW_ZkM8VSVSrJhDaIKKQrtFfoA3mv",
+  "name": "Tonal-Hub-0.17.7-backup.zip",
+  "bytes": 403358262,
+  "remoteSizeDisplay": "384,7 MB",
+  "remoteSizeMatches": true,
+  "privacy": "Pasta privada existente, proprietário eu; nenhum compartilhamento adicionado",
+  "sha256": "65f3b119e2c11d1dbe2650121606dd5eb1fa0073880aa93fd54eb28593965670",
+  "remoteSha256Available": false,
+  "files": 15,
+  "localCrcAndRestoreVerified": true
+ }
+}

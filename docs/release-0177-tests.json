@@ -42,5 +42,10 @@
   "A rota next-not-prepared foi reproduzida e corrigida; sem o trace do telefone não se afirma que foi a única causa possível do relato.",
   "A validação Android usa PCM sintético na AVD e não é aceite físico do sintoma."
  ],
+ "publication": {
+  "app": "PR68 merge 7422df085173e160c3a3f311b40b5f543f57b2db; CI 5/5 + regressão visual; release v0.17.7 com quatro assets/digests/downloads conferidos",
+  "portal": "PR83 merge 50c771949c8e0fc47d15762fe6d11813e642a80f; Worker c675e3a7-9c21-4de9-98c9-53b8450b3a82; verify 60/60; produção com APIs/nomes/hashes/redirects e privado 401 após 403/503 transitórios",
+  "privateBackup": "https://drive.google.com/drive/folders/1j-glW_ZkM8VSVSrJhDaIKKQrtFfoA3mv; 403358262 bytes/384,7 MB exibidos; SHA-256 local 65f3b119e2c11d1dbe2650121606dd5eb1fa0073880aa93fd54eb28593965670; 15 arquivos, CRC e restauração aprovados; pasta privada, proprietário eu, sem compartilhamento adicionado; hash remoto indisponível"
+ },
  "toolsInstalled": "Nenhum aplicativo ou ferramenta adicional instalado/baixado; usados MSVC, SDK/NDK/Gradle/AVD e dependências já existentes."
 }
