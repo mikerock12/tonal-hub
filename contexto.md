@@ -2,7 +2,7 @@
 
 Atualizado em **23/11/2026**. Versão de trabalho **Windows 0.17.6 e Android 0.17.6**, versionCode 47.
 
-0.17.6: corrige a regressão relatada na 0.17.5. A proteção `transportChanging` podia descartar PCM indefinidamente após um seek se o marcador esperado não chegasse, parando posição e novas transições. O bloqueio foi removido; o evento tipado continua fazendo flush ao chegar, sem parar o PCM. AVD: PCM com marcador atrasado, nova mescla após seek, 0 underruns/0 fallbacks; crash 30 gestos/renders aprovado. Teste real Android indisponível sem login na AVD; sem aceite físico/acústico. Publicação e backup serão registrados ao concluir.
+0.17.6: corrige a regressão relatada na 0.17.5. A proteção `transportChanging` podia descartar PCM indefinidamente após um seek se o marcador esperado não chegasse, parando posição e novas transições. O bloqueio foi removido; o evento tipado continua fazendo flush ao chegar, sem parar o PCM. AVD: PCM com marcador atrasado, nova mescla após seek, 0 underruns/0 fallbacks; crash 30 gestos/renders aprovado. Teste real Android indisponível sem login na AVD; sem aceite físico/acústico. Publicação: PR66 merge `d6739e95507a7c12ff3ff936b5b2ebe60111e9ab` (CI 5/5 + visual), release v0.17.6; portal PR81 merge `933775e8d89be3f58702bdaee8c0b2f37e734d9a`, Worker `027e235f-3fd2-4deb-9999-b510d0fe1afc`, downloads/hashes/privado 401 conferidos. Backup privado em https://drive.google.com/drive/folders/1fpxLJK8HIBzHl8BaGW0qIKr4aH561dAH: 403.360.272 bytes locais/384,7 MB exibidos, CRC e restauração aprovados, pasta privada com proprietário `eu` e sem compartilhamento adicionado; hash remoto não fornecido.
 
 ## Contexto histórico até 0.17.5
 

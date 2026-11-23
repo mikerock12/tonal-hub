@@ -1,0 +1,46 @@
+{
+ "version": "0.17.6",
+ "assets": [
+  {"name": "Tonal-Hub-0.17.6.0-Windows-x64-Setup.exe", "sha256": "c2f5fbb9dca3804dd05b43fe6286c6e56f85b38236178cd00f0f475e54aadb60", "bytes": 89149771},
+  {"name": "Tonal-Hub-0.17.6-local.zip", "sha256": "fe055e12a5937459ef8523c3072d31f0568d2ea935391a16bbd4cbe21c50f722", "bytes": 121174199},
+  {"name": "Tonal-Android-0.17.6-arm64-v8a.apk", "sha256": "33a4158decb5f477a16e2d83df8e35afe62015a39b53780a0779d177aeb2e59c", "bytes": 38381102},
+  {"name": "Tonal-Android-0.17.6-local.apk", "sha256": "39a560c95d32e6c43dc1091dc64d124696ae1b6033c70bf1544e40817950e969", "bytes": 66614943}
+ ],
+ "androidVersionCode": 47,
+ "productCode": "af2df8e6a6a8e34a68e356bf3e0d2db2bb324ee5",
+ "productMerge": "d6739e95507a7c12ff3ff936b5b2ebe60111e9ab",
+ "certificateSha256": "464ae7cf34f4f145541569db215f8fcdef5deda1be31921d8e366eed20aa22c2",
+ "alignment": 16384,
+ "release": "https://github.com/mikerock12/tonal-hub/releases/tag/v0.17.6",
+ "remoteAssetsVerified": true,
+ "portal": {
+  "pullRequest": 81,
+  "merge": "933775e8d89be3f58702bdaee8c0b2f37e734d9a",
+  "worker": "027e235f-3fd2-4deb-9999-b510d0fe1afc",
+  "downloadsRedirectToV0176": true,
+  "hashesMatch": true,
+  "privateArea401": true,
+  "tests": "60/60"
+ },
+ "ci": {
+  "pullRequest": 66,
+  "checks": "5/5",
+  "mainRun": 45165349789,
+  "androidVisualRun": 45165349709,
+  "androidVisualRegression": "success"
+ },
+ "privateBackup": {
+  "status": "uploaded_verified",
+  "folder": "1fpxLJK8HIBzHl8BaGW0qIKr4aH561dAH",
+  "url": "https://drive.google.com/drive/folders/1fpxLJK8HIBzHl8BaGW0qIKr4aH561dAH",
+  "name": "Tonal-Hub-0.17.6-backup.zip",
+  "bytes": 403360272,
+  "remoteSizeDisplay": "384,7 MB",
+  "remoteSizeMatches": true,
+  "privacy": "Pasta privada existente, proprietário eu; nenhum compartilhamento adicionado",
+  "sha256": "a738ec95d2540e99a91136a7525877e9fb4459c8fec336aee03272d1cc687545",
+  "remoteSha256Available": false,
+  "files": 16,
+  "localCrcAndRestoreVerified": true
+ }
+}
