@@ -5,7 +5,7 @@ afetada antes de alterar o produto. Estado documental: 25/10/2026, builds Window
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
-Estado atual: 21/11/2026, Windows 0.17.4 e Android 0.17.4 (ver seções 0.17.0 a 0.17.4 ao final). As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
+Estado atual: 22/11/2026, Windows 0.17.5 e Android 0.17.5 (ver seção 0.17.5 ao final). As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
 
 ## Autoria, Git e privacidade
 
@@ -598,3 +598,15 @@ docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no
 - Android consulta versão e notas, mas delega download e instalação
   ao navegador e ao sistema. Não declara REQUEST_INSTALL_PACKAGES.
   Preservar o certificado atual e conferir o manifesto final. VersionCode 39.
+
+
+## Robustez, playlists e Text to Tonalify 0.17.5
+
+- Android TH-006: PCM e marcadores compartilham uma fila SPSC de 256 entradas, limitada e cancelável por epoch. Só o writer chama push/pull; onPcm não segura o monitor do mixer e não há `wait(50)`, `wait(4)` ou `sleep(2)` no loop de saída. O writer é reutilizado. Uma exclusão distinta serializa somente as operações nativas do AudioTrack (write/pause/flush/play/stop/release), pois a primeira versão da fila apresentou SIGSEGV por escrita concorrente na AVD e foi corrigida antes da entrega.
+- TH-009: o marcador PCM `0x7FA07A1C` informa UserLoad (1), UserSeek (2) e UserStop (3), em ordem com os quadros e na geração da sessão. NaturalLoad e ResumeLoad não geram flush. O Windows consome esses eventos pelo NativePcmPipe; logs do librespot continuam apenas para diagnóstico/estado, não para decidir descarte. O Android retém PCM antigo entre o pedido e a fronteira aplicada e limpa o AudioTrack no evento.
+- A compensação temporária de volume do Windows volta a 1 ao cancelar, mudar de geração ou sair da transição. Isso evita levar um ganho antigo para a mescla seguinte; não é uma promessa de ausência absoluta de alterações audíveis ou de medição acústica.
+- Crash dos prints: `MusicPanel.render()` anula o pager antes de `removeAllViews()`, que pode cancelar o toque e chamar `showPage()` no objeto antigo. Os callbacks agora capturam o pager daquela instância e retornam se ele tiver sido substituído/fechado.
+- Playlists Spotify e pessoais podem ser adicionadas à fila atual. O carregamento paginado termina antes de uma única edição transacional, preservando atual, ordem, duplicatas, Descoberta e o limite de 500 entradas. Fila parcial ou falha de catálogo não é reescrita.
+- Text to Tonalify reconhece `Música by Artista`, confirma ordem invertida pelo artista padrão, normaliza artigos/remasters e artistas colaboradores e penaliza troca não pedida entre estúdio/live/remix/acoustic/demo. Busca seguinte quando o resultado é fraco, mantendo a melhor candidata para revisão.
+- Destino existente no Text to Tonalify: as adições são salvas localmente e enviadas somente com POST. `appendBase` guarda a sequência original e `appendBaseReady` distingue playlist vazia de base não confirmada. Retomada confere prefixo original + sufixo já recebido; alterações interrompem o envio. Não altera a capa nem usa PUT. A conferência mantém o limite existente de 12 páginas e falha sem escrever se não puder consultar toda a base.
+- Validação local: CTest Windows 12/12, QML, Java SPSC e AVD com AudioTrack real; 30 gestos/renders sem crash; fila 5/5; diálogo de transições; append com resposta perdida e retomada sem duplicar/zero PUT em Windows e Android sintético. Spotify real no Windows: 3/3 transições naturais com A+B, 0 B faltando e 0 underruns no OpenAL nulo. Sem Spotify real no Android, telefone físico, Bluetooth, medição acústica, CPU/bateria ou escrita real em playlist Spotify nesta versão.

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.17.5 — 22/11/2026
+
+- **Android:** corrige o fechamento da página da música quando um gesto era cancelado pela reconstrução do painel e chamava um `SongPager` já substituído.
+- **Transições:** fila SPSC limitada para PCM e marcadores, cancelamento por epoch e saída sem esperas temporizadas no monitor do mixer. As operações nativas do AudioTrack são serializadas entre escrita, pausa, flush e fechamento.
+- **Windows e Android:** cargas naturais, retomadas, pulos, seeks e paradas têm eventos tipados no fluxo do motor. A limpeza de buffers não depende mais de interpretar linhas `command=Load`/`Seek` no Windows, e PCM antigo não atravessa uma troca de transporte no Android.
+- O Windows zera a compensação temporária de volume ao cancelar, trocar de geração ou encerrar uma transição, evitando reutilizar ganho antigo na mescla seguinte.
+- **Playlists na fila:** playlists do Spotify e pessoais podem ser adicionadas à fila atual, preservando ordem, ocorrências repetidas, a faixa atual e o limite de 500 entradas.
+- **Text to Tonalify:** melhor correspondência de artistas com artigos/colaborações, títulos remasterizados e versões ao vivo/remix; tentativas adicionais quando uma busca só encontra candidatas fracas. Permite acrescentar as músicas revisadas a uma playlist Spotify existente, sempre com POST, sem substituir o conteúdo e com verificação antes de retomar lotes cuja resposta se perdeu.
+- Validação sintética Windows/Android e AudioTrack real na AVD; Spotify real no Windows em três transições naturais com A+B e zero underruns. Sem teste físico, acústico ou Spotify real no Android. Detalhes em docs/TRANSITIONS_0170.md, docs/QUEUE_EDITOR_01514.md e docs/TEXT_TO_TONALIFY_090.md.
+
 ## 0.17.4 — 21/11/2026
 
 - **Android:** as transições voltam a mesclar a música atual com a próxima. Causa: lido em rajada durante a transição, o fim da música atual era tratado pelo motor como falta de dados. O motor pausava e recarregava o fim da própria música, que entrava na mescla no lugar da próxima. Por isso a atual baixava ou oscilava e a próxima começava depois, sem efeito. Agora o fim chega com a posição exata e segue direto para a próxima.

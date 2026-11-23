@@ -298,3 +298,12 @@ Correções:
   de transporte tipados em vez das linhas do log do librespot) continuam como
   na 0.17.3. O produtor Android ainda espera quando o buffer da pré-rolagem
   enche, fora da thread de saída.
+
+
+## 0.17.5 — fila SPSC e transporte tipado (22/11/2026)
+
+TH-006: no Android, PCM e marcadores entram na mesma fila SPSC limitada de 256 entradas. O produtor pode aguardar espaço fora do monitor do mixer; cancelamento muda o epoch e acorda esperas. O writer reutilizado é o único que chama push/pull e não usa waits temporizados nem sleeps de polling. Depois que a primeira implementação apresentou um SIGSEGV na AVD por chamadas concorrentes ao AudioTrack, as operações nativas do dispositivo passaram a ser serializadas em uma exclusão separada, sem envolver o mixer.
+
+TH-009: o librespot emite no PCM eventos UserLoad, UserSeek e UserStop. Cargas naturais e retomadas têm comandos próprios e não descartam a mescla. O Windows lê esses eventos pelo pipe da geração atual e não usa mais strings `command=Load`/`Seek` para decidir flush. O Android retém o PCM antigo até a fronteira efetiva e limpa o AudioTrack nela. Troca de rota cancela a transição. A compensação de volume do Windows é zerada ao encerrar/cancelar, para não vazar ganho antigo para outra mescla.
+
+Na AVD, após a correção do AudioTrack: 0 underruns, seis esperas por fila cheia totalizando 101 ms, 0 fallbacks diretos, recuperação e barreira de transporte aprovadas. No Windows com Spotify real, fade 6/6 s, eco 6/9 s e freio 9/4 s concluíram 3/3 com A+B verificados, 0 quadros de B faltando e 0 underruns no OpenAL nulo. Esses números não são benchmark de aparelho nem captação acústica. O teste com Spotify real no Android, áudio acústico, Bluetooth e aparelho físico continua pendente.

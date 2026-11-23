@@ -70,3 +70,10 @@ reinicia a reprodução. O gesto requer uma fila confirmada no motor do Tonalify
 Desde a 0.17.0, **Colocar como próxima da fila** sempre entra logo após a
 música atual e **Adicionar à fila** entra depois do bloco de próximas. Ver
 [TRANSITIONS_0170.md](TRANSITIONS_0170.md).
+
+
+## Playlists inteiras na fila — 0.17.5
+
+**Adicionar playlist à fila** está disponível nas playlists do Spotify e nas playlists pessoais, no Windows e no Android. A ação carrega as páginas pendentes (até o limite existente), preserva a ordem original mesmo quando a prévia visual está embaralhada e chama uma única edição transacional da fila.
+
+As faixas entram no bloco de adições, depois das próximas explícitas. Ocorrências repetidas são preservadas; episódios/entradas que não são faixas Spotify válidas ficam fora. A música atual, pausa, posição e Descoberta não são reiniciadas. O total continua limitado a 500 entradas incluindo a atual; falha de catálogo, mudança de faixa ou fila parcial impede a reescrita.
