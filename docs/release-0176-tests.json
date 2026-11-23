@@ -1,0 +1,39 @@
+{
+ "version": "0.17.6",
+ "date": "2026-11-23",
+ "androidVersionCode": 47,
+ "report": "Usuário: avançar a música no seekbar muda para mudo e as transições parecem não funcionar após a 0.17.5.",
+ "cause": "A proteção transportChanging introduzida na 0.17.5 descartava todo PCM até um marcador específico chegar. Se o evento não chegasse numa retomada ou mudança inesperada, a saída ficava muda e trackPositionMs não avançava, impedindo o arm de novas transições.",
+ "fix": "Removido o bloqueio indefinido de PCM. O evento tipado continua fazendo flush ao chegar; fila SPSC, epoch, trackLock e NaturalLoad/ResumeLoad permanecem. Nova regressão cobre PCM com marcador atrasado, discontinuity e mescla concluída após seek.",
+ "validation": {
+  "javaHost": "PLAYBACK_SAFETY_PASS 20079 checks",
+  "windowsFinal": "Build 0.17.6 e CTest 12/12 (84,89 s); portátil com 3 programas em smoke, ZIP 1450 arquivos/CRC e zero arquivos privados",
+  "androidTransitionAvd": {
+   "pass": true,
+   "pcmContinuesWithDelayedMarker": true,
+   "discontinuityResumesPcm": true,
+   "completedMixAfterSeek": true,
+   "captureMs": 25,
+   "preparedBMs": 1021,
+   "latencyAfterMixMs": 2484,
+   "latencyAfterSecondMs": 2507,
+   "recoveryResumeVerified": true,
+   "underruns": 0,
+   "queueWaitsIncludingExtraMix": 47,
+   "queueWaitMsIncludingExtraMix": 1024,
+   "directFallbacks": 0
+  },
+  "androidSongPagerRace": "PASS 30 gestos/renders, sem Java/native crash",
+  "realAndroidSpotify": "NOT RUN: AVD sem login após limpeza de dados de testes anteriores; catalog_navigation_smoke parou em Entrar com Spotify, antes de tocar ou usar o seek."
+ },
+ "testAttempts": [
+  "Primeira regressão após seek falhou com next-not-prepared/0 B: fixture tinha só 3 s de A e o mixer fez o fallback correto. A fixture passou a usar 6 s de A e 8 s de B; a asserção de mescla concluída foi mantida e passou.",
+  "O laço de leitura da suíte foi ajustado para usar o log TonalTest, sem tratar erro remoto de cat como sucesso."
+ ],
+ "limits": [
+  "Sem aparelho físico, Spotify real Android, acústica, Bluetooth/carro ou benchmark novo.",
+  "O teste usa PCM sintético na AVD; não é aceite físico do sintoma relatado.",
+  "Windows não mudou de motor nesta correção; o build 0.17.6 não constitui novo benchmark."
+ ],
+ "toolsInstalled": "Nenhum aplicativo ou ferramenta adicional instalado/baixado; usados SDK/NDK/Gradle/AVD existentes."
+}

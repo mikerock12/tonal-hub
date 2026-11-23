@@ -119,7 +119,14 @@ final class AudioSelfTest {
             // Cancelar descarta o que foi lido e volta ao caminho direto.
             require(out.armTransition(5,4000,2000,2000)!=0,"armar para cancelar");out.write(Arrays.copyOfRange(b,0,packet*8));out.cancelTransition();
             require(out.transitionState()==0&&out.transitionLatencyMs()==0,"cancelar manteve a transição");out.write(Arrays.copyOfRange(b,0,packet));
-            out.prepareTransportChange();long blockedFrames=out.frames.get();out.write(Arrays.copyOfRange(a,0,packet));require(out.frames.get()==blockedFrames,"PCM antigo atravessou a troca de transporte");out.completeTransportChange();out.write(Arrays.copyOfRange(a,0,packet));require(out.frames.get()>blockedFrames,"PCM novo não retomou depois do evento tipado");
+            long continuousFrames=out.frames.get();out.write(Arrays.copyOfRange(a,0,packet));require(out.frames.get()>continuousFrames,"seek sem marcador interrompeu o PCM");
+            out.transportDiscontinuity();out.write(Arrays.copyOfRange(b,0,packet));require(out.frames.get()>continuousFrames,"evento tipado não retomou o PCM");
+            require(out.armTransition(0,4000,2000,2000)!=0,"transição não rearma depois do seek");
+            for(int i=0;i<44100*2*6;i+=packet)out.write(Arrays.copyOfRange(a,i,Math.min(44100*2*6,i+packet)));
+            out.boundary(0);
+            for(int i=0;i<44100*2*8;i+=packet)out.write(Arrays.copyOfRange(b,i,Math.min(44100*2*8,i+packet)));
+            until(()->out.transitionState()==3||out.transitionState()==0,"transição após seek não processou a saída");
+            long[] afterSeek=out.transitionTrace();require(afterSeek!=null&&afterSeek[TransitionNative.T_PHASE]==TransitionNative.PHASE_COMPLETED&&TransitionNative.overlapVerified(afterSeek),"sem mescla válida após o seek: "+java.util.Arrays.toString(afterSeek));
             JSONObject output=out.testSnapshot();report.put("underruns",out.underruns()-before).put("queueWaits",output.getLong("transitionQueueWaits")).put("queueMaxSize",output.getInt("transitionQueueMaxSize")).put("queueWaitMs",output.getLong("transitionQueueWaitMs")).put("directFallbacks",output.getLong("transitionDirectFallbacks")).put("pass",true);
         }finally{out.release();}
         return report;

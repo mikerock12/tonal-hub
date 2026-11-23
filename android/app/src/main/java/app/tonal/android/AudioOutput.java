@@ -16,7 +16,7 @@ final class AudioOutput {
     private Handler control;
     private volatile long writtenFrames;
     private long pauseQueuedFrames,lastPauseFadeMs;
-    private volatile boolean paused,transportChanging;
+    private volatile boolean paused;
     // Set while suspended when the queued tail stopped belonging to what plays next.
     private boolean staleTail;
     private int staleFlushes;private long staleFrames;
@@ -88,7 +88,7 @@ final class AudioOutput {
         else open(sampleRate,2);
     }
     synchronized void open(int sampleRate,int channelCount){
-        release();transportChanging=false;rate=sampleRate;channels=channelCount;dsp.reset(rate,channels,binauralSource);applyDsp();createTrack();
+        release();rate=sampleRate;channels=channelCount;dsp.reset(rate,channels,binauralSource);applyDsp();createTrack();
     }
     private void createTrack(){
         int minimum=AudioTrack.getMinBufferSize(rate,AudioFormat.CHANNEL_OUT_STEREO,AudioFormat.ENCODING_PCM_FLOAT);
@@ -128,7 +128,6 @@ final class AudioOutput {
     }
     int sampleRate(){return rate;}
     void write(float[] samples){
-        if(transportChanging)return;
         long counted=trackFrames;if(counted>=0)trackFrames=counted+samples.length/Math.max(1,channels);
         if(mixActive&&channels==2){if(writeTransition(samples))return;}
         float[] rendered=render(samples);
@@ -187,8 +186,6 @@ final class AudioOutput {
         if(mixActive)mixInput.put(null,resumed?TransitionInputQueue.RESUME:TransitionInputQueue.BOUNDARY,0,epoch,()->epoch!=mixEpoch);
     }
     /** Seek ou outra escolha: a contagem desde o marcador deixa de valer até o próximo. */
-    void prepareTransportChange(){transportChanging=true;}
-    void completeTransportChange(){transportChanging=false;}
     void forgetTrackPosition(){trackFrames=-1;}
     /** Posição da faixa no PCM já entregue pelo motor; -1 quando desconhecida. */
     long trackPositionMs(){long counted=trackFrames;return counted<0?-1:trackStartMs+counted*1000L/Math.max(1,rate);}
@@ -326,7 +323,6 @@ final class AudioOutput {
         boolean resume=!paused;++transition;lastTransition=SystemClock.elapsedRealtime();
         staleFrames+=queuedFrames(current);staleFlushes++;staleTail=false;
         synchronized(trackLock){if(current!=track)return;current.pause();current.flush();writtenFrames=0;if(resume)current.play();}
-        transportChanging=false;
         dsp.reset(rate,channels,binauralSource);applyDsp();
         synchronized(mixLock){mixLock.notifyAll();}mixInput.wakeAll();
     }

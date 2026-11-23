@@ -307,3 +307,12 @@ TH-006: no Android, PCM e marcadores entram na mesma fila SPSC limitada de 256 e
 TH-009: o librespot emite no PCM eventos UserLoad, UserSeek e UserStop. Cargas naturais e retomadas têm comandos próprios e não descartam a mescla. O Windows lê esses eventos pelo pipe da geração atual e não usa mais strings `command=Load`/`Seek` para decidir flush. O Android retém o PCM antigo até a fronteira efetiva e limpa o AudioTrack nela. Troca de rota cancela a transição. A compensação de volume do Windows é zerada ao encerrar/cancelar, para não vazar ganho antigo para outra mescla.
 
 Na AVD, após a correção do AudioTrack: 0 underruns, seis esperas por fila cheia totalizando 101 ms, 0 fallbacks diretos, recuperação e barreira de transporte aprovadas. No Windows com Spotify real, fade 6/6 s, eco 6/9 s e freio 9/4 s concluíram 3/3 com A+B verificados, 0 quadros de B faltando e 0 underruns no OpenAL nulo. Esses números não são benchmark de aparelho nem captação acústica. O teste com Spotify real no Android, áudio acústico, Bluetooth e aparelho físico continua pendente.
+
+
+## 0.17.6 — regressão do seek (23/11/2026)
+
+A proteção `transportChanging` da 0.17.5 descartava PCM até receber um evento específico. Sem esse marcador numa retomada, a saída podia ficar muda e a posição parava, impedindo novas transições. A correção remove o bloqueio: o PCM continua e `transportDiscontinuity()` faz flush quando o evento tipado chega. Não há promessa de que áudio antigo seja preferível a continuidade; o evento real continua sendo a fronteira de descarte.
+
+Na AVD, o teste cobre PCM com marcador atrasado, flush e nova mescla concluída após o seek. Resultado: 0 underruns e 0 fallbacks diretos; a transição adicional elevou os contadores acumulados para 47 esperas/1.024 ms, sem falha de saída. Uma primeira fixture com apenas 3 s de A abortou corretamente por `next-not-prepared`; foi substituída por uma janela com 6 s de A e 8 s de B, sem afrouxar a exigência de mescla concluída.
+
+O teste de navegação com Spotify real não iniciou por falta de login na AVD após os testes anteriores. Sem teste físico, acústico ou validação Android real nesta correção.

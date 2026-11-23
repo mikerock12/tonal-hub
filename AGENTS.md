@@ -5,7 +5,7 @@ afetada antes de alterar o produto. Estado documental: 25/10/2026, builds Window
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
-Estado atual: 22/11/2026, Windows 0.17.5 e Android 0.17.5 (ver seção 0.17.5 ao final). As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
+Estado atual: 23/11/2026, Windows 0.17.6 e Android 0.17.6 (ver seção 0.17.6 ao final). As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
 
 ## Autoria, Git e privacidade
 
@@ -612,3 +612,12 @@ docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no
 - Validação local: CTest Windows 12/12, QML, Java SPSC e AVD com AudioTrack real; 30 gestos/renders sem crash; fila 5/5; diálogo de transições; append com resposta perdida e retomada sem duplicar/zero PUT em Windows e Android sintético. Spotify real no Windows: 3/3 transições naturais com A+B, 0 B faltando e 0 underruns no OpenAL nulo. Sem Spotify real no Android, telefone físico, Bluetooth, medição acústica, CPU/bateria ou escrita real em playlist Spotify nesta versão.
 
 - Entrega 0.17.5 (22/11/2026): PR63 merge `5521d56fec5ba2b7e75f8453071484cf0377f66d` (CI 5/5 + visual), release v0.17.5 com assets/digests remotos conferidos; portal PR78 merge `dd4c02185813f5637bea285be0a2035843b83e21`, Worker `9cf4757d-24dc-4d20-97a3-9a3532a1eb01`, downloads/hashes/privado 401 verificados. Backup privado concluído no Drive na pasta `1rVB_8yTmFKRUxbWVhvgm2eK8QHAlqYhm`: `Tonal-Hub-0.17.5-backup.zip`, 384,5 MB exibidos (403.207.985 bytes locais), SHA-256 local `543e38207d22ec397836a81e1b19bea842cf09f73065215e2a38a61343794971`, 18 arquivos, CRC/archives/bundles restaurados. Upload concluído, tamanho compatível e acesso “Só você tem acesso a este arquivo”; hash remoto não fornecido pela interface. Evidências: docs/release-0175-tests.json e docs/artifacts-0175.json.
+
+
+## Regressão de seek e transições 0.17.6
+
+- A 0.17.5 introduziu `transportChanging`: depois de um seek, o Android descartava todo PCM até receber um marcador específico. Se esse evento não chegasse numa retomada/mudança inesperada, o áudio ficava mudo e a posição parava, impedindo novas transições.
+- A 0.17.6 remove esse bloqueio indefinido. O PCM continua sendo processado e o evento tipado faz o flush quando efetivamente chega. `trackLock`, fila SPSC, cancelamento por epoch e NaturalLoad/ResumeLoad permanecem.
+- Regressão na AVD: PCM avança com marcador atrasado, `transportDiscontinuity()` não interrompe a retomada e outra mescla conclui após o seek. Resultado: 0 underruns, 0 fallbacks diretos; 47 esperas/1.024 ms incluindo a transição adicional. Crash dedicado repetiu 30 gestos/renders sem falha.
+- O teste real Android não iniciou porque a AVD estava sem login após a limpeza dos testes anteriores. Não declarar seek/transições com Spotify real no Android nem aceite físico. Windows mantém o motor 0.17.5 já medido; recompilação da versão não é novo benchmark.
+- Android versionCode 47. Publicação/backup devem ser registrados somente após evidência correspondente.

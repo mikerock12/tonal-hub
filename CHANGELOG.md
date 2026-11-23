@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.17.6 — 23/11/2026
+
+- **Android:** corrige a regressão da 0.17.5 em que avançar pela seekbar podia deixar o áudio mudo e impedir novas transições. O app não descarta mais PCM indefinidamente enquanto espera um marcador de transporte que pode não chegar.
+- O evento tipado continua fazendo o flush da saída quando efetivamente aplicado pelo motor, sem bloquear a reprodução. A fila SPSC e a serialização do AudioTrack permanecem.
+- Testado na AVD: PCM continua com marcador atrasado, nova transição concluída após seek, zero underruns e regressão do SongPager aprovada. Sem Spotify real no Android ou teste físico nesta correção.
+
 ## 0.17.5 — 22/11/2026
 
 - **Android:** corrige o fechamento da página da música quando um gesto era cancelado pela reconstrução do painel e chamava um `SongPager` já substituído.
