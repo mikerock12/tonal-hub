@@ -32,11 +32,16 @@
   "androidVisualRegression": "success"
  },
  "privateBackup": {
-  "status": "blocked_auth",
-  "reason": "Google Drive MCP invalid_grant e navegador integrado sem sessão Google; nenhum upload declarado.",
-  "localFile": "out/Tonal-Hub-0.17.5-backup.zip",
+  "status": "uploaded_verified",
+  "folder": "1rVB_8yTmFKRUxbWVhvgm2eK8QHAlqYhm",
+  "url": "https://drive.google.com/drive/folders/1rVB_8yTmFKRUxbWVhvgm2eK8QHAlqYhm",
+  "name": "Tonal-Hub-0.17.5-backup.zip",
   "bytes": 403207985,
+  "remoteSizeDisplay": "384,5 MB",
+  "remoteSizeMatches": true,
+  "privacy": "Só você tem acesso a este arquivo",
   "sha256": "543e38207d22ec397836a81e1b19bea842cf09f73065215e2a38a61343794971",
+  "remoteSha256Available": false,
   "files": 18,
   "localCrcAndRestoreVerified": true
  }
