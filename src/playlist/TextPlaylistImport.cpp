@@ -35,7 +35,7 @@ void TextPlaylistImport::call(const QByteArray &method,const QString &path,const
     if(method=="GET")send();else m_music->persist([self,serial,send](bool ok){if(!self||self->m_generation!=serial)return;if(ok)send();else self->finish("Não foi possível confirmar a gravação local. O envio ao Spotify foi interrompido; confira o espaço em disco e faça backup.");});
 }
 void TextPlaylistImport::parse(const QString &text,int format,const QString &artist){
-    if(m_syncing)return;cancel();m_rows.clear();m_saved.clear();
+    if(m_syncing)return;cancel();m_rows.clear();m_saved.clear();m_targetId.clear();
     try {const auto parsed=tonal::playlist::parse(text.toUtf8().toStdString(),format,artist.toUtf8().toStdString());m_detected=QString::fromStdString(parsed.detectedArtist);
         for(const auto &song:parsed.songs)m_rows<<QVariantMap{{"artist",QString::fromStdString(song.artist)},{"title",QString::fromStdString(song.title)},{"original",QString::fromStdString(song.original)},{"status","Aguardando"},{"candidates",QVariantList{}},{"choice",-1},{"selected",false}};
         m_status=m_rows.isEmpty()?"Nenhuma música reconhecida.":QString("%1 músicas. Revise o artista e busque as gravações.").arg(m_rows.size());
@@ -48,21 +48,24 @@ void TextPlaylistImport::nextSearch(int row,int attempt){
     auto item=m_rows[row].toMap();if(attempt==0&&item.value("choice").toInt()>=0){nextSearch(row+1);return;}
     tonal::playlist::Song song{item["artist"].toString().toUtf8().toStdString(),item["title"].toString().toUtf8().toStdString(),{}};
     const auto queries=tonal::playlist::queries(song);
-    if(attempt>=int(queries.size())){item["status"]="Não encontrada";m_rows[row]=item;emit changed();const int serial=m_generation;QTimer::singleShot(180,this,[this,row,serial]{if(m_generation==serial&&m_busy&&!m_syncing)nextSearch(row+1);});return;}
+    if(attempt>=int(queries.size())){item["status"]=item["choice"].toInt()>=0?"Revisar versão":"Não encontrada";m_rows[row]=item;emit changed();const int serial=m_generation;QTimer::singleShot(180,this,[this,row,serial]{if(m_generation==serial&&m_busy&&!m_syncing)nextSearch(row+1);});return;}
     item["status"]="Buscando…";m_rows[row]=item;emit changed();
-    call("GET","/search",{{"q",QString::fromStdString(queries[attempt])},{"type","track"},{"limit",10}}, {},{},[this,row,attempt,song](int s,const QJsonDocument &doc){
+    call("GET","/search",{{"q",QString::fromStdString(queries[attempt])},{"type","track"},{"limit",10}}, {},{},[this,row,attempt,song,queries](int s,const QJsonDocument &doc){
         auto item=m_rows[row].toMap();if(s!=200){item["status"]=failure(s);m_rows[row]=item;m_busy=false;m_status=failure(s);emit changed();return;}
         auto values=doc.object()["tracks"].toObject()["items"].toArray();QVariantList tracks;std::vector<tonal::playlist::Candidate> candidates;
         for(auto v:values){auto t=track(v.toObject());if(!t["uri"].toString().startsWith("spotify:track:")||!t["playable"].toBool())continue;tracks<<t;candidates.push_back({t["title"].toString().toUtf8().toStdString(),t["artist"].toString().toUtf8().toStdString(),t["popularity"].toInt()});if(tracks.size()==10)break;}
         if(tracks.isEmpty()){nextSearch(row,attempt+1);return;}
         QVariantList ordered;auto ranking=tonal::playlist::rank(song,candidates);for(const auto &r:ranking)ordered<<tracks[r.index];
-        item["candidates"]=ordered;item["choice"]=0;item["selected"]=ranking.front().highConfidence;
-        item["status"]=ranking.front().highConfidence?"Encontrada":"Revisar versão";m_rows[row]=item;emit changed();
+        const double score=ranking.empty()?0:ranking.front().score;const bool confident=!ranking.empty()&&ranking.front().highConfidence;
+        const double previous=item.contains("bestScore")?item["bestScore"].toDouble():-1;
+        if(score>=previous){item["bestScore"]=score;item["candidates"]=ordered;item["choice"]=0;item["selected"]=confident;}
+        if(!item["selected"].toBool()&&attempt+1<int(queries.size())){item["status"]="Revisar versão";m_rows[row]=item;emit changed();nextSearch(row,attempt+1);return;}
+        item["status"]=item["selected"].toBool()?"Encontrada":"Revisar versão";m_rows[row]=item;emit changed();
         const int serial=m_generation;QTimer::singleShot(180,this,[this,row,serial]{if(m_generation==serial&&m_busy&&!m_syncing)nextSearch(row+1);});
     });
 }
 void TextPlaylistImport::choose(int row,int candidate,bool selected){if(m_busy||!m_saved.isEmpty()||row<0||row>=m_rows.size())return;auto item=m_rows[row].toMap();auto values=item["candidates"].toList();if(candidate<0||candidate>=values.size())return;item["choice"]=candidate;item["selected"]=selected;item["status"]=selected?"Revisada":"Ignorada";m_rows[row]=item;emit changed();}
-void TextPlaylistImport::edit(int row,const QString &artist,const QString &title){if(m_busy||!m_saved.isEmpty()||row<0||row>=m_rows.size()||title.trimmed().isEmpty())return;auto item=m_rows[row].toMap();item["artist"]=artist.trimmed().left(300);item["title"]=title.trimmed().left(300);item["choice"]=-1;item["selected"]=false;item["candidates"]=QVariantList{};item["status"]="Aguardando";m_rows[row]=item;emit changed();}
+void TextPlaylistImport::edit(int row,const QString &artist,const QString &title){if(m_busy||!m_saved.isEmpty()||row<0||row>=m_rows.size()||title.trimmed().isEmpty())return;auto item=m_rows[row].toMap();item["artist"]=artist.trimmed().left(300);item["title"]=title.trimmed().left(300);item["choice"]=-1;item["selected"]=false;item.remove("bestScore");item["candidates"]=QVariantList{};item["status"]="Aguardando";m_rows[row]=item;emit changed();}
 void TextPlaylistImport::move(int row,int direction){if(m_busy||!m_saved.isEmpty())return;int other=row+direction;if(row<0||row>=m_rows.size()||other<0||other>=m_rows.size())return;m_rows.swapItemsAt(row,other);emit changed();}
 QVariantList TextPlaylistImport::selectedTracks(bool deduplicate) const{QVariantList out;QSet<QString> seen;for(auto v:m_rows){auto row=v.toMap();auto values=row["candidates"].toList();int i=row["choice"].toInt();if(!row["selected"].toBool()||i<0||i>=values.size())continue;auto t=values[i].toMap();QString uri=t["uri"].toString();if(deduplicate&&seen.contains(uri))continue;seen.insert(uri);out<<MusicCompanion::safeTrack(t);}return out;}
 bool TextPlaylistImport::setCover(const QUrl &url){
@@ -74,18 +77,24 @@ bool TextPlaylistImport::setCover(const QUrl &url){
     m_cover="data:image/jpeg;base64,"+QString::fromLatin1(encoded.toBase64());emit changed();return true;
 }
 void TextPlaylistImport::clearCover(){if(!m_busy&&m_saved.isEmpty()){m_cover.clear();emit changed();}}
+bool TextPlaylistImport::setTargetPlaylist(const QString &id){
+    if(m_busy||!m_saved.isEmpty())return false;
+    if(!id.isEmpty()&&!QRegularExpression("^[A-Za-z0-9]{22}$").match(id).hasMatch())return false;
+    m_targetId=id;return true;
+}
 bool TextPlaylistImport::saveLocal(const QString &name,const QString &description,bool deduplicate){
     if(m_busy||!m_saved.isEmpty())return false;m_saved=m_music->importPlaylist(name,description,m_cover,selectedTracks(deduplicate));
+    if(!m_saved.isEmpty()&&!m_targetId.isEmpty())patch({{"spotifyId",m_targetId},{"appendMode",true},{"appendBase",QVariantList{}},{"appendBaseReady",false},{"syncedCount",0},{"cloudComplete",false},{"cloudUncertain",false},{"coverSynced",true}});
     m_status=m_saved.isEmpty()?"Não foi possível salvar. Informe um nome, selecione músicas e confira o limite da biblioteca.":"Confirmando a gravação local…";
     if(!m_saved.isEmpty()){m_busy=true;const int serial=m_generation;QPointer<TextPlaylistImport> self(this);m_music->persist([self,serial](bool ok){if(self&&self->m_generation==serial)self->finish(ok?"Playlist salva no Tonalify. Deseja salvar também na conta Spotify?":"A gravação local falhou. Exporte um backup e confira o espaço em disco antes de enviar.");});}emit changed();return !m_saved.isEmpty();
 }
-bool TextPlaylistImport::loadSaved(const QString &id){if(m_busy)return false;auto p=m_music->playlistDetails(id);if(p.isEmpty())return false;++m_generation;m_rows.clear();m_saved=id;m_cover=p["cover"].toString();for(auto t:m_music->playlistTracks(id))m_rows<<QVariantMap{{"artist",t.toMap()["artist"]},{"title",t.toMap()["title"]},{"candidates",QVariantList{t}},{"choice",0},{"selected",true},{"status","Salva"}};m_status="Playlist local. Você pode concluir a cópia para o Spotify.";emit changed();return true;}
+bool TextPlaylistImport::loadSaved(const QString &id){if(m_busy)return false;auto p=m_music->playlistDetails(id);if(p.isEmpty())return false;++m_generation;m_rows.clear();m_saved=id;m_cover=p["cover"].toString();m_targetId=p["appendMode"].toBool()?p["spotifyId"].toString():QString();for(auto t:m_music->playlistTracks(id))m_rows<<QVariantMap{{"artist",t.toMap()["artist"]},{"title",t.toMap()["title"]},{"candidates",QVariantList{t}},{"choice",0},{"selected",true},{"status","Salva"}};m_status="Playlist local. Você pode concluir a cópia para o Spotify.";emit changed();return true;}
 void TextPlaylistImport::patch(const QVariantMap &v){m_music->updatePlaylistDetails(m_saved,v);}
 void TextPlaylistImport::finish(const QString &text){m_busy=false;m_syncing=false;m_status=text;emit changed();}
 void TextPlaylistImport::sync(bool publicPlaylist){
     if(m_busy||m_saved.isEmpty())return;auto p=details();m_upload=m_music->playlistTracks(m_saved);if(m_upload.isEmpty())return;m_cloudId=p["spotifyId"].toString();m_cursor=std::clamp(p["syncedCount"].toInt(),0,int(m_upload.size()));
     ++m_generation;m_busy=m_syncing=true;m_status="Copiando playlist para o Spotify…";emit changed();
-    if(!m_cloudId.isEmpty()){if(!QRegularExpression("^[A-Za-z0-9]{22}$").match(m_cloudId).hasMatch()){finish("Identificação da playlist Spotify inválida.");return;}m_verifiedPages=0;if(p["cloudUncertain"].toBool())verifyRemote("/playlists/"+m_cloudId+"/items?limit=50");else uploadBatch();return;}
+    if(!m_cloudId.isEmpty()){if(!QRegularExpression("^[A-Za-z0-9]{22}$").match(m_cloudId).hasMatch()){finish("Identificação da playlist Spotify inválida.");return;}m_verifiedPages=0;if(p["appendMode"].toBool()||p["cloudUncertain"].toBool())verifyRemote("/playlists/"+m_cloudId+"/items?limit=50");else uploadBatch();return;}
     if(p["cloudUncertain"].toBool()){finish("O envio anterior não confirmou a criação. Confira sua Biblioteca Spotify antes de tentar criar outra cópia.");return;}
     patch({{"cloudUncertain",true},{"spotifyPublic",publicPlaylist}});
     call("POST","/me/playlists",{},json({{"name",p["name"].toString()},{"description",p["description"].toString()},{"public",publicPlaylist}}),"application/json",[this](int s,const QJsonDocument &doc){
@@ -98,8 +107,26 @@ void TextPlaylistImport::verifyRemote(const QString &path,QVariantList accumulat
     if(++m_verifiedPages>12){finish("Não foi possível conferir a paginação da playlist. Nenhuma faixa extra foi enviada.");return;}
     call("GET",path,{}, {},{},[this,accumulated](int s,const QJsonDocument &doc)mutable{
         if(!ok(s)){finish(failure(s));return;}auto o=doc.object();for(auto v:o["items"].toArray()){auto item=v.toObject();auto t=item["item"].toObject();if(t.isEmpty())t=item["track"].toObject();accumulated<<t["uri"].toString();}
-        if(accumulated.size()>m_upload.size()){finish("A playlist Spotify foi alterada. O envio foi interrompido para preservar seu conteúdo.");return;}
+        const auto state=details();const bool append=state["appendMode"].toBool();
+        if(!append&&accumulated.size()>m_upload.size()){finish("A playlist Spotify foi alterada. O envio foi interrompido para preservar seu conteúdo.");return;}
         auto next=o["next"].toString();if(!next.isEmpty()){verifyRemote(next,accumulated);return;}
+        if(append){
+            auto base=state["appendBase"].toList();
+            if(!state["appendBaseReady"].toBool()){
+                m_cursor=0;patch({{"appendBase",accumulated},{"appendBaseReady",true},{"syncedCount",0},{"cloudUncertain",false}});uploadBatch();return;
+            }
+            if(accumulated.size()<base.size()||accumulated.size()>base.size()+m_upload.size()){
+                finish("A playlist Spotify mudou desde o início da adição. Confira seu conteúdo antes de continuar.");return;
+            }
+            for(int i=0;i<base.size();++i)if(accumulated[i].toString()!=base[i].toString()){
+                finish("A parte original da playlist Spotify mudou. Nenhuma faixa extra foi enviada.");return;
+            }
+            const int received=int(accumulated.size()-base.size());
+            for(int i=0;i<received;++i)if(accumulated[base.size()+i].toString()!=m_upload[i].toMap()["uri"].toString()){
+                finish("As adições confirmadas no Spotify divergem desta retomada. Confira a playlist antes de continuar.");return;
+            }
+            m_cursor=received;patch({{"syncedCount",m_cursor},{"cloudUncertain",false}});uploadBatch();return;
+        }
         for(int i=0;i<accumulated.size();++i)if(accumulated[i].toString()!=m_upload[i].toMap()["uri"].toString()){finish("A ordem no Spotify mudou. Confira a playlist antes de continuar.");return;}
         m_cursor=int(accumulated.size());patch({{"syncedCount",m_cursor},{"cloudUncertain",false}});uploadBatch();
     });
@@ -108,9 +135,10 @@ void TextPlaylistImport::uploadBatch(){
     if(m_cursor>=m_upload.size()){patch({{"cloudComplete",true}});emit spotifyChanged();uploadCover();return;}
     QJsonArray uris;for(int i=m_cursor;i<std::min(m_cursor+100,int(m_upload.size()));++i)uris.append(m_upload[i].toMap()["uri"].toString());const int end=m_cursor+int(uris.size());
     patch({{"cloudUncertain",true}});m_status=QString("Spotify • enviando %1–%2 de %3").arg(m_cursor+1).arg(end).arg(m_upload.size());emit changed();
-    call(m_cursor==0?"PUT":"POST","/playlists/"+m_cloudId+"/items",{},json({{"uris",uris}}),"application/json",[this,end](int s,const QJsonDocument &){if(!ok(s)){finish(failure(s)+" Na próxima tentativa, o conteúdo será conferido antes de continuar.");return;}m_cursor=end;patch({{"syncedCount",m_cursor},{"cloudUncertain",false}});uploadBatch();});
+    call(details()["appendMode"].toBool()||m_cursor>0?"POST":"PUT","/playlists/"+m_cloudId+"/items",{},json({{"uris",uris}}),"application/json",[this,end](int s,const QJsonDocument &){if(!ok(s)){finish(failure(s)+" Na próxima tentativa, o conteúdo será conferido antes de continuar.");return;}m_cursor=end;patch({{"syncedCount",m_cursor},{"cloudUncertain",false}});uploadBatch();});
 }
 void TextPlaylistImport::uploadCover(){
+    if(details()["appendMode"].toBool()){finish("Músicas adicionadas à playlist Spotify existente. A cópia local das adições continua salva.");return;}
     if(m_cover.isEmpty()||details()["coverSynced"].toBool()){finish("Playlist salva no Tonalify e no Spotify.");return;}
     const auto bytes=m_cover.section(',',1).toLatin1();
     call("PUT","/playlists/"+m_cloudId+"/images",{},bytes,"image/jpeg",[this](int s,const QJsonDocument &){if(ok(s)){patch({{"coverSynced",true}});finish("Playlist e capa salvas no Tonalify e no Spotify.");}else finish("Músicas copiadas. Capa pendente: "+failure(s)+" Autorize e use Enviar novamente para concluir só a capa.");});

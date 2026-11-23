@@ -8,6 +8,7 @@ Dialog {
     required property var controller
     property int step: 0
     property bool onlyMissing: false
+    property var playlistTargets: Playlists.editable || []
     function missingCount(){let count=0;for(let i=0;i<controller.rows.length;i++)if(!controller.rows[i].selected)count++;return count}
     function reviewRows(){const result=[];for(let i=0;i<controller.rows.length;i++)if(!onlyMissing||!controller.rows[i].selected)result.push(Object.assign({},controller.rows[i],{reviewIndex:i}));return result}
     function chooseReview(row,candidate,selected){const y=review.contentY;controller.choose(row,candidate,selected);Qt.callLater(()=>review.contentY=Math.min(y,Math.max(0,review.contentHeight-review.height)))}
@@ -80,6 +81,8 @@ Dialog {
             Label {text:"Correspondências duvidosas ficam desmarcadas. Escolha a versão, corrija a busca ou deixe a faixa fora da playlist.";wrapMode:Text.WordWrap;color:"#a8b0b7";Layout.fillWidth:true}
         }
         ColumnLayout {visible:root.step===2;Layout.fillWidth:true;Layout.fillHeight:true;spacing:16
+            ComboBox {id:importTarget;objectName:"importTargetPlaylist";textRole:"name";valueRole:"id";model:[{id:"",name:"Criar uma nova playlist"}].concat(root.playlistTargets);Layout.fillWidth:true}
+            Label {visible:importTarget.currentIndex>0;text:"As músicas revisadas serão acrescentadas ao final da playlist escolhida. O conteúdo existente não será substituído; uma cópia local das adições fica neste aparelho.";color:"#8ed7f2";wrapMode:Text.WordWrap;Layout.fillWidth:true}
             TextField {id:playlistName;objectName:"importPlaylistName";placeholderText:"Nome da playlist";text:"Minha playlist de texto";maximumLength:100;Layout.fillWidth:true}
             TextArea {id:description;objectName:"importPlaylistDescription";placeholderText:"Descrição (opcional)";wrapMode:TextEdit.Wrap;Layout.fillWidth:true;Layout.preferredHeight:100;onTextChanged:if(text.length>300)text=text.slice(0,300)}
             RowLayout {Layout.fillWidth:true;spacing:18
@@ -99,10 +102,10 @@ Dialog {
                 }
             }
             Button {text:"Ouvir / abrir playlist local";enabled:!root.controller.busy;onClicked:{let id=root.controller.savedId;root.close();root.localPlaylistRequested(id)}}
-            Label {text:"Salvar também na conta Spotify?";font.pixelSize:21;font.bold:true;color:"white"}
+            Label {text:root.controller.details.appendMode?"Adicionar à playlist Spotify existente":"Salvar também na conta Spotify?";font.pixelSize:21;font.bold:true;color:"white"}
             RowLayout {Layout.fillWidth:true
-                ComboBox {id:visibility;model:["Privada","Pública"];enabled:!root.controller.busy&&!root.controller.details.spotifyId}
-                Button {objectName:"playlistSendSpotify";text:root.controller.details.spotifyId?"Concluir / conferir envio":"Salvar também no Spotify";enabled:!root.controller.busy;onClicked:root.controller.sync(visibility.currentIndex===1)}
+                ComboBox {id:visibility;model:["Privada","Pública"];visible:!root.controller.details.appendMode;enabled:!root.controller.busy&&!root.controller.details.spotifyId}
+                Button {objectName:"playlistSendSpotify";text:root.controller.details.appendMode?"Adicionar músicas à playlist":root.controller.details.spotifyId?"Concluir / conferir envio":"Salvar também no Spotify";enabled:!root.controller.busy;onClicked:root.controller.sync(visibility.currentIndex===1)}
                 BusyIndicator {running:root.controller.syncing;visible:running;implicitWidth:32;implicitHeight:32}
             }
             Button {text:"Autorizar permissões do Spotify…";visible:root.controller.status.indexOf("Autorize")>=0;enabled:!root.controller.busy;onClicked:root.authorizationRequested()}
@@ -114,8 +117,8 @@ Dialog {
             Button {text:root.step===3?"Concluir":"Fechar";enabled:!root.controller.syncing;onClicked:root.close()}
             Item {Layout.fillWidth:true}
             Button {text:"Voltar";visible:root.step>0&&root.step<3;enabled:!root.controller.busy;onClicked:root.step--}
-            Button {objectName:"playlistContinue";text:root.step===0?"Interpretar e buscar":root.step===1?"Personalizar":"Salvar no Tonalify";visible:root.step<3;enabled:!root.controller.busy&&(root.step!==1||root.controller.selectedCount>0)
-                onClicked:{if(root.step===0){root.controller.parse(sourceText.text,format.currentIndex,artist.text);if(root.controller.rows.length){root.step=1;root.controller.search()}}else if(root.step===1)root.step=2;else if(root.controller.saveLocal(playlistName.text,description.text,deduplicate.checked))root.step=3}
+            Button {objectName:"playlistContinue";text:root.step===0?"Interpretar e buscar":root.step===1?"Personalizar":importTarget.currentIndex>0?"Salvar adições no Tonalify":"Salvar no Tonalify";visible:root.step<3;enabled:!root.controller.busy&&(root.step!==1||root.controller.selectedCount>0)
+                onClicked:{if(root.step===0){root.controller.parse(sourceText.text,format.currentIndex,artist.text);if(root.controller.rows.length){root.step=1;root.controller.search()}}else if(root.step===1)root.step=2;else {root.controller.setTargetPlaylist(importTarget.currentIndex>0&&importTarget.currentIndex<=root.playlistTargets.length?root.playlistTargets[importTarget.currentIndex-1].id:"");if(root.controller.saveLocal(playlistName.text,description.text,deduplicate.checked))root.step=3}}
             }
         }
     }

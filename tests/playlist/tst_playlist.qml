@@ -17,15 +17,17 @@ Item {
         property int selectedCount:0
         property var details:({})
         property int spotifyWrites:0
+        property string targetId:""
+        function setTargetPlaylist(id){targetId=id;return true}
         function cancel(){}
-        function parse(text,format,artist){let generated=[];for(let i=0;i<30;i++){let missing=i%7===3,review=i===14;generated.push({artist:i===0?"Veruca Salt":"Banda "+i,title:i===0?"Seether":"Música "+i,status:missing?"Não encontrada":review?"Revisar versão":"Encontrada",choice:missing?-1:0,selected:!missing&&!review,candidates:missing?[]:[{title:"Música "+i,artist:"Banda "+i,album:"Álbum sintético",image:""}]})}rows=generated;selectedCount=25}
+        function parse(text,format,artist){targetId="";spotifyWrites=0;let generated=[];for(let i=0;i<30;i++){let missing=i%7===3,review=i===14;generated.push({artist:i===0?"Veruca Salt":"Banda "+i,title:i===0?"Seether":"Música "+i,status:missing?"Não encontrada":review?"Revisar versão":"Encontrada",choice:missing?-1:0,selected:!missing&&!review,candidates:missing?[]:[{title:"Música "+i,artist:"Banda "+i,album:"Álbum sintético",image:""}]})}rows=generated;selectedCount=25}
         function search(){status="Revise as gravações antes de salvar."}
         function choose(row,candidate,on){let updated=rows.slice();updated[row]=Object.assign({},updated[row],{choice:candidate,selected:on,status:on?"Revisada":"Ignorada"});rows=updated;selectedCount=updated.filter(r=>r.selected&&r.choice>=0).length}
         function edit(row,artist,title){}
         function move(row,direction){}
         function clearCover(){cover=""}
         function setCover(url){return true}
-        function saveLocal(name,description,dedup){savedId="local-fixture";details={name:name,description:description,cover:"",tracks:["uri"]};status="Playlist salva no Tonalify. Deseja salvar também no Spotify?";return true}
+        function saveLocal(name,description,dedup){savedId="local-fixture";details={name:name,description:description,cover:"",tracks:["uri"],appendMode:targetId.length>0,spotifyId:targetId};status="Playlist salva no Tonalify. Deseja salvar também no Spotify?";return true}
         function sync(pub){spotifyWrites++;status="Playlist salva no Tonalify e no Spotify."}
     }
     TextPlaylistDialog {id:wizard;controller:mock;parent:host}
@@ -48,6 +50,15 @@ Item {
             grabImage(host).save("local-saved.png")
             mouseClick(findChild(host,"playlistSendSpotify"));compare(mock.spotifyWrites,1)
             wizard.close()
+        }
+        function test_existing_playlist_destination(){
+            wizard.playlistTargets=[{id:"abcdefghijklmnopqrstuv",name:"Playlist de destino"}]
+            wizard.fresh();const input=findChild(host,"playlistTextInput"),next=findChild(host,"playlistContinue");input.text="Veruca Salt - Seether"
+            mouseClick(next);tryCompare(wizard,"step",1);mouseClick(next);tryCompare(wizard,"step",2)
+            const target=findChild(host,"importTargetPlaylist");verify(target!==null);tryCompare(target,"count",2);target.currentIndex=1
+            mouseClick(next);tryCompare(wizard,"step",3);compare(mock.targetId,"abcdefghijklmnopqrstuv");compare(mock.details.appendMode,true);compare(mock.spotifyWrites,0)
+            compare(findChild(host,"playlistSendSpotify").text,"Adicionar músicas à playlist");mouseClick(findChild(host,"playlistSendSpotify"));compare(mock.spotifyWrites,1)
+            wizard.close();wizard.playlistTargets=[]
         }
     }
 }

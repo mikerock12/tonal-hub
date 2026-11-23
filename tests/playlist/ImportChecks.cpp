@@ -45,6 +45,24 @@ int main(int argc,char **argv){QCoreApplication app(argc,argv);app.setOrganizati
         importer.acknowledgeUncertainCreate();dropCreate=false;dropBatch=true;importer.sync(false);waitFor([&]{return !importer.busy();});previous=puts;dropBatch=false;importer.sync(false);waitFor([&]{return !importer.busy();});expectCore(puts==previous&&remoteCount==1,"uncertain items must be verified, not blindly repeated");
         importer.parse("Veruca Salt - Seether");importer.search();importer.cancel();importer.parse("L7 - Shove");QCoreApplication::processEvents();expectCore(importer.rows().first().toMap()["title"]=="Shove"&&importer.selectedCount()==0,"stale search corrupted a new draft");
         }
+        {
+            MusicCompanion music(nullptr,storage.path());QVariantList remote;remote<<QVariantMap{{"uri","spotify:track:AAAAAAAAAAAAAAAAAAAAAA"}}<<QVariantMap{{"uri","spotify:track:BBBBBBBBBBBBBBBBBBBBBB"}};int posts=0,puts=0,creates=0;bool drop=true;
+            TextPlaylistImport importer(&music,[&](const QByteArray &method,const QString &path,const QVariantMap &,const QByteArray &body,const QByteArray &,TextPlaylistImport::Reply cb,std::function<bool()> alive){
+                expectCore(alive(),"append request generation");int status=200;QJsonDocument result;
+                if(method=="GET"&&path=="/search")result=QJsonDocument(QJsonObject{{"tracks",QJsonObject{{"items",QJsonArray{spotifyTrack()}}}}});
+                else if(method=="GET"&&path.contains("/items")){QJsonArray items;for(const auto &track:remote)items.append(QJsonObject{{"item",QJsonObject::fromVariantMap(track.toMap())}});result=QJsonDocument(QJsonObject{{"items",items}});}
+                else if(method=="POST"&&path.endsWith("/items")){++posts;for(auto uri:QJsonDocument::fromJson(body).object()["uris"].toArray())remote<<QVariantMap{{"uri",uri.toString()}};status=drop?503:201;}
+                else if(method=="PUT"&&path.endsWith("/items")){++puts;status=500;}
+                else if(method=="POST"&&path=="/me/playlists"){++creates;status=500;}
+                QTimer::singleShot(0,&app,[=]{cb(status,result);});
+            });
+            importer.parse("Veruca Salt - Seether");importer.search();waitFor([&]{return !importer.busy();});expectCore(importer.setTargetPlaylist("abcdefghijklmnopqrstuv"),"existing playlist target");expectCore(importer.saveLocal("Adições locais","",false),"append local checkpoint");waitFor([&]{return !importer.busy();});
+            importer.sync(false);waitFor([&]{return !importer.busy();});expectCore(posts==1,"one append POST before lost receipt");expectCore(puts==0,"append never replaces remote items");expectCore(creates==0,"append never creates another playlist");expectCore(remote.size()==3,"lost append response was applied by fixture");expectCore(importer.details()["cloudUncertain"].toBool(),"lost append response marked for verification");
+            drop=false;importer.sync(false);waitFor([&]{return !importer.busy();});expectCore(posts==1&&puts==0&&creates==0&&remote.size()==3&&importer.details()["cloudComplete"].toBool(),"append resume verifies base plus suffix without duplicate or overwrite");
+            expectCore(importer.details()["appendBase"].toList().size()==2&&remote[2].toMap()["uri"].toString()=="spotify:track:1234567890123456789012","existing prefix preserved and reviewed track appended");
+            remote.clear();posts=0;drop=true;importer.parse("Veruca Salt - Seether");importer.search();waitFor([&]{return !importer.busy();});expectCore(importer.setTargetPlaylist("abcdefghijklmnopqrstuv"),"empty existing playlist target");expectCore(importer.saveLocal("Adição em playlist vazia","",false),"empty base checkpoint");waitFor([&]{return !importer.busy();});importer.sync(false);waitFor([&]{return !importer.busy();});drop=false;importer.sync(false);waitFor([&]{return !importer.busy();});
+            expectCore(posts==1&&remote.size()==1&&importer.details()["appendBase"].toList().isEmpty()&&importer.details()["appendBaseReady"].toBool()&&importer.details()["cloudComplete"].toBool(),"empty remote base is distinguishable from an unconfirmed base and resumes without duplicates");
+        }
         {MusicCompanion reopened(nullptr,storage.path());expectCore(reopened.playlistTracks(saved).size()==2&&reopened.playlistDetails(saved)["description"]=="Descrição","playlist/description persistence");
          const auto expected=reopened.playlistDetails(saved);auto backup=QUrl::fromLocalFile(storage.filePath("roundtrip.tonal-backup.json"));
          expectCore(reopened.exportBackup(backup),"imported playlist backup export");reopened.deletePlaylist(saved);

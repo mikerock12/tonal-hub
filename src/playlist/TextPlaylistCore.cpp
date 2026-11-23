@@ -58,6 +58,25 @@ double similarity(const std::string &a,const std::string &b) {
 bool contains(const std::string &s,const std::string &word) {
     return (" "+normalize(s)+" ").find(" "+word+" ")!=std::string::npos;
 }
+std::string artistName(const std::string &s) {
+    return std::regex_replace(normalize(s),std::regex(R"(^(?:the|a|an|o|os|as) )"),"");
+}
+std::string titleBase(const std::string &s) {
+    auto value=normalize(s);
+    static const std::regex suffix(R"(\s+(?:(?:\d{4} )?remaster(?:ed|izado|izada)?|deluxe(?: edition)?|expanded edition|bonus track|radio edit|single version|album version|mono|stereo)$)",std::regex::icase);
+    while(true){auto next=std::regex_replace(value,suffix,"");if(next==value)break;value=std::move(next);}
+    return trim(value);
+}
+double artistSimilarity(const std::string &requested,const std::string &credited) {
+    double score=similarity(artistName(requested),artistName(credited));
+    static const std::regex split(R"(\s*(?:,|;|\s+feat\.?\s+|\s+featuring\s+|\s+with\s+)\s*)",std::regex::icase);
+    std::sregex_token_iterator part(credited.begin(),credited.end(),split,-1),end;
+    for(;part!=end;++part)if(!part->str().empty())score=std::max(score,similarity(artistName(requested),artistName(part->str())));
+    return score;
+}
+double titleSimilarity(const std::string &requested,const std::string &candidate) {
+    return std::max(similarity(normalize(requested),normalize(candidate)),.995*similarity(titleBase(requested),titleBase(candidate)));
+}
 }
 std::string normalize(const std::string &s) {
     std::string result;bool space=true;
@@ -103,12 +122,14 @@ Parsed parse(const std::string &text,int format,const std::string &defaultArtist
     const auto artist=clean(defaultArtist.empty()?out.detectedArtist:defaultArtist);
     for(const auto &raw:lines) {
         auto s=strip(raw).first;if(s.empty())continue;
-        Song song{artist,s,raw};
+        Song song{artist,s,raw};bool separated=false;
         for(const std::string separator:{" - "," – "," — ","\t"," : "," / "," | "," -- ",","}) {
             auto pos=s.find(separator);if(pos==std::string::npos)continue;
             auto a=clean(s.substr(0,pos)),b=clean(s.substr(pos+separator.size()));
-            song.artist=format==2?b:a;song.title=format==2?a:b;break;
+            const bool reverse=format==2||(format==0&&!artist.empty()&&normalize(b)==normalize(artist)&&normalize(a)!=normalize(artist));
+            song.artist=reverse?b:a;song.title=reverse?a:b;separated=true;break;
         }
+        if(!separated){std::smatch by;if(std::regex_match(s,by,std::regex(R"(^(.+)\s+[Bb]y\s+(.+)$)"))){song.title=clean(by[1]);song.artist=clean(by[2]);}}
         if(song.artist.empty())song.artist=artist;
         song.artist=clean(song.artist);song.title=clean(song.title);
         if(!song.title.empty())out.songs.push_back(std::move(song));
@@ -118,17 +139,20 @@ Parsed parse(const std::string &text,int format,const std::string &defaultArtist
 std::vector<Ranked> rank(const Song &song,const std::vector<Candidate> &candidates) {
     std::vector<Ranked> result;
     for(int i=0;i<int(candidates.size());++i) {
-        const auto &c=candidates[i];const double a=song.artist.empty()?.8:similarity(song.artist,c.artist),t=similarity(song.title,c.title);
+        const auto &c=candidates[i];const double a=song.artist.empty()?.8:artistSimilarity(song.artist,c.artist),t=titleSimilarity(song.title,c.title);
         double penalty=0;for(const auto *word:{"karaoke","tribute","cover","instrumental"})
             if((contains(c.title,word)||contains(c.artist,word))&&!contains(song.title+" "+song.artist,word))penalty+=.4;
-        if(contains(song.title,"live")&&!contains(c.title,"live"))penalty+=.2;
+        for(const auto *word:{"live","remix","acoustic","unplugged","demo"}){
+            if(contains(song.title,word)&&!contains(c.title,word))penalty+=.25;
+            else if(!contains(song.title,word)&&contains(c.title,word))penalty+=.12;
+        }
         double score=c.popularity<0?a*.5+t*.5:a*.475+t*.475+std::clamp(c.popularity,0,100)*.0005;
-        score-=penalty;result.push_back({i,score,a,t,a>=.7&&t>=.6&&penalty==0});
+        score-=penalty;result.push_back({i,score,a,t,a>=.7&&t>=.7&&penalty==0});
     }
     std::stable_sort(result.begin(),result.end(),[](const Ranked &a,const Ranked &b){return a.score>b.score;});
     if(result.size()>1&&result[0].score-result[1].score<.04 &&
-       (normalize(candidates[result[0].index].artist)!=normalize(candidates[result[1].index].artist)||
-        similarity(candidates[result[0].index].title,candidates[result[1].index].title)<.7))result[0].highConfidence=false;
+       (artistName(candidates[result[0].index].artist)!=artistName(candidates[result[1].index].artist)||
+        titleSimilarity(candidates[result[0].index].title,candidates[result[1].index].title)<.7))result[0].highConfidence=false;
     return result;
 }
 std::vector<std::string> queries(const Song &s) {
@@ -136,6 +160,8 @@ std::vector<std::string> queries(const Song &s) {
     std::vector<std::string> out;
     auto add=[&](std::string q){q=trim(q);if(!q.empty()&&std::find(out.begin(),out.end(),q)==out.end())out.push_back(q);};
     if(!s.artist.empty())add("track:\""+escaped(s.title)+"\" artist:\""+escaped(s.artist)+"\"");
-    add(s.artist+" "+s.title);add("track:\""+escaped(s.title)+"\"");return out;
+    add(s.artist+" "+s.title);
+    const auto base=titleBase(s.title);if(base!=normalize(s.title))add(s.artist+" "+base);
+    add("track:\""+escaped(s.title)+"\"");return out;
 }
 }

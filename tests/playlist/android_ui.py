@@ -69,7 +69,16 @@ def main():
     click('Concluir / conferir envio');wait_for('Playlist e capa salvas no Tonalify e no Spotify.')
     final=receipt();assert final['cloud_creates']==1 and final['cloud_items']==3 and final['cover_mime']=='image/jpeg' and not final['public'] and not final['uncertain'] and final['real_spotify_writes']==0,final
     screen('cloud-recovered.png')
-    report={'passed':True,'serial':SERIAL,'package':PKG,'native_views':True,'shared_cpp_via_JNI':True,'real_spotify_writes':0,'before_explicit_cloud_request':first,'response_lost_after_server_applied_batch':interrupted,'verified_resume_without_duplicates':final,'screenshots':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in OUT.glob('*.png')}}
+    adb('shell','am','force-stop',PKG)
+    adb('shell','am','start','-n',PKG+'/app.tonal.android.MainActivity','--ez','openTextPlaylist','true','--ez','textPlaylistFixture','true','--ez','textPlaylistExisting','true','--ez','textPlaylistDropBatch','true')
+    wait_for('Interpretar e buscar');click('Interpretar e buscar');wait_for('Revisão pronta');click('Personalizar',prefix=True)
+    spinner=next(n for n in dump() if n.get('class')=='android.widget.Spinner');tap(spinner);time.sleep(.3);tap(wait_for('Playlist existente de teste'));time.sleep(.25);click('Salvar no Tonalify');wait_for('Playlist salva no Tonalify.')
+    click('Adicionar músicas à playlist');wait_for('HTTP 503');append_interrupted=receipt()
+    assert append_interrupted['append_mode'] and append_interrupted['append_base']==1 and append_interrupted['cloud_items']==4 and append_interrupted['cloud_creates']==0 and append_interrupted['cloud_puts']==0,append_interrupted
+    click('Adicionar músicas à playlist');wait_for('Músicas adicionadas à playlist Spotify existente.');append_final=receipt()
+    assert append_final['cloud_items']==4 and append_final['cloud_creates']==0 and append_final['cloud_puts']==0 and not append_final['uncertain'] and append_final['real_spotify_writes']==0,append_final
+    screen('existing-playlist-append.png')
+    report={'passed':True,'serial':SERIAL,'package':PKG,'native_views':True,'shared_cpp_via_JNI':True,'real_spotify_writes':0,'before_explicit_cloud_request':first,'response_lost_after_server_applied_batch':interrupted,'verified_resume_without_duplicates':final,'existing_playlist_append_interrupted':append_interrupted,'existing_playlist_append_final':append_final,'screenshots':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in OUT.glob('*.png')}}
     (OUT/'result.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
     print(json.dumps(report,ensure_ascii=False))
     adb('shell','am','force-stop',PKG)
