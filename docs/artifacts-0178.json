@@ -1,0 +1,41 @@
+{
+ "version": "0.17.8",
+ "assets": [
+  {"name": "Tonal-Hub-0.17.8.0-Windows-x64-Setup.exe", "sha256": "f73703e647a0e52e9b9db3651144f846e587bd43b0db7938268d0b01590ad0eb", "bytes": 89147809},
+  {"name": "Tonal-Hub-0.17.8-local.zip", "sha256": "919820f04681d7cad4d15d8c93d3cecbab617866cb0d74bbaf2c060e73b73274", "bytes": 121175930},
+  {"name": "Tonal-Android-0.17.8-arm64-v8a.apk", "sha256": "682943ae5ba6dbb595c08b8ac0c50d59a80c29d0e33f80441eb2df53c85e736d", "bytes": 38381102},
+  {"name": "Tonal-Android-0.17.8-local.apk", "sha256": "a060104de45cb8e1c5c686534f7c3be7104cae44e4cdd108896cf160bfece32f", "bytes": 66614943}
+ ],
+ "androidVersionCode": 49,
+ "productCode": "0e16c8a",
+ "productMerge": "7f018e9f543bac32513ac16f3f40b8054264b99a",
+ "certificateSha256": "464ae7cf34f4f145541569db215f8fcdef5deda1be31921d8e366eed20aa22c2",
+ "alignment": 16384,
+ "portable": {"files": 1439, "crc": true, "programsStarted": 3, "privateFiles": 0},
+ "release": "https://github.com/mikerock12/tonal-hub/releases/tag/v0.17.8",
+ "remoteAssetsVerified": true,
+ "portal": {
+  "pullRequest": 85,
+  "merge": "f0a03ea",
+  "worker": "87a07c0b-5790-467b-8bc2-1e50801b9f0a",
+  "downloadsRedirectToV0178": true,
+  "hashesMatch": true,
+  "privateArea401": true,
+  "tests": "60/60",
+  "productionNote": "API do Windows respondeu 503 transitório na primeira consulta; repetição aprovada com nome, tamanho, hash e notas."
+ },
+ "ci": {"pullRequest": 70, "checks": "5/5", "mainRun": 45223796935, "androidVisualRun": 45223797336, "androidVisualRegression": "success"},
+ "privateBackup": {
+  "status": "uploaded_verified",
+  "folder": "1ZuDEpXy3a3p9b3X2KfYofldtxCfDqrpL",
+  "url": "https://drive.google.com/drive/folders/1ZuDEpXy3a3p9b3X2KfYofldtxCfDqrpL",
+  "files": 33,
+  "bytes": 191628902,
+  "partBytes": 7000000,
+  "contents": "fontes (git archive 7f018e9), histórico (git bundle --all verificado), dados permitidos do PC, fontes do portal f0a03ea, instalador Windows e APK arm64; APK universal e ZIP portátil só na release",
+  "localReassemblyVerified": true,
+  "remoteSizesMatch": true,
+  "privacy": "Pasta privada, proprietário único; nenhum compartilhamento adicionado",
+  "remoteSha256Available": false
+ }
+}
