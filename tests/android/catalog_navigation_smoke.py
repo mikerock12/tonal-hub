@@ -19,7 +19,8 @@ try:
     run('shell','input','keyevent','4');click('Músicas Curtidas');time.sleep(2);names=song_names();assert len(names)>=2
     liked=api_state('me/tracks?limit=10')['items'];playable=[i.get('track') or i.get('item') for i in liked];playable=[t['name'] for t in playable if t and t.get('is_playable',True) and not t.get('is_local',False)];assert len(playable)>1;shot('02-liked');click(playable[0]);wait_track(playable[0]);time.sleep(3);click('Próxima');wait_track(playable[1]);check('liked_queue_and_next',first=playable[0],second=playable[1],unavailable_count=len(liked)-len(playable))
     tap_node(next(n for n in state() if n.get('resource-id','').endswith('/now_title')));wait_text('Tocando agora')
-    seek=next(n for n in state() if n.get('class')=='android.widget.SeekBar');tap_node(seek);time.sleep(4)
+    seek=next(n for n in state() if n.get('class')=='android.widget.SeekBar');frames_before_seek=frame_count();tap_node(seek);time.sleep(4)
+    frames_after_seek=frame_count();assert frames_after_seek>frames_before_seek+44100,(frames_before_seek,frames_after_seek);check('seek_keeps_pcm_playing',before=frames_before_seek,after=frames_after_seek)
     playback=player_state();position=playback['progress_ms'];duration=playback['item']['duration_ms']
     assert .40<position/duration<.65,(position,duration);check('seek_confirmed_by_spotify',position_ms=position,duration_ms=duration)
     click('Aleatório');click('Repetir');time.sleep(3);playback=player_state();assert playback['shuffle_state'] and playback['repeat_state']=='context';check('shuffle_repeat_confirmed_by_spotify')
