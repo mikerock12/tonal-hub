@@ -9,7 +9,8 @@ import org.json.*;
 /** Signal-level tests exercise the shipped native libraries, not a second model of the DSP. */
 final class AudioSelfTest {
     static void require(boolean condition,String message){if(!condition)throw new AssertionError(message);}
-    static void until(java.util.function.BooleanSupplier condition,String message)throws InterruptedException{long deadline=android.os.SystemClock.elapsedRealtime()+10000;while(!condition.getAsBoolean()&&android.os.SystemClock.elapsedRealtime()<deadline)Thread.sleep(5);require(condition.getAsBoolean(),message);}
+    static void until(java.util.function.BooleanSupplier condition,String message)throws InterruptedException{until(condition,message,10000);}
+    static void until(java.util.function.BooleanSupplier condition,String message,long timeoutMs)throws InterruptedException{long deadline=android.os.SystemClock.elapsedRealtime()+timeoutMs;while(!condition.getAsBoolean()&&android.os.SystemClock.elapsedRealtime()<deadline)Thread.sleep(5);require(condition.getAsBoolean(),message);}
     static float[] tone(int channels,int channel,double amplitude,double hz){float[] a=new float[48000*channels];for(int f=0;f<48000;f++)a[f*channels+channel]=(float)(amplitude*Math.sin(2*Math.PI*hz*f/48000));return a;}
     static double rms(float[] a,int channel,int channels){double e=0;int count=0;for(int i=24000*channels+channel;i<a.length;i+=channels){e+=a[i]*a[i];count++;}return Math.sqrt(e/count);}
     static Dsp.Settings setting(boolean enabled,boolean eq,float[] bands,float bass,boolean compressor,float ceiling,float gain,boolean hrtf){return new Dsp.Settings(enabled,eq,bands,bass,compressor,ceiling,gain,hrtf);}
@@ -73,8 +74,9 @@ final class AudioSelfTest {
             require(Math.abs(out.trackPositionMs()-12000)<50,"posição de B recomeça no marcador: "+out.trackPositionMs());
             until(()->out.transitionState()==3,"a primeira mescla não concluiu pela fila SPSC");
             long bMs=(System.nanoTime()-start)/1_000_000;
-            int latency=out.transitionLatencyMs();
-            require(out.transitionState()==3&&latency>=2000&&latency<=3200,"pré-rolagem depois da mescla: "+out.transitionState()+" "+latency+" ms");
+            // Desde a auditoria TH-006 o atraso informado inclui a fila; a pré-rolagem do mixer é o resto.
+            int latency=out.transitionLatencyMs(),queuedMs=(int)(out.testSnapshot().getLong("transitionQueuedFrames")*1000/44100);
+            require(out.transitionState()==3&&latency-queuedMs>=2000&&latency-queuedMs<=3200,"pré-rolagem depois da mescla: "+out.transitionState()+" "+latency+" ms (fila "+queuedMs+" ms)");
             long[] trace=out.transitionTrace();
             require(trace!=null&&trace[TransitionNative.T_PHASE]==TransitionNative.PHASE_COMPLETED&&TransitionNative.overlapVerified(trace)
                     &&trace[TransitionNative.T_MISSING_B]==0&&trace[TransitionNative.T_PREPARED_B]>=44100,
@@ -87,8 +89,8 @@ final class AudioSelfTest {
             start=System.nanoTime();
             for(int i=0;i<a.length;i+=packet)out.write(Arrays.copyOfRange(a,i,Math.min(a.length,i+packet)));
             until(()->out.transitionState()==3,"a segunda mescla não concluiu pela fila SPSC");
-            int latency2=out.transitionLatencyMs();
-            require(out.transitionState()==3&&latency2>=2000&&latency2<=3200,"segunda transição: "+out.transitionState()+" "+latency2+" ms");
+            int latency2=out.transitionLatencyMs(),queued2=(int)(out.testSnapshot().getLong("transitionQueuedFrames")*1000/44100);
+            require(out.transitionState()==3&&latency2-queued2>=2000&&latency2-queued2<=3200,"segunda transição: "+out.transitionState()+" "+latency2+" ms (fila "+queued2+" ms)");
             report.put("secondWriteMs",(System.nanoTime()-start)/1_000_000).put("latencyAfterSecondMs",latency2);
             // Sem a próxima faixa: o motor fecha o sink e o fim lido toca sozinho.
             out.cancelTransition();
@@ -120,7 +122,9 @@ final class AudioSelfTest {
             out.cancelTransition();
             // Cancelar descarta o que foi lido e volta ao caminho direto.
             require(out.armTransition(5,4000,2000,2000)!=0,"armar para cancelar");out.write(Arrays.copyOfRange(b,0,packet*8));out.cancelTransition();
-            require(out.transitionState()==0&&out.transitionLatencyMs()==0,"cancelar manteve a transição");out.write(Arrays.copyOfRange(b,0,packet));
+            // O writer descarta logo o que ficou na fila (epoch antigo); o atraso volta a zero.
+            require(out.transitionState()==0,"cancelar manteve a transição");
+            until(()->out.transitionLatencyMs()==0,"cancelar manteve atraso da fila: "+out.transitionLatencyMs()+" ms",1000);out.write(Arrays.copyOfRange(b,0,packet));
             long continuousFrames=out.frames.get();out.write(Arrays.copyOfRange(a,0,packet));require(out.frames.get()>continuousFrames,"seek sem marcador interrompeu o PCM");
             out.transportDiscontinuity();out.write(Arrays.copyOfRange(b,0,packet));require(out.frames.get()>continuousFrames,"evento tipado não retomou o PCM");
             require(out.armTransition(0,4000,2000,2000)!=0,"transição não rearma depois do seek");
@@ -132,6 +136,94 @@ final class AudioSelfTest {
             JSONObject output=out.testSnapshot();report.put("underruns",out.underruns()-before).put("queueWaits",output.getLong("transitionQueueWaits")).put("queueMaxSize",output.getInt("transitionQueueMaxSize")).put("queueWaitMs",output.getLong("transitionQueueWaitMs")).put("directFallbacks",output.getLong("transitionDirectFallbacks")).put("pass",true);
         }finally{out.release();}
         return report;
+    }
+    /**
+     * Motor como o librespot real: pacotes de 1024 quadros (Vorbis), entregues
+     * tão rápido quanto a saída aceita e sem pausa entre as faixas A, B e C.
+     * Mede o que as fixtures de pacotes grandes não mostram: se a leitura
+     * adiantada chega à próxima a tempo, se a segunda transição perde áudio
+     * da fila e se o atraso informado à tela inclui o que está na fila.
+     */
+    static JSONObject realisticTransitions(Context context)throws Exception{
+        JSONObject report=new JSONObject();JSONArray failures=new JSONArray();
+        AudioOutput out=new AudioOutput();out.initialize(context,"transition-real-test");
+        final int rate=44100,packet=2048,seconds=18,region=4000;
+        final float[][] tracks=new float[3][];final double[] hz={440,660,550};
+        for(int t=0;t<3;t++){tracks[t]=new float[rate*2*seconds];for(int f=0;f<rate*seconds;f++){float v=(float)(.3*Math.sin(2*Math.PI*hz[t]*f/rate));tracks[t][f*2]=v;tracks[t][f*2+1]=v;}}
+        final java.util.concurrent.atomic.AtomicLong delivered=new java.util.concurrent.atomic.AtomicLong();
+        final java.util.concurrent.atomic.AtomicInteger current=new java.util.concurrent.atomic.AtomicInteger(-1);
+        final Throwable[] producerError=new Throwable[1];
+        try{
+            out.startStereo(rate);
+            int opened=out.underruns();
+            final int[] before={-1};
+            Thread producer=new Thread(()->{
+                try{
+                    for(int t=0;t<3;t++){
+                        out.boundary(0);current.set(t);
+                        for(int i=0;i<tracks[t].length;i+=packet){float[] chunk=Arrays.copyOfRange(tracks[t],i,Math.min(tracks[t].length,i+packet));out.write(chunk);delivered.addAndGet(chunk.length/2);}
+                    }
+                    current.set(3);
+                }catch(Throwable error){producerError[0]=error;}
+            },"TonalFakeLibrespot");
+            producer.start();
+            until(()->delivered.get()>rate,"o produtor não começou",10000);
+            Thread.sleep(500);
+            before[0]=out.underruns();
+            report.put("startupUnderruns",before[0]-opened);
+            long[] overlaps=new long[2];
+            for(int n=0;n<2;n++){
+                final int track=n;
+                long wait=android.os.SystemClock.elapsedRealtime()+40000;
+                while(!(current.get()==track&&out.trackPositionMs()>=(seconds*1000L-9000))&&android.os.SystemClock.elapsedRealtime()<wait)Thread.sleep(5);
+                if(!(current.get()==track&&out.trackPositionMs()>=(seconds*1000L-9000))){
+                    JSONObject s=out.testSnapshot();
+                    failures.put("produtor parado antes de armar a transição "+(n+1)+": faixa "+current.get()+" posição "+out.trackPositionMs()+" ms, entregue "+delivered.get()+" escrito "+out.frames.get()+" estado "+out.transitionState()+" fila "+s.getInt("transitionQueueSize")+" trace "+Arrays.toString(out.transitionTrace()));
+                    break;
+                }
+                long upcoming=seconds*1000L-out.trackPositionMs();
+                long id=out.armTransition(0,upcoming,region,region);
+                if(id==0){failures.put("transição "+(n+1)+" recusada");continue;}
+                long deadline=android.os.SystemClock.elapsedRealtime()+30000;long[] trace;
+                do{Thread.sleep(20);trace=out.transitionTrace();}
+                while((trace==null||trace[TransitionNative.T_ID]!=id||(trace[TransitionNative.T_PHASE]!=TransitionNative.PHASE_COMPLETED&&trace[TransitionNative.T_PHASE]!=TransitionNative.PHASE_ABORTED))&&android.os.SystemClock.elapsedRealtime()<deadline);
+                JSONObject one=new JSONObject().put("trace",new JSONArray(trace==null?new long[0]:trace));
+                boolean done=trace!=null&&trace[TransitionNative.T_ID]==id&&trace[TransitionNative.T_PHASE]==TransitionNative.PHASE_COMPLETED&&TransitionNative.overlapVerified(trace);
+                if(!done)failures.put("transição "+(n+1)+" sem mescla verificada: "+Arrays.toString(trace));
+                else{
+                    overlaps[n]=trace[TransitionNative.T_OVERLAP];
+                    one.put("overlapMs",overlaps[n]*1000/rate).put("preparedBMs",trace[TransitionNative.T_PREPARED_B]*1000/rate).put("waitedMs",trace[TransitionNative.T_WAITED]*1000/rate).put("missingB",trace[TransitionNative.T_MISSING_B]);
+                    if(overlaps[n]<(long)rate*region/1000*9/10)failures.put("transição "+(n+1)+" encolheu: "+overlaps[n]*1000/rate+" ms de "+region);
+                    if(trace[TransitionNative.T_PREPARED_B]<rate)failures.put("transição "+(n+1)+" começou com pouca B: "+trace[TransitionNative.T_PREPARED_B]);
+                    if(trace[TransitionNative.T_MISSING_B]!=0)failures.put("transição "+(n+1)+" com B faltando: "+trace[TransitionNative.T_MISSING_B]);
+                }
+                // Atraso informado x áudio que realmente está no app (entregue e não escrito).
+                Thread.sleep(1500);
+                long backlogMs=(delivered.get()-out.frames.get()-overlaps[0]-overlaps[1])*1000/rate;
+                int latency=out.transitionLatencyMs();
+                one.put("backlogMs",backlogMs).put("reportedLatencyMs",latency);
+                if(Math.abs(backlogMs-latency)>150)failures.put("transição "+(n+1)+": atraso informado "+latency+" ms, no app "+backlogMs+" ms");
+                report.put("transition"+(n+1),one);
+            }
+            // Falhas de buffer só durante as transições: o fim do fluxo (produtor parado) também conta uma.
+            int duringTransitions=out.underruns()-before[0];
+            producer.join(60000);
+            if(producer.isAlive()){failures.put("produtor não terminou");producer.interrupt();}
+            long drainWait=android.os.SystemClock.elapsedRealtime()+40000;
+            while(out.transitionState()!=0&&android.os.SystemClock.elapsedRealtime()<drainWait)Thread.sleep(20);
+            if(out.transitionState()!=0)failures.put("o fim de C não drenou: estado "+out.transitionState());
+            Thread.sleep(300);
+            long lost=delivered.get()-out.frames.get()-overlaps[0]-overlaps[1];
+            report.put("deliveredFrames",delivered.get()).put("writtenFrames",out.frames.get()).put("lostFrames",lost).put("lostMs",lost*1000/rate);
+            if(Math.abs(lost)>packet)failures.put("áudio perdido ou duplicado: "+lost*1000/rate+" ms");
+            if(producerError[0]!=null)failures.put("produtor: "+producerError[0]);
+            JSONObject snapshot=out.testSnapshot();
+            report.put("underruns",out.underruns()-before[0]).put("queueWaits",snapshot.getLong("transitionQueueWaits")).put("queueMaxSize",snapshot.getInt("transitionQueueMaxSize")).put("queueWaitMs",snapshot.getLong("transitionQueueWaitMs")).put("directFallbacks",snapshot.getLong("transitionDirectFallbacks"));
+            report.put("queueMaxWaitMs",snapshot.getDouble("transitionQueueMaxWaitMs")).put("writerFailures",snapshot.getLong("transitionWriterFailures"));
+            report.put("underrunsDuringTransitions",duringTransitions).put("underrunsAtEndOfStream",out.underruns()-before[0]-duringTransitions);
+            if(duringTransitions!=0)failures.put("underruns nas transições: "+duringTransitions);
+        }finally{out.release();}
+        return report.put("failures",failures).put("pass",failures.length()==0);
     }
     static void run(Context context){
         JSONObject report=new JSONObject();JSONArray checks=new JSONArray();

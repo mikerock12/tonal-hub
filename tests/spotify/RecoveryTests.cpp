@@ -1586,7 +1586,7 @@ public:
     qputenv("TONAL_TEST_RECOVERY_COUNTER", counter.toUtf8());
     engine.m_exe = QCoreApplication::applicationFilePath();
     engine.m_restartBaseMs = 20;
-    if (mode == "stall-once" || mode == "paused")
+    if (mode == "stall-once" || mode == "paused" || mode == "natural-end")
       engine.m_stallTimeoutMs = 400;
     engine.m_healthTimer.setInterval(20);
     engine.setAudioEngine(&audio);
@@ -1598,12 +1598,13 @@ public:
     QObject::connect(&heartbeat, &QTimer::timeout, &engine, [&] { ++beats; });
     heartbeat.start();
     engine.start();
-    if (mode == "paused") {
+    if (mode == "paused" || mode == "natural-end") {
       require(spin([&] { return engine.state() == LibrespotProcess::Ready; }),
               "paused child not ready");
       wait(800);
       require(lost == 0 && countRuns(counter) == 1,
-              "watchdog restarted an intentionally paused player");
+              mode == "paused" ? "watchdog restarted an intentionally paused player"
+                               : "watchdog restarted the engine after the natural end of the queue");
     } else if (mode == "always-crash" || mode == "invalid-always") {
       require(spin(
                   [&] {
@@ -1674,6 +1675,10 @@ static int producer() {
   if (mode == "paused")
     std::cerr << "[DEBUG librespot_playback::player] command=Pause\n"
               << std::flush;
+  // Fim natural da fila: o player para sem o evento de stop do usuário.
+  if (mode == "natural-end")
+    std::cerr << "[DEBUG librespot_playback::player] command=NaturalStop\n"
+              << std::flush;
   if (mode == "panic-once" && run == 1)
     std::cerr << "thread 'audio' panicked at simulated local sink\n"
               << std::flush;
@@ -1683,7 +1688,7 @@ static int producer() {
     output = INVALID_HANDLE_VALUE;
   }
   const bool silent =
-      mode == "paused" ||
+      mode == "paused" || mode == "natural-end" ||
       ((mode == "stall-once" || mode == "panic-once" || mode == "eof-once") &&
        run == 1);
   float pcm[1024];
@@ -1742,7 +1747,7 @@ int main(int argc, char **argv) {
         SpotifyRecoveryTests::desktopUpdate();
 #ifdef _WIN32
         for (const auto *mode : {"crash-once", "eof-once", "stall-once",
-                                 "panic-once", "paused", "always-crash",
+                                 "panic-once", "paused", "natural-end", "always-crash",
                                  "invalid-once", "invalid-always"})
           SpotifyRecoveryTests::pipeline(mode);
 #endif

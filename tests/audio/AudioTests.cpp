@@ -433,6 +433,42 @@ void spotifyTransitionTest()
               << trace.value("preparedBMs").toInt() << " ms) and preroll without underruns (" << latencyAfter << " ms)\n";
 #endif
 }
+// Evento de transporte no próprio PCM: tudo o que vem depois dele já é a nova
+// posição. O descarte do áudio antigo não pode jogar fora esse começo (a 0.17.5
+// esvaziava o pipe também no evento tipado e perdia o início do seek/da faixa).
+void spotifySeekEventKeepsNewAudioTest()
+{
+#ifdef _WIN32
+    QTemporaryDir storage;
+    AudioEngine engine(nullptr, storage.path());
+    engine.setSetting("normalization", false);
+    const auto writer = engine.prepareSpotifyPipe();
+    check(writer != 0, "seek PCM writer");
+    QProcess child;
+    child.setCreateProcessArgumentsModifier([writer](QProcess::CreateProcessArguments *a) {
+        a->inheritHandles = true;
+        a->startupInfo->dwFlags |= STARTF_USESTDHANDLES;
+        a->startupInfo->hStdOutput = reinterpret_cast<HANDLE>(writer);
+        a->flags |= CREATE_NO_WINDOW;
+    });
+    child.start(QCoreApplication::applicationFilePath(), {"--pipe-seek-child"});
+    check(child.waitForStarted(), "synthetic seek producer starts");
+    engine.spotifyStarted();
+    constexpr uint64_t total = 44100ull * 3;
+    spin([&] { return engine.spotifyFramesRead() >= total; }, 9000);
+    QThread::msleep(300);
+    const auto read = engine.spotifyFramesRead();
+    const int events = engine.spotifyTransportEvents();
+    child.kill();
+    child.waitForFinished();
+    engine.stopSpotify();
+    check(events == 1, "the typed seek event was applied once");
+    if (read != total)
+        std::cout << "frames read " << read << " of " << total << '\n';
+    check(read == total, "every frame after the typed seek event is played, none discarded with the old audio");
+    std::cout << "PASS typed seek event flushes the old output and keeps the new position's first frames\n";
+#endif
+}
 void engineTest(const QString &dir)
 {
     QTemporaryDir storage;
@@ -659,6 +695,21 @@ int main(int argc, char **argv)
         std::vector<float> pcm(8192 * 2, .125f);
         return fwrite(pcm.data(), sizeof(float), pcm.size(), stdout) == pcm.size() ? 0 : 1;
     }
+    if (argc > 1 && std::string(argv[1]) == "--pipe-seek-child")
+    {
+        // Como o librespot corrigido num seek: A, o evento UserSeek aplicado e logo
+        // depois o PCM da nova posição, sem pausa (o pipe enche atrás do evento).
+        _setmode(_fileno(stdout), _O_BINARY);
+        const uint32_t start[2] = {0x7FA07A1Bu, 0x7FC00000u}, seek[2] = {0x7FA07A1Cu, 0x7FC00002u};
+        std::vector<float> a(44100 * 2, .125f), b(44100 * 2 * 2, -.25f);
+        const bool ok = fwrite(start, sizeof(start), 1, stdout) == 1 &&
+                        fwrite(a.data(), sizeof(float), a.size(), stdout) == a.size() &&
+                        fwrite(seek, sizeof(seek), 1, stdout) == 1 &&
+                        fwrite(b.data(), sizeof(float), b.size(), stdout) == b.size();
+        fflush(stdout);
+        std::this_thread::sleep_for(std::chrono::seconds(10));
+        return ok ? 0 : 1;
+    }
     if (argc > 1 && std::string(argv[1]) == "--pipe-transition-child")
     {
         _setmode(_fileno(stdout), _O_BINARY);
@@ -705,6 +756,10 @@ int main(int argc, char **argv)
                   error);
             return 0;
         }
+        if (argc == 2 && std::string(argv[1]) == "--seek-event") {
+            spotifySeekEventKeepsNewAudioTest();
+            return 0;
+        }
         check(argc > 1, "fixture directory required");
         const auto dir = QString::fromLocal8Bit(argv[1]);
         settingsTest();
@@ -723,6 +778,7 @@ int main(int argc, char **argv)
         spatialSwitchTest();
         spotifyPauseTest();
         spotifyTransitionTest();
+        spotifySeekEventKeepsNewAudioTest();
         engineTest(dir);
         benchmark();
     }

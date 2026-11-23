@@ -75,6 +75,22 @@ text = replace(text, "        self.player.load(id, start_playing, position_ms);"
         } else {
             self.player.load(id, start_playing, position_ms);
         }""")
+# Natural end of the queue: stop without the user-stop transport event, so the
+# already-read end of the last track (and of a transition) still plays out.
+text = replace(text, """    fn handle_stop(&mut self) {
+        self.player.stop();""", """    fn handle_stop(&mut self) {
+        self.handle_stop_kind(false)
+    }
+
+    fn handle_stop_kind(&mut self, natural: bool) {
+        if natural {
+            self.player.stop_natural();
+        } else {
+            self.player.stop();
+        }""")
+text = replace(text, """            info!("Not playing next track because there are no more tracks left in queue.");
+            self.handle_stop();""", """            info!("Not playing next track because there are no more tracks left in queue.");
+            self.handle_stop_kind(natural);""")
 spirc.write_text(text, encoding="utf-8")
 
 # Same start-of-track marker as android/native/vendor/librespot-playback: one
@@ -105,6 +121,29 @@ text = replace(text, """    pub fn preload(&self, track_id: SpotifyUri) {""", ""
     }
 
     pub fn preload(&self, track_id: SpotifyUri) {""")
+text = replace(text, """    Pause,
+    Stop,
+    Seek(u32),""", """    Pause,
+    Stop,
+    NaturalStop,
+    Seek(u32),""")
+text = replace(text, """    pub fn stop(&self) {
+        self.command(PlayerCommand::Stop)
+    }
+""", """    pub fn stop(&self) {
+        self.command(PlayerCommand::Stop)
+    }
+
+    pub fn stop_natural(&self) {
+        self.command(PlayerCommand::NaturalStop)
+    }
+""")
+text = replace(text, "            PlayerCommand::Stop => self.handle_player_stop(),",
+               """            PlayerCommand::Stop => self.handle_player_stop(),
+            PlayerCommand::NaturalStop => self.handle_player_stop_quiet(),""")
+text = replace(text, '            PlayerCommand::Stop => f.debug_tuple("Stop").finish(),',
+               """            PlayerCommand::Stop => f.debug_tuple("Stop").finish(),
+            PlayerCommand::NaturalStop => f.debug_tuple("NaturalStop").finish(),""")
 text = replace(text, "impl PlayerInternal {\n    fn ensure_sink_running(&mut self) {", """/// Tonal: signalling NaN on the left, quiet NaN carrying the start position
 /// (ms, 22 bits) on the right. Never audio; the reader removes the frame.
 pub const TONAL_TRACK_MARKER: u32 = 0x7FA0_7A1B;
@@ -137,6 +176,10 @@ impl PlayerInternal {
     fn ensure_sink_running(&mut self) {""")
 text = replace(text, "    fn handle_player_stop(&mut self) {\n        match self.state {", """    fn handle_player_stop(&mut self) {
         self.tonal_transport_event(TONAL_USER_STOP);
+        self.handle_player_stop_quiet();
+    }
+
+    fn handle_player_stop_quiet(&mut self) {
         match self.state {""")
 text = replace(text, "    fn handle_command_seek(&mut self, position_ms: u32) -> PlayerResult {", """    fn handle_command_seek(&mut self, position_ms: u32) -> PlayerResult {
         self.tonal_transport_event(TONAL_USER_SEEK);""")

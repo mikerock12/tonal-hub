@@ -569,7 +569,10 @@ void LibrespotProcess::handleLine(const QString &line) {
 
   if (line.contains(QLatin1String("librespot_playback::player")) ||
       line.contains(QLatin1String("librespot_connect"))) {
-    if (line.contains("command=Pause") || line.contains("command=Stop"))
+    // NaturalStop (fim da fila): não se espera mais PCM, mas o fim já lido
+    // continua tocando; por isso não pausa o motor de áudio abaixo.
+    if (line.contains("command=Pause") || line.contains("command=Stop") ||
+        line.contains("command=NaturalStop"))
       setPlaybackExpected(false);
     else if (line.contains("command=Play"))
       setPlaybackExpected(true);

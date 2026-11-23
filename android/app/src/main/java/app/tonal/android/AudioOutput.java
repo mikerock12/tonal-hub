@@ -129,9 +129,9 @@ final class AudioOutput {
     int sampleRate(){return rate;}
     void write(float[] samples){
         long counted=trackFrames;if(counted>=0)trackFrames=counted+samples.length/Math.max(1,channels);
-        if(mixActive&&channels==2){if(writeTransition(samples))return;}
+        if(channels==2&&(mixActive||!mixInput.isEmpty())){if(writeTransition(samples))return;}
         float[] rendered=render(samples);
-        if(rendered!=null)output(rendered,0,true);
+        if(rendered!=null)output(rendered,0,true,-1);
     }
     private float[] render(float[] samples){
         float[] rendered;long start=System.nanoTime();
@@ -141,13 +141,17 @@ final class AudioOutput {
         if(elapsed>samples.length*1_000_000_000L/(Math.max(1,channels)*rate))overBudgetBlocks.incrementAndGet();
         return rendered;
     }
-    /** Escreve a partir de `offset`; retorna quantas amostras saíram. trackLock serializa só o dispositivo, nunca o mixer. */
-    private int output(float[] rendered,int offset,boolean blocking){
+    /**
+     * Escreve a partir de `offset`; retorna quantas amostras saíram. trackLock serializa só o dispositivo, nunca o mixer.
+     * Com `epoch` >= 0 (thread das transições) a geração é conferida dentro do trackLock: depois de um cancelamento
+     * seguido do flush de transportDiscontinuity nenhum bloco antigo chega ao AudioTrack. Retorna -1 nesse caso.
+     */
+    private int output(float[] rendered,int offset,boolean blocking,long epoch){
         AudioTrack current=track;if(current==null)return rendered.length-offset;
         int start=offset,retries=0;
         while(offset<rendered.length&&current==track){
             int count;
-            try{synchronized(trackLock){if(current!=track)return rendered.length-start;count=BuildConfig.DEBUG&&testDeadObject.getAndSet(false)?AudioTrack.ERROR_DEAD_OBJECT:current.write(rendered,offset,rendered.length-offset,blocking?AudioTrack.WRITE_BLOCKING:AudioTrack.WRITE_NON_BLOCKING);}}catch(IllegalStateException error){if(current!=track)return rendered.length-start;throw error;}
+            try{synchronized(trackLock){if(current!=track)return rendered.length-start;if(epoch>=0&&epoch!=mixEpoch)return -1;count=BuildConfig.DEBUG&&testDeadObject.getAndSet(false)?AudioTrack.ERROR_DEAD_OBJECT:current.write(rendered,offset,rendered.length-offset,blocking?AudioTrack.WRITE_BLOCKING:AudioTrack.WRITE_NON_BLOCKING);}}catch(IllegalStateException error){if(current!=track)return rendered.length-start;throw error;}
             if(count==AudioTrack.ERROR_DEAD_OBJECT&&retries++<2){synchronized(this){if(current!=track)return rendered.length-start;boolean wasPaused=paused;releaseTrack(false);createTrack();recoveries++;current=track;if(wasPaused)pause();}continue;}
             if(count<0){if(current!=track)return rendered.length-start;throw new IllegalStateException("Saída de áudio falhou ("+count+")");}
             if(count==0)break;offset+=count;frames.addAndGet(count/2);if(current==track)writtenFrames+=count/2;adapt(current);
@@ -162,7 +166,12 @@ final class AudioOutput {
     // espera um wake-up temporizado do DSP. Se a fila encher, a contrapressão
     // fica no produtor do motor e é cancelada pelo epoch, sem perder PCM aceito.
     private final Object mixLock=new Object();
-    private final TransitionInputQueue mixInput=new TransitionInputQueue(256);
+    // Poucos pacotes: a fila só absorve o ritmo do motor. Com 256 ela guardava ~6 s
+    // de áudio fora da conta do atraso (0.17.5–0.17.7) e, a partir da segunda
+    // transição, esse trecho era descartado ao armar.
+    private final TransitionInputQueue mixInput=new TransitionInputQueue(16);
+    /** Quadros de PCM aceitos na fila e ainda não entregues ao mixer nem à saída. */
+    private final AtomicLong queuedFrames=new AtomicLong();
     private long mixer;
     private volatile boolean mixActive;
     private volatile int latencyFrames;
@@ -171,7 +180,8 @@ final class AudioOutput {
     private Thread writer;
     private final float[] mixOut=new float[1024*2];
     private long transitionIds;
-    private final AtomicLong transitionQueueWaits=new AtomicLong(),transitionQueueWaitNanos=new AtomicLong(),transitionQueueMaxSize=new AtomicLong(),transitionDirectFallbacks=new AtomicLong();
+    private final AtomicLong transitionQueueWaits=new AtomicLong(),transitionQueueWaitNanos=new AtomicLong(),transitionQueueMaxSize=new AtomicLong(),transitionDirectFallbacks=new AtomicLong(),
+        transitionQueueMaxWaitNanos=new AtomicLong(),transitionWriterFailures=new AtomicLong();
     /** Começos de faixa marcados pelo librespot: identifica cada ocorrência no PCM. */
     volatile long trackSequence;
     private volatile long trackFrames=-1;
@@ -200,7 +210,9 @@ final class AudioOutput {
             if(mixer==0)return 0;
             long id=++transitionIds;
             if(!TransitionNative.arm(mixer,effect,upcomingMs*current/1000,outroMs*current/1000,introMs*current/1000,true,id))return 0;
-            ++mixEpoch;mixShutdown=false;mixActive=true;latencyFrames=(int)TransitionNative.latency(mixer);
+            // Sem novo epoch: os pacotes já na fila são a continuação de A e entram no
+            // buffer da transição na ordem. Só cancelamento/liberação invalida a fila.
+            mixShutdown=false;mixActive=true;latencyFrames=(int)TransitionNative.latency(mixer);
             if(writer==null||!writer.isAlive()){writer=new Thread(this::writerLoop,"TonalTransitionOut");writer.start();}
             mixLock.notifyAll();mixInput.wakeAll();
             return id;
@@ -213,64 +225,99 @@ final class AudioOutput {
         mixInput.wakeAll();
     }
     int transitionState(){synchronized(mixLock){return mixer==0||!mixActive?0:TransitionNative.state(mixer);}}
-    /** Áudio já entregue pelo motor e ainda não tocado por causa da transição. */
-    int transitionLatencyMs(){return mixActive?(int)(latencyFrames*1000L/Math.max(1,rate)):0;}
+    /** Áudio já entregue pelo motor e ainda não tocado por causa da transição (mixer + fila). */
+    int transitionLatencyMs(){long frames=(mixActive?latencyFrames:0)+Math.max(0,queuedFrames.get());return (int)(frames*1000L/Math.max(1,rate));}
     /** Motor parou de entregar no fim natural: a transição continua tocando o que já leu. */
     boolean continuesThroughEngineStop(){
         if(!mixActive)return false;
         long epoch=mixEpoch;
         return mixInput.put(null,TransitionInputQueue.END_CAPTURE,0,epoch,()->epoch!=mixEpoch);
     }
+    /**
+     * Entrega o pacote ao writer das transições. Retorna false quando a fila não é mais
+     * o caminho (cancelada antes de aceitar): o chamador escreve direto, sem perder o pacote.
+     */
     private boolean writeTransition(float[] samples){
-        if(!mixActive)return false;
         long epoch=mixEpoch;
+        if(!mixActive&&mixInput.isEmpty())return false;
         int queued=mixInput.size();transitionQueueMaxSize.accumulateAndGet(queued,Math::max);
         boolean full=queued>=mixInput.capacity(),interrupted=false;
         if(full)transitionQueueWaits.incrementAndGet();
         long started=full?System.nanoTime():0;
-        boolean accepted=false;
-        while(!accepted&&epoch==mixEpoch){
+        int frames=samples.length/2;
+        queuedFrames.addAndGet(frames);
+        boolean accepted;
+        while(true){
             accepted=mixInput.put(samples,TransitionInputQueue.PCM,0,epoch,()->epoch!=mixEpoch);
-            if(!accepted&&epoch==mixEpoch){interrupted=true;Thread.interrupted();}
+            if(accepted||epoch!=mixEpoch)break;
+            // Só uma interrupção recusa sem cancelamento: espera de novo e devolve o sinal no fim.
+            interrupted=true;Thread.interrupted();
         }
-        if(full)transitionQueueWaitNanos.addAndGet(System.nanoTime()-started);
+        if(!accepted)queuedFrames.addAndGet(-frames);
+        if(full){long waited=System.nanoTime()-started;transitionQueueWaitNanos.addAndGet(waited);transitionQueueMaxWaitNanos.accumulateAndGet(waited,Math::max);}
         if(interrupted)Thread.currentThread().interrupt();
-        return true;
+        return accepted;
+    }
+    /** Remove um pacote da fila descontando o que dele ainda não saiu. */
+    private void dropEntry(TransitionInputQueue.Entry entry){
+        if(entry.samples!=null)queuedFrames.addAndGet(-(entry.samples.length-entry.offset)/2);
+        mixInput.release(entry);
+    }
+    /** Escreve um bloco da thread das transições; retoma o resto depois de uma pausa no meio do write. */
+    private void writeOwned(float[] rendered,long epoch)throws InterruptedException{
+        int offset=0;
+        while(offset<rendered.length){
+            int n=output(rendered,offset,true,epoch);
+            if(n<0)return;
+            offset+=n;
+            if(offset>=rendered.length)return;
+            // Write curto: o AudioTrack foi pausado durante o write. Sem pausa, não insiste.
+            synchronized(mixLock){
+                if(!paused)return;
+                while(paused&&epoch==mixEpoch&&!mixShutdown)mixLock.wait();
+                if(epoch!=mixEpoch||mixShutdown)return;
+            }
+        }
     }
     private void writerLoop(){
         try{android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);}catch(SecurityException ignored){}
         TransitionInputQueue.Entry pending=null;
-        boolean drained=false;
+        boolean drained=false,failed=true;
         try{
             while(true){
-                if(pending==null)pending=mixInput.peek();
-                if(pending!=null&&pending.epoch!=mixEpoch){mixInput.release(pending);pending=null;continue;}
-                long epoch=mixEpoch;
+                long epoch;
                 int got=0;
                 boolean nativeEmpty=false;
                 synchronized(mixLock){
                     if(mixer==0)break;
-                    if(pending!=null&&pending.epoch==mixEpoch){
+                    epoch=mixEpoch;
+                    // Entrega ao mixer tudo o que ele aceitar agora: a leitura adiantada
+                    // segue o ritmo do motor, não o da saída. Um pacote por bloco tocado
+                    // (0.17.5–0.17.7) deixava a captura no tempo real e a região vazia.
+                    for(int handled=0;handled<64;handled++){
+                        if(pending==null)pending=mixInput.peek();
+                        if(pending==null)break;
+                        if(pending.epoch!=epoch){dropEntry(pending);pending=null;continue;}
                         if(pending.event!=TransitionInputQueue.PCM){
                             if(mixActive){
                                 if(pending.event==TransitionInputQueue.RESUME)TransitionNative.resumeCapture(mixer);
                                 else if(pending.event==TransitionInputQueue.END_CAPTURE)TransitionNative.endCapture(mixer);
                                 else{if(TransitionNative.state(mixer)==1)markerBoundaries++;TransitionNative.boundary(mixer);}
                             }
-                            mixInput.release(pending);pending=null;mixLock.notifyAll();continue;
+                            mixInput.release(pending);pending=null;continue;
                         }
-                        if(mixActive&&TransitionNative.wantsInput(mixer)){
-                            int used=TransitionNative.push(mixer,pending.samples,pending.offset,pending.samples.length-pending.offset);
-                            if(used>0){pending.offset+=used;latencyFrames=(int)TransitionNative.latency(mixer);}
-                            if(pending.offset>=pending.samples.length){mixInput.release(pending);pending=null;}
-                        }
+                        if(!mixActive||!TransitionNative.wantsInput(mixer))break;
+                        int used=TransitionNative.push(mixer,pending.samples,pending.offset,pending.samples.length-pending.offset);
+                        if(used>0){pending.offset+=used;queuedFrames.addAndGet(-used/2);}
+                        if(pending.offset>=pending.samples.length){mixInput.release(pending);pending=null;}
+                        else if(used<=0)break;
                     }
                     if(mixActive){
                         got=TransitionNative.pullInto(mixer,mixOut,mixOut.length/2);
                         latencyFrames=(int)TransitionNative.latency(mixer);
                         nativeEmpty=got==0&&TransitionNative.state(mixer)==0;
                         if(nativeEmpty&&pending==null&&mixInput.isEmpty()){mixActive=false;latencyFrames=0;drained=true;mixLock.notifyAll();}
-                    }else if(mixShutdown&&pending==null&&mixInput.isEmpty())break;
+                    }else if(mixShutdown&&pending==null&&mixInput.isEmpty()){failed=false;break;}
                 }
                 if(drained){drained=false;if(this==NativeBridge.audio)NativeBridge.onTransitionDrained();}
                 if(got>0){
@@ -278,28 +325,38 @@ final class AudioOutput {
                     synchronized(mixLock){while(paused&&mixActive&&epoch==mixEpoch)mixLock.wait();}
                     if(epoch!=mixEpoch||!mixActive)continue;
                     float[] rendered=render(chunk);
-                    if(rendered!=null&&epoch==mixEpoch&&mixActive)output(rendered,0,true);
+                    if(rendered!=null)writeOwned(rendered,epoch);
                     continue;
                 }
                 if((nativeEmpty||!mixActive)&&pending!=null){
                     // O mixer drenou antes deste pacote já aceito: preserva a ordem
                     // pelo próprio writer, sem devolver PCM antigo depois de um cancel.
-                    TransitionInputQueue.Entry item=pending;
-                    float[] rest=item.offset==0?item.samples:java.util.Arrays.copyOfRange(item.samples,item.offset,item.samples.length);
-                    float[] rendered=render(rest);
-                    if(rendered!=null&&epoch==mixEpoch&&!mixShutdown){transitionDirectFallbacks.incrementAndGet();output(rendered,0,true);}
-                    mixInput.release(item);pending=null;continue;
+                    TransitionInputQueue.Entry item=pending;pending=null;
+                    if(item.epoch==mixEpoch&&!mixShutdown){
+                        float[] rest=item.offset==0?item.samples:java.util.Arrays.copyOfRange(item.samples,item.offset,item.samples.length);
+                        float[] rendered=render(rest);
+                        if(rendered!=null){transitionDirectFallbacks.incrementAndGet();writeOwned(rendered,item.epoch);}
+                    }
+                    dropEntry(item);continue;
                 }
-                synchronized(mixLock){if(mixShutdown&&pending==null&&mixInput.isEmpty())break;}
+                synchronized(mixLock){if(mixShutdown&&pending==null&&mixInput.isEmpty()){failed=false;break;}}
                 if(pending==null&&mixInput.isEmpty())mixInput.awaitWork();
                 else Thread.yield();
             }
+            failed=false;
         }catch(InterruptedException interrupted){Thread.currentThread().interrupt();}
+        catch(RuntimeException error){transitionWriterFailures.incrementAndGet();NativeBridge.onDiagnostic("Transição: falha na saída ("+error.getClass().getSimpleName()+")");}
         finally{
-            synchronized(mixLock){if(Thread.currentThread()==writer)writer=null;mixLock.notifyAll();}
+            synchronized(mixLock){
+                // Sem writer, ninguém consome a fila: invalida o que restou para o motor nunca esperar por ele.
+                if(failed){++mixEpoch;mixActive=false;latencyFrames=0;if(mixer!=0)TransitionNative.reset(mixer);}
+                if(pending!=null)dropEntry(pending);
+                if(failed)for(TransitionInputQueue.Entry left=mixInput.peek();left!=null;left=mixInput.peek())dropEntry(left);
+                if(Thread.currentThread()==writer)writer=null;
+                mixLock.notifyAll();
+            }
             mixInput.wakeAll();
         }
-
     }
     synchronized void pause(){
         if(track==null||paused)return;paused=true;int serial=++transition;lastTransition=SystemClock.elapsedRealtime();
@@ -367,6 +424,6 @@ final class AudioOutput {
     synchronized long testQueuedFrames(){return track==null?0:queuedFrames(track);}
     void testDeadObject(){if(BuildConfig.DEBUG)testDeadObject.set(true);}
     synchronized org.json.JSONObject testSnapshot()throws org.json.JSONException{
-        return new org.json.JSONObject().put("frames",frames.get()).put("blocks",blocks.get()).put("dspNanos",dspNanos.get()).put("maxDspNanos",maxDspNanos.get()).put("overBudgetBlocks",overBudgetBlocks.get()).put("underruns",underruns()).put("staleFlushes",staleFlushes).put("staleFrames",staleFrames).put("recoveries",recoveries).put("bufferFrames",bufferFrames).put("rate",rate).put("channels",channels).put("routeKey",routeKey).put("route",routeName()).put("hrtfRequested",dsp.settings.values[16]!=0).put("eq",config.eq).put("enabled",config.enabled).put("binauralSource",binauralSource).put("paused",paused).put("volume",shaper==null?1:shaper.getVolume()).put("pauseQueuedFrames",pauseQueuedFrames).put("pauseFadeMs",lastPauseFadeMs).put("transitionQueueSize",mixInput.size()).put("transitionQueueCapacity",mixInput.capacity()).put("transitionQueueWaits",transitionQueueWaits.get()).put("transitionQueueMaxSize",transitionQueueMaxSize.get()).put("transitionQueueWaitMs",transitionQueueWaitNanos.get()/1_000_000).put("transitionDirectFallbacks",transitionDirectFallbacks.get());
+        return new org.json.JSONObject().put("frames",frames.get()).put("blocks",blocks.get()).put("dspNanos",dspNanos.get()).put("maxDspNanos",maxDspNanos.get()).put("overBudgetBlocks",overBudgetBlocks.get()).put("underruns",underruns()).put("staleFlushes",staleFlushes).put("staleFrames",staleFrames).put("recoveries",recoveries).put("bufferFrames",bufferFrames).put("rate",rate).put("channels",channels).put("routeKey",routeKey).put("route",routeName()).put("hrtfRequested",dsp.settings.values[16]!=0).put("eq",config.eq).put("enabled",config.enabled).put("binauralSource",binauralSource).put("paused",paused).put("volume",shaper==null?1:shaper.getVolume()).put("pauseQueuedFrames",pauseQueuedFrames).put("pauseFadeMs",lastPauseFadeMs).put("transitionQueueSize",mixInput.size()).put("transitionQueueCapacity",mixInput.capacity()).put("transitionQueueWaits",transitionQueueWaits.get()).put("transitionQueueMaxSize",transitionQueueMaxSize.get()).put("transitionQueueWaitMs",transitionQueueWaitNanos.get()/1_000_000).put("transitionDirectFallbacks",transitionDirectFallbacks.get()).put("transitionQueueMaxWaitMs",transitionQueueMaxWaitNanos.get()/1_000_000.0).put("transitionQueuedFrames",queuedFrames.get()).put("transitionWriterFailures",transitionWriterFailures.get());
     }
 }

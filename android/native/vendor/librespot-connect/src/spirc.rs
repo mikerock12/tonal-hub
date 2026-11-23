@@ -1406,8 +1406,13 @@ impl SpircTask {
     }
 
     fn handle_stop(&mut self) {
+        self.handle_stop_kind(false)
+    }
+
+    /// Tonal: `natural` é o fim da fila; o player para sem descartar o áudio já lido.
+    fn handle_stop_kind(&mut self, natural: bool) {
         self.buffer_recovery=None;
-        self.player.stop();
+        if natural {self.player.stop_natural();} else {self.player.stop();}
         self.connect_state.update_position(0, self.now_ms());
         self.connect_state.clear_next_tracks();
 
@@ -1846,7 +1851,7 @@ impl SpircTask {
             self.load_track_kind(continue_playing,0,natural)
         } else {
             info!("Not playing next track because there are no more tracks left in queue.");
-            self.handle_stop();
+            self.handle_stop_kind(natural);
             Ok(())
         }
     }

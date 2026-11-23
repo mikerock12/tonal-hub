@@ -346,6 +346,8 @@ void AudioEngine::run() {
   double replayGain = 0, logicalPosition = 0;
   bool hasReplayGain = false;
   bool transportFlush = false;
+  // Evento tipado lido do PCM: o que vem depois dele no pipe já é a nova posição.
+  bool eventFlush = false;
   auto lastReport = std::chrono::steady_clock::now();
   AudioDiagnostics counters;
   // Criado só na primeira transição (reserva ~5 MB para o fim da faixa).
@@ -371,10 +373,10 @@ void AudioEngine::run() {
       // O evento veio do player, em ordem com o PCM desta geração. Não há
       // inferência por texto nem distinção pela atividade atual do mixer.
       transportFlush = true;
+      eventFlush = true;
       trackFrames = -1;
       m_trackPositionMs = -1;
       ++m_transportEvents;
-      flushSpotify();
     }
     const int rate = std::max(1, format.sampleRate);
     m_trackPositionMs = trackFrames < 0 ? -1 : int(trackStartMs + trackFrames * 1000 / rate);
@@ -461,6 +463,8 @@ void AudioEngine::run() {
       rev = m_revision;
       paused = m_pause;
       flush = std::exchange(m_flush, false);
+      // Só um pedido de fora (Player, antes do motor aplicar) esvazia o pipe:
+      // depois de um evento tipado o pipe contém o começo da nova posição.
       seek = std::exchange(m_seek, -1.);
       target = m_volume;
       serial = m_generation.load();
@@ -491,6 +495,7 @@ void AudioEngine::run() {
       file = path;
       pts = 0;
       transportFlush = false;
+      eventFlush = false;
       volumeSegments.clear();
       volumeCompensation = 1;
       ended = false;
@@ -591,12 +596,14 @@ void AudioEngine::run() {
       std::this_thread::sleep_for(std::chrono::milliseconds(50));
       continue;
     }
+    const bool commandFlush = flush;
+    flush = flush || std::exchange(eventFlush, false);
     if (flush) {
       transportFlush = false;
       volumeSegments.clear();
       volumeCompensation = 1;
       output.clear();
-      if (pipe)
+      if (pipe && commandFlush)
         pipe->discard();
       dsp.reset();
       drained = false;

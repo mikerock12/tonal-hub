@@ -545,7 +545,12 @@ size_t TransitionMixer::pull(float *out, size_t frames) {
       // Com o marcador a mescla só começa quando se sabe onde A termina.
       if (!m_waitBoundary && m_tailPlayed >= m_mixStart) {
         if (m_overlap <= 0) {
-          finishMixing();  // sem região: A acabou, B segue do FIFO
+          // Sem região: A acabou antes de B chegar (o marcador veio depois de A
+          // tocar). Troca normal, e o trace termina com o motivo em vez de
+          // continuar "armado".
+          if (m_trace.phase == TransitionPhase::Armed)
+            abort(TransitionReason::NextNotPrepared);
+          finishMixing();  // B segue do FIFO
           continue;
         }
         if (bReady()) {
