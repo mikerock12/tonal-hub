@@ -5,7 +5,7 @@ afetada antes de alterar o produto. Estado documental: 25/10/2026, builds Window
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
-Estado atual: 23/11/2026, Windows 0.17.6 e Android 0.17.6 (ver seção 0.17.6 ao final). As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
+Estado atual: 23/11/2026, Windows 0.17.8 e Android 0.17.8, versionCode 49 (ver seção da auditoria TH-006/TH-009 ao final). As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
 
 ## Autoria, Git e privacidade
 
@@ -632,7 +632,7 @@ docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no
 - Entrega 0.17.7 (23/11/2026): PR68 merge `7422df085173e160c3a3f311b40b5f543f57b2db` (CI 5/5 + visual), código de produto `84bf3e3a821f2d60664e920cfb33bf0ec7e02bba`, release v0.17.7 com quatro assets/digests conferidos; portal PR83 merge `50c771949c8e0fc47d15762fe6d11813e642a80f`, Worker `c675e3a7-9c21-4de9-98c9-53b8450b3a82`, verify 60/60 e produção/downloads/hashes/privado 401 aprovados após 403/503 transitórios do edge. Backup privado `1j-glW_ZkM8VSVSrJhDaIKKQrtFfoA3mv`: 403.358.262 bytes/384,7 MB exibidos, SHA-256 local `65f3b119e2c11d1dbe2650121606dd5eb1fa0073880aa93fd54eb28593965670`, 15 arquivos, CRC/archives/bundles restaurados; pasta privada, proprietário `eu`, nenhum compartilhamento adicionado, hash remoto não fornecido. Evidências: docs/release-0177-tests.json e docs/artifacts-0177.json. Commits documentais posteriores não significam rebuild.
 
 
-## Auditoria TH-006/TH-009 (23/11/2026)
+## Auditoria TH-006/TH-009 — 0.17.8 (23/11/2026)
 
 - Ler docs/audit/TH006_TH009_AUDIT.md. O writer Android entrega ao mixer tudo o que ele aceitar a cada ciclo; nunca voltar a um pacote por bloco tocado (a leitura adiantada ficava no tempo real e a mescla, vazia). Testar com pacotes de 1024 quadros (`transitionRealSuite`), não só com as fixtures de 2048.
 - Armar não muda `mixEpoch`: a fila é a continuação de A. Só cancelamento, liberação ou falha do writer invalidam a fila. O atraso informado (`transitionLatencyMs`) inclui a fila (16 entradas).

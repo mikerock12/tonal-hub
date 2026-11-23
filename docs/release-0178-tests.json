@@ -1,0 +1,29 @@
+{
+ "version": "0.17.8",
+ "date": "2026-11-23",
+ "androidVersionCode": 49,
+ "report": "Usuário pediu auditoria independente do TH-006/TH-009 (plano local) e a publicação da 0.17.8.",
+ "identifiedFailures": [
+  "Android: writer entregava um pacote por bloco tocado; com pacotes reais de 1024 quadros a leitura adiantada ficava no tempo real e a região de mescla ficava vazia (troca sem efeito).",
+  "Android: armar incrementava mixEpoch e descartava a fila a partir da segunda transição.",
+  "Android: áudio da fila fora de transitionLatencyMs (6004 ms guardados x 0 ms informados).",
+  "Windows: evento tipado esvaziava o pipe com o começo da nova posição (115473/132300 quadros).",
+  "Ambos: fim natural da fila emitia UserStop e descartava o fim já lido."
+ ],
+ "validation": {
+  "transitionCore": "PASS, inclui captura atrasada (FAIL antes)",
+  "javaHost": "PLAYBACK_SAFETY_PASS 20084 checks (1M itens, cancelamento, interrupção, dois produtores; dois produtores FAIL 3/3 na fila antiga)",
+  "windowsCtest": "12/12 (84,24 s)",
+  "windowsSeekEvent": "132300/132300 quadros (antes 115473)",
+  "naturalEndWatchdog": "PASS (antes reiniciava o motor)",
+  "androidTransitionAvd": {"realisticPackets1024": "PASS 2/2 mesclas 4 s, B 2507 ms, 0 quadros perdidos, atraso 2877=2877 ms, 0 underruns durante as transições (1 no fim do fluxo)", "previousSuite": "PASS, pré-rolagem sem a fila 2,5 s, 0 underruns, 0 fallbacks"},
+  "realWindowsSpotify": "PASS 3/3: fade 6/6, eco 6/9, freio 9/4; A+B, 0 B faltando, 0 underruns; OpenAL nulo, sem áudio físico"
+ },
+ "limits": [
+  "Sem Spotify real no Android, aparelho físico, Bluetooth/carro, acústica, CPU/GC/p99.",
+  "Ciclos de AudioTrack/rota/taxa e fim natural da fila com motor real não executados.",
+  "Troca de rota durante a mescla ainda cancela a transição e perde o áudio guardado no mixer."
+ ],
+ "evidence": "docs/audit/TH006_TH009_AUDIT.md e docs/audit/TH006_TH009_TEST_RESULTS.json",
+ "toolsInstalled": "Nenhum aplicativo ou ferramenta adicional instalado/baixado; usados MSVC, Rust, SDK/NDK/Gradle/AVD e dependências já existentes."
+}

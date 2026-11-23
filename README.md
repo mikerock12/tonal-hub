@@ -10,6 +10,8 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
+**0.17.8 — Transições corrigidas pela auditoria TH-006/TH-009:** no Android a música atual volta a ser lida adiantada na velocidade do motor, então a mescla tem a próxima de verdade. A segunda transição não pula mais a música, e a barra e a letra contam o áudio guardado. No Windows, seek e pulo não perdem o começo da nova posição. Nas duas plataformas, o fim natural da fila toca até o fim. [Auditoria](docs/audit/TH006_TH009_AUDIT.md).
+
 **0.17.7 — Transições com mais tempo de preparação:** a captura começa 6 s mais cedo para a próxima música carregar antes da mescla, evitando a troca sem efeito por `next-not-prepared`. A pré-rolagem de 2,5 s e a exigência de áudio real da próxima permanecem. [Detalhes](docs/TRANSITIONS_0170.md).
 
 **0.17.6 — Correção do seek Android:** avançar pela seekbar não deixa mais o áudio esperando indefinidamente por um marcador de transporte, e as transições voltam a poder ser armadas depois do seek. [Detalhes](docs/TRANSITIONS_0170.md).

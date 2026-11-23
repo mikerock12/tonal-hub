@@ -1,6 +1,6 @@
 # Changelog
 
-## Em preparação — auditoria TH-006/TH-009 (23/11/2026)
+## 0.17.8 — 23/11/2026 (auditoria TH-006/TH-009)
 
 - **Android:** corrige as transições sem efeito. Desde a 0.17.5 a fila entregava ao mixer só um pacote por bloco tocado. Com os pacotes reais do Spotify, a leitura adiantada não passava do tempo real e a mescla ficava vazia. A partir da segunda transição, armar descartava segundos da música atual. O atraso mostrado na tela (posição e letra) agora inclui o áudio guardado na fila.
 - **Windows:** o seek e o pulo não perdem mais o começo da nova posição (cerca de 0,4 s).

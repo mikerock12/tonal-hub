@@ -328,7 +328,7 @@ Regressão: o planejamento antigo recusou a nova janela antes da correção. No 
 
 Windows: CTest 12/12 (81,55 s). Spotify real com saída OpenAL nula: primeira tentativa concluiu 3/3 mesclas com A+B e 0 quadros ausentes, mas foi reprovada por 1 underrun no eco; repetição concluiu 3/3 com 0 underruns. O episódio fica registrado, sem declarar benchmark ou teste acústico. Android com Spotify real e aparelho físico não foram testados.
 
-## Auditoria TH-006/TH-009 (23/11/2026, em preparação)
+## 0.17.8 — auditoria TH-006/TH-009 (23/11/2026)
 
 Relatório completo: `docs/audit/TH006_TH009_AUDIT.md`. Resultados: `docs/audit/TH006_TH009_TEST_RESULTS.json`.
 
