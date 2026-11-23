@@ -58,6 +58,23 @@ text = replace(text, "        match cmd {\n            SpircCommand::Shutdown", 
                 return accepted.map(|_| ());
             }
             SpircCommand::Shutdown""")
+text = replace(text, "                self.handle_next(next_track)?", "                self.handle_next_kind(next_track, true)?")
+text = replace(text, "    fn handle_next(&mut self, track_uri: Option<String>) -> Result<(), Error> {", """    fn handle_next(&mut self, track_uri: Option<String>) -> Result<(), Error> {
+        self.handle_next_kind(track_uri, false)
+    }
+
+    fn handle_next_kind(&mut self, track_uri: Option<String>, natural: bool) -> Result<(), Error> {""")
+text = replace(text, "            self.load_track(continue_playing, 0)", "            self.load_track_kind(continue_playing, 0, natural)")
+text = replace(text, "    fn load_track(&mut self, start_playing: bool, position_ms: u32) -> Result<(), Error> {", """    fn load_track(&mut self, start_playing: bool, position_ms: u32) -> Result<(), Error> {
+        self.load_track_kind(start_playing, position_ms, false)
+    }
+
+    fn load_track_kind(&mut self, start_playing: bool, position_ms: u32, natural: bool) -> Result<(), Error> {""")
+text = replace(text, "        self.player.load(id, start_playing, position_ms);", """        if natural {
+            self.player.load_natural(id, start_playing, position_ms);
+        } else {
+            self.player.load(id, start_playing, position_ms);
+        }""")
 spirc.write_text(text, encoding="utf-8")
 
 # Same start-of-track marker as android/native/vendor/librespot-playback: one
@@ -65,16 +82,29 @@ spirc.write_text(text, encoding="utf-8")
 # AudioEngine strips it and uses it as the exact end of the previous track.
 player = playback / "src/player.rs"
 text = player.read_text(encoding="utf-8")
-text = replace(text, """        if start_playback {
-            self.ensure_sink_running();
-            self.send_event(PlayerEvent::Playing {""", """        if start_playback {
-            self.ensure_sink_running();
-            // Tonal: exact start of this track inside the PCM stream (transitions).
-            let _ = self.sink.write(
-                AudioPacket::Raw(tonal_track_marker(position_ms)),
-                &mut self.converter,
-            );
-            self.send_event(PlayerEvent::Playing {""")
+text = replace(text, """    Load {
+        track_id: SpotifyUri,
+        play: bool,
+        position_ms: u32,
+    },""", """    Load {
+        track_id: SpotifyUri,
+        play: bool,
+        position_ms: u32,
+    },
+    NaturalLoad {
+        track_id: SpotifyUri,
+        play: bool,
+        position_ms: u32,
+    },""")
+text = replace(text, """    pub fn preload(&self, track_id: SpotifyUri) {""", """    pub fn load_natural(&self, track_id: SpotifyUri, start_playing: bool, position_ms: u32) {
+        self.command(PlayerCommand::NaturalLoad {
+            track_id,
+            play: start_playing,
+            position_ms,
+        });
+    }
+
+    pub fn preload(&self, track_id: SpotifyUri) {""")
 text = replace(text, "impl PlayerInternal {\n    fn ensure_sink_running(&mut self) {", """/// Tonal: signalling NaN on the left, quiet NaN carrying the start position
 /// (ms, 22 bits) on the right. Never audio; the reader removes the frame.
 pub const TONAL_TRACK_MARKER: u32 = 0x7FA0_7A1B;
@@ -85,8 +115,70 @@ fn tonal_track_marker(position_ms: u32) -> Vec<u8> {
     bytes
 }
 
+pub const TONAL_TRANSPORT_MARKER: u32 = 0x7FA0_7A1C;
+const TONAL_USER_LOAD: u32 = 1;
+const TONAL_USER_SEEK: u32 = 2;
+const TONAL_USER_STOP: u32 = 3;
+fn tonal_transport_marker(event: u32) -> Vec<u8> {
+    let mut bytes = Vec::with_capacity(8);
+    bytes.extend_from_slice(&TONAL_TRANSPORT_MARKER.to_le_bytes());
+    bytes.extend_from_slice(&(0x7FC0_0000u32 | event).to_le_bytes());
+    bytes
+}
+
 impl PlayerInternal {
+    fn tonal_transport_event(&mut self, event: u32) {
+        let _ = self.sink.write(
+            AudioPacket::Raw(tonal_transport_marker(event)),
+            &mut self.converter,
+        );
+    }
+
     fn ensure_sink_running(&mut self) {""")
+text = replace(text, "    fn handle_player_stop(&mut self) {\n        match self.state {", """    fn handle_player_stop(&mut self) {
+        self.tonal_transport_event(TONAL_USER_STOP);
+        match self.state {""")
+text = replace(text, "    fn handle_command_seek(&mut self, position_ms: u32) -> PlayerResult {", """    fn handle_command_seek(&mut self, position_ms: u32) -> PlayerResult {
+        self.tonal_transport_event(TONAL_USER_SEEK);""")
+text = replace(text, """            PlayerCommand::Load {
+                track_id,
+                play,
+                position_ms,
+            } => self.handle_command_load(track_id, None, play, position_ms)?,""", """            PlayerCommand::Load {
+                track_id,
+                play,
+                position_ms,
+            } => {
+                self.tonal_transport_event(TONAL_USER_LOAD);
+                self.handle_command_load(track_id, None, play, position_ms)?
+            }
+            PlayerCommand::NaturalLoad {
+                track_id,
+                play,
+                position_ms,
+            } => self.handle_command_load(track_id, None, play, position_ms)?,""")
+text = replace(text, "            PlayerCommand::Preload { track_id } => {", """            PlayerCommand::NaturalLoad {
+                track_id,
+                play,
+                position_ms,
+                ..
+            } => f
+                .debug_tuple("NaturalLoad")
+                .field(&track_id)
+                .field(&play)
+                .field(&position_ms)
+                .finish(),
+            PlayerCommand::Preload { track_id } => {""")
+text = replace(text, """        if start_playback {
+            self.ensure_sink_running();
+            self.send_event(PlayerEvent::Playing {""", """        if start_playback {
+            self.ensure_sink_running();
+            // Tonal: exact start of this track inside the PCM stream (transitions).
+            let _ = self.sink.write(
+                AudioPacket::Raw(tonal_track_marker(position_ms)),
+                &mut self.converter,
+            );
+            self.send_event(PlayerEvent::Playing {""")
 player.write_text(text, encoding="utf-8")
 
 main = cli / "src/main.rs"

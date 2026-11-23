@@ -220,7 +220,6 @@ void AudioEngine::cancelTransition() {
   std::lock_guard l(m_mutex);
   m_transitionEffect = -1;
   m_transitionCancel = true;
-  m_transitionCancelPending = true;
 }
 void AudioEngine::setSpotifyPaused(bool paused) {
   std::lock_guard l(m_mutex);
@@ -346,6 +345,7 @@ void AudioEngine::run() {
   Loudness loudness;
   double replayGain = 0, logicalPosition = 0;
   bool hasReplayGain = false;
+  bool transportFlush = false;
   auto lastReport = std::chrono::steady_clock::now();
   AudioDiagnostics counters;
   // Criado só na primeira transição (reserva ~5 MB para o fim da faixa).
@@ -358,19 +358,27 @@ void AudioEngine::run() {
   auto trackBoundary = [&](int frames) {
     if (trackFrames >= 0 && frames > 0)
       trackFrames += frames;
-    uint32_t startMs = 0;
-    const bool boundary = pipe && pipe->takeBoundary(startMs);
-    if (boundary) {
+    NativePcmPipe::Event event;
+    const bool boundary = pipe && pipe->takeEvent(event);
+    if (boundary && event.kind == NativePcmPipe::EventKind::TrackBoundary) {
       trackFrames = 0;
-      trackStartMs = startMs;
+      trackStartMs = event.positionMs;
       m_trackMarkers = true;
       // Um marcador no meio da faixa é a mesma ocorrência retomada.
-      if (startMs <= 1000)
+      if (trackStartMs <= 1000)
         ++m_trackSequence;
+    } else if (boundary) {
+      // O evento veio do player, em ordem com o PCM desta geração. Não há
+      // inferência por texto nem distinção pela atividade atual do mixer.
+      transportFlush = true;
+      trackFrames = -1;
+      m_trackPositionMs = -1;
+      ++m_transportEvents;
+      flushSpotify();
     }
     const int rate = std::max(1, format.sampleRate);
     m_trackPositionMs = trackFrames < 0 ? -1 : int(trackStartMs + trackFrames * 1000 / rate);
-    return boundary;
+    return boundary && event.kind == NativePcmPipe::EventKind::TrackBoundary;
   };
   auto publishTransition = [&] {
     if (mixer) {
@@ -482,6 +490,9 @@ void AudioEngine::run() {
       local = !path.isEmpty();
       file = path;
       pts = 0;
+      transportFlush = false;
+      volumeSegments.clear();
+      volumeCompensation = 1;
       ended = false;
       revision = -1;
       loudness = {};
@@ -543,7 +554,6 @@ void AudioEngine::run() {
       if (mixer)
         mixer->reset();
       publishTransition();
-      m_transitionCancelPending = false;
     }
     if (ended && decoder && seek >= 0)
       ended = false;
@@ -582,6 +592,9 @@ void AudioEngine::run() {
       continue;
     }
     if (flush) {
+      transportFlush = false;
+      volumeSegments.clear();
+      volumeCompensation = 1;
       output.clear();
       if (pipe)
         pipe->discard();
@@ -630,8 +643,10 @@ void AudioEngine::run() {
           volumeSegments.push_back({pending, librespotGain(to) / before});
       }
     }
-    if (!mixer || !mixer->active())
+    if (!mixer || !mixer->active()) {
       volumeSegments.clear();
+      volumeCompensation = 1;
+    }
     if (seek >= 0 && decoder) {
       output.clear();
       if (!decoder->seek(seek, error)) {
@@ -722,6 +737,8 @@ void AudioEngine::run() {
       }
       publishTransition();
     }
+    if (transportFlush)
+      continue;
     if (!transitionEnded && ((paused && local) || output.queued() >= 6)) {
       std::this_thread::sleep_for(std::chrono::milliseconds(transition ? 1 : 3));
       continue;
@@ -766,6 +783,8 @@ void AudioEngine::run() {
       if (got > 0)
         m_spotifyFrames += uint64_t(got);
       trackBoundary(got);
+      if (transportFlush)
+        continue;
       pts += in.frames();
     }
     if (got < 0) {

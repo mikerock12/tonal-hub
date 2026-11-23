@@ -81,6 +81,10 @@ impl Sink for AndroidSink {
                 let floats: Vec<f32> = samples.iter().map(|x|*x as f32).collect();
                 pcm(&floats)?;
             }
+            AudioPacket::Raw(bytes) if bytes.len()==8 && bytes[..4]==0x7FA0_7A1Cu32.to_le_bytes() => {
+                let event=u32::from_le_bytes([bytes[4],bytes[5],bytes[6],bytes[7]])&0x3F_FFFF;
+                call_void("onTransportEvent","(JI)V",&[JValue::Long(self.generation as jlong),JValue::Int(event as i32)]).map_err(SinkError::OnWrite)?;
+            }
             // Marcador do começo de faixa (vendor/librespot-playback, start_playback):
             // chega na mesma thread e na mesma ordem do PCM.
             AudioPacket::Raw(bytes) if bytes.len()==8 && bytes[..4]==0x7FA0_7A1Bu32.to_le_bytes() => {

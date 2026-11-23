@@ -89,6 +89,7 @@ public:
   bool spotifyTrackMarkers() const { return m_trackMarkers.load(); }
   // Quantas transições tiveram o fim de A fixado pelo marcador (diagnóstico).
   int transitionBoundaries() const { return m_transitionBoundaries.load(); }
+  int spotifyTransportEvents() const { return m_transportEvents.load(); }
   // Áudio entregue pelo motor e ainda não tocado (pré-rolagem das transições).
   int transitionLatencyMs() const { return m_transitionLatencyMs.load(); }
   // O volume do Spotify é aplicado no librespot, antes do buffer: durante o
@@ -97,9 +98,7 @@ public:
   void cancelTransition();
   // 0 parado, 1 lendo o fim da faixa, 2 mesclando.
   int transitionState() const { return m_transitionState.load(); }
-  bool transitionContinuesOnLoad() const {
-    return m_transitionState.load() != 0 && !m_transitionCancelPending.load();
-  }
+
 signals:
   void settingsChanged();
   void diagnosticsChanged();
@@ -135,6 +134,7 @@ private:
   std::atomic<bool> m_trackMarkers{false};
   std::atomic<uint64_t> m_trackSequence{0};
   std::atomic<int> m_transitionBoundaries{0};
+  std::atomic<int> m_transportEvents{0};
   uint64_t m_transitionRequest = 0, m_transitionNextId = 0;  // sob m_mutex
   mutable std::mutex m_traceMutex;
   tonal::playback::TransitionTrace m_trace;                 // sob m_traceMutex
@@ -144,7 +144,6 @@ private:
   std::atomic<int> m_transitionLatencyMs{0};
   bool m_transitionCancel = false;
   std::atomic<int> m_transitionState{0};
-  std::atomic<bool> m_transitionCancelPending{false};
   bool m_failed = false;
   std::thread m_thread;
   QString m_diagnostics = QStringLiteral("Aguardando áudio local");

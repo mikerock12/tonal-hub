@@ -23,7 +23,7 @@ public final class NativeBridge {
     public static void start(String token,String cache,int bitrate,boolean normalize){spotifyEngine=true;nativeStart(token,cache,bitrate,normalize);}
     public static void command(String command){
         synchronized(intent){intent.command(command,playing);}
-        if(PlaybackIntent.movesAudio(command)){Transitions.cancel();audio.discontinuity();audio.forgetTrackPosition();}
+        if(PlaybackIntent.movesAudio(command)){audio.prepareTransportChange();Transitions.cancel();audio.discontinuity();audio.forgetTrackPosition();}
         if(command.equals("pause")||command.equals("stop")){audio.pause();playing=false;}
         repeatMode=RepeatMode.afterCommand(repeatMode,command);
         Consumer<String> listener=commandListener;if(listener!=null)listener.accept(command);
@@ -82,7 +82,7 @@ public final class NativeBridge {
     public static void onAudioStart(int rate) {
         boolean allowed;synchronized(intent){allowed=intent.audioStarted(android.os.SystemClock.elapsedRealtime());}
         if(!allowed){playing=false;audio.pause();sendCommand("pause");onDiagnostic("Áudio não solicitado bloqueado");return;}
-        audio.source(false,false,-70,0,Double.NaN,0); audio.startStereo(rate); playing=true; onStatus("Reproduzindo");
+        audio.source(false,false,-70,0,Double.NaN,0); audio.startStereo(rate); audio.completeTransportChange(); playing=true; onStatus("Reproduzindo");
     }
     public static void onAudioFormat(int rate,int channels) { audio.open(rate,channels); playing=true; onStatus("Reproduzindo"); }
     public static void onAudioResume() { if(spotifyEngine&&!intent.desired){sendCommand("pause");return;}audio.resume(); playing=true; onStatus("Reproduzindo"); }
@@ -100,6 +100,13 @@ public final class NativeBridge {
     }
     /** Começo exato de uma faixa no PCM (marcador do librespot), antes da primeira amostra dela. */
     public static void onTrackBoundary(int positionMs){if(spotifyEngine)audio.boundary(positionMs);}
+    /** Transporte efetivamente aplicado pelo player, na ordem do PCM e da geração da sessão. */
+    public static void onTransportEvent(long epoch,int event){
+        if(epoch!=generation||!spotifyEngine)return;
+        if(event==1||event==2||event==3){
+            Transitions.cancel();audio.transportDiscontinuity();audio.forgetTrackPosition();
+        }
+    }
     /** Engine closed the sink only to load another track; runs right after onAudioPause. */
     public static void onAudioDiscontinuity() { audio.discontinuity(); }
     private static final ThreadLocal<Boolean> audioPriority=ThreadLocal.withInitial(()->false);

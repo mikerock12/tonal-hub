@@ -862,7 +862,7 @@ impl SpircTask {
                     .repeat_track()
                     .then(|| self.connect_state.current_track(|t| t.uri.clone()));
 
-                self.handle_next(next_track)?
+                self.handle_next_kind(next_track,true)?
             }
             PlayerEvent::Loading { .. } => match self.play_status {
                 SpircPlayStatus::LoadingPlay { position_ms } => {
@@ -1817,6 +1817,10 @@ impl SpircTask {
     }
 
     fn handle_next(&mut self, track_uri: Option<String>) -> Result<(), Error> {
+        self.handle_next_kind(track_uri,false)
+    }
+
+    fn handle_next_kind(&mut self, track_uri: Option<String>, natural: bool) -> Result<(), Error> {
         self.buffer_recovery=None;
         let continue_playing = self.connect_state.is_playing();
 
@@ -1839,7 +1843,7 @@ impl SpircTask {
 
         if has_next_track {
             self.add_autoplay_resolving_when_required();
-            self.load_track(continue_playing, 0)
+            self.load_track_kind(continue_playing,0,natural)
         } else {
             info!("Not playing next track because there are no more tracks left in queue.");
             self.handle_stop();
@@ -1993,6 +1997,10 @@ impl SpircTask {
     }
 
     fn load_track(&mut self, start_playing: bool, position_ms: u32) -> Result<(), Error> {
+        self.load_track_kind(start_playing,position_ms,false)
+    }
+
+    fn load_track_kind(&mut self, start_playing: bool, position_ms: u32, natural: bool) -> Result<(), Error> {
         self.audio_position_ms=position_ms;
         self.audio_duration_ms=0;
         if self.connect_state.current_track(MessageField::is_none) {
@@ -2003,7 +2011,8 @@ impl SpircTask {
 
         let current_uri = self.connect_state.current_track(|t| &t.uri);
         let id = SpotifyUri::from_uri(current_uri)?;
-        self.player.load(id, start_playing, position_ms);
+        if natural {self.player.load_natural(id,start_playing,position_ms);}
+        else {self.player.load(id, start_playing, position_ms);}
 
         self.connect_state
             .update_position(position_ms, self.now_ms());
@@ -2023,7 +2032,7 @@ impl SpircTask {
         let uri=self.connect_state.current_track(|t|t.uri.clone());
         let Ok(id)=SpotifyUri::from_uri(&uri) else {self.buffer_recovery=None;return;};
         recovery.pending=false;
-        self.player.load(id,recovery.start_playing,recovery.position_ms);
+        self.player.load_resume(id,recovery.start_playing,recovery.position_ms);
     }
 
     async fn notify(&mut self) -> Result<(), Error> {
