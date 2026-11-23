@@ -1678,13 +1678,23 @@ qint64 queueInsertionMarker(const QVariantList &rows, int placement) {
 } // namespace
 
 void Player::insertInQueue(const QVariantMap &track, int placement) {
+  insertTracksInQueue({track}, placement);
+}
+
+void Player::insertTracksInQueue(const QVariantList &tracks, int placement) {
   if (!queueEditingAvailable()) {
     emit message(tr("A edição da fila requer o motor local do Tonalify."));
     return;
   }
   static const QRegularExpression valid("^spotify:track:[A-Za-z0-9]{22}$");
+  QVariantList accepted;
+  for (const auto &value : tracks) {
+    const auto track = value.toMap();
+    if (valid.match(track.value("uri").toString()).hasMatch())
+      accepted << track;
+  }
   if (localPlayback() || m_trackUri.isEmpty() || targetDeviceForPlay().isEmpty() ||
-      !valid.match(track.value("uri").toString()).hasMatch() || placement < 0 || placement > 2) {
+      accepted.isEmpty() || placement < 0 || placement > 2) {
     emit message(tr("Inicie uma seleção no Tonalify antes de editar a fila."));
     return;
   }
@@ -1696,8 +1706,13 @@ void Player::insertInQueue(const QVariantMap &track, int placement) {
     emit message(tr("A fila atingiu o limite de 500 músicas."));
     return;
   }
-  m_queueInsertions.append({track, placement});
-  if (m_queueInsertions.size() > 1)
+  const bool start = m_queueInsertions.isEmpty();
+  for (const auto &value : accepted) {
+    if (m_queueInsertions.size() >= 500)
+      break;
+    m_queueInsertions.append({value.toMap(), placement});
+  }
+  if (!start)
     return;
   const auto anchor = m_trackUri, device = targetDeviceForPlay();
   auto link = std::make_shared<QMetaObject::Connection>();
@@ -1734,9 +1749,11 @@ void Player::insertInQueue(const QVariantMap &track, int placement) {
       row["queueAdded"] = queueInsertionMarker(rows, placement);
       rows.insert(at, row);
     }
-    if (rows.size() > initialSize && commitQueueEdit(rows) && m_isPlaying)
-      emit message(tr("Música adicionada à fila."));
-    if (rows.size() - initialSize < insertions.size())
+    const auto inserted = rows.size() - initialSize;
+    if (inserted > 0 && commitQueueEdit(rows) && m_isPlaying)
+      emit message(inserted == 1 ? tr("Música adicionada à fila.")
+                                 : tr("%1 músicas adicionadas à fila.").arg(inserted));
+    if (inserted < insertions.size())
       emit message(tr("A fila atingiu o limite de 500 músicas."));
   });
   QTimer::singleShot(10000, this, [this,link] {

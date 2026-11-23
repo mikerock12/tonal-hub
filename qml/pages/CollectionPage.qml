@@ -391,6 +391,10 @@ Item {
         else if (playUri !== "") App.player.playContext(playUri)
     }
 
+    function addPlaylistToQueue() {
+        ensureMix(function() { App.player.insertTracksInQueue(root.mixRows(), 2) })
+    }
+
     function titleSize() {
         const len = title.length
         const w = list.width
@@ -803,6 +807,13 @@ Item {
     DarkMenu {
         id: pageMenu
 
+        DarkMenuItem {
+            text: qsTr("Adicionar playlist à fila")
+            visible: (root.kind === "playlist" || root.kind === "liked") && root.contentsAvailable
+            height: visible ? implicitHeight : 0
+            enabled: !root.loading && !root.loadingMix && trackModel.count > 0
+            onTriggered: root.addPlaylistToQueue()
+        }
         DarkMenuItem {
             text: qsTr("Editar detalhes")
             visible: root.isOwner

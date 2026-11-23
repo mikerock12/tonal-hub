@@ -411,13 +411,19 @@ public final class MainActivity extends Activity {
         return lastAdded+1;
     }
     void insertInQueue(JSONObject track,QueuePlacement placement){
-        if(!canEditQueue()||!track.optString("uri").matches("spotify:track:[A-Za-z0-9]{22}")){
+        insertTracksInQueue(Collections.singletonList(track),placement);
+    }
+    void insertTracksInQueue(java.util.List<JSONObject> tracks,QueuePlacement placement){
+        ArrayList<JSONObject> accepted=new ArrayList<>();
+        for(JSONObject track:tracks)if(track.optString("uri").matches("spotify:track:[A-Za-z0-9]{22}"))accepted.add(track);
+        if(!canEditQueue()||accepted.isEmpty()){
             notice("Inicie uma seleção no Tonalify antes de editar a fila.");
             return;
         }
         if(queueInsertions.size()>=500){notice("A fila atingiu o limite de 500 músicas.");return;}
-        queueInsertions.add(new QueueInsertion(track,placement));
-        if(queueInsertions.size()>1)return;
+        boolean start=queueInsertions.isEmpty();
+        for(JSONObject track:accepted){if(queueInsertions.size()>=500)break;queueInsertions.add(new QueueInsertion(track,placement));}
+        if(!start)return;
         int revision=queueRevision;
         queueSnapshot(snapshot->{
             ArrayList<JSONObject> rows=snapshot.tracks();
@@ -442,7 +448,8 @@ public final class MainActivity extends Activity {
                 added++;
             }
             if(added>0&&!editQueue(rows,revision)){notice("Não foi possível editar esta fila.");return;}
-            notice(added<additions.size()?"A fila atingiu o limite de 500 músicas.":"Música adicionada à fila.");
+            if(added<additions.size())notice("A fila atingiu o limite de 500 músicas.");
+            else notice(added==1?"Música adicionada à fila.":added+" músicas adicionadas à fila.");
         },error->{queueInsertions.clear();notice(error);});
     }
 
@@ -466,6 +473,16 @@ public final class MainActivity extends Activity {
     }
     void searchArtist(String query){catalog.search(query);}
     void playPersonal(JSONArray values){playPersonalMix(values,false,false);}
+    void insertPersonalInQueue(JSONArray values){
+        ArrayList<JSONObject> tracks=new ArrayList<>();
+        for(Object value:MusicStore.values(values)){
+            JSONObject t=(JSONObject)value;if(!t.optString("provider").equals("Spotify"))continue;
+            JSONObject item=new JSONObject();MusicStore.put(item,"uri",t.optString("uri"));MusicStore.put(item,"name",t.optString("title"));MusicStore.put(item,"duration_ms",t.optInt("durationMs"));
+            JSONObject artist=new JSONObject();MusicStore.put(artist,"name",t.optString("artist"));MusicStore.put(artist,"id",t.optString("artistId"));MusicStore.put(item,"artists",new JSONArray().put(artist));
+            JSONObject album=new JSONObject();MusicStore.put(album,"name",t.optString("album"));MusicStore.put(album,"id",t.optString("albumId"));JSONObject image=new JSONObject();MusicStore.put(image,"url",t.optString("image"));MusicStore.put(album,"images",new JSONArray().put(image));MusicStore.put(item,"album",album);tracks.add(item);
+        }
+        if(!tracks.isEmpty())insertTracksInQueue(tracks,QueuePlacement.ADDED);
+    }
     void playPersonalMix(JSONArray values,boolean random,boolean discovery){ArrayList<JSONObject> tracks=new ArrayList<>();for(Object v:MusicStore.values(values)){JSONObject t=(JSONObject)v;if(t.optString("provider").equals("Local")){if(tracks.isEmpty()){playLocal(new File(t.optString("localFile")),t.optString("title"));return;}continue;}if(!t.optString("provider").equals("Spotify"))continue;JSONObject item=new JSONObject();MusicStore.put(item,"uri",t.optString("uri"));MusicStore.put(item,"name",t.optString("title"));MusicStore.put(item,"duration_ms",t.optInt("durationMs"));JSONObject artist=new JSONObject();MusicStore.put(artist,"name",t.optString("artist"));MusicStore.put(artist,"id",t.optString("artistId"));MusicStore.put(item,"artists",new JSONArray().put(artist));JSONObject album=new JSONObject();MusicStore.put(album,"name",t.optString("album"));MusicStore.put(album,"id",t.optString("albumId"));if(t.optInt("year")>0)MusicStore.put(album,"release_date",String.valueOf(t.optInt("year")));JSONObject img=new JSONObject();MusicStore.put(img,"url",t.optString("image"));MusicStore.put(album,"images",new JSONArray().put(img));MusicStore.put(item,"album",album);tracks.add(item);}if(!tracks.isEmpty()){if(random||discovery)playMix(tracks,0,random,discovery,false);else playTracks(tracks,0,"",tracks.get(0));}}
     void trackPersonalMenu(JSONObject track){MusicPanel.trackMenu(this,api,track);}
     private void setTrack(JSONObject item){if(!item.optString("uri").equals(currentUri)){seekGuardUntil=0;lastEnginePositionAt=0;queueRevision++;}if(!item.optString("uri").equals(currentUri)&&!orderedQueue.isEmpty()){int found=-1;for(int i=orderedCursor;i<orderedQueue.size();i++)if(item.optString("uri").equals(orderedQueue.get(i).optString("uri"))){found=i;break;}if(found<0){if(jamClient==null||!jamClient.active()){orderedQueue.clear();orderedCursor=0;}}else orderedCursor=found;}MusicStore journal=MusicStore.get(this);journal.select(MusicStore.spotifyTrack(item));if(musicMetadata==null){if(journal.metadata!=null)journal.metadata.close();musicMetadata=new MusicMetadata(journal,api);journal.metadata=musicMetadata;}musicMetadata.enrich(journal.current);currentTrack=item;currentUri=item.optString("uri");if(!currentUri.isEmpty()&&!currentUri.equals(queriedLikeUri)){queriedLikeUri=currentUri;String requested=currentUri;api.get("me/library/contains?uris="+SpotifyClient.encode(requested),r->{JSONArray items=r.optJSONArray("items");if(requested.equals(currentUri)&&items!=null&&items.length()>0)MusicStore.get(this).favorite(MusicStore.spotifyTrack(item),items.optBoolean(0));},error->{});}now.setText(item.optString("name"));byline.setText(CatalogScreen.artists(item));durationMs=item.optInt("duration_ms");artwork.load(nowCover,journal.current.optString("image"));}

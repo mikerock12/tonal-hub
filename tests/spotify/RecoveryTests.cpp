@@ -1398,6 +1398,10 @@ public:
     require(engine.commands.last().second==QStringList{player.m_trackUri},"clear must send only the current track anchor");
     engine.confirm();
     require(player.m_isPlaying&&transportWrites==0,"editing while playing sent a playback command");
+    player.setOrderedQueue({row("AAAAAAAAAAAAAAAAAAAAAA"),row("BBBBBBBBBBBBBBBBBBBBBB")});
+    player.insertTracksInQueue({row("CCCCCCCCCCCCCCCCCCCCCC"),row("DDDDDDDDDDDDDDDDDDDDDD"),row("CCCCCCCCCCCCCCCCCCCCCC"),QVariantMap{{"uri","spotify:episode:invalid"}}},2);
+    require(ids()=="CDCB"&&transportWrites==0,"playlist insertion lost order, repeated occurrences or touched transport");
+    for(int i=0;i<6&&player.queueEditPending();++i)engine.confirm();
     engine.available=false;
     require(player.queueEditToken().isEmpty()&&!player.applyQueueEdit({row("AAAAAAAAAAAAAAAAAAAAAA")}),
             "a stock or remote engine must not fall back to Web API play");
