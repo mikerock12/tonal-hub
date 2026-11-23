@@ -35,5 +35,10 @@
   "O teste usa PCM sintético na AVD; não é aceite físico do sintoma relatado.",
   "Windows não mudou de motor nesta correção; o build 0.17.6 não constitui novo benchmark."
  ],
+ "publication": {
+  "app": "PR66 merge d6739e95507a7c12ff3ff936b5b2ebe60111e9ab; CI 5/5 + regressão visual; release v0.17.6",
+  "portal": "PR81 merge 933775e8d89be3f58702bdaee8c0b2f37e734d9a; Worker 027e235f-3fd2-4deb-9999-b510d0fe1afc; verify 60/60, downloads/hashes e privado 401 conferidos",
+  "privateBackup": "https://drive.google.com/drive/folders/1fpxLJK8HIBzHl8BaGW0qIKr4aH561dAH; 403360272 bytes/384,7 MB exibidos; SHA-256 local a738ec95d2540e99a91136a7525877e9fb4459c8fec336aee03272d1cc687545; 16 arquivos, CRC e restauração aprovados; pasta privada, proprietário eu, sem compartilhamento adicionado; hash remoto indisponível"
+ },
  "toolsInstalled": "Nenhum aplicativo ou ferramenta adicional instalado/baixado; usados SDK/NDK/Gradle/AVD existentes."
 }
