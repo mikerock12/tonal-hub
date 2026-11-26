@@ -663,9 +663,9 @@ docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no
 - Publicação e backup só devem ser registrados após evidência correspondente.
 - Entrega 0.18.0 (26/11/2026): PR72 merge `bca01f70706c5b3218d847ea6356022d3a25d9ab` (CI 4/4; o
   job do leitor Qwen saiu), código de produto `9be7cd4`, release v0.18.0 com Windows, ZIP, APKs e
-  `SHA256SUMS.txt` (digests remotos iguais). Portal PR88 merge `27ac80f`; deploy do Worker pendente
-  por autenticação Cloudflare expirada (APIs/downloads já resolvem v0.18.0; nota da versão só após
-  o deploy). Backup privado `1Nx2lz-4vLZmP5QpWJcUYEohVw5lKY6WF` (31 arquivos, partes de 7 MB,
+  `SHA256SUMS.txt` (digests remotos iguais). Portal PR88 merge `27ac80f`, Worker
+  `534e0934-45b1-48cc-8998-0422a23aa8da` (publicado após renovar o login do wrangler; nota,
+  APIs, hashes, redirects e privado 401 conferidos). Backup privado `1Nx2lz-4vLZmP5QpWJcUYEohVw5lKY6WF` (31 arquivos, partes de 7 MB,
   remontagem local verificada, somente proprietário). Evidências: docs/release-0180-tests.json e
   docs/artifacts-0180.json. `jniLibs` é ignorado pelo Git e guarda .so antigos: `verify_apk.py`
   recusa bibliotecas do leitor. Commits documentais posteriores não significam rebuild.
