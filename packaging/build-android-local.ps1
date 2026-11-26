@@ -36,6 +36,8 @@ if(-not $SkipAudio){
     & (Join-Path $PSScriptRoot 'build-android-audio-local.ps1')
 }
 foreach($abi in @('x86_64','arm64-v8a')){
+    # 0.18.0 removeu o leitor Qwen: bibliotecas antigas de build não podem voltar ao APK.
+    foreach($stale in @('libtonal_story.so','libtonal_story_fast.so')){Remove-Item -LiteralPath (Join-Path $root "android\app\src\main\jniLibs\$abi\$stale") -Force -ErrorAction SilentlyContinue}
     if(-not(Test-Path -LiteralPath (Join-Path $root "android\app\src\main\jniLibs\$abi\libtonal_android.so"))){
         throw "Biblioteca nativa $abi ausente. Execute novamente sem -SkipNative."
     }

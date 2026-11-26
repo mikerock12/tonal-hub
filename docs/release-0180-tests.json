@@ -11,6 +11,8 @@
   "qml": "lyrics 7/7, playlist 4/4, mix 35/35, temas 8 temas/267 checagens, Halloween e Natal visuais PASS",
   "qmlRegressionsFixed": "mix 30/35 antes: chamada App.jam sem componente nativo interrompia a discografia, a ordenação sobrepunha o botão de nova tentativa sem faixas e o teste do leitor antigo exigia 'Continuar análise'",
   "androidJava": "release, benchmark, comparison e automation compilados",
+  "androidApks": "Universal 49.889.225 bytes e ARM64 27.666.146 bytes; versionCode 50; mesmo certificado da 0.17.8 (SHA-256 464ae7cf…a22c2); alinhamento 16 KiB; verify_apk PASS sem credenciais. A primeira verificação recusou libtonal_story(.so/_fast) antigos que sobraram em jniLibs; removidos, o build passou a apagá-los e verify_apk falha se voltarem.",
+  "androidAvd": "Tonal_Local_20261015 com APK benchmark: transitionRealSuite PASS (2 mesclas de 4 s, B 2.507 ms, 0 quadros perdidos, 0 underruns durante as transições, 1 no fim do fluxo, 0 fallbacks; trace com 20 campos); transitionSuite PASS (0 underruns, 0 fallbacks); historyStoryTests PASS 10/10 incluindo legacy_Qwen_weights_removed e deterministic_genre_mood_summary. Uma leitura inicial foi descartada por ter lido o arquivo da 0.17.8 (o shell converteu o caminho e não apagou o resultado anterior).",
   "realArtistStatsWindows": "TonalJam.exe com a sessão Spotify existente deste PC: queryArtistOverview HTTP 200 para um artista público, ouvintes mensais e posição mundial iguais aos exibidos pela página pública no navegador, cidades com ouvintes, 10 plays de faixas populares. Leitura apenas; nenhuma credencial no relatório."
  },
  "limits": [
