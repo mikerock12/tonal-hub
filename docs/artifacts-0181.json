@@ -1,7 +1,7 @@
 {
  "version": "0.18.1",
  "androidVersionCode": 51,
- "productCode": "12e3eb1",
+ "productCode": "12e3eb1693eb8ae4d1cd672ecce389ecb75d0163",
  "assets": [
   {
    "name": "Tonal-Hub-0.18.1.0-Windows-x64-Setup.exe",
@@ -26,5 +26,22 @@
  ],
  "androidCertificateSha256": "464ae7cf34f4f145541569db215f8fcdef5deda1be31921d8e366eed20aa22c2",
  "alignment16KiB": true,
- "release": "https://github.com/mikerock12/tonal-hub/releases/tag/v0.18.1"
+ "release": "https://github.com/mikerock12/tonal-hub/releases/tag/v0.18.1",
+ "merge": "6add8cc6e71d51efd53c81c7568b8b0500332548",
+ "pullRequest": 74,
+ "releaseDigestsVerified": true,
+ "portal": {
+  "pullRequest": 90,
+  "merge": "0d09f4ad33a1c0bec3eda13277353ed6947d49c9",
+  "worker": "129cd767-cc6f-4e55-be83-455fc9c1c0cc",
+  "checks": "verify 62/62; produção: API v0.18.1 com hashes iguais nas duas plataformas, downloads 302 para a release, nota em /catalog.json, área privada 401"
+ },
+ "backup": {
+  "driveFolder": "1k2V_yKKjUry8L9J8oJBphcovM8SBmnBS",
+  "files": 31,
+  "bytes": 180048407,
+  "parts": "7 MB, remontagem verificada localmente pelo SHA-256",
+  "access": "somente proprietário; arquivos PRIVATE",
+  "remoteHash": "não fornecido pelo conector; tamanhos remotos iguais aos locais"
+ }
 }

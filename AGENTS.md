@@ -686,3 +686,9 @@ docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no
   Até 6 consultas de integrantes no throttle comum de 1,25 s.
 - Sem Spotify autenticado no Android, aparelho físico ou garantia de estabilidade
   da consulta persistente. Publicação e backup só após evidência.
+- Entrega 0.18.1 (26/11/2026): PR74 merge `6add8cc6e71d51efd53c81c7568b8b0500332548` (CI 4/4), código de
+  produto `12e3eb1`, release v0.18.1 com Windows, ZIP, APKs e `SHA256SUMS.txt` (digests remotos iguais).
+  Portal PR90 merge `0d09f4a`, Worker `129cd767-cc6f-4e55-be83-455fc9c1c0cc` (API, hashes, redirects,
+  nota e privado 401 conferidos). Backup privado `1k2V_yKKjUry8L9J8oJBphcovM8SBmnBS` (31 arquivos, partes
+  de 7 MB, somente proprietário). Evidências: docs/release-0181-tests.json e docs/artifacts-0181.json.
+  Commits documentais posteriores não significam rebuild.
