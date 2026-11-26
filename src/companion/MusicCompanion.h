@@ -74,6 +74,9 @@ public:
   Q_INVOKABLE void pulse(bool playing,int positionMs);
   Q_INVOKABLE bool liked(const QVariantMap &) const;
   Q_INVOKABLE void favorite(const QVariantMap &);
+  Q_INVOKABLE bool collectionLiked(const QVariantMap &) const;
+  Q_INVOKABLE void favoriteCollection(const QVariantMap &);
+  Q_INVOKABLE QVariantList collectionFavorites() const;
   void setFavorite(const QVariantMap &,bool);
   Q_INVOKABLE QString createPlaylist(const QString &);
   QString importPlaylist(const QString &name,const QString &description,const QString &cover,

@@ -13,10 +13,70 @@ Item {
     property bool loadingMix:false
     property var pendingMix:null
     property var originalOrder:[]
+    property var sourceRows:[]
+    property string sortMode:"original"
+    property bool sortDescending:false
+    property var sortModes:[
+        {id:"original",label:qsTr("Ordem da playlist")},{id:"title",label:qsTr("Título A–Z")},
+        {id:"duration",label:qsTr("Duração")},{id:"artist",label:qsTr("Artista A–Z")},
+        {id:"album",label:qsTr("Álbum A–Z")},{id:"genre",label:qsTr("Gênero A–Z")},
+        {id:"plays",label:qsTr("Plays / suas escutas")},{id:"albumFavorites",label:qsTr("Favoritos do álbum")},
+        {id:"followers",label:qsTr("Seguidores do artista")}
+    ]
     property int mixSeed:Math.floor(Math.random()*2147483647)
     function rawRows(){let rows=[];for(let i=0;i<trackModel.count;i++)rows.push(JSON.parse(JSON.stringify(trackModel.get(i))));return rows}
     function mixRows(){return rawRows().map(t=>({provider:"Spotify",id:t.uri,uri:t.uri,title:t.name,artist:t.artistsText,artistId:t.artistId,album:t.album,albumId:t.albumId,image:t.coverUrl,durationMs:t.durationMs,year:t.releaseYear||parseInt(root.year)||0}))}
     function personalRow(index){const t=trackModel.get(index);if(!t)return{};return{provider:"Spotify",id:t.uri,uri:t.uri,title:t.name,artist:t.artistsText,artistId:t.artistId,album:t.album,albumId:t.albumId,image:t.coverUrl,durationMs:t.durationMs,year:t.releaseYear||parseInt(root.year)||0}}
+    function compareRows(a,b,mode) {
+        const textKeys={title:"name",artist:"artistsText",album:"album",genre:"genre"}
+        if (textKeys[mode]) {
+            const av=(a[textKeys[mode]]||"").trim(),bv=(b[textKeys[mode]]||"").trim()
+            if (!av && bv) return 1
+            if (av && !bv) return -1
+            const text=av.localeCompare(bv,"pt-BR",{sensitivity:"base"})
+            return (root.sortDescending?-text:text) || a.originalIndex-b.originalIndex
+        }
+        const keys={duration:"durationMs",plays:"sortPlayCount",albumFavorites:"albumFavoriteCount",followers:"artistFollowers"}
+        const av=a[keys[mode]]===undefined?-1:a[keys[mode]],bv=b[keys[mode]]===undefined?-1:b[keys[mode]]
+        if (av<0 && bv>=0) return 1
+        if (bv<0 && av>=0) return -1
+        const direction=root.sortDescending?-1:1
+        return (av-bv)*direction || a.originalIndex-b.originalIndex
+    }
+    function rebuildSorted() {
+        let rows=sourceRows.map((t,i)=>Object.assign({},t,{originalIndex:i,sortPlayCount:t.playCount>=0?t.playCount:t.localPlays}))
+        if (sortMode!=="original") rows.sort((a,b)=>compareRows(a,b,sortMode))
+        trackModel.clear();for (let row of rows) trackModel.append(row)
+    }
+    function chooseSort(mode) {
+        ensureMix(function() {
+            if (sortMode===mode && mode!=="original") sortDescending=!sortDescending
+            else { sortMode=mode; sortDescending=["plays","albumFavorites","followers"].indexOf(mode)>=0 }
+            listShaken=false;originalOrder=[];mixTouched=mode!=="original"||randomPlayback||discoveryPlayback
+            if (mode==="genre"||mode==="followers") { loadArtistMetadata(0,[]); return }
+            if (mode==="albumFavorites") Nav.toast(qsTr("O Spotify não informa o total de favoritos dos álbuns; itens sem dado ficam no fim."))
+            rebuildSorted()
+        })
+    }
+    function loadArtistMetadata(offset,ids) {
+        if (offset===0) {
+            const wanted={}
+            for (let row of sourceRows) if (row.artistId && !row.artistMetadata) wanted[row.artistId]=true
+            ids=Object.keys(wanted)
+            if (!ids.length) { rebuildSorted(); return }
+        }
+        const s=serial,chunk=ids.slice(offset,offset+50)
+        App.api.call("GET","/artists",{ids:chunk.join(",")},null,function(status,data) {
+            if (s!==root.serial) return
+            if (status!==200) { Nav.toast(qsTr("Não foi possível carregar gêneros/seguidores. A ordenação usará os dados disponíveis."));rebuildSorted();return }
+            const details={};for (let artist of data.artists||[]) details[artist.id]=artist
+            sourceRows=sourceRows.map(row=>{
+                const a=details[row.artistId];if(!a)return row
+                return Object.assign({},row,{artistMetadata:true,genre:(a.genres||[]).join(", "),artistFollowers:a.followers&&a.followers.total!==undefined?a.followers.total:-1})
+            })
+            if (offset+50<ids.length) loadArtistMetadata(offset+50,ids);else rebuildSorted()
+        })
+    }
     function likedAt(index){const t=personalRow(index);return!!t.uri&&App.music.liked(t)}
     function favoriteAt(index){const t=personalRow(index);if(t.uri)App.music.favorite(t)}
     function ensureMix(action){if(loadError!==""){Nav.toast(loadError);return}if(loading||loadingMix){Nav.toast("Aguarde o carregamento da seleção.");return}if(nextUrl!==""&&trackModel.count<500){pendingMix=action;loadingMix=true;loadMore()}else action()}
@@ -24,8 +84,8 @@ Item {
     // atual, a partir da música que toca; senão, valem no próximo Reproduzir.
     function playingHere(){const u=App.player.trackUri||"";if(!App.player.hasTrack||App.player.localPlayback||!u.startsWith("spotify:track:"))return false;for(let i=0;i<trackModel.count;i++)if(trackModel.get(i).uri===u)return true;return false}
     function applyToPlaying(){if(!playingHere())return false;ensureMix(function(){const rows=root.mixRows();const i=rows.findIndex(r=>r.uri===App.player.trackUri);if(i<0)return;const rest=(root.randomPlayback||root.listShaken)?rows.slice(i+1).concat(rows.slice(0,i)):rows.slice(i+1);if(!rest.length){Nav.toast("Não há próximas músicas nesta seleção.");return}App.listeningMix.applyModes([rows[i]].concat(rest),false,root.randomPlayback,root.discoveryPlayback);root.mixTouched=false;Nav.toast(root.discoveryPlayback?"Preparando a Descoberta 2+1 na fila atual…":"Fila atual atualizada; a música continua.")});return true}
-    function restoreOrder(){if(!listShaken)return;App.listeningMix.cancel();trackModel.clear();for(let t of originalOrder)trackModel.append(t);listShaken=false;mixTouched=true;applyToPlaying()}
-    function shakeList(){App.listeningMix.cancel();ensureMix(function(){if(!root.listShaken)root.originalOrder=root.rawRows();let before=JSON.stringify(root.rawRows().map(t=>t.uri));let order=[];for(let attempt=0;attempt<5;attempt++){root.mixSeed=Math.floor(Math.random()*2147483647);order=App.listeningMix.order(root.originalOrder.length,root.mixSeed);if(JSON.stringify(order.map(i=>root.originalOrder[i].uri))!==before)break}trackModel.clear();for(let i of order)trackModel.append(root.originalOrder[i]);root.listShaken=true;root.mixTouched=true;root.applyToPlaying()})}
+    function restoreOrder(){if(!listShaken)return;App.listeningMix.cancel();trackModel.clear();for(let t of originalOrder)trackModel.append(t);listShaken=false;sortMode="original";sortDescending=false;mixTouched=true;applyToPlaying()}
+    function shakeList(){App.listeningMix.cancel();ensureMix(function(){sortMode="original";sortDescending=false;if(!root.listShaken)root.originalOrder=root.rawRows();let before=JSON.stringify(root.rawRows().map(t=>t.uri));let order=[];for(let attempt=0;attempt<5;attempt++){root.mixSeed=Math.floor(Math.random()*2147483647);order=App.listeningMix.order(root.originalOrder.length,root.mixSeed);if(JSON.stringify(order.map(i=>root.originalOrder[i].uri))!==before)break}trackModel.clear();for(let i of order)trackModel.append(root.originalOrder[i]);root.listShaken=true;root.mixTouched=true;root.applyToPlaying()})}
     Connections{target:App.player;function onPlaybackRequested(){root.pendingMix=null;root.loadingMix=false}}
     property bool showListening:false
     property int journalRevision:0
@@ -48,6 +108,8 @@ Item {
     property string releaseDate
     property string copyright
     property int totalTracks: -1
+    property int popularity: -1
+    property int followerCount: -1
     property real totalDurationMs: 0
     property bool contentsAvailable: true
     property bool owned: false          // aceita músicas: sua ou colaborativa
@@ -79,14 +141,14 @@ Item {
     // ------------------------------------------------------------ dados
     function reset() {
         serial++
-        listShaken=false;randomPlayback=false;discoveryPlayback=false;mixTouched=false;loadingMix=false;pendingMix=null;originalOrder=[]
+        listShaken=false;randomPlayback=false;discoveryPlayback=false;mixTouched=false;loadingMix=false;pendingMix=null;originalOrder=[];sourceRows=[];sortMode="original";sortDescending=false
         trackModel.clear()
         // Depois de clear() + append() o ListView põe currentIndex em 0 sozinho, e a primeira
         // faixa aparecia selecionada sem ninguém clicar nela.
         list.currentIndex = -1
         typeLabel = ""; title = ""; description = ""; imageUrl = ""; uri = ""
         ownerName = ""; ownerId = ""; artistId = ""; year = ""; releaseDate = ""; copyright = ""
-        totalTracks = -1; totalDurationMs = 0; contentsAvailable = true; owned = false; saved = false
+        totalTracks = -1; popularity = -1; followerCount = -1; totalDurationMs = 0; contentsAvailable = true; owned = false; saved = false
         isOwner = false; snapshotId = ""
         nextUrl = ""; tint = "#535353"
         loadError = ""
@@ -141,6 +203,7 @@ Item {
                 root.year = (a.release_date || "").substring(0, 4)
                 root.releaseDate = a.release_date || ""
                 root.totalTracks = a.total_tracks
+                root.popularity = a.popularity !== undefined ? a.popularity : -1
                 root.copyright = a.copyrights && a.copyrights.length > 0 ? a.copyrights.map(c => (c.type === "P" ? "℗ " : "© ") + c.text.replace(/^[©℗]\s*/, "")).join("\n") : ""
                 root.appendTracks(a.tracks.items, a)
                 root.nextUrl = a.tracks.next || ""
@@ -166,6 +229,7 @@ Item {
             root.isOwner = !!(Nav.me && p.owner && p.owner.id === Nav.me.id)
             root.owned = root.isOwner || !!p.collaborative
             root.snapshotId = p.snapshot_id || ""
+            root.followerCount = p.followers && p.followers.total !== undefined ? p.followers.total : -1
             // Fev/2026: o conteúdo vem em "items" (antes "tracks") e só para playlists suas/colaborativas.
             const page = p.items || p.tracks
             if (page && page.items) {
@@ -177,7 +241,7 @@ Item {
                 if (page && page.total !== undefined) root.totalTracks = page.total
             }
             root.updateTint()
-            if (!root.owned) root.checkSaved()
+            root.checkSaved()
         })
     }
 
@@ -222,7 +286,7 @@ Item {
 
     function addRow(t, album, addedAt) {
         const artists = t.artists || (t.show ? [{ name: t.show.name, id: "" }] : [])
-        trackModel.append({
+        const row = {
             uri: t.uri,
             name: t.name || "",
             artistsText: Theme.joinNames(artists),
@@ -234,8 +298,17 @@ Item {
             coverUrl: album && album.images ? Theme.bestImage(album.images, 64) : "",
             durationMs: t.duration_ms || 0,
             addedAt: addedAt,
-            explicit: !!t.explicit
-        })
+            explicit: !!t.explicit,
+            popularity: t.popularity !== undefined ? t.popularity : -1,
+            playCount: t.playcount !== undefined ? Number(t.playcount) : (t.playCount !== undefined ? t.playCount : -1),
+            localPlays: App.music.summary("track","Spotify|||"+t.uri).plays || 0,
+            albumFavoriteCount: t.albumFavoriteCount !== undefined ? t.albumFavoriteCount : -1,
+            artistFollowers: -1,
+            genre: t.genre || "",
+            artistMetadata: false
+        }
+        sourceRows = sourceRows.concat([row])
+        if (sortMode !== "original") rebuildSorted(); else trackModel.append(row)
         totalDurationMs += t.duration_ms || 0
     }
 
@@ -522,6 +595,8 @@ Item {
                             const parts = []
                             if (root.ownerName) parts.push("<b><font color='#ffffff'>" + root.ownerName + "</font></b>")
                             if (root.year) parts.push(root.year)
+                            if (root.followerCount >= 0) parts.push(root.followerCount.toLocaleString() + qsTr(" seguidores"))
+                            if (root.popularity >= 0) parts.push(qsTr("Popularidade %1/100").arg(root.popularity))
                             if (root.totalTracks >= 0) parts.push(root.totalTracks + (root.totalTracks === 1 ? qsTr(" música") : qsTr(" músicas")))
                             if (root.totalDurationMs > 0 && (root.kind === "album" || trackModel.count >= root.totalTracks))
                                 parts.push(Theme.formatLongDuration(root.totalDurationMs))
@@ -567,7 +642,7 @@ Item {
                     Personal.ActionIcon {anchors.verticalCenter:parent.verticalCenter;symbol:"discover";description:"Descoberta 2+1: aplica na fila se esta seleção estiver tocando; senão, no Reproduzir";filled:root.discoveryPlayback;onClicked:{App.listeningMix.cancel();root.pendingMix=null;root.loadingMix=false;root.mixTouched=true;root.discoveryPlayback=!root.discoveryPlayback;if(!root.applyToPlaying())Nav.toast(root.discoveryPlayback?"Descoberta 2+1 ativada. Use Reproduzir para montar a nova fila.":"Descoberta desativada para a próxima reprodução.")}}
                     IconButton {
                         anchors.verticalCenter: parent.verticalCenter
-                        visible: root.kind === "album" || (root.kind === "playlist" && !root.owned)
+                        visible: root.kind === "album" || root.kind === "playlist"
                         iconSize: 30
                         fillPath: root.saved ? Icons.heart : ""
                         strokePath: root.saved ? "" : Icons.heart
@@ -589,6 +664,25 @@ Item {
                 }
             }
 
+            Row {
+                x: 24
+                spacing: 8
+                visible: root.contentsAvailable && trackModel.count > 0
+                ComboBox {
+                    objectName: "collectionSort"
+                    width: 260
+                    model: root.sortModes
+                    textRole: "label"
+                    currentIndex: Math.max(0, root.sortModes.findIndex(m => m.id === root.sortMode))
+                    onActivated: root.chooseSort(root.sortModes[index].id)
+                }
+                Button {
+                    objectName: "collectionSortDirection"
+                    visible: root.sortMode !== "original"
+                    text: root.sortDescending ? qsTr("Decrescente") : qsTr("Crescente")
+                    onClicked: { root.sortDescending=!root.sortDescending;root.rebuildSorted() }
+                }
+            }
             Label{visible:root.showListening;x:24;width:parent.width-48;wrapMode:Text.Wrap;font.pixelSize:16;color:"#7ddbff";text:{root.journalRevision;const s=App.music.summary("album",root.ownerName+"|"+root.title);return(s.plays||0)+" escutas · "+((s.ms||0)/60000).toFixed(1)+" min · "+(s.tracks||0)+" músicas"}MouseArea{anchors.fill:parent;onClicked:{const rows=App.music.statistics(180,"albums").rows;listeningDetail.report=rows.find(r=>r.id===root.ownerName+"|"+root.title)||{};listeningDetail.open()}}}
             // Aviso de playlist sem conteúdo disponível
             Rectangle {
@@ -627,6 +721,8 @@ Item {
             required property string artistsJson
             required property string albumId
             required property bool explicit
+            required property int popularity
+            required property double playCount
             // propriedades que já existem no TrackRow: só marcamos como "required"
             required album
             required coverUrl
@@ -641,6 +737,7 @@ Item {
             title: name
             artists: artistsText
             explicitContent: explicit
+            catalogStats: playCount >= 0 ? Number(playCount).toLocaleString() + qsTr(" reproduções no Spotify") : (popularity >= 0 ? qsTr("Popularidade %1/100").arg(popularity) : "")
             showCover: root.kind !== "album"
             showAlbum: root.kind !== "album" && width > 640
             showAdded: root.kind !== "album"
@@ -651,7 +748,7 @@ Item {
             isPlaying: App.player.isPlaying
             selected: list.currentIndex === index
             onSelectRequested: list.currentIndex = index
-            draggable: root.kind === "playlist" && root.owned && !root.listShaken && !root.loadingMix
+            draggable: root.kind === "playlist" && root.owned && root.sortMode === "original" && !root.listShaken && !root.loadingMix
             dragging: root.dragIndex === index
             onDragStarted: root.dragStart(index)
             onDragMoved: (sx, sy) => root.dragMove(sx, sy)

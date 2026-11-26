@@ -200,7 +200,8 @@ final class AudioOutput {
     /** Posição da faixa no PCM já entregue pelo motor; -1 quando desconhecida. */
     long trackPositionMs(){long counted=trackFrames;return counted<0?-1:trackStartMs+counted*1000L/Math.max(1,rate);}
     /** Retorna o id do pedido aceito pelo mixer (0: recusado). O resultado sai em transitionTrace(). */
-    long armTransition(int effect,long upcomingMs,long outroMs,long introMs){
+    long armTransition(int effect,long upcomingMs,long outroMs,long introMs){return armTransition(effect,upcomingMs,outroMs,introMs,false);}
+    long armTransition(int effect,long upcomingMs,long outroMs,long introMs,boolean trimSilence){
         if(!TransitionNative.READY)return 0;
         int current;
         synchronized(this){if(track==null||channels!=2||localSource||paused)return 0;current=rate;}
@@ -209,7 +210,7 @@ final class AudioOutput {
             if(mixer==0)mixer=TransitionNative.create(current);
             if(mixer==0)return 0;
             long id=++transitionIds;
-            if(!TransitionNative.arm(mixer,effect,upcomingMs*current/1000,outroMs*current/1000,introMs*current/1000,true,id))return 0;
+            if(!TransitionNative.arm(mixer,effect,upcomingMs*current/1000,outroMs*current/1000,introMs*current/1000,true,id,trimSilence))return 0;
             // Sem novo epoch: os pacotes já na fila são a continuação de A e entram no
             // buffer da transição na ordem. Só cancelamento/liberação invalida a fila.
             mixShutdown=false;mixActive=true;latencyFrames=(int)TransitionNative.latency(mixer);

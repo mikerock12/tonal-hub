@@ -82,6 +82,16 @@ TransitionPlan planTransition(int outroSeconds, int introSeconds, int64_t durati
   return plan;
 }
 
+TransitionPlan planSilenceTrim(int64_t durationMs, int64_t audibleRemainingMs, int64_t upcomingMs) {
+  TransitionPlan plan;
+  if (durationMs <= 0 || upcomingMs < 0 || audibleRemainingMs < 1000 ||
+      audibleRemainingMs > kTransitionPrerollMs + kTransitionLoadMarginMs + 500)
+    return plan;
+  plan.arm = true;
+  plan.upcomingMs = upcomingMs;
+  return plan;
+}
+
 void TransitionMixer::Biquad::lowpass(double rate, double hz, double q) {
   const double w = 2 * kPi * std::clamp(hz, 10.0, rate * 0.45) / rate;
   const double alpha = std::sin(w) / (2 * q), c = std::cos(w), a0 = 1 + alpha;
@@ -165,6 +175,7 @@ void TransitionMixer::reset() {
   if (m_state != State::Idle && m_trace.phase != TransitionPhase::Aborted)
     abort(TransitionReason::Cancelled);
   finishMixing();
+  m_trimSilence = m_trimOnly = m_trimLeadingB = false;
   m_fifoHead = m_fifoCount = 0;
   clearEffects();
 }
@@ -175,6 +186,7 @@ void TransitionMixer::finishMixing() {
   m_mixStart = m_overlap = m_rendered = m_mixed = 0;
   m_outro = m_intro = m_outroWanted = m_introWanted = 0;
   m_waitBoundary = false;
+  m_trimOnly = false;
   m_gain = 1;
   m_limiterSlope = 0;
 }
@@ -199,13 +211,14 @@ void TransitionMixer::fifoPop(float &l, float &r) {
 }
 
 bool TransitionMixer::arm(TransitionEffect effect, int64_t upcomingFrames, int64_t outroFrames,
-                          int64_t introFrames, bool exactBoundary, uint64_t id) {
+                          int64_t introFrames, bool exactBoundary, uint64_t id, bool trimSilence) {
   if (m_state != State::Idle) {
     m_rejection = TransitionReason::Busy;
     return false;
   }
-  if (int(effect) < 0 || int(effect) >= kTransitionEffectCount || upcomingFrames < 0 || outroFrames <= 0 ||
-      introFrames <= 0) {
+  if (int(effect) < 0 || int(effect) >= kTransitionEffectCount || upcomingFrames < 0 ||
+      (outroFrames < 0 || introFrames < 0) || (!trimSilence && (outroFrames <= 0 || introFrames <= 0)) ||
+      (trimSilence && ((outroFrames == 0) != (introFrames == 0)))) {
     m_rejection = TransitionReason::InvalidRequest;
     return false;
   }
@@ -224,6 +237,9 @@ bool TransitionMixer::arm(TransitionEffect effect, int64_t upcomingFrames, int64
   m_trace.exactBoundary = exactBoundary;
   m_trace.configuredOutro = outroFrames;
   m_trace.configuredIntro = introFrames;
+  m_trimSilence = trimSilence;
+  m_trimOnly = trimSilence && outroFrames == 0 && introFrames == 0;
+  m_trimLeadingB = false;
   clearEffects();
   // O FIFO guarda A já entregue e ainda não tocada: vira o começo do buffer.
   int64_t count = 0;
@@ -249,6 +265,21 @@ bool TransitionMixer::arm(TransitionEffect effect, int64_t upcomingFrames, int64
 }
 
 void TransitionMixer::placeRegion(int64_t end) {
+  // Só quadros estéreo exatamente zero são removidos. O cálculo espera o fim
+  // real chegar ao buffer para não confundir espaço ainda não preenchido com silêncio.
+  if (m_trimSilence && !m_waitBoundary && end <= m_tailCount) {
+    const int64_t untrimmed = end;
+    while (end > m_tailPlayed && end > 0 && m_tail[size_t((end - 1) * 2)] == 0.f &&
+           m_tail[size_t((end - 1) * 2 + 1)] == 0.f)
+      --end;
+    m_trace.trimmedA = std::max<int64_t>(0, untrimmed - end);
+  }
+  if (m_trimOnly) {
+    m_overlap = m_outro = m_intro = 0;
+    m_mixStart = end;
+    m_trace.outro = m_trace.intro = m_trace.overlap = 0;
+    return;
+  }
   // A região termina no último quadro de A; não pode começar no que já tocou.
   const int64_t available = std::max<int64_t>(0, end - m_tailPlayed);
   m_overlap = std::min(std::max(m_outroWanted, m_introWanted), available);
@@ -266,6 +297,7 @@ void TransitionMixer::boundary() {
   if (m_state != State::Armed || m_tailCount >= m_tailTarget)
     return;
   m_waitBoundary = false;
+  m_trimLeadingB = m_trimSilence;
   m_tailTarget = m_tailCount;
   m_trace.boundaryFrame = m_tailCount;
   placeRegion(m_tailTarget);
@@ -311,6 +343,14 @@ size_t TransitionMixer::push(const float *in, size_t frames) {
       placeRegion(m_tailTarget);
       abort(TransitionReason::NoExactBoundary);
     }
+  }
+  while (used < frames && m_trimLeadingB) {
+    if (in[used * 2] != 0.f || in[used * 2 + 1] != 0.f) {
+      m_trimLeadingB = false;
+      break;
+    }
+    ++used;
+    ++m_trace.trimmedB;
   }
   while (used < frames && m_fifoCount < m_fifoCapacity) {
     const size_t slot = (m_fifoHead + m_fifoCount) % m_fifoCapacity;
@@ -545,6 +585,12 @@ size_t TransitionMixer::pull(float *out, size_t frames) {
       // Com o marcador a mescla só começa quando se sabe onde A termina.
       if (!m_waitBoundary && m_tailPlayed >= m_mixStart) {
         if (m_overlap <= 0) {
+          if (m_trimOnly) {
+            m_tailPlayed = m_tailTarget;
+            m_trace.phase = TransitionPhase::Completed;
+            finishMixing();  // B segue do FIFO, já sem o silêncio inicial
+            continue;
+          }
           // Sem região: A acabou antes de B chegar (o marcador veio depois de A
           // tocar). Troca normal, e o trace termina com o motivo em vez de
           // continuar "armado".

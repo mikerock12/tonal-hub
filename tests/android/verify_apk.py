@@ -31,6 +31,8 @@ with apk.open('rb') as raw, zipfile.ZipFile(apk) as archive:
         # 0.15.2+: ARM64 also carries the guarded accelerated reader backend.
         if args.stories and abi=="arm64-v8a":expected.add("libtonal_story_fast.so")
         assert not any(n.endswith(".gguf") for n in names), "Model weights must remain optional"
+        # 0.18.0: the Qwen reader was removed; stale build outputs must not ship.
+        if not args.stories:assert not any("libtonal_story" in n for n in libraries), "Removed reader library still packaged"
         assert {Path(n).name for n in libraries} == expected
         results = {}
         for name in libraries:

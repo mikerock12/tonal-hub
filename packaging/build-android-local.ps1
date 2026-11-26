@@ -32,11 +32,12 @@ if(-not $SkipNative){
 }
 if($NativeOnly){return}
 & (Join-Path $PSScriptRoot "build-muse-android.ps1")
-& (Join-Path $PSScriptRoot "build-stories-local.ps1") -Android
 if(-not $SkipAudio){
     & (Join-Path $PSScriptRoot 'build-android-audio-local.ps1')
 }
 foreach($abi in @('x86_64','arm64-v8a')){
+    # 0.18.0 removeu o leitor Qwen: bibliotecas antigas de build não podem voltar ao APK.
+    foreach($stale in @('libtonal_story.so','libtonal_story_fast.so')){Remove-Item -LiteralPath (Join-Path $root "android\app\src\main\jniLibs\$abi\$stale") -Force -ErrorAction SilentlyContinue}
     if(-not(Test-Path -LiteralPath (Join-Path $root "android\app\src\main\jniLibs\$abi\libtonal_android.so"))){
         throw "Biblioteca nativa $abi ausente. Execute novamente sem -SkipNative."
     }
@@ -44,7 +45,8 @@ foreach($abi in @('x86_64','arm64-v8a')){
 [IO.File]::WriteAllText((Join-Path $root 'android\local.properties'),"sdk.dir=$($sdkPath.Replace('\','/').Replace(':','\:'))`n",[Text.Encoding]::ASCII)
 $gradlePath=Join-Path $env:USERPROFILE '.gradle\wrapper\dists\gradle-8.14.3-all\10utluxaxniiv4wxiphsi49nj\gradle-8.14.3\bin\gradle.bat'
 $assets=Join-Path $root 'android/app/src/main/assets'
-Copy-Item -LiteralPath (Join-Path $root 'packaging/licenses/llama.cpp-MIT.txt'),(Join-Path $root 'packaging/licenses/Qwen-Apache-2.0.txt') -Destination (Join-Path $assets 'licenses') -Force
+Copy-Item -LiteralPath (Join-Path $root 'docs/LIBRARY_POPULARITY_SILENCE_0180.md') -Destination (Join-Path $assets 'LIBRARY_POPULARITY_SILENCE_0180.md') -Force
+
 Copy-Item -LiteralPath (Join-Path $root 'docs/SONG_PAGES_SHARE_SETLISTS_0140.md') -Destination (Join-Path $assets 'SONG_PAGES_SHARE_SETLISTS_0140.md') -Force
 Copy-Item -LiteralPath (Join-Path $root 'docs/NATAL_PLAYER_0157.md') -Destination (Join-Path $assets 'NATAL_PLAYER_0157.md') -Force
 Copy-Item -LiteralPath (Join-Path $root 'docs/TEXT_REVIEW_0158.md') -Destination (Join-Path $assets 'TEXT_REVIEW_0158.md') -Force
@@ -66,6 +68,6 @@ if($PhoneOnly){$gradleArgs+='-PtonalAbi=arm64-v8a'}
 if($LASTEXITCODE -ne 0){throw 'Build APK falhou'}
 $outputPath=Join-Path $root 'out\android'
 New-Item -ItemType Directory -Force $outputPath | Out-Null
-$apkName=if($PhoneOnly){'Tonal-Android-0.17.8-arm64-v8a.apk'}else{'Tonal-Android-0.17.8-local.apk'}
+$apkName=if($PhoneOnly){'Tonal-Android-0.18.0-arm64-v8a.apk'}else{'Tonal-Android-0.18.0-local.apk'}
 Copy-Item -LiteralPath (Join-Path $root 'android\app\build\outputs\apk\release\app-release.apk') -Destination (Join-Path $outputPath $apkName) -Force
 Write-Host "APK local: $outputPath\$apkName"

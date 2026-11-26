@@ -17,6 +17,11 @@ Flickable {
     property string imageUrl
     property string uri
     property string genres
+    property int followers: -1
+    property int monthlyListeners: -1
+    property int worldRank: -1
+    property var cities: []
+    property int popularity: -1
     property var popular: []
     property var releases: []
     property var releaseNext: ({})   // próxima página de cada tipo ("album" | "single" | "compilation")
@@ -28,6 +33,25 @@ Flickable {
     property bool following: false
     property color tint: "#404040"
     property int serial: 0
+
+    Connections {
+        target: App.jam || null
+        ignoreUnknownSignals: true
+        function onArtistStatsReady(id, stats) {
+            if (id !== root.artistId) return
+            root.monthlyListeners = stats.monthlyListeners !== undefined && stats.monthlyListeners !== null ? stats.monthlyListeners : -1
+            root.worldRank = stats.worldRank !== undefined && stats.worldRank !== null ? stats.worldRank : -1
+            root.cities = stats.cities || []
+            if (stats.followers !== undefined && stats.followers !== null) root.followers = stats.followers
+            const counts = stats.playCounts || ({})
+            root.popular = root.popular.map(t => Object.assign({}, t, { playCount: counts[t.uri] !== undefined ? counts[t.uri] : -1 }))
+            const order = stats.topTracks || []
+            if (order.length > 0) root.popular = root.popular.slice().sort((a, b) => {
+                const ai = order.indexOf(a.uri), bi = order.indexOf(b.uri)
+                return (ai < 0 ? 999 : ai) - (bi < 0 ? 999 : bi)
+            })
+        }
+    }
 
     readonly property bool isCurrentContext: uri !== "" && App.player.contextUri === uri
 
@@ -47,7 +71,7 @@ Flickable {
         // Rotas de outro tipo podem chegar aqui durante a troca de página (ver CollectionPage.load).
         if (!route || route.page !== "artist" || artistId === "") return
         contentY = 0
-        name = ""; imageUrl = ""; uri = ""; genres = ""; popular = []; releases = []; releaseNext = ({}); releaseStatus = ({}); releaseErrors = ({})
+        name = ""; imageUrl = ""; uri = ""; genres = ""; followers = -1; monthlyListeners = -1; worldRank = -1; cities = []; popularity = -1; popular = []; releases = []; releaseNext = ({}); releaseStatus = ({}); releaseErrors = ({})
         showAllPopular = false; showAllReleases = false; following = false; tint = "#404040"
         releaseFilter = "album"   // o filtro do artista anterior não vale para este
 
@@ -57,9 +81,14 @@ Flickable {
             root.uri = a.uri
             root.imageUrl = Theme.bestImage(a.images, 640)
             root.genres = (a.genres || []).slice(0, 3).join(", ")
+            root.followers = a.followers && a.followers.total !== undefined ? a.followers.total : -1
+            root.popularity = a.popularity !== undefined ? a.popularity : -1
             if (root.imageUrl) App.dominantColor(Theme.bestImage(a.images, 64), function(c) { root.tint = c })
             root.loadPopular(s)
         })
+
+        // Estatísticas públicas são opcionais: sem o componente nativo, a página segue com a Web API.
+        if (App.jam && typeof App.jam.artistStats === "function") App.jam.artistStats(artistId)
 
         // Other categories are loaded only when selected; revisits use the API cache.
         loadReleaseGroup("album")
@@ -139,7 +168,7 @@ Flickable {
                 .filter(t => t && t.artists.some(a => a.id === root.artistId))
                 .map(t => ({ uri: t.uri, name: t.name, artists: t.artists, artistsText: Theme.joinNames(t.artists),
                              album: t.album.name, albumId: t.album.id, coverUrl: Theme.bestImage(t.album.images, 64),
-                             durationMs: t.duration_ms, explicit: t.explicit }))
+                             durationMs: t.duration_ms, explicit: t.explicit, popularity: t.popularity !== undefined ? t.popularity : -1 }))
         })
     }
 
@@ -186,6 +215,19 @@ Flickable {
                 text: root.genres !== "" ? root.genres : qsTr("Artista")
                 color: Theme.textPrimary
                 font.pixelSize: 14
+            }
+            Label {
+                visible: root.followers >= 0 || root.monthlyListeners >= 0 || root.worldRank >= 0 || root.popularity >= 0
+                width: parent.width
+                text: [
+                    root.followers >= 0 ? root.followers.toLocaleString() + qsTr(" seguidores") : "",
+                    root.monthlyListeners >= 0 ? root.monthlyListeners.toLocaleString() + qsTr(" ouvintes mensais") : "",
+                    root.worldRank >= 0 ? "#" + root.worldRank + qsTr(" no mundo") : "",
+                    root.popularity >= 0 ? qsTr("Popularidade %1/100").arg(root.popularity) : ""
+                ].filter(p => p !== "").join(" • ")
+                color: Theme.textPrimary
+                font.pixelSize: 14
+                elide: Text.ElideRight
             }
             Label {
                 width: parent.width
@@ -254,6 +296,16 @@ Flickable {
         }
 
         Row{spacing:12;Button{text:root.showListening?"Ocultar estatísticas":"Estatísticas";onClicked:root.showListening=!root.showListening}Button{visible:root.showListening;text:{root.journalRevision;const s=App.music.summary("artist",root.name);return(s.plays||0)+" escutas · "+((s.ms||0)/60000).toFixed(1)+" min · "+(s.tracks||0)+" músicas"}onClicked:{listeningDetail.report=App.music.statistics(180,"artists").rows.find(r=>r.label===root.name)||{};listeningDetail.open()}}}
+        Column {
+            visible: root.cities.length > 0
+            width: parent.width
+            spacing: 5
+            Label { text: qsTr("Ouvintes por cidade • página pública do Spotify"); color: Theme.textPrimary; font.bold: true }
+            Repeater {
+                model: root.cities
+                Label { required property var modelData; text: modelData.city + ", " + modelData.country + " • " + Number(modelData.listeners).toLocaleString() + qsTr(" ouvintes"); color: Theme.textSecondary }
+            }
+        }
         // Populares
         Column {
             visible: root.popular.length > 0
@@ -275,6 +327,7 @@ Flickable {
                     album: modelData.album
                     coverUrl: modelData.coverUrl
                     durationMs: modelData.durationMs
+                    catalogStats: modelData.playCount >= 0 ? Number(modelData.playCount).toLocaleString() + qsTr(" reproduções no Spotify") : (modelData.popularity >= 0 ? qsTr("Popularidade %1/100").arg(modelData.popularity) : "")
                     explicitContent: !!modelData.explicit
                     showAlbum: false
                     isCurrent: App.player.trackUri === modelData.uri

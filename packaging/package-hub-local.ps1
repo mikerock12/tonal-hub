@@ -1,13 +1,13 @@
-param([switch]$Zip,[ValidatePattern('^[A-Za-z0-9._-]+$')][string]$PackageName='Tonal-Hub-0.17.8-local')
+param([switch]$Zip,[ValidatePattern('^[A-Za-z0-9._-]+$')][string]$PackageName='Tonal-Hub-0.18.0-local')
 $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot -Parent
 $build=Join-Path $root 'out\build\release'
 $stage=Join-Path $root ('out\release-local\'+$PackageName)
-foreach($name in @('TonalHub.exe','IndieTonal.exe','Tonal.exe','TonalStories.exe','TonalJam.exe','librespot.exe')){
+foreach($name in @('TonalHub.exe','IndieTonal.exe','Tonal.exe','TonalJam.exe','librespot.exe')){
     if(-not (Test-Path -LiteralPath (Join-Path $build $name))){throw "Compile primeiro: falta $name"}
 }
 New-Item -ItemType Directory -Force -Path $stage | Out-Null
-Get-ChildItem -LiteralPath $build -File | Where-Object { $_.Extension -eq '.dll' -or $_.Name -in @('TonalHub.exe','IndieTonal.exe','TonalStories.exe','TonalJam.exe','librespot.exe') } | Copy-Item -Destination $stage -Force
+Get-ChildItem -LiteralPath $build -File | Where-Object { $_.Extension -eq '.dll' -or $_.Name -in @('TonalHub.exe','IndieTonal.exe','TonalJam.exe','librespot.exe') } | Copy-Item -Destination $stage -Force
 Copy-Item -LiteralPath (Join-Path $build 'Tonal.exe') -Destination (Join-Path $stage 'Tonalify.exe') -Force
 # WebP comes from the optional qtimageformats module; without it the Christmas theme is blank.
 if(-not (Test-Path -LiteralPath (Join-Path $build 'imageformats\qwebp.dll'))){throw 'Falta imageformats\qwebp.dll (módulo qtimageformats do Qt)'}
@@ -31,7 +31,7 @@ Copy-Item -LiteralPath (Join-Path $root 'LICENSE') -Destination (Join-Path $stag
 Copy-Item -LiteralPath (Join-Path $root 'CREDITS.md') -Destination $stage -Force
 Copy-Item -LiteralPath (Join-Path $root 'third_party/PLAYLISTSPOTIFY-PORT.md') -Destination (Join-Path $stage 'licenses/PLAYLISTSPOTIFY-PORT.md') -Force
 Copy-Item -LiteralPath (Join-Path $root 'native/jam-transport/LICENSE') -Destination (Join-Path $stage 'licenses/JAM-TRANSPORT-LICENSE.txt') -Force
-foreach($docName in @('WINDOWS_GRAPHICS_0172.md','TRANSITIONS_0170.md','COLLECTIONS_ROUTING_01512.md','CATALOG_RATE_LIMITS.md','TEXT_REVIEW_0158.md','NATAL_PLAYER_0157.md','HALLOWEEN.md','READER_RESUME_0152.md','HOME_QUEUE_AUDIO_0151.md','LOCAL_STORIES_QUALITY_0151.md','JAM_RESEARCH.md')){Copy-Item -LiteralPath (Join-Path $root ('docs/'+$docName)) -Destination $stage -Force}
+foreach($docName in @('LIBRARY_POPULARITY_SILENCE_0180.md','WINDOWS_GRAPHICS_0172.md','TRANSITIONS_0170.md','COLLECTIONS_ROUTING_01512.md','CATALOG_RATE_LIMITS.md','TEXT_REVIEW_0158.md','NATAL_PLAYER_0157.md','HALLOWEEN.md','READER_RESUME_0152.md','HOME_QUEUE_AUDIO_0151.md','LOCAL_STORIES_QUALITY_0151.md','JAM_RESEARCH.md')){Copy-Item -LiteralPath (Join-Path $root ('docs/'+$docName)) -Destination $stage -Force}
 foreach($docName in @('STATISTICS_STORIES_0150.md','VOLUME_WINDOWS_0141.md','SONG_PAGES_SHARE_SETLISTS_0140.md','PERSONAL_LIBRARY_050.md','RARE_RECORDINGS_LOCAL.md','WINDOWS_INSTALLER_LOCAL.md','SONG_PAGE_060.md','TONAL_MUSE_070.md','PLAYER_POLISH_080.md')){Copy-Item -LiteralPath (Join-Path $root ('docs/'+$docName)) -Destination $stage -Force}
 & (Join-Path $PSScriptRoot 'collect-audio-notices.ps1') -Destination (Join-Path $stage 'licenses\audio')
 Copy-Item -LiteralPath (Join-Path $root 'docs\TONAL_HUB_LOCAL.md') -Destination $stage -Force

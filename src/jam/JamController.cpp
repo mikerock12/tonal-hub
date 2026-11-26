@@ -10,6 +10,7 @@
 #include <QFileInfo>
 #include <QGuiApplication>
 #include <QJsonDocument>
+#include <QRegularExpression>
 #include <QUrl>
 #include <QClipboard>
 
@@ -40,7 +41,7 @@ void JamController::request(QJsonObject command){
     m_idle.stop();
     if(!m_engine->nativeLoginAvailable()){m_status="Entre no motor Spotify antes de usar o Jam.";emit changed();return;}
     m_op=command.value("op").toString();
-    if(m_op!="current"&&m_op!="leave"){
+    if(m_op!="current"&&m_op!="leave"&&m_op!="artistStats"){
         const auto id=m_player->localDeviceId();if(!tonal::jam::atom(id,20,128)){m_status="Inicie o motor Tonalify deste PC para usar o Jam.";emit changed();return;}command["device"]=id;
     }
     m_command=QJsonDocument(command).toJson(QJsonDocument::Compact)+'\n';m_busy=true;m_status="Consultando Jam…";emit changed();m_timeout.start(45000);
@@ -54,6 +55,7 @@ void JamController::autoCheck(){
     m_lastAutoCheck=now;refresh();
 }
 void JamController::start(){request({{"op","start"}});}
+void JamController::artistStats(const QString &artistId){if(!m_busy&&QRegularExpression("^[A-Za-z0-9]{22}$").match(artistId).hasMatch()){m_artistStatsId=artistId;request({{"op","artistStats"},{"uri","spotify:artist:"+artistId}});}}
 void JamController::copyInvite(){const auto link=m_session.value("link").toString();if(!link.isEmpty()){QGuiApplication::clipboard()->setText(link);emit notice("Convite do Jam copiado. Cole o link para seus amigos.");}}
 void JamController::join(const QString &value){
     QString token=value.trimmed();const QUrl u(token);
@@ -65,6 +67,7 @@ void JamController::join(const QString &value){
 void JamController::leave(){request({{"op",m_session.value("host").toBool()?"end":"leave"},{"session",m_session.value("id").toString()}});}
 void JamController::response(const QJsonObject &reply){
     if(!m_busy)return;m_timeout.stop();m_busy=false;const auto op=m_op;const int code=reply.value("status").toInt();
+    if(op=="artistStats"){if(code>=200&&code<300)emit artistStatsReady(m_artistStatsId,reply.value("result").toObject().toVariantMap());else emit artistStatsFailed(m_artistStatsId,code);m_idle.start();return;}
     if(code==404&&op=="current"){++m_epoch;m_session.clear();m_queueBaseline=false;m_status="Nenhum Jam ativo nesta conta.";m_poll.stop();m_idle.start();emit changed();return;}
     if(code<200||code>=300){m_cooldownUntil=QDateTime::currentMSecsSinceEpoch()+(code==429?60000:code==503?15000:5000);m_status=QString("Jam indisponível nesta sessão (HTTP %1). O protocolo experimental pode variar.").arg(code);m_poll.stop();m_idle.start();emit changed();return;}
     if(op=="leave"||op=="end"){++m_epoch;m_session.clear();m_poll.stop();m_queueBaseline=false;m_status="Você saiu do Jam.";m_idle.start();emit changed();return;}

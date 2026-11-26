@@ -19,7 +19,7 @@ final class SpotifyClient {
     static final String ENGINE_REDIRECT="http://127.0.0.1:5588/login";
     static final String ENGINE_SCOPES="streaming user-read-playback-state user-modify-playback-state user-read-currently-playing";
     static final String ENGINE_CACHE="librespot-oauth-v2";
-    static final String SCOPES="streaming user-read-private user-read-playback-state user-modify-playback-state user-read-currently-playing user-library-read user-library-modify playlist-modify-private playlist-modify-public playlist-read-private playlist-read-collaborative user-read-recently-played user-top-read user-follow-read ugc-image-upload";
+    static final String SCOPES="streaming user-read-private user-read-playback-state user-modify-playback-state user-read-currently-playing user-library-read user-library-modify playlist-modify-private playlist-modify-public playlist-read-private playlist-read-collaborative user-read-recently-played user-top-read user-follow-read user-follow-modify ugc-image-upload";
     final ExecutorService worker=Executors.newFixedThreadPool(2);
     private final Activity activity;
     private volatile boolean closed;

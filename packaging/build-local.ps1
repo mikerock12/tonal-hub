@@ -27,7 +27,7 @@ try {
     $rebuild=if($repair -eq 10){@("--clean-first")}else{@()}
     cmake --build --preset release --parallel 4 @rebuild
     Check 'Build'
-    & (Join-Path $PSScriptRoot 'build-stories-local.ps1')
+
     $build=Join-Path $projectRoot 'out\build\release'
     & (Join-Path $tools 'Scripts/python.exe') -X utf8 (Join-Path $PSScriptRoot 'prepare-librespot-windows.py')
     Check 'Fontes do librespot'

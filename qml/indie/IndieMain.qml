@@ -171,6 +171,13 @@ ApplicationWindow {
                         Label { text: modelData.artist || ({artist:"Artista",album:"Álbum",track:"Música",show:"Show",playlist:"Playlist",release:"Edição"})[modelData.kind] || "Gravação"; textFormat: Text.PlainText; color: "#afbeca"; elide: Text.ElideRight; Layout.fillWidth: true }
                         Label { text: modelData.provider + " • " + (modelData.detail || ""); textFormat: Text.PlainText; color: "#67cddd"; font.pixelSize: 11; elide: Text.ElideRight; Layout.fillWidth: true }
                     }
+                    Personal.ActionIcon {
+                        symbol: "heart"
+                        visible: ["artist", "album", "playlist"].indexOf(modelData.kind) >= 0
+                        filled: { window.musicRevision; return music.collectionLiked(modelData) }
+                        description: modelData.kind === "artist" ? (filled ? "Deixar de seguir neste aparelho" : "Seguir neste aparelho") : (filled ? "Remover dos favoritos deste aparelho" : "Favoritar neste aparelho")
+                        onClicked: music.favoriteCollection(modelData)
+                    }
                     Button { visible: modelData.kind !== "track"; text: modelData.kind === "artist" ? "Ver músicas / álbuns" : "Ver faixas / edições"; onClicked: catalog.open(modelData) }
                     Button { visible: modelData.playable === true; text: "Reproduzir"; onClicked: window.playItem(modelData) }
                     Personal.ActionIcon {symbol:"heart";filled:{window.musicRevision;return music.liked(modelData)} description:filled?"Remover das favoritas":"Favoritar música";visible:modelData.playable===true; onClicked: music.favorite(modelData) }

@@ -84,6 +84,7 @@ Player::Player(SpotifyApi *api, LibrespotProcess *librespot, AuthManager *auth,
   {
     QSettings settings;
     m_transitionsEnabled = settings.value(QStringLiteral("transitions/enabled"), false).toBool();
+    m_trimSilenceEnabled = settings.value(QStringLiteral("transitions/trimSilence"), false).toBool();
     const auto effect = settings.value(QStringLiteral("transitions/effect"), QStringLiteral("random")).toString();
     if (effect == QLatin1String("random") ||
         tonal::playback::transitionEffectFromId(effect.toStdString()) != tonal::playback::TransitionEffect::Count)
@@ -227,6 +228,16 @@ void Player::setTransitionsEnabled(bool enabled) {
   emit transitionsChanged();
 }
 
+void Player::setTrimSilenceEnabled(bool enabled) {
+  if (enabled == m_trimSilenceEnabled)
+    return;
+  m_trimSilenceEnabled = enabled;
+  QSettings().setValue(QStringLiteral("transitions/trimSilence"), enabled);
+  cancelTransition();
+  m_transitionStatus.clear();
+  emit transitionsChanged();
+}
+
 void Player::setTransitionEffect(const QString &effect) {
   if (effect == m_transitionEffect ||
       (effect != QLatin1String("random") &&
@@ -293,7 +304,12 @@ void Player::updateTransitionResult() {
     return;
   m_transitionShown = request;
   m_transitionRequest = 0;
-  if (phase == QLatin1String("completed") && trace.value("overlapVerified").toBool()) {
+  if (phase == QLatin1String("completed") && !trace.value("overlapVerified").toBool() &&
+      (trace.value("trimmedA").toLongLong() > 0 || trace.value("trimmedB").toLongLong() > 0)) {
+    m_transitionStatus = tr("Silêncio removido: %1 s no fim e %2 s no começo")
+                             .arg(trace.value("trimmedA").toLongLong() / 1000.0, 0, 'f', 1)
+                             .arg(trace.value("trimmedB").toLongLong() / 1000.0, 0, 'f', 1);
+  } else if (phase == QLatin1String("completed") && trace.value("overlapVerified").toBool()) {
     const auto id = QString::fromLatin1(
         tonal::playback::transitionEffectId(tonal::playback::TransitionEffect(trace.value("effect").toInt())).data());
     for (const auto &entry : transitionEffects())
@@ -314,7 +330,7 @@ void Player::updateTransitionResult() {
 
 void Player::maybeArmTransition() {
   updateTransitionResult();
-  if (!m_transitionsEnabled || !m_audio || localPlayback() || !m_isPlaying ||
+  if ((!m_transitionsEnabled && !m_trimSilenceEnabled) || !m_audio || localPlayback() || !m_isPlaying ||
       !playingHere() || m_trackUri.isEmpty() || m_durationMs <= 0 ||
       m_repeatWanted == QLatin1String("track") || !m_audio->spotifyPipeActive() || m_transitionRequest)
     return;
@@ -345,16 +361,19 @@ void Player::maybeArmTransition() {
   const bool exact = engine >= 0 && engine <= m_durationMs + 2000;
   const int upcoming = qMax(0, m_durationMs - (exact ? engine : positionMs()));
   const int audible = upcoming + m_audio->transitionLatencyMs();
-  const auto plan = tonal::playback::planTransition(m_transitionSeconds, m_transitionIntroSeconds, m_durationMs,
-                                                    audible, upcoming);
+  const auto plan = m_transitionsEnabled
+      ? tonal::playback::planTransition(m_transitionSeconds, m_transitionIntroSeconds, m_durationMs, audible, upcoming)
+      : tonal::playback::planSilenceTrim(m_durationMs, audible, upcoming);
   if (!plan.arm)
     return;
-  auto effect = tonal::playback::transitionEffectFromId(m_transitionEffect.toStdString());
+  auto effect = m_transitionsEnabled
+      ? tonal::playback::transitionEffectFromId(m_transitionEffect.toStdString())
+      : tonal::playback::TransitionEffect::Fade;
   if (effect == tonal::playback::TransitionEffect::Count)
     effect = tonal::playback::pickRandomTransition(
         tonal::playback::TransitionEffect(m_lastTransition < 0 ? int(tonal::playback::TransitionEffect::Count) : m_lastTransition),
         QRandomGenerator::global()->generate());
-  const auto request = m_audio->armTransition(int(effect), int(plan.upcomingMs), int(plan.outroMs), int(plan.introMs));
+  const auto request = m_audio->armTransition(int(effect), int(plan.upcomingMs), int(plan.outroMs), int(plan.introMs), m_trimSilenceEnabled);
   if (!request)
     return;
   m_transitionArmedUri = m_trackUri;

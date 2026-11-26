@@ -32,12 +32,11 @@ Audius, Internet Archive, Live Music Archive, a coleção Aadam Jacobs,
 MusicBrainz, Jamendo e bibliotecas OpenSubsonic mantêm a identificação de suas
 fontes. Gravações e metadados pertencem aos respectivos autores e titulares.
 
-## Leitor opcional de letras (0.15.0)
+## Resumo local por regras
 
-**Qwen Team / Alibaba Cloud**: Qwen2.5-0.5B-Instruct GGUF Q4_K_M, Apache 2.0,
-sem ajuste fino neste fork. **ggml-org e contribuidores**: llama.cpp/ggml, MIT.
-Detalhes e licenças em [third_party/LOCAL-STORIES.md](third_party/LOCAL-STORIES.md).
-O TonalMuse Tiny sintético permanece identificado separadamente.
+O resumo de gêneros e clima usa regras e metadados da biblioteca, sem LLM,
+runtime de inferência ou pesos externos. O TonalMuse Tiny sintético permanece
+identificado separadamente; não interpreta saúde ou humor do usuário.
 
 ## Animação do tema Natal
 

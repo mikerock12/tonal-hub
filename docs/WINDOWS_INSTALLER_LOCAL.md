@@ -1,11 +1,11 @@
 # Instalador Windows
 
-## Atualização 0.15.1
+## Atualização 0.18.0
 
-Instalador atual: `Tonal-Hub-0.15.1.0-Windows-x64-Setup.exe`, em
+Instalador atual: `Tonal-Hub-0.18.0.0-Windows-x64-Setup.exe`, em
 `out/release-local/`. Contém Tonalify, IndieTonal e Hub, Qt, motor de áudio,
-auxiliares nativos opcionais TonalStories e TonalJam, e licenças. Pesos do leitor
-não estão embutidos: o download de cerca de 1,2 GiB é opcional e verificado pelo app.
+TonalJam e licenças. O leitor Qwen e o helper TonalStories foram removidos;
+o resumo local por regras não exige downloads.
 
 Instale por usuário, sem administrador, e feche a versão antiga antes de atualizar.
 A atualização mantém o AppId e os dados pessoais fora da pasta dos executáveis.
