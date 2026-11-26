@@ -21,5 +21,10 @@
   "Seguir artista/favoritar coleção com escrita real na conta não executado nesta validação.",
   "Pesos Qwen no telefone físico são removidos ao abrir a versão nova; nenhum aparelho estava conectado para confirmar."
  ],
- "toolsInstalled": "Nenhum aplicativo ou ferramenta adicional instalado/baixado; g++ não foi instalado porque o MSVC existente em D:\\Dev\\VisualStudio2022 bastou."
+ "toolsInstalled": "Nenhum aplicativo ou ferramenta adicional instalado/baixado; g++ não foi instalado porque o MSVC existente em D:\\Dev\\VisualStudio2022 bastou.",
+ "publication": {
+  "app": "PR72 merge bca01f70706c5b3218d847ea6356022d3a25d9ab; CI 4/4 (android-components, android-java, native-jam-transport, personal-library); release v0.18.0 com quatro assets + SHA256SUMS.txt, digests remotos iguais",
+  "portal": "PR88 merge 27ac80ffc06dcca4f96a9b58acb941b3cb065d86; primeiro deploy recusado (Cloudflare 10001, login OAuth do wrangler inválido); após o usuário renovar o login, Worker 534e0934-45b1-48cc-8998-0422a23aa8da com verify 62/62/build. Produção: catálogo com a nota 0.18.0 e sem o alerta do leitor, APIs Windows/APK v0.18.0 com nomes, SHA-256 e notas, downloads 302 para os assets exatos, páginas 200 e privado 401. Registro: PR89 merge 89661ba",
+  "privateBackup": "https://drive.google.com/drive/folders/1Nx2lz-4vLZmP5QpWJcUYEohVw5lKY6WF; 31 arquivos/179.821.749 bytes em partes de 7 MB; remontagem, bundle e CRC verificados localmente; tamanhos remotos iguais; somente proprietário; hash remoto não fornecido"
+ }
 }
