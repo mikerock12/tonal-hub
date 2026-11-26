@@ -8,6 +8,7 @@ Item {
     property bool showStats:false
     property string statisticKey:""
     property var listening:({})
+    property string catalogStats: ""
     property int number: 1
     property string title
     property string artists
@@ -40,7 +41,7 @@ Item {
     signal albumClicked()
     signal favoriteRequested()
 
-    implicitHeight: showStats ? 74 : 56
+    implicitHeight: showStats || catalogStats !== "" ? 74 : 56
     readonly property bool hovered: hover.hovered
     readonly property real albumWidth: showAlbum ? Math.max(0, (width - 48 - (showFavorite ? 112 : 76) - (showAdded ? 150 : 0)) * 0.38) : 0
     readonly property real addedWidth: showAdded && width > 820 ? 150 : 0
@@ -192,7 +193,14 @@ Item {
                     }
                 }
             }
-            Label{visible:root.showStats;text:(root.listening.plays || 0)+" escutas · "+((root.listening.ms || 0)/60000).toFixed(1)+" min";color:"#7ddbff";font.pixelSize:12}
+            Label {
+                visible: root.showStats || root.catalogStats !== ""
+                text: (root.showStats ? (root.listening.plays || 0)+" escutas · "+((root.listening.ms || 0)/60000).toFixed(1)+" min" : "") + (root.showStats && root.catalogStats !== "" ? " • " : "") + root.catalogStats
+                color: "#7ddbff"
+                font.pixelSize: 12
+                elide: Text.ElideRight
+                width: parent.width
+            }
         }
     }
 

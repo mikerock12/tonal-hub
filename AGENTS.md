@@ -5,7 +5,7 @@ afetada antes de alterar o produto. Estado documental: 25/10/2026, builds Window
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
-Estado atual: 23/11/2026, Windows 0.17.8 e Android 0.17.8, versionCode 49 (ver seção da auditoria TH-006/TH-009 ao final). As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
+Estado atual: 26/11/2026, Windows 0.18.0 e Android 0.18.0, versionCode 50 (ver seção da auditoria TH-006/TH-009 ao final). As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
 
 ## Autoria, Git e privacidade
 
@@ -639,3 +639,25 @@ docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no
 - Windows: o evento tipado limpa saída, DSP e mixer, mas não esvazia o pipe (`commandFlush` só para pedidos do Player). Fim natural da fila = `NaturalStop`, sem `UserStop`; o vigia trata `command=NaturalStop` como reprodução encerrada.
 - Pendente: Spotify real no Android, aparelho físico, rotas/BT, CPU/GC e ciclos de AudioTrack. Não declarar aceite ponta a ponta.
 - Entrega 0.17.8 (23/11/2026): PR70 merge `7f018e9f543bac32513ac16f3f40b8054264b99a` (CI 5/5 + visual), release v0.17.8 com Windows e APKs (versionCode 49), portal PR85 merge `f0a03ea` (Worker `87a07c0b-5790-467b-8bc2-1e50801b9f0a`), backup privado `1ZuDEpXy3a3p9b3X2KfYofldtxCfDqrpL` (33 arquivos, partes de 7 MB). Evidências: docs/release-0178-tests.json e docs/artifacts-0178.json. Commits documentais posteriores não significam rebuild.
+
+
+## Biblioteca, popularidade, resumo local e silêncio — 0.18.0 (26/11/2026)
+
+- Ler docs/LIBRARY_POPULARITY_SILENCE_0180.md. Spotify segue artistas e salva
+  álbuns/playlists por `/me/library`; Android pede `user-follow-modify` e pode
+  exigir nova autorização. IndieTonal guarda até 500 coleções favoritas locais
+  em `collectionFavorites`, validadas no backup, sem sincronizar plataformas.
+- Web API não fornece plays/ouvintes mensais. A sessão nativa lê
+  `queryArtistOverview`: seguidores, ouvintes mensais, rank, plays populares e
+  cidades com **ouvintes**, não seguidores regionais. Falha mantém fallback e
+  nunca inventa números. Não há escrita nesse caminho; consulta pública pode mudar.
+- Nove ordenações temporárias, direção invertível, desconhecidos no fim e sem
+  reordenar a playlist salva. Plays globais só quando disponíveis; demais casos
+  identificam escutas locais. Spotify não informa favoritos totais de álbuns.
+- Qwen/llama.cpp/TonalStories/serviço :stories foram removidos. Resumo usa até 8
+  faixas, gêneros e climas já registrados, sem rede/modelo/pausa. A inicialização
+  apaga pesos e checkpoints antigos; preserva histórico, letras e TonalMuse Tiny.
+- `TransitionMixer` corta somente quadros estéreo exatamente 0,0 no fim de A e
+  começo de B, com ou sem crossfade; amplitude baixa não é silêncio. Trace grava
+  `trimmedA`/`trimmedB`. Não prometer corte por limiar ou teste acústico/físico.
+- Publicação e backup só devem ser registrados após evidência correspondente.

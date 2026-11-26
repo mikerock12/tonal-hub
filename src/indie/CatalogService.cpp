@@ -630,6 +630,14 @@ void CatalogService::audius(const QJsonObject &o, const QString &kind) {
                                       : "Acesso restrito / indisponível")
         : kind == "artist" ? "Artista / perfil • verifique a identidade"
                            : "Álbum / playlist";
+    i["followers"] = t["follower_count"].toInteger(-1);
+    i["playCount"] = t["play_count"].toInteger(-1);
+    i["favoriteCount"] = t["favorite_count"].toInteger(-1);
+    QStringList metrics;
+    if (i["followers"].toLongLong() >= 0) metrics << QStringLiteral("%1 seguidores").arg(i["followers"].toLongLong());
+    if (i["playCount"].toLongLong() >= 0) metrics << QStringLiteral("%1 plays").arg(i["playCount"].toLongLong());
+    if (i["favoriteCount"].toLongLong() >= 0) metrics << QStringLiteral("%1 favoritos").arg(i["favoriteCount"].toLongLong());
+    if (!metrics.isEmpty()) i["detail"] = i["detail"].toString() + " • " + metrics.join(" • ");
     QString permalink = t["permalink"].toString();
     if (permalink.startsWith("/"))
       permalink = "https://audius.co" + permalink;

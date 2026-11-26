@@ -1,0 +1,23 @@
+{
+ "version": "0.18.0",
+ "date": "2026-11-26",
+ "androidVersionCode": 50,
+ "report": "Usuário pediu seguir artistas e favoritar coleções, popularidade/plays/ouvintes mensais, filtros de playlist, remover o leitor Qwen por um resumo sem modelo e tirar silêncio entre faixas.",
+ "validation": {
+  "rustJamTransport": "2/2 (allowlist de endpoints e normalização pública das estatísticas)",
+  "transitionCore": "PASS MSVC: efeitos existentes + corte independente exato e corte com crossfade; amostras de amplitude 0,0002 preservadas; zero real inicial de B também removido",
+  "windowsCtest": "12/12 em série. Uma execução paralela (-j2) falhou em audio_integration 'no output underrun while reading ahead, waiting for B and mixing'; repetido isolado 2/2 e na suíte em série, sem mudança de código. Causa não estabelecida; registrada como intermitente sob carga.",
+  "companionCtest": "7/7, incluindo history_stories (resumo por regras, backup de coleções favoritas, remoção de pesos antigos)",
+  "qml": "lyrics 7/7, playlist 4/4, mix 35/35, temas 8 temas/267 checagens, Halloween e Natal visuais PASS",
+  "qmlRegressionsFixed": "mix 30/35 antes: chamada App.jam sem componente nativo interrompia a discografia, a ordenação sobrepunha o botão de nova tentativa sem faixas e o teste do leitor antigo exigia 'Continuar análise'",
+  "androidJava": "release, benchmark, comparison e automation compilados",
+  "realArtistStatsWindows": "TonalJam.exe com a sessão Spotify existente deste PC: queryArtistOverview HTTP 200 para um artista público, ouvintes mensais e posição mundial iguais aos exibidos pela página pública no navegador, cidades com ouvintes, 10 plays de faixas populares. Leitura apenas; nenhuma credencial no relatório."
+ },
+ "limits": [
+  "queryArtistOverview é consulta interna usada pelo cliente Spotify, não Web API documentada: pode mudar sem aviso; o app mantém fallback.",
+  "Sem Spotify real no Android, aparelho físico, Bluetooth/carro, acústica ou benchmark.",
+  "Seguir artista/favoritar coleção com escrita real na conta não executado nesta validação.",
+  "Pesos Qwen no telefone físico são removidos ao abrir a versão nova; nenhum aparelho estava conectado para confirmar."
+ ],
+ "toolsInstalled": "Nenhum aplicativo ou ferramenta adicional instalado/baixado; g++ não foi instalado porque o MSVC existente em D:\\Dev\\VisualStudio2022 bastou."
+}

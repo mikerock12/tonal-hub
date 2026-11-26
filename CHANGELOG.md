@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.18.0 — 26/11/2026 (biblioteca, estatísticas e silêncio)
+
+- Seguir artistas e favoritar álbuns/playlists no Spotify; coleções locais no IndieTonal incluídas no backup.
+- Seguidores, ouvintes mensais, plays e ouvintes por cidade quando disponíveis; contadores reais do Audius.
+- Nove ordenações temporárias de playlists, com direção invertível e sem escrita na ordem salva.
+- Resumo local de gêneros/clima sem LLM; pesos Qwen, helper, serviço e dependências de inferência removidos.
+- Botão para remover zeros digitais no fim da atual e começo da próxima, com ou sem crossfade.
+- Detalhes e limites: docs/LIBRARY_POPULARITY_SILENCE_0180.md.
+
 ## 0.17.8 — 23/11/2026 (auditoria TH-006/TH-009)
 
 - **Android:** corrige as transições sem efeito. Desde a 0.17.5 a fila entregava ao mixer só um pacote por bloco tocado. Com os pacotes reais do Spotify, a leitura adiantada não passava do tempo real e a mescla ficava vazia. A partir da segunda transição, armar descartava segundos da música atual. O atraso mostrado na tela (posição e letra) agora inclui o áudio guardado na fila.

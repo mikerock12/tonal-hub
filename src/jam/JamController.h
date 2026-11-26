@@ -22,8 +22,11 @@ public:
     Q_INVOKABLE void join(const QString &link);
     Q_INVOKABLE void leave();
     Q_INVOKABLE void copyInvite();
+    Q_INVOKABLE void artistStats(const QString &artistId);
 signals:
     void changed();
+    void artistStatsReady(const QString &artistId,const QVariantMap &stats);
+    void artistStatsFailed(const QString &artistId,int status);
     void notice(const QString &text);
     void queueCapacityExceeded(bool value);
 private:
@@ -37,7 +40,7 @@ private:
     Player *m_player;LibrespotProcess *m_engine;SpotifyApi *m_api;
     QProcess m_process;QTimer m_timeout,m_poll,m_idle;
     QByteArray m_buffer,m_command;
-    QVariantMap m_session;QString m_status="Jam experimental • amigos participam pelo Spotify",m_op;
+    QVariantMap m_session;QString m_status="Jam experimental • amigos participam pelo Spotify",m_op,m_artistStatsId;
     QString m_queueAnchor;QStringList m_queueUris;
     bool m_busy=false,m_queueBusy=false,m_queueBaseline=false;
     quint64 m_epoch=0;

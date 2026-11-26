@@ -16,6 +16,7 @@ import android.graphics.Typeface;
  */
 final class Transitions {
     static volatile boolean enabled;
+    static volatile boolean trimSilence;
     static volatile String effect="random";
     static volatile int seconds=6;      // fim da música atual com o efeito
     static volatile int introSeconds=6; // começo da próxima na mescla
@@ -30,6 +31,7 @@ final class Transitions {
 
     static void load(SharedPreferences prefs){
         enabled=prefs.getBoolean("transitionsEnabled",false);
+        trimSilence=prefs.getBoolean("trimSilence",false);
         String chosen=prefs.getString("transitionEffect","random");
         effect=chosen.equals("random")||TransitionNative.index(chosen)>=0?chosen:"random";
         seconds=Math.max(3,Math.min(10,prefs.getInt("transitionSeconds",6)));
@@ -38,10 +40,11 @@ final class Transitions {
     static void save(SharedPreferences prefs,boolean on,String chosen,int duration){save(prefs,on,chosen,duration,introSeconds);}
     static void save(SharedPreferences prefs,boolean on,String chosen,int duration,int intro){
         enabled=on;effect=chosen;seconds=Math.max(3,Math.min(10,duration));introSeconds=Math.max(3,Math.min(10,intro));
-        prefs.edit().putBoolean("transitionsEnabled",on).putString("transitionEffect",chosen).putInt("transitionSeconds",seconds).putInt("transitionIntroSeconds",introSeconds).apply();
-        if(!on)cancel();
+        prefs.edit().putBoolean("transitionsEnabled",on).putString("transitionEffect",chosen).putInt("transitionSeconds",seconds).putInt("transitionIntroSeconds",introSeconds).putBoolean("trimSilence",trimSilence).apply();
+        if(!on&&!trimSilence)cancel();
         status="";
     }
+    static boolean active(){return enabled||trimSilence;}
     static String name(String id){if(id.equals("random"))return "Aleatório";int i=TransitionNative.index(id);return i<0?id:TransitionNative.NAMES[i];}
 
     /** Chamado na thread principal quando o motor carrega uma faixa (TrackChanged). */
@@ -59,7 +62,9 @@ final class Transitions {
         if(phase!=TransitionNative.PHASE_COMPLETED&&phase!=TransitionNative.PHASE_ABORTED)return;
         shownId=armedId;
         int effect=(int)t[TransitionNative.T_EFFECT];
-        if(phase==TransitionNative.PHASE_COMPLETED&&TransitionNative.overlapVerified(t)&&effect>=0&&effect<TransitionNative.NAMES.length)
+        if(phase==TransitionNative.PHASE_COMPLETED&&!TransitionNative.overlapVerified(t)&&(t[TransitionNative.T_TRIMMED_A]>0||t[TransitionNative.T_TRIMMED_B]>0))
+            status=String.format(java.util.Locale.ROOT,"Silêncio removido: %.1f s no fim e %.1f s no começo",t[TransitionNative.T_TRIMMED_A]*1000.0/t[TransitionNative.T_RATE],t[TransitionNative.T_TRIMMED_B]*1000.0/t[TransitionNative.T_RATE]);
+        else if(phase==TransitionNative.PHASE_COMPLETED&&TransitionNative.overlapVerified(t)&&effect>=0&&effect<TransitionNative.NAMES.length)
             status="Última transição: "+TransitionNative.NAMES[effect];
         else if(t[TransitionNative.T_REASON]==TransitionNative.REASON_NEXT_NOT_PREPARED)
             status="Última troca sem efeito: a próxima música não chegou a tempo";
@@ -71,14 +76,14 @@ final class Transitions {
     static void onProgress(String uri,int position,boolean active,long eventAt){
         updateResult();
         boolean armed=NativeBridge.audio.markersSeen?occurrence()==armedSequence:uri.equals(armedUri);
-        if(!enabled||!TransitionNative.READY||!active||!uri.equals(trackUri)||durationMs<=0||armed||scheduled!=null)return;
+        if((!enabled&&!trimSilence)||!TransitionNative.READY||!active||!uri.equals(trackUri)||durationMs<=0||armed||scheduled!=null)return;
         if(NativeBridge.repeatMode==RepeatMode.TRACK||!NativeBridge.spotifyEngine)return;
         int state=NativeBridge.audio.transitionState();
         if(state==1||state==2)return;
         long now=SystemClock.elapsedRealtime();
         if(now<guardUntil)return;
-        long overlap=Math.min(Math.max(seconds,introSeconds)*1000L,durationMs/3);
-        if(overlap<1500)return;
+        long overlap=enabled?Math.min(Math.max(seconds,introSeconds)*1000L,durationMs/3):0;
+        if(enabled&&overlap<1500)return;
         // Posição do PCM já entregue; o som está atrás pelo atraso da anterior.
         long upcoming=remaining(durationMs,position,eventAt);
         long audible=upcoming+NativeBridge.audio.transitionLatencyMs();
@@ -92,14 +97,14 @@ final class Transitions {
     private static void arm(String uri,long duration,int position,long eventAt){
         synchronized(NativeBridge.intent){if(!NativeBridge.intent.desired)return;}
         boolean armed=NativeBridge.audio.markersSeen?occurrence()==armedSequence:uri.equals(armedUri);
-        if(!enabled||!uri.equals(trackUri)||armed||!NativeBridge.playing)return;
+        if((!enabled&&!trimSilence)||!uri.equals(trackUri)||armed||!NativeBridge.playing)return;
         long upcoming=remaining(duration,position,eventAt);
         long audible=upcoming+NativeBridge.audio.transitionLatencyMs();
-        long[] plan=TransitionNative.plan(seconds,introSeconds,duration,audible,Math.max(0,upcoming));
-        if(plan==null||plan.length<4||plan[0]==0)return;
-        int chosen=TransitionNative.index(effect);
+        long[] plan=enabled?TransitionNative.plan(seconds,introSeconds,duration,audible,Math.max(0,upcoming)):TransitionNative.planSilenceTrim(duration,audible,Math.max(0,upcoming));
+        if(plan==null||plan.length<(enabled?4:2)||plan[0]==0)return;
+        int chosen=enabled?TransitionNative.index(effect):0;
         if(chosen<0)chosen=TransitionNative.pickRandom(lastEffect<0?TransitionNative.IDS.length:lastEffect,(int)(Math.random()*Integer.MAX_VALUE));
-        long id=NativeBridge.audio.armTransition(chosen,plan[1],plan[2],plan[3]);
+        long id=enabled?NativeBridge.audio.armTransition(chosen,plan[1],plan[2],plan[3],trimSilence):NativeBridge.audio.armTransition(0,plan[1],0,0,true);
         if(id!=0){
             armedUri=uri;armedSequence=occurrence();armedId=id;lastEffect=chosen;
         }else guardUntil=SystemClock.elapsedRealtime()+1000;  // recusado: nova tentativa logo depois
@@ -123,6 +128,9 @@ final class Transitions {
         final boolean[] on={enabled};final String[] chosen={effect};final int[] length={seconds};final int[] intro={introSeconds};
         android.widget.Switch toggle=new android.widget.Switch(a);toggle.setText("Mesclar o fim de cada música com o começo da próxima");toggle.setTextColor(Ui.TEXT);toggle.setChecked(on[0]);toggle.setTag("transitions-enabled");
         body.addView(toggle);
+        android.widget.Switch silence=new android.widget.Switch(a);silence.setText("Tirar silêncio no final da faixa / começo da próxima");silence.setTextColor(Ui.TEXT);silence.setChecked(trimSilence);silence.setTag("trim-silence-enabled");body.addView(silence);
+        silence.setOnCheckedChangeListener((v,checked)->{trimSilence=checked;prefs.edit().putBoolean("trimSilence",checked).apply();cancel();status="";});
+        body.addView(ui.text("Remove somente quadros com os dois canais em zero digital. Funciona sozinha ou junto com as transições; volumes baixos não são cortados.",12,Ui.MUTED));
         body.addView(ui.title("Efeito",18));
         android.widget.RadioGroup group=new android.widget.RadioGroup(a);
         String[] ids=new String[TransitionNative.IDS.length+1];ids[0]="random";System.arraycopy(TransitionNative.IDS,0,ids,1,TransitionNative.IDS.length);

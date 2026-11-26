@@ -52,6 +52,19 @@ Dialog {
                 color: dialog.muted
                 text: qsTr("Mescla o fim de cada música com o começo da próxima, como um DJ.")
             }
+            Switch {
+                objectName: "trimSilenceEnabled"
+                text: qsTr("Tirar silêncio no final da faixa / começo da próxima")
+                checked: dialog.player.trimSilenceEnabled
+                onToggled: dialog.player.trimSilenceEnabled = checked
+            }
+            Label {
+                Layout.fillWidth: true
+                wrapMode: Text.Wrap
+                color: dialog.muted
+                font.pixelSize: 12
+                text: qsTr("Remove somente quadros com os dois canais em zero digital. Funciona sozinha ou junto com as transições; volumes baixos não são cortados.")
+            }
             Label {
                 Layout.fillWidth: true
                 visible: !dialog.player.transitionsAvailable

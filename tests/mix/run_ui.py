@@ -129,12 +129,12 @@ Pane {id:harness;width:1000;height:800;padding:0;palette.button:"#263440";palett
    for(let i=0;i<20;i++)jam.notice("Synthetic change "+i);verify(jamToast.pending.length<=8);
    jamToast.message="";jamToast.pending=[];jamToast.showing=false;
   }
-  function test_reader_continues_before_first_accepted_reading(){
+  function test_rule_summary_has_no_model_controls(){
    const old=personal.stories.state;
-   personal.stories.state={ready:true,busy:false,summary:"",partial:true,status:"Preparando leitura: avanço salvo",items:[]};
-   let button=findChild(progressCard,"readerAnalyzeButton"),summary=findChild(progressCard,"readerSummary");verify(button!==null&&summary!==null);compare(button.text,"Continuar análise");verify(summary.text.indexOf("avanço está salvo")>=0);
-   personal.stories.state={ready:true,busy:false,summary:"",partial:false,status:"Lote concluído",items:[{title:"Fixture",artist:"Synthetic",theme:"Leitura inconclusiva",meaning:"Nenhuma interpretação validada."}]};
-   verify(summary.text.indexOf("não produziu uma leitura validada")>=0);personal.stories.state=old;
+   personal.stories.state={ready:true,busy:false,summary:"",items:[]};
+   let button=findChild(progressCard,"readerAnalyzeButton"),summary=findChild(progressCard,"readerSummary");verify(button!==null&&summary!==null);compare(button.text,"Resumir repertório");verify(summary.text.indexOf("por regras")>=0);
+   personal.stories.state={ready:true,busy:false,summary:"Neste período, os gêneros mais presentes são Grunge.",status:"Resumo local por regras",items:[{title:"Fixture",artist:"Synthetic",theme:"Grunge • intenso",meaning:"Contribui para o resumo."}]};
+   compare(button.text,"Atualizar resumo");verify(summary.text.indexOf("Grunge")>=0);personal.stories.state=old;
   }
   function test_home_uses_local_album_evidence(){
    const first={kind:"album",id:"first",uri:"spotify:album:first",title:"Recently heard",listenedMs:1000,lastAt:2000};
@@ -387,4 +387,4 @@ try:
  r=subprocess.run([str(qt/'bin/qmltestrunner.exe'),'-input',str(OUT/'tst_mix.qml'),'-o',str(OUT/'results.txt')+',txt'],cwd=OUT,env=env,capture_output=True,text=True,timeout=50,creationflags=subprocess.CREATE_NO_WINDOW)
 except subprocess.TimeoutExpired as error:
  (OUT/'timeout-stderr.log').write_bytes(error.stderr or b'');(OUT/'timeout-stdout.log').write_bytes(error.stdout or b'');raise
-(OUT/'stderr.log').write_text(r.stderr,encoding='utf-8');print((OUT/'results.txt').read_text(encoding='utf-8'));print(r.stderr[-4000:] if r.returncode else '');raise SystemExit(r.returncode)
+(OUT/'stderr.log').write_text(r.stderr,encoding='utf-8');print((OUT/'results.txt').read_text(encoding='utf-8',errors='replace'));print(r.stderr[-4000:] if r.returncode else '');raise SystemExit(r.returncode)

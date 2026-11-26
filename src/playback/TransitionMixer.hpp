@@ -86,6 +86,7 @@ struct TransitionTrace {
   int64_t mixedFrames = 0;     // quadros da mescla tocados
   int64_t bFrames = 0;         // quadros da mescla com B
   int64_t missingBFrames = 0;  // quadros em que B deveria soar e faltou
+  int64_t trimmedA = 0, trimmedB = 0;  // silêncio digital removido no fim de A / começo de B
   double energyA = 0, energyB = 0;  // soma dos quadrados de A (com efeito) e B (com ganho)
   // A e B soaram juntas na mescla.
   bool overlapVerified() const { return bFrames > 0 && energyB > 0 && energyA > 0; }
@@ -111,6 +112,7 @@ struct TransitionPlan {
 };
 TransitionPlan planTransition(int outroSeconds, int introSeconds, int64_t durationMs,
                               int64_t audibleRemainingMs, int64_t upcomingMs);
+TransitionPlan planSilenceTrim(int64_t durationMs, int64_t audibleRemainingMs, int64_t upcomingMs);
 
 class TransitionMixer {
 public:
@@ -125,7 +127,7 @@ public:
   // serve de referência); sem ele, A termina em FIFO + upcomingFrames.
   // Retorna false com o motivo em trace(); `id` identifica o pedido no trace.
   bool arm(TransitionEffect effect, int64_t upcomingFrames, int64_t outroFrames, int64_t introFrames,
-           bool exactBoundary = false, uint64_t id = 0);
+           bool exactBoundary = false, uint64_t id = 0, bool trimSilence = false);
   // O motor começou outra faixa: o próximo quadro de push() já é de B.
   void boundary();
   // Seek, troca de faixa pelo usuário, flush ou nova sessão: descarta tudo.
@@ -202,6 +204,7 @@ private:
   int64_t m_mixStart = 0, m_overlap = 0;
   int64_t m_outro = 0, m_intro = 0, m_outroWanted = 0, m_introWanted = 0;
   bool m_waitBoundary = false, m_brakeStarted = false;
+  bool m_trimSilence = false, m_trimOnly = false, m_trimLeadingB = false;
   int64_t m_rendered = 0, m_mixed = 0;  // quadros da mescla renderizados/tocados
   double m_brakeRead = 0;               // leitura fracionária de A no freio
 

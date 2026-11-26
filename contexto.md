@@ -1,6 +1,8 @@
 # Contexto do Tonal Hub
 
-Atualizado em **23/11/2026**. Versão de trabalho **Windows 0.17.8 e Android 0.17.8**, versionCode 49.
+Atualizado em **26/11/2026**. Versão de trabalho **Windows 0.18.0 e Android 0.18.0**, versionCode 50.
+
+0.18.0: seguir artistas e favoritar álbuns/playlists no Spotify nas duas plataformas; seguidos/favoritos locais de coleções no IndieTonal entram no backup. Artistas mostram seguidores, ouvintes mensais, plays e ouvintes por cidade via sessão nativa quando disponíveis, com fallback Web API. Listas têm nove ordenações temporárias sem alterar a playlist salva. O leitor Qwen foi removido: resumo determinístico de gêneros/clima e limpeza automática dos pesos antigos. Novo botão remove somente silêncio digital no fim da atual e começo da próxima, sozinho ou com transição. Ver docs/LIBRARY_POPULARITY_SILENCE_0180.md. Publicação, testes e backup ficam registrados somente após evidência.
 
 0.17.8 (auditoria TH-006/TH-009, 23/11, versionCode 49): a fila Android da 0.17.5 entregava um pacote por bloco tocado (mescla vazia com pacotes reais), descartava a fila ao armar a segunda transição e deixava a fila fora do atraso informado; o Windows esvaziava o pipe no evento tipado (0,38 s perdidos por seek) e o fim natural da fila era tratado como stop do usuário. Corrigido com testes que falham antes; Spotify real Android e aparelho físico pendentes. Ver docs/audit/TH006_TH009_AUDIT.md. Publicação: PR70 merge `7f018e9`, release v0.17.8; portal PR85 merge `f0a03ea`, Worker `87a07c0b`; backup privado em https://drive.google.com/drive/folders/1ZuDEpXy3a3p9b3X2KfYofldtxCfDqrpL (33 arquivos, remontagem verificada, pasta privada).
 

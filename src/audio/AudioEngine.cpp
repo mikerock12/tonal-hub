@@ -164,7 +164,7 @@ void AudioEngine::flushSpotify() {
   if (!m_local)
     m_flush = true;
 }
-uint64_t AudioEngine::armTransition(int effect, int upcomingMs, int outroMs, int introMs) {
+uint64_t AudioEngine::armTransition(int effect, int upcomingMs, int outroMs, int introMs, bool trimSilence) {
   uint64_t id;
   {
     std::lock_guard l(m_mutex);
@@ -174,6 +174,7 @@ uint64_t AudioEngine::armTransition(int effect, int upcomingMs, int outroMs, int
     m_transitionUpcomingMs = upcomingMs;
     m_transitionOutroMs = outroMs;
     m_transitionIntroMs = introMs;
+    m_transitionTrimSilence = trimSilence;
     id = m_transitionRequest = ++m_transitionNextId;
   }
   std::lock_guard t(m_traceMutex);
@@ -206,6 +207,8 @@ QVariantMap AudioEngine::transitionTrace() const {
           {"mixedFrames", qint64(trace.mixedFrames)},
           {"bFrames", qint64(trace.bFrames)},
           {"missingBFrames", qint64(trace.missingBFrames)},
+          {"trimmedA", ms(trace.trimmedA)},
+          {"trimmedB", ms(trace.trimmedB)},
           {"energyA", trace.energyA},
           {"energyB", trace.energyB},
           {"overlapVerified", trace.overlapVerified()}};
@@ -452,7 +455,7 @@ void AudioEngine::run() {
     uint64_t serial;
     int transitionEffect, transitionUpcomingMs, transitionOutroMs, transitionIntroMs;
     uint64_t transitionRequest;
-    bool transitionCancel;
+    bool transitionCancel, transitionTrimSilence;
     std::vector<std::pair<int, int>> volumeNotes;
     {
       std::lock_guard l(m_mutex);
@@ -472,6 +475,7 @@ void AudioEngine::run() {
       transitionUpcomingMs = m_transitionUpcomingMs;
       transitionOutroMs = m_transitionOutroMs;
       transitionIntroMs = m_transitionIntroMs;
+      transitionTrimSilence = m_transitionTrimSilence;
       transitionRequest = m_transitionRequest;
       volumeNotes.swap(m_volumeNotes);
       transitionCancel = std::exchange(m_transitionCancel, false);
@@ -631,7 +635,7 @@ void AudioEngine::run() {
       // estimativa só decide quando começar a ler. Sem marcador não há efeito
       // (o buffer enche e A segue normal), nunca A mesclada com ela mesma.
       if (!mixer->arm(tonal::playback::TransitionEffect(transitionEffect), upcoming, outro, intro, true,
-                      transitionRequest)) {
+                      transitionRequest, transitionTrimSilence)) {
         std::lock_guard t(m_traceMutex);
         m_traceRejected = transitionRequest;
         m_traceRejection = int(mixer->lastRejection());

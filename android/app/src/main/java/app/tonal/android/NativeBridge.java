@@ -11,8 +11,9 @@ public final class NativeBridge {
     static native void sendCommand(String command);
     static volatile Consumer<String> commandListener;
     static volatile Consumer<String> jamListener;
+    static volatile Consumer<String> artistStatsListener;
     static void jamRequest(String json){if(ready&&json.length()<=8192)sendCommand("jam|"+json);}
-    public static void onJamResult(long epoch,String json){if(epoch!=generation||json.length()>600*1024)return;main.post(()->{Consumer<String> listener=jamListener;if(epoch==generation&&listener!=null)listener.accept(json);});}
+    public static void onJamResult(long epoch,String json){if(epoch!=generation||json.length()>600*1024)return;main.post(()->{Consumer<String> listener=jamListener,stats=artistStatsListener;if(epoch==generation&&listener!=null)listener.accept(json);if(epoch==generation&&stats!=null)stats.accept(json);});}
     /** Engine position events (Seeked/PositionChanged), delivered on the main thread. */
     static volatile java.util.function.BiConsumer<String,Integer> progressObserver;
     static volatile java.util.function.BiConsumer<Integer,Boolean> queueEditObserver;

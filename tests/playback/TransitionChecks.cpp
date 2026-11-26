@@ -540,6 +540,59 @@ int main() {
             "durations follow the sample rate");
     require(total == size_t(10 * other + 8 * other - 6 * other), "program length at other rate");
   }
+  {
+    require(planSilenceTrim(200000, 9000, 10000).arm, "trim-only arms inside the loading window");
+    require(!planSilenceTrim(200000, 9001, 10000).arm && !planSilenceTrim(200000, 999, 10000).arm,
+            "trim-only respects the loading window");
+    auto ta = tone(440, 3, 0.4f);
+    ta.resize(ta.size() + size_t(rate) * 2, 0.f);
+    auto tb = std::vector<float>(size_t(rate * 0.75) * 2, 0.f);
+    const auto quiet = tone(660, 2.25, 0.0002f);
+    tb.insert(tb.end(), quiet.begin(), quiet.end());
+    TransitionMixer mixer(rate);
+    require(mixer.arm(TransitionEffect::Fade, ta.size() / 2, 0, 0, true, 77, true), "arm trim without crossfade");
+    mixer.push(ta.data(), ta.size() / 2);
+    mixer.boundary();
+    mixer.push(tb.data(), tb.size() / 2);
+    std::vector<float> rendered, block(512 * 2);
+    for (int guard = 0; guard < 10000; ++guard) {
+      const size_t got = mixer.pull(block.data(), 512);
+      rendered.insert(rendered.end(), block.begin(), block.begin() + ptrdiff_t(got * 2));
+      if (!got) break;
+    }
+    size_t firstSound = 0;
+    while (firstSound < tb.size() / 2 && tb[firstSound * 2] == 0.f && tb[firstSound * 2 + 1] == 0.f) ++firstSound;
+    std::vector<float> expected(ta.begin(), ta.end() - ptrdiff_t(rate) * 2);
+    expected.insert(expected.end(), tb.begin() + ptrdiff_t(firstSound * 2), tb.end());
+    if (rendered != expected) {
+      size_t mismatch = 0;
+      while (mismatch < std::min(rendered.size(), expected.size()) && rendered[mismatch] == expected[mismatch]) ++mismatch;
+      std::printf("trim diagnostic: rendered=%zu expected=%zu mismatch=%zu renderedValue=%g expectedValue=%g A=%lld B=%lld phase=%d overlap=%lld\n",
+                  rendered.size(), expected.size(), mismatch,
+                  mismatch < rendered.size() ? rendered[mismatch] : -999.f,
+                  mismatch < expected.size() ? expected[mismatch] : -999.f,
+                  (long long)mixer.trace().trimmedA, (long long)mixer.trace().trimmedB,
+                  int(mixer.trace().phase), (long long)mixer.trace().overlap);
+    }
+    require(rendered == expected, "trim-only joins the actual audio and preserves quiet samples");
+    require(mixer.trace().phase == TransitionPhase::Completed && mixer.trace().trimmedA == int64_t(rate) &&
+                mixer.trace().trimmedB == firstSound && mixer.trace().overlap == 0,
+            "trim-only reports exact zero frames and no crossfade");
+    TransitionMixer combined(rate);
+    require(combined.arm(TransitionEffect::Fade, ta.size() / 2, 2 * rate, 2 * rate, true, 78, true),
+            "arm trim together with a real crossfade");
+    combined.push(ta.data(), ta.size() / 2);
+    combined.boundary();
+    combined.push(tb.data(), tb.size() / 2);
+    for (int guard = 0; guard < 10000; ++guard) {
+      const size_t got = combined.pull(block.data(), 512);
+      if (!got) break;
+    }
+    require(combined.trace().phase == TransitionPhase::Completed && combined.trace().overlapVerified() &&
+                combined.trace().trimmedA == int64_t(rate) && combined.trace().trimmedB == firstSound &&
+                combined.trace().overlap == int64_t(2 * rate),
+            "trim and crossfade work independently in the same transition");
+  }
   require(transitionPhaseId(TransitionPhase::Completed) == "completed" &&
               transitionReasonId(TransitionReason::NextNotPrepared) == "next-not-prepared",
           "stable report ids");
@@ -548,6 +601,6 @@ int main() {
     std::printf("%d transition check(s) failed\n", failures);
     return 1;
   }
-  std::printf("PASS transition mixer: 6 effects x 3 shapes with A 440 Hz + B 660 Hz in the same mix, B late 0-7 s after the planned start (gate/abort), exact boundary vs wrong estimate, preroll, full buffer, two transitions, limiter, endCapture, reset, trace, 48/96 kHz\n");
+  std::printf("PASS transition mixer: 6 effects x 3 shapes with A 440 Hz + B 660 Hz in the same mix, B late 0-7 s after the planned start (gate/abort), exact boundary vs wrong estimate, preroll, full buffer, two transitions, limiter, endCapture, reset, trace, 48/96 kHz, exact digital-silence trimming without crossfade\n");
   return 0;
 }

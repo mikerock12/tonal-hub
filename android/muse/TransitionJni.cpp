@@ -21,10 +21,10 @@ extern "C" JNIEXPORT void JNICALL Java_app_tonal_android_TransitionNative_destro
 extern "C" JNIEXPORT jint JNICALL Java_app_tonal_android_TransitionNative_rate(JNIEnv *, jclass, jlong handle) {
   return handle ? mixer(handle)->sampleRate() : 0;
 }
-extern "C" JNIEXPORT jboolean JNICALL Java_app_tonal_android_TransitionNative_arm(JNIEnv *, jclass, jlong handle, jint effect, jlong upcomingFrames, jlong outroFrames, jlong introFrames, jboolean exact, jlong id) {
+extern "C" JNIEXPORT jboolean JNICALL Java_app_tonal_android_TransitionNative_arm(JNIEnv *, jclass, jlong handle, jint effect, jlong upcomingFrames, jlong outroFrames, jlong introFrames, jboolean exact, jlong id, jboolean trimSilence) {
   if (!handle) return JNI_FALSE;
   return mixer(handle)->arm(tonal::playback::TransitionEffect(effect), upcomingFrames, outroFrames, introFrames,
-                            exact == JNI_TRUE, uint64_t(id)) ? JNI_TRUE : JNI_FALSE;
+                            exact == JNI_TRUE, uint64_t(id), trimSilence == JNI_TRUE) ? JNI_TRUE : JNI_FALSE;
 }
 extern "C" JNIEXPORT jint JNICALL Java_app_tonal_android_TransitionNative_rejection(JNIEnv *, jclass, jlong handle) {
   return handle ? jint(mixer(handle)->lastRejection()) : 0;
@@ -80,17 +80,17 @@ extern "C" JNIEXPORT jlong JNICALL Java_app_tonal_android_TransitionNative_laten
 //  região, quadro do marcador, B guardada, espera, quadros mesclados, quadros
 //  com B, B faltando, energia A x1000, energia B x1000} — chamado fora do PCM.
 extern "C" JNIEXPORT jlongArray JNICALL Java_app_tonal_android_TransitionNative_trace(JNIEnv *env, jclass, jlong handle) {
-  jlong values[18] = {};
+  jlong values[20] = {};
   if (handle) {
     const auto &t = mixer(handle)->trace();
-    const jlong filled[18] = {jlong(t.id), jlong(t.phase), jlong(t.reason), t.effect, t.sampleRate,
+    const jlong filled[20] = {jlong(t.id), jlong(t.phase), jlong(t.reason), t.effect, t.sampleRate,
                               t.configuredOutro, t.configuredIntro, t.outro, t.intro, t.overlap,
                               t.boundaryFrame, t.preparedB, t.waitedFrames, t.mixedFrames, t.bFrames,
-                              t.missingBFrames, jlong(t.energyA * 1000), jlong(t.energyB * 1000)};
-    std::copy(filled, filled + 18, values);
+                              t.missingBFrames, jlong(t.energyA * 1000), jlong(t.energyB * 1000), t.trimmedA, t.trimmedB};
+    std::copy(filled, filled + 20, values);
   }
-  jlongArray result = env->NewLongArray(18);
-  if (result) env->SetLongArrayRegion(result, 0, 18, values);
+  jlongArray result = env->NewLongArray(20);
+  if (result) env->SetLongArrayRegion(result, 0, 20, values);
   return result;
 }
 extern "C" JNIEXPORT jlongArray JNICALL Java_app_tonal_android_TransitionNative_plan(JNIEnv *env, jclass, jint outroSeconds, jint introSeconds, jlong duration, jlong audible, jlong upcoming) {
@@ -98,6 +98,13 @@ extern "C" JNIEXPORT jlongArray JNICALL Java_app_tonal_android_TransitionNative_
   jlong values[4] = {plan.arm ? 1 : 0, plan.upcomingMs, plan.outroMs, plan.introMs};
   jlongArray result = env->NewLongArray(4);
   if (result) env->SetLongArrayRegion(result, 0, 4, values);
+  return result;
+}
+extern "C" JNIEXPORT jlongArray JNICALL Java_app_tonal_android_TransitionNative_planSilenceTrim(JNIEnv *env, jclass, jlong duration, jlong audible, jlong upcoming) {
+  const auto plan = tonal::playback::planSilenceTrim(duration, audible, upcoming);
+  jlong values[2] = {plan.arm ? 1 : 0, plan.upcomingMs};
+  jlongArray result = env->NewLongArray(2);
+  if (result) env->SetLongArrayRegion(result, 0, 2, values);
   return result;
 }
 extern "C" JNIEXPORT jint JNICALL Java_app_tonal_android_TransitionNative_pickRandom(JNIEnv *, jclass, jint previous, jint random) {

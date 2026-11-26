@@ -45,6 +45,7 @@ class Player : public QObject {
   Q_PROPERTY(QVariantList devices READ devices NOTIFY devicesChanged)
   // Transições entre as músicas da fila (efeitos de DJ).
   Q_PROPERTY(bool transitionsEnabled READ transitionsEnabled WRITE setTransitionsEnabled NOTIFY transitionsChanged)
+  Q_PROPERTY(bool trimSilenceEnabled READ trimSilenceEnabled WRITE setTrimSilenceEnabled NOTIFY transitionsChanged)
   Q_PROPERTY(QString transitionEffect READ transitionEffect WRITE setTransitionEffect NOTIFY transitionsChanged)
   // Fim da música atual com o efeito (3–10 s).
   Q_PROPERTY(int transitionSeconds READ transitionSeconds WRITE setTransitionSeconds NOTIFY transitionsChanged)
@@ -113,6 +114,8 @@ public:
   QVariantList devices() const { return m_devices; }
   bool transitionsEnabled() const { return m_transitionsEnabled; }
   void setTransitionsEnabled(bool enabled);
+  bool trimSilenceEnabled() const { return m_trimSilenceEnabled; }
+  void setTrimSilenceEnabled(bool enabled);
   QString transitionEffect() const { return m_transitionEffect; }
   void setTransitionEffect(const QString &effect);
   int transitionSeconds() const { return m_transitionSeconds; }
@@ -256,6 +259,7 @@ private:
   void updateTransitionResult();
   void cancelTransition();
   bool m_transitionsEnabled = false;
+  bool m_trimSilenceEnabled = false;
   QString m_transitionEffect = QStringLiteral("random");
   int m_transitionSeconds = 6, m_transitionIntroSeconds = 6;
   int m_lastTransition = -1;

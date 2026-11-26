@@ -75,7 +75,7 @@ public:
   // próxima injetado na mescla. O fim de A é sempre o marcador do librespot
   // (sem ele não há efeito). Retorna o id do pedido (0: recusado aqui); o
   // aceite, a mescla e o resultado chegam depois em transitionTrace().
-  uint64_t armTransition(int effect, int upcomingMs, int outroMs, int introMs);
+  uint64_t armTransition(int effect, int upcomingMs, int outroMs, int introMs, bool trimSilence = false);
   // Último pedido e o que a transição realmente fez (ids, fase, motivo,
   // quadros de A e B na mescla). Seguro de qualquer thread.
   QVariantMap transitionTrace() const;
@@ -130,6 +130,7 @@ private:
   std::atomic<bool> m_visualizer{false};
   std::atomic<uint64_t> m_spotifyFrames{0};
   int m_transitionEffect = -1, m_transitionUpcomingMs = 0, m_transitionOutroMs = 0, m_transitionIntroMs = 0;
+  bool m_transitionTrimSilence = false;
   std::atomic<int> m_trackPositionMs{-1};
   std::atomic<bool> m_trackMarkers{false};
   std::atomic<uint64_t> m_trackSequence{0};

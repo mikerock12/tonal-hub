@@ -18,7 +18,7 @@ final class TransitionNative {
     static native void destroy(long handle);
     static native int rate(long handle);
     /** Com `exact` o fim de A é o próximo boundary() (marcador do librespot); a estimativa só posiciona. */
-    static native boolean arm(long handle,int effect,long upcomingFrames,long outroFrames,long introFrames,boolean exact,long id);
+    static native boolean arm(long handle,int effect,long upcomingFrames,long outroFrames,long introFrames,boolean exact,long id,boolean trimSilence);
     /** Motivo do último arm() recusado (TransitionReason do C++). */
     static native int rejection(long handle);
     /** O motor começou outra faixa: o próximo push() já é de B. */
@@ -34,7 +34,7 @@ final class TransitionNative {
     static native int pullInto(long handle,float[] out,int frames);
     /** Índices de trace(). */
     static final int T_ID=0,T_PHASE=1,T_REASON=2,T_EFFECT=3,T_RATE=4,T_CONF_OUTRO=5,T_CONF_INTRO=6,T_OUTRO=7,T_INTRO=8,T_OVERLAP=9,
-        T_BOUNDARY=10,T_PREPARED_B=11,T_WAITED=12,T_MIXED=13,T_B_FRAMES=14,T_MISSING_B=15,T_ENERGY_A=16,T_ENERGY_B=17;
+        T_BOUNDARY=10,T_PREPARED_B=11,T_WAITED=12,T_MIXED=13,T_B_FRAMES=14,T_MISSING_B=15,T_ENERGY_A=16,T_ENERGY_B=17,T_TRIMMED_A=18,T_TRIMMED_B=19;
     static final int PHASE_IDLE=0,PHASE_ARMED=1,PHASE_MIXING=2,PHASE_COMPLETED=3,PHASE_ABORTED=4;
     static final int REASON_NEXT_NOT_PREPARED=5,REASON_NO_EXACT_BOUNDARY=4,REASON_CANCELLED=6;
     /** O que a última transição realmente fez (fora do caminho do PCM). */
@@ -44,6 +44,7 @@ final class TransitionNative {
     /** {arm 0/1, upcomingMs, outroMs, introMs}; mesmas regras do Windows. */
     static native long[] plan(int outroSeconds,int introSeconds,long durationMs,long audibleRemainingMs,long upcomingMs);
     static final int PREROLL_MS=2500,LOAD_MARGIN_MS=6000;
+    static native long[] planSilenceTrim(long durationMs,long audibleRemainingMs,long upcomingMs);
     static native int pickRandom(int previous,int random);
     private TransitionNative(){}
 }
