@@ -1,0 +1,30 @@
+{
+ "version": "0.18.1",
+ "androidVersionCode": 51,
+ "productCode": "12e3eb1",
+ "assets": [
+  {
+   "name": "Tonal-Hub-0.18.1.0-Windows-x64-Setup.exe",
+   "sha256": "8b7e8a624b4f81ee9b6ae02a0de83e1054daa07b65631aa711b924db3bc46844",
+   "bytes": 88087439
+  },
+  {
+   "name": "Tonal-Hub-0.18.1-local.zip",
+   "sha256": "55adbc2f9f333cb2d16596897b675189feb0972cd26880c04935314e19d45845",
+   "bytes": 119559499
+  },
+  {
+   "name": "Tonal-Android-0.18.1-arm64-v8a.apk",
+   "sha256": "a2e6c75d0dd2884e33bc745122c9031ebdbbe577c00e5973c2240eee505088c0",
+   "bytes": 27750708
+  },
+  {
+   "name": "Tonal-Android-0.18.1-local.apk",
+   "sha256": "b38893796c4d3f196edaa49276c320224d6cf55a63ff85ad292f6d962d266c94",
+   "bytes": 50022939
+  }
+ ],
+ "androidCertificateSha256": "464ae7cf34f4f145541569db215f8fcdef5deda1be31921d8e366eed20aa22c2",
+ "alignment16KiB": true,
+ "release": "https://github.com/mikerock12/tonal-hub/releases/tag/v0.18.1"
+}
