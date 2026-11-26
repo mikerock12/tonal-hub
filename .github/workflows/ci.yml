@@ -98,5 +98,9 @@ jobs:
         run: |
           javac -d out/ci-playback android/app/src/main/java/app/tonal/android/SpotifyCatalogPolicy.java tests/android/SpotifyCatalogPolicyChecks.java
           java -cp out/ci-playback app.tonal.android.SpotifyCatalogPolicyChecks
+      - name: Test compact play counts and member ages
+        run: |
+          javac -d out/ci-playback android/app/src/main/java/app/tonal/android/CatalogFormat.java tests/android/CatalogFormatChecks.java
+          java -cp out/ci-playback app.tonal.android.CatalogFormatChecks
       - name: Compile Android variants
         run: gradle -p android compileReleaseJavaWithJavac compileBenchmarkJavaWithJavac compileComparisonJavaWithJavac :automation:compileDebugJavaWithJavac --console=plain

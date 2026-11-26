@@ -61,16 +61,17 @@ fn public_artist_stats(body: &Value) -> Value {
         "source":"Spotify • página pública do artista",
         "followers":count(stats.and_then(|value|value.get("followers"))),
         "monthlyListeners":count(stats.and_then(|value|value.get("monthlyListeners"))),
-        "worldRank":count(stats.and_then(|value|value.get("worldRank"))),
+        // Spotify ranks only the global top 500 by monthly listeners; 0 means "not ranked".
+        "worldRank":count(stats.and_then(|value|value.get("worldRank"))).filter(|rank|*rank>0),
         "cities":cities,"playCounts":play_counts,"topTracks":top_tracks,
     })
 }
 
-async fn artist_stats(session:&Session,uri:&str)->Value {
-    let query=json!({"operationName":"queryArtistOverview","variables":{"uri":uri,"locale":"","includePrerelease":true},"extensions":{"persistedQuery":{"version":1,"sha256Hash":ARTIST_OVERVIEW_HASH}}});
-    let response=tokio::time::timeout(Duration::from_secs(12),async {
+/// One persisted pathfinder query with fixed host, bounded body and no raw error text.
+async fn pathfinder(session:&Session,query:&Value,seconds:u64)->Result<Value,Value> {
+    let response=tokio::time::timeout(Duration::from_secs(seconds),async {
         let login=session.login5().auth_token().await?;let client=session.spclient().client_token().await?;
-        let bytes=serde_json::to_vec(&query).unwrap_or_default();
+        let bytes=serde_json::to_vec(query).unwrap_or_default();
         let request=Request::builder().method(Method::POST).uri("https://api-partner.spotify.com/pathfinder/v1/query")
             .header("authorization",format!("{} {}",login.token_type,login.access_token)).header("client-token",client)
             .header("app-platform","Android").header("accept","application/json").header("content-type","application/json")
@@ -82,11 +83,69 @@ async fn artist_stats(session:&Session,uri:&str)->Value {
         Ok((code,bytes))
     }).await;
     match response {
-        Err(_)=>json!({"status":408,"error":"timeout"}),
-        Ok(Err(_))=>json!({"status":503,"error":"spotify_unavailable"}),
-        Ok(Ok((code,_))) if !(200..300).contains(&code)=>json!({"status":code,"error":"spotify_unavailable"}),
-        Ok(Ok((code,bytes)))=>match serde_json::from_slice::<Value>(&bytes){Ok(body)=>json!({"status":code,"result":public_artist_stats(&body)}),Err(_)=>json!({"status":502,"error":"invalid_response"})},
+        Err(_)=>Err(json!({"status":408,"error":"timeout"})),
+        Ok(Err(_))=>Err(json!({"status":503,"error":"spotify_unavailable"})),
+        Ok(Ok((code,_))) if !(200..300).contains(&code)=>Err(json!({"status":code,"error":"spotify_unavailable"})),
+        Ok(Ok((_,bytes)))=>serde_json::from_slice::<Value>(&bytes).map_err(|_|json!({"status":502,"error":"invalid_response"})),
     }
+}
+
+async fn artist_stats(session:&Session,uri:&str)->Value {
+    let query=json!({"operationName":"queryArtistOverview","variables":{"uri":uri,"locale":"","includePrerelease":true},"extensions":{"persistedQuery":{"version":1,"sha256Hash":ARTIST_OVERVIEW_HASH}}});
+    match pathfinder(session,&query,12).await {Ok(body)=>json!({"status":200,"result":public_artist_stats(&body)}),Err(error)=>error}
+}
+
+const ALBUM_HASH: &str = "0b6ce3511e1b02e4a40fa95440f992acbe85080eb308af9194322d708fc1914f";
+const MAX_ALBUMS: usize = 8;
+
+fn valid_uri(uri:&str,kind:&str)->bool {
+    let prefix=format!("spotify:{kind}:");uri.len()==prefix.len()+22&&uri.starts_with(&prefix)&&uri[prefix.len()..].bytes().all(|c|c.is_ascii_alphanumeric())
+}
+
+/// Public per-track play counts of one album page. Unknown rows are skipped, never invented.
+fn album_play_counts(body:&Value,out:&mut serde_json::Map<String,Value>)->usize {
+    let album=body.pointer("/data/albumUnion");
+    let rows=album.and_then(|a|a.pointer("/tracksV2/items").or_else(||a.pointer("/tracks/items"))).and_then(Value::as_array);
+    let mut seen=0;
+    for row in rows.into_iter().flatten().take(200) {
+        let track=row.get("track").unwrap_or(row);seen+=1;
+        let uri=track.get("uri").and_then(Value::as_str).unwrap_or("");
+        if !valid_uri(uri,"track"){continue;}
+        if let Some(plays)=count(track.get("playcount")) {out.insert(uri.to_string(),json!(plays));}
+    }
+    seen
+}
+
+async fn one_album(session:Session,uri:String)->Result<serde_json::Map<String,Value>,u16> {
+    let mut plays=serde_json::Map::new();let mut offset=0;
+    while offset<150 {
+        let query=json!({"operationName":"getAlbum","variables":{"uri":uri,"locale":"","offset":offset,"limit":50},"extensions":{"persistedQuery":{"version":1,"sha256Hash":ALBUM_HASH}}});
+        match pathfinder(&session,&query,10).await {
+            Ok(body)=>{if album_play_counts(&body,&mut plays)<50{break;}offset+=50;},
+            Err(error)=>return Err(error.get("status").and_then(Value::as_u64).unwrap_or(503) as u16),
+        }
+    }
+    Ok(plays)
+}
+
+/// Up to eight albums per call, fetched concurrently; failures keep the other results.
+async fn album_plays(session:&Session,albums:&[Value])->Value {
+    let mut tasks=tokio::task::JoinSet::new();
+    for value in albums.iter().take(MAX_ALBUMS) {
+        let Some(uri)=value.as_str().filter(|uri|valid_uri(uri,"album")) else {continue;};
+        let (session,uri)=(session.clone(),uri.to_string());
+        tasks.spawn(async move {let result=one_album(session,uri.clone()).await;(uri,result)});
+    }
+    let mut plays=serde_json::Map::new();let mut done=Vec::new();let mut failed=Vec::new();let mut status=200;
+    while let Some(joined)=tasks.join_next().await {
+        match joined {
+            Ok((uri,Ok(rows)))=>{plays.extend(rows);done.push(json!(uri));},
+            Ok((uri,Err(code)))=>{status=code;failed.push(json!(uri));},
+            Err(_)=>{status=503;},
+        }
+    }
+    if done.is_empty()&&status!=200 {return json!({"status":status,"error":"spotify_unavailable"});}
+    json!({"status":200,"result":{"plays":plays,"albums":done,"failed":failed,"partial":status!=200}})
 }
 
 /// Bounded, cancellable network work. Raw errors can contain private URLs: never return them.
@@ -100,6 +159,10 @@ async fn execute_inner(session: &Session, command: &Value) -> Value {
         let uri=command.get("uri").and_then(Value::as_str).unwrap_or("");
         let valid=uri.len()==37&&uri.starts_with("spotify:artist:")&&uri[15..].bytes().all(|c|c.is_ascii_alphanumeric());
         return if valid {artist_stats(session,uri).await} else {json!({"status":400,"error":"invalid_artist"})};
+    }
+    if command.get("op").and_then(Value::as_str)==Some("albumPlays") {
+        let albums=command.get("albums").and_then(Value::as_array).cloned().unwrap_or_default();
+        return if albums.is_empty()||albums.len()>MAX_ALBUMS {json!({"status":400,"error":"invalid_albums"})} else {album_plays(session,&albums).await};
     }
     let Some((method,path))=endpoint(command) else {return json!({"status":400,"error":"invalid_command"});};
     let response=tokio::time::timeout(Duration::from_secs(10),async {
@@ -160,5 +223,18 @@ async fn send(session:&Session,base:&str,method:&Method,path:&str)->Result<(u16,
         }}});
         let stats=public_artist_stats(&body);
         assert_eq!(stats["monthlyListeners"],467589);assert_eq!(stats["cities"][0]["listeners"],9470);assert_eq!(stats["playCounts"]["spotify:track:abcdefghijklmnopqrstuv"],2889055);
+        let unranked=public_artist_stats(&json!({"data":{"artistUnion":{"stats":{"worldRank":0}}}}));
+        assert!(unranked["worldRank"].is_null());
+    }
+    #[test] fn album_play_counts_skip_unknown_rows(){
+        let body=json!({"data":{"albumUnion":{"tracksV2":{"items":[
+            {"track":{"uri":"spotify:track:abcdefghijklmnopqrstuv","playcount":"10988356"}},
+            {"track":{"uri":"spotify:track:bad","playcount":"5"}},
+            {"track":{"uri":"spotify:track:bcdefghijklmnopqrstuvw"}}
+        ]}}}});
+        let mut plays=serde_json::Map::new();
+        assert_eq!(album_play_counts(&body,&mut plays),3);
+        assert_eq!(plays.len(),1);assert_eq!(plays["spotify:track:abcdefghijklmnopqrstuv"],10988356);
+        assert!(valid_uri("spotify:album:abcdefghijklmnopqrstuv","album"));assert!(!valid_uri("spotify:album:../abcdefghijklmnopqrs","album"));
     }
 }

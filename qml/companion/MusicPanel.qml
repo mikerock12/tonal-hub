@@ -389,8 +389,27 @@ Dialog {
                                 Label {text:panel.controller.current.artist||"Sobre o artista";textFormat:Text.PlainText;font.pixelSize:32;font.bold:true;wrapMode:Text.Wrap;Layout.fillWidth:true}
                                 Label {text:"Bastidores do artista";font.pixelSize:22}
                                 Label {text:(panel.controller.artistNotes||{}).message||"Curiosidades e trajetória · MusicBrainz";Layout.fillWidth:true;wrapMode:Text.Wrap;color:panel.tone.textSecondary}
+                                Button{visible:!!(panel.controller.artistNotes||{}).retry;text:"Tentar novamente";onClicked:panel.controller.retryArtistNotes()}
                                 Repeater{model:(panel.controller.artistNotes||{}).facts||[];Label{required property string modelData;text:modelData;textFormat:Text.PlainText;Layout.fillWidth:true;wrapMode:Text.Wrap;font.pixelSize:18}}
-                                Button{visible:!!(panel.controller.artistNotes||{}).url;text:"Fonte: MusicBrainz · dados colaborativos";onClicked:Qt.openUrlExternally(panel.controller.artistNotes.url)}
+                                Label{visible:((panel.controller.artistNotes||{}).members||[]).length>0;text:(panel.controller.artistNotes||{}).group?"Integrantes":"Grupos";font.pixelSize:18;font.bold:true}
+                                Repeater{model:(panel.controller.artistNotes||{}).members||[];Label{required property var modelData;text:modelData.line||modelData.name;textFormat:Text.PlainText;Layout.fillWidth:true;wrapMode:Text.Wrap;font.pixelSize:15}}
+                                Label{readonly property int more:((panel.controller.artistNotes||{}).memberTotal||0)-((panel.controller.artistNotes||{}).members||[]).length;visible:more>0;text:"+ "+more+" outros registros";color:panel.tone.textSecondary}
+                                Button{visible:!!(panel.controller.artistNotes||{}).url;text:"Fonte: MusicBrainz · dados colaborativos; idades pelas datas registradas";onClicked:Qt.openUrlExternally(panel.controller.artistNotes.url)}
+                                // Público no Spotify: ouvintes mensais, posição (só top 500) e cidades com mais ouvintes.
+                                ColumnLayout{id:audience;Layout.fillWidth:true;spacing:4;visible:!!audience.stats&&(audience.stats.monthlyListeners>=0||(audience.stats.cities||[]).length>0)
+                                    property var stats:null
+                                    readonly property string artistId:panel.controller.current.artistId||""
+                                    readonly property var catalog:typeof App!=="undefined"&&App.catalogStats?App.catalogStats:null
+                                    function refresh(){stats=null;if(catalog&&/^[A-Za-z0-9]{22}$/.test(artistId))catalog.artistStats(artistId)}
+                                    onArtistIdChanged:refresh()
+                                    Component.onCompleted:refresh()
+                                    Connections{target:audience.catalog;ignoreUnknownSignals:true;function onArtistStatsReady(id,stats){if(id===audience.artistId)audience.stats=stats}}
+                                    Label{text:"Público no Spotify";font.pixelSize:18;font.bold:true}
+                                    Label{Layout.fillWidth:true;wrapMode:Text.Wrap;font.pixelSize:15;text:{const s=audience.stats||{};const parts=[];if(s.monthlyListeners>=0)parts.push(Number(s.monthlyListeners).toLocaleString(Qt.locale("pt_BR"),"f",0)+" ouvintes mensais");if(s.followers>=0)parts.push(Number(s.followers).toLocaleString(Qt.locale("pt_BR"),"f",0)+" seguidores");if(s.worldRank>0)parts.push("#"+s.worldRank+" no mundo em ouvintes mensais");return parts.join(" · ")}}
+                                    Label{visible:((audience.stats||{}).cities||[]).length>0;text:"Cidades com mais ouvintes";color:panel.tone.textSecondary}
+                                    Repeater{model:(audience.stats||{}).cities||[];Label{required property var modelData;text:modelData.city+", "+modelData.country+" · "+Number(modelData.listeners).toLocaleString(Qt.locale("pt_BR"),"f",0)+" ouvintes";font.pixelSize:15}}
+                                    Label{text:"Fonte: Spotify · página pública do artista";color:panel.tone.textSecondary;font.pixelSize:11}
+                                }
                                 Label{text:"Continue a descoberta";font.pixelSize:22;font.bold:true}
                                 Label{text:"Sugestões editoriais por estilo; não são uma lista oficial de artistas relacionados.";Layout.fillWidth:true;wrapMode:Text.Wrap;color:panel.tone.textSecondary}
                                 Flow{Layout.fillWidth:true;spacing:8;Repeater{model:(panel.controller.artistNotes||{}).related||[];Button{required property string modelData;text:modelData;onClicked:{panel.discover(modelData);panel.close()}}}}
@@ -429,6 +448,8 @@ Dialog {
                 visible: !panel.queueEdited && !!panel.transportPlayer && typeof panel.transportPlayer.editQueue === "function"
                 player: panel.transportPlayer
                 tone: panel.tone
+                catalog: typeof App !== "undefined" && App.catalogStats ? App.catalogStats : null
+                api: typeof App !== "undefined" && App.api ? App.api : null
             }
             ListView{visible:panel.queueEdited||!panel.transportPlayer||typeof panel.transportPlayer.editQueue!=="function";Layout.fillWidth:true;Layout.fillHeight:true;clip:true;model:panel.queuedRows;spacing:8;ScrollBar.vertical:ScrollBar{}
                 delegate:Column{required property var modelData;required property int index;width:ListView.view.width;spacing:3

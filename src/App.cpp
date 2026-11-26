@@ -36,6 +36,7 @@ App::App(QObject *parent)
     , m_listeningMix(new ListeningMix(m_api,m_music,this))
     , m_theme(new ThemeCatalog(this))
     , m_jam(new JamController(m_player,m_librespot,m_api,this))
+    , m_catalogStats(new CatalogStats(m_librespot,this))
 {
     // Ícone da janela e da barra de tarefas com as cores do tema escolhido.
     updateWindowIcon();

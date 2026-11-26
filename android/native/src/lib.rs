@@ -174,6 +174,8 @@ pub extern "system" fn Java_app_tonal_android_NativeBridge_nativeStart(mut env: 
             status(generation, "Pronto • Spotify Connect: Tonalify Android");
             tokio::pin!(task);
             let jam_busy=std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+            // Catalog reads (artist overview, album play counts) never occupy the Jam slot.
+            let catalog_busy=std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
             // Audio keys can stop arriving on a half-broken session: librespot then
             // skips every track in a few seconds. Two tracks lost to key timeouts
             // within 30 s end the cascade: report the first one as the resume point
@@ -217,9 +219,11 @@ pub extern "system" fn Java_app_tonal_android_NativeBridge_nativeStart(mut env: 
                         if let Some(payload)=cmd.strip_prefix("jam|"){
                             if payload.len()>8192{jam_result(generation,&serde_json::json!({"status":413,"error":"command_too_large"}));continue;}
                             let Ok(mut command)=serde_json::from_str::<serde_json::Value>(payload) else {jam_result(generation,&serde_json::json!({"status":400,"error":"invalid_json"}));continue;};
-                            if jam_busy.swap(true,Ordering::SeqCst){jam_result(generation,&serde_json::json!({"status":409,"error":"busy","request":command.get("request")}));continue;}
+                            let catalog=matches!(command.get("op").and_then(|v|v.as_str()),Some("artistStats"|"albumPlays"));
+                            let slot=if catalog {catalog_busy.clone()} else {jam_busy.clone()};
+                            if slot.swap(true,Ordering::SeqCst){jam_result(generation,&serde_json::json!({"status":409,"error":"busy","request":command.get("request")}));continue;}
                             if let Some(object)=command.as_object_mut(){object.insert("device".into(),serde_json::Value::String(jam_session.device_id().to_owned()));}
-                            let session=jam_session.clone();let busy=jam_busy.clone();
+                            let session=jam_session.clone();let busy=slot;
                             // A network await never blocks the Spirc pause/stop command loop.
                             tokio::spawn(async move{let result=tonal_jam_transport::execute(&session,&command).await;busy.store(false,Ordering::SeqCst);jam_result(generation,&result);});
                             continue;

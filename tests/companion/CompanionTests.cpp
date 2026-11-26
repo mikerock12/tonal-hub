@@ -76,7 +76,29 @@ public:
     restored.deletePlaylist(restored.playlists()[0].toMap()["id"].toString());require(restored.restoreBackup(backup)&&restored.playlists().size()==1,"backup restore failed");
     require(restored.lyricStyle()["lyricFont"]=="Mono"&&restored.searches().size()==1,"preferences absent from restored backup");
     auto facts=MusicCompanion::artistFacts(QJsonObject{{"id","12345678-1234-1234-1234-123456789012"},{"type","Group"},{"begin-area",QJsonObject{{"name","Cidade de teste"}}},{"life-span",QJsonObject{{"begin","1994"}}}});
-    require(facts["facts"].toList().contains("Formação: 1994")&&facts["facts"].toList().contains("Origem: Cidade de teste"),"artist facts lost sourced fields");
+    require(facts["facts"].toList().contains("Início: 1994 · em atividade")&&facts["facts"].toList().contains("Origem: Cidade de teste"),"artist facts lost sourced fields");
+    {   // 0.18.1: members merged by MBID, roles translated, current first; ages only from registered dates.
+        QJsonArray rels;
+        auto rel=[](const char *id,const char *name,QJsonArray attrs,const char *begin,const QJsonValue &end,bool ended){return QJsonObject{{"type","member of band"},{"direction","backward"},{"ended",ended},{"begin",begin},{"end",end},{"attributes",attrs},{"artist",QJsonObject{{"id",id},{"name",name}}}};};
+        rels.append(rel("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","Ex Baterista",QJsonArray{"drums (drum set)"},"1988",QJsonValue("1990"),true));
+        rels.append(rel("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb","Vocalista",QJsonArray{"lead vocals","original"},"1987",QJsonValue(),false));
+        rels.append(rel("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb","Vocalista",QJsonArray{"guitar","original"},"1987",QJsonValue(),false));
+        rels.append(QJsonObject{{"type","member of band"},{"direction","forward"},{"artist",QJsonObject{{"id","cccccccc-cccc-cccc-cccc-cccccccccccc"},{"name","Outra banda"}}}});
+        auto band=MusicCompanion::artistFacts(QJsonObject{{"type","Group"},{"relations",rels},{"life-span",QJsonObject{{"begin","1987"},{"end","1994-04-05"},{"ended",true}}}});
+        auto members=band["members"].toList();
+        require(members.size()==2&&members[0].toMap()["name"]=="Vocalista"&&members[0].toMap()["roles"].toStringList()==QStringList({"vocal","guitarra"}),"members not merged/ordered");
+        require(band["facts"].toList().contains("Início: 1987 · encerrada em 1994"),"band period lost");
+        const QDate today(2026,11,26);
+        auto singer=members[0].toMap();singer["born"]="1967-02-20";
+        require(MusicCompanion::memberLine(singer,today)=="Vocalista — vocal, guitarra · desde 1987 · 59 anos","current member line");
+        auto drummer=members[1].toMap();drummer["born"]="1967";drummer["died"]="1994-04-05";
+        require(MusicCompanion::memberLine(drummer,today)=="Ex Baterista — bateria · 1988–1990 · 1967–1994 (aos cerca de 27 anos)","former member line");
+        require(MusicCompanion::memberAge("","",today).isEmpty()&&MusicCompanion::memberAge("2030-01-01","",today).isEmpty(),"unknown age invented");
+        QJsonArray links;links.append(QJsonObject{{"target-type","artist"},{"artist",QJsonObject{{"id","5b11f4ce-a62d-471e-81fc-a69a8278c7da"}}}});
+        require(MusicCompanion::linkedArtist(QJsonObject{{"relations",links}})=="5b11f4ce-a62d-471e-81fc-a69a8278c7da","spotify link identity");
+        links.append(QJsonObject{{"target-type","artist"},{"artist",QJsonObject{{"id","11111111-1111-1111-1111-111111111111"}}}});
+        require(MusicCompanion::linkedArtist(QJsonObject{{"relations",links}}).isEmpty(),"ambiguous spotify link accepted");
+    }
     require(!MusicCompanion::artistFacts({}).value("facts").toList().size()&&MusicCompanion::artistFacts({})["url"].toString().isEmpty(),"missing artist fields fabricated facts or source");
     auto args=QCoreApplication::arguments();int exportAt=args.indexOf("--export");if(exportAt>=0)require(restored.exportBackup(QUrl::fromLocalFile(args.value(exportAt+1))),"interop export failed");
     int importAt=args.indexOf("--import");if(importAt>=0)require(restored.restoreBackup(QUrl::fromLocalFile(args.value(importAt+1)))&&!restored.favorites().isEmpty(),"Android backup import failed");

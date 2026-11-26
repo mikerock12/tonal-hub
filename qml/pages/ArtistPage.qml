@@ -19,8 +19,7 @@ Flickable {
     property string genres
     property int followers: -1
     property int monthlyListeners: -1
-    property int worldRank: -1
-    property var cities: []
+    property int worldRank: 0
     property int popularity: -1
     property var popular: []
     property var releases: []
@@ -35,13 +34,13 @@ Flickable {
     property int serial: 0
 
     Connections {
-        target: App.jam || null
+        target: App.catalogStats || null
         ignoreUnknownSignals: true
         function onArtistStatsReady(id, stats) {
             if (id !== root.artistId) return
             root.monthlyListeners = stats.monthlyListeners !== undefined && stats.monthlyListeners !== null ? stats.monthlyListeners : -1
-            root.worldRank = stats.worldRank !== undefined && stats.worldRank !== null ? stats.worldRank : -1
-            root.cities = stats.cities || []
+            // Spotify only ranks the global top 500 by monthly listeners; 0/absent means unranked.
+            root.worldRank = stats.worldRank > 0 ? stats.worldRank : 0
             if (stats.followers !== undefined && stats.followers !== null) root.followers = stats.followers
             const counts = stats.playCounts || ({})
             root.popular = root.popular.map(t => Object.assign({}, t, { playCount: counts[t.uri] !== undefined ? counts[t.uri] : -1 }))
@@ -71,7 +70,7 @@ Flickable {
         // Rotas de outro tipo podem chegar aqui durante a troca de página (ver CollectionPage.load).
         if (!route || route.page !== "artist" || artistId === "") return
         contentY = 0
-        name = ""; imageUrl = ""; uri = ""; genres = ""; followers = -1; monthlyListeners = -1; worldRank = -1; cities = []; popularity = -1; popular = []; releases = []; releaseNext = ({}); releaseStatus = ({}); releaseErrors = ({})
+        name = ""; imageUrl = ""; uri = ""; genres = ""; followers = -1; monthlyListeners = -1; worldRank = 0; popularity = -1; popular = []; releases = []; releaseNext = ({}); releaseStatus = ({}); releaseErrors = ({})
         showAllPopular = false; showAllReleases = false; following = false; tint = "#404040"
         releaseFilter = "album"   // o filtro do artista anterior não vale para este
 
@@ -88,7 +87,7 @@ Flickable {
         })
 
         // Estatísticas públicas são opcionais: sem o componente nativo, a página segue com a Web API.
-        if (App.jam && typeof App.jam.artistStats === "function") App.jam.artistStats(artistId)
+        if (App.catalogStats) App.catalogStats.artistStats(artistId)
 
         // Other categories are loaded only when selected; revisits use the API cache.
         loadReleaseGroup("album")
@@ -177,6 +176,7 @@ Flickable {
         following = newState
         App.api.call(newState ? "PUT" : "DELETE", "/me/library", { uris: uri }, null, function(status) {
             if (status >= 300) { root.following = !newState; Nav.toast(qsTr("Não consegui atualizar")) }
+            else Nav.toast(newState ? qsTr("Você agora segue %1 no Spotify").arg(root.name) : qsTr("Você deixou de seguir %1 no Spotify").arg(root.name))
         })
     }
 
@@ -217,12 +217,12 @@ Flickable {
                 font.pixelSize: 14
             }
             Label {
-                visible: root.followers >= 0 || root.monthlyListeners >= 0 || root.worldRank >= 0 || root.popularity >= 0
+                visible: root.followers >= 0 || root.monthlyListeners >= 0 || root.worldRank > 0 || root.popularity >= 0
                 width: parent.width
                 text: [
                     root.followers >= 0 ? root.followers.toLocaleString() + qsTr(" seguidores") : "",
                     root.monthlyListeners >= 0 ? root.monthlyListeners.toLocaleString() + qsTr(" ouvintes mensais") : "",
-                    root.worldRank >= 0 ? "#" + root.worldRank + qsTr(" no mundo") : "",
+                    root.worldRank > 0 ? "#" + root.worldRank + qsTr(" no mundo em ouvintes mensais") : "",
                     root.popularity >= 0 ? qsTr("Popularidade %1/100").arg(root.popularity) : ""
                 ].filter(p => p !== "").join(" • ")
                 color: Theme.textPrimary
@@ -268,22 +268,29 @@ Flickable {
                 playing: root.isCurrentContext && App.player.isPlaying
                 onClicked: root.playArtist()
             }
+            // Seguir: pílula cheia na cor de destaque; Seguindo: contorno com ✓ na mesma cor.
             Rectangle {
+                id: followButton
                 anchors.verticalCenter: parent.verticalCenter
-                width: followLabel.implicitWidth + 32
-                height: 32
-                radius: 16
-                color: "transparent"
-                border.width: 1
-                border.color: followMouse.containsMouse ? Theme.textPrimary : Theme.textMuted
-                scale: followMouse.containsMouse ? 1.04 : 1
+                width: followLabel.implicitWidth + 40
+                height: 36
+                radius: 18
+                color: root.following ? "transparent" : (followMouse.containsMouse ? Theme.accentHover : Theme.accent)
+                border.width: 2
+                border.color: root.following ? Theme.accent : "transparent"
+                scale: followMouse.pressed ? 0.94 : followMouse.containsMouse ? 1.04 : 1
+                Behavior on color { ColorAnimation { duration: 180 } }
+                Behavior on scale { NumberAnimation { duration: 120 } }
+                Accessible.role: Accessible.Button
+                Accessible.name: root.following ? qsTr("Seguindo. Clique para deixar de seguir") : qsTr("Seguir artista no Spotify")
                 Label {
                     id: followLabel
                     anchors.centerIn: parent
-                    text: root.following ? qsTr("Seguindo") : qsTr("Seguir")
-                    color: Theme.textPrimary
+                    text: root.following ? qsTr("✓  Seguindo") : qsTr("+  Seguir")
+                    color: root.following ? Theme.accent : Theme.textOnAccent
                     font.pixelSize: 14
                     font.weight: Font.Bold
+                    Behavior on color { ColorAnimation { duration: 180 } }
                 }
                 MouseArea {
                     id: followMouse
@@ -296,16 +303,6 @@ Flickable {
         }
 
         Row{spacing:12;Button{text:root.showListening?"Ocultar estatísticas":"Estatísticas";onClicked:root.showListening=!root.showListening}Button{visible:root.showListening;text:{root.journalRevision;const s=App.music.summary("artist",root.name);return(s.plays||0)+" escutas · "+((s.ms||0)/60000).toFixed(1)+" min · "+(s.tracks||0)+" músicas"}onClicked:{listeningDetail.report=App.music.statistics(180,"artists").rows.find(r=>r.label===root.name)||{};listeningDetail.open()}}}
-        Column {
-            visible: root.cities.length > 0
-            width: parent.width
-            spacing: 5
-            Label { text: qsTr("Ouvintes por cidade • página pública do Spotify"); color: Theme.textPrimary; font.bold: true }
-            Repeater {
-                model: root.cities
-                Label { required property var modelData; text: modelData.city + ", " + modelData.country + " • " + Number(modelData.listeners).toLocaleString() + qsTr(" ouvintes"); color: Theme.textSecondary }
-            }
-        }
         // Populares
         Column {
             visible: root.popular.length > 0
@@ -327,7 +324,7 @@ Flickable {
                     album: modelData.album
                     coverUrl: modelData.coverUrl
                     durationMs: modelData.durationMs
-                    catalogStats: modelData.playCount >= 0 ? Number(modelData.playCount).toLocaleString() + qsTr(" reproduções no Spotify") : (modelData.popularity >= 0 ? qsTr("Popularidade %1/100").arg(modelData.popularity) : "")
+                    catalogStats: modelData.playCount >= 0 ? App.catalogStats.compact(modelData.playCount) + qsTr(" plays") : (modelData.popularity >= 0 ? qsTr("Popularidade %1/100").arg(modelData.popularity) : "")
                     explicitContent: !!modelData.explicit
                     showAlbum: false
                     isCurrent: App.player.trackUri === modelData.uri

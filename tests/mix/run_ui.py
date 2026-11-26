@@ -18,6 +18,19 @@ QtObject {
  property QtObject music:QtObject{property var homeAlbums:[];property var favoriteRows:[];function requestHomeAlbums(){}signal changed();function summary(k,v){return {ms:0,plays:0,tracks:[]}}function liked(t){return favoriteRows.indexOf(t.uri)>=0}function favorite(t){let i=favoriteRows.indexOf(t.uri);if(i>=0)favoriteRows.splice(i,1);else favoriteRows.push(t.uri);changed()}}
  property QtObject player:QtObject{property bool transitionsEnabled:false;property string transitionEffect:"random";property int transitionSeconds:6;property int transitionIntroSeconds:6;property bool transitionsAvailable:true;property string transitionStatus:"";property var transitionEffects:[{id:"random",name:"Aleatório",description:"Um efeito diferente a cada troca."},{id:"fade",name:"Fade cruzado",description:"d"},{id:"echo",name:"Eco de despedida",description:"d"},{id:"filter",name:"Troca de graves",description:"d"},{id:"brake",name:"Freio de vinil",description:"d"},{id:"reverb",name:"Banho de reverb",description:"d"},{id:"roll",name:"Loop acelerado",description:"d"}];property int volume:60;property string coverUrlLarge:"";function setVolume(v){volume=Math.max(0,Math.min(100,v))}property int volumeBeforeMute:30;function toggleMute(){if(volume>0){volumeBeforeMute=volume;setVolume(0)}else setVolume(volumeBeforeMute)}property string contextUri:"";property string trackUri:"";property bool hasTrack:false;property string repeatMode:"off";property int repeatCycles:0;function cycleRepeat(){repeatCycles++;repeatMode=repeatMode==="off"?"context":repeatMode==="context"?"track":"off"}property bool isPlaying:false;property bool shuffle:false;property var queue:[{uri:"spotify:track:next",name:"Next song",artists:"Next artist",durationMs:180000}];property bool delayQueue:false;property int refreshes:0;signal queueRefreshFinished(int status);function refreshQueue(){refreshes++;if(!delayQueue){queueChanged();queueRefreshFinished(200)}}signal playbackRequested();function togglePlay(){}function playContext(a,b,c){}function playUris(a,b){}property var playlistInsertions:[];function insertTracksInQueue(rows,placement){playlistInsertions=playlistInsertions.concat([{rows:rows,placement:placement}])}}
  property QtObject listeningMix:QtObject{property bool busy:false;property string status:"";property var received:({});property var previewQueue:[];property var committedRows:[];property bool discoveryEnabled:false;property bool randomEnabled:false;property bool enrichmentEnabled:false;property string enrichmentStatus:"";function queueFor(uri){return committedRows}property var applied:null;function applyModes(rows,shake,random,discovery){applied={rows:rows,shake:shake,random:random,discovery:discovery}}property int appliedPosition:-1;signal changed();signal previewReady();function preview(rows,index,random,discovery,album){received={rows:rows,index:index,random:random,discover:discovery,album:album};previewQueue=rows.slice();previewReady();changed()}function applyPreview(position){appliedPosition=position}function cancel(){}function order(n,seed){let a=[];for(let i=1;i<n;i++)a.push(i);a.push(0);return a}function play(rows,index,random,discover,album){received={rows:rows,index:index,random:random,discover:discover,album:album}}}
+ property QtObject catalogStats:QtObject{
+  property int revision:0
+  property var known:({"spotify:track:fixture0":1200,"spotify:track:fixture1":4831164,"spotify:track:fixture2":200500,"spotify:track:fixture3":-1,"spotify:track:q1":10,"spotify:track:q2":2200,"spotify:track:q3":27396836,"spotify:track:q5":999})
+  property var requested:[]
+  signal playsChanged()
+  signal artistStatsReady(string id,var stats)
+  function plays(uri){return known[uri]!==undefined?known[uri]:-1}
+  function requestAlbums(ids){requested=requested.concat(ids)}
+  function albumKnown(id){return true}
+  function pendingAlbums(){return 0}
+  function artistStats(id){}
+  function compact(v){if(v<0)return "";if(v<1000)return String(v);const u=["K","M","B"];let x=v,i=-1;while(x>=1000&&i<2){x/=1000;i++}const r=Math.round(x*10)/10;return (r===Math.floor(r)?String(r):r.toFixed(1).replace(".",","))+u[i]}
+ }
  property QtObject api:QtObject{
   property int writes:0
   property int collectionStatus:200
@@ -59,6 +72,7 @@ Pane {id:harness;width:1000;height:800;padding:0;palette.button:"#263440";palett
    anchors.fill:parent
    anchors.margins:10
    tone:App.theme.current
+   catalog:App.catalogStats
    player:QtObject {
     property bool hasTrack:true
     property string trackName:"Entre Estações"
@@ -68,11 +82,11 @@ Pane {id:harness;width:1000;height:800;padding:0;palette.button:"#263440";palett
     property int playedEntry:-1
     function playQueueEntry(token,index){if(token===queueEditToken)playedEntry=index}
     property var queue:[
-     {name:"Luz de Vidro",artists:"Vento Norte",albumId:"a",durationMs:180000},
-     {name:"Maré Baixa",artists:"Vento Norte",albumId:"a",durationMs:240000},
-     {name:"Órbita",artists:"Sete Luas",albumId:"b",durationMs:180000,mixExternal:true},
-     {name:"A Última Rua",artists:"Sete Luas",albumId:"b",durationMs:120000},
-     {name:"Farol",artists:"Horizonte Sul",albumId:"c",durationMs:240000}
+     {name:"Luz de Vidro",artists:"Vento Norte",albumId:"a",durationMs:180000,uri:"spotify:track:q1"},
+     {name:"Maré Baixa",artists:"Vento Norte",albumId:"a",durationMs:240000,uri:"spotify:track:q2"},
+     {name:"Órbita",artists:"Sete Luas",albumId:"b",durationMs:180000,mixExternal:true,uri:"spotify:track:q3"},
+     {name:"A Última Rua",artists:"Sete Luas",albumId:"b",durationMs:120000,uri:"spotify:track:q4"},
+     {name:"Farol",artists:"Horizonte Sul",albumId:"c",durationMs:240000,uri:"spotify:track:q5"}
     ]
     function editQueue(token,order){
      if(token!==queueEditToken)return false
@@ -257,6 +271,43 @@ Pane {id:harness;width:1000;height:800;padding:0;palette.button:"#263440";palett
    let original=personal.current;personal.current=Object.assign({},original,{uri:"spotify:track:different"});
    verify(!personalPanel.queueLoading);verify(personalPanel.queueNotice.indexOf("mudou")>=0);App.player.queueRefreshFinished(200);compare(App.listeningMix.previewQueue.length,0);
    findChild(personalPanel,"songQueueDialog").close();personalPanel.close();personal.current=original;App.player.delayQueue=false;
+  }
+  function test_queue_sort_menu_plays_and_restore(){
+   const card=queueFixture.createObject(harness)
+   const editor=findChild(card,"fixtureQueueEditor")
+   const list=findChild(editor,"editableQueueList")
+   tryCompare(list,"count",5)
+   tryVerify(()=>list.itemAtIndex(2)!==null)
+   compare(list.itemAtIndex(2).byline,"Sete Luas · Descoberta · 27,4M plays")
+   compare(list.itemAtIndex(3).byline,"Sete Luas")
+   const button=findChild(editor,"queueSort")
+   verify(button.enabled)
+   compare(button.text,"↑↓ Ordenar")
+   editor.chooseSort("plays")
+   compare(editor.player.queue.map(t=>t.name).join("|"),"Órbita|Maré Baixa|Farol|Luz de Vidro|A Última Rua")
+   compare(button.text,"↑↓ Mais tocadas (Spotify) ↓")
+   verify(editor.sortStatus.indexOf("sem dado público no fim")>0)
+   editor.chooseSort("plays")
+   compare(editor.player.queue.map(t=>t.name).join("|"),"Luz de Vidro|Farol|Maré Baixa|Órbita|A Última Rua")
+   editor.chooseSort("title")
+   compare(editor.player.queue.map(t=>t.name).join("|"),"A Última Rua|Farol|Luz de Vidro|Maré Baixa|Órbita")
+   editor.chooseSort("original")
+   compare(editor.player.queue.map(t=>t.name).join("|"),"Luz de Vidro|Maré Baixa|Órbita|A Última Rua|Farol")
+   wait(80);captureSong(card,"desktop-fila-ordenar-0181.png")
+   card.destroy()
+  }
+  function test_collection_sort_button_and_compact_plays(){
+   tryCompare(page,"totalTracks",6)
+   const button=findChild(page,"collectionSort")
+   verify(button!==null)
+   compare(button.text,"↑↓ Ordenar: Ordem original")
+   page.chooseSort("plays")
+   compare(page.rawRows().map(r=>r.uri).slice(0,3).join("|"),"spotify:track:fixture1|spotify:track:fixture2|spotify:track:fixture0")
+   compare(button.text,"↑↓ Ordenar: Mais tocadas (Spotify) ↓")
+   verify(App.catalogStats.requested.indexOf("album")>=0)
+   page.chooseSort("original")
+   compare(page.rawRows()[0].uri,"spotify:track:fixture0")
+   compare(App.api.writes,0)
   }
   function test_visual_order_and_playback_are_independent(){
    tryCompare(page,"totalTracks",6);let original=page.mixRows();compare(original.length,6);compare(original[0].uri,"spotify:track:fixture0");compare(original[0].artist,"Test Band");compare(original[0].year,1994)

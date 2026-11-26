@@ -1,0 +1,26 @@
+{
+ "version": "0.18.1",
+ "date": "2026-11-26",
+ "androidVersionCode": 51,
+ "report": "Usuário pediu ordenação num botão com lista, aplicada também à fila; ouvintes por cidade e mais dados do artista (integrantes, origem, início, idades) nos Bastidores; plays abreviados; plays em álbum, playlist e fila; botão Seguir/Seguindo estilizado; e, em seguida, corrigir o '#0 no mundo' usando apenas um ranking real.",
+ "validation": {
+  "rustJamTransport": "3/3 (allowlist, estatísticas públicas com worldRank 0 tratado como ausente, plays por álbum ignorando linhas inválidas)",
+  "realSpotifyWindows": "TonalJam.exe com a sessão Spotify existente deste PC: queryArtistOverview HTTP 200 para dois artistas públicos (worldRank 7 e 136) e albumPlays com 13 faixas de um álbum público; álbum inexistente responde sem dados e não interrompe o lote. Leitura apenas; nada escrito na conta.",
+  "musicBrainzLive": "A busca por nome respondeu HTTP 503 search-shed durante a sessão (causa do 'temporariamente indisponíveis' do print). A consulta por link do Spotify (/ws/2/url) respondeu 200 e identificou o artista; a consulta do artista trouxe integrantes com instrumentos e períodos.",
+  "windowsCtest": "12/12 (companion_unit inclui integrantes agrupados, idades a partir de datas registradas, recusa de idade futura e identidade por link único)",
+  "qml": "mix 37/37 (inclui ordenação da fila por plays, inversão, título e desfazer; botão Ordenar da playlist e plays abreviados), lyrics 7/7, playlist 4/4, temas 8/267",
+  "qmlGlyph": "O harness offscreen não desenha ⇅ nem ↕; o Windows usa ↑↓ no botão, conferido na captura out/mix-ui/desktop-fila-ordenar-0181.png",
+  "javaHost": "CatalogFormatChecks 21 checagens (formato 2,2K/200,5K/4,5M/1,2B e idades); Android release e benchmark compilados",
+  "androidApks": "Universal 50.022.939 bytes e ARM64 27.750.708 bytes; versionCode 51; certificado SHA-256 464ae7cf…a22c2 igual ao da 0.18.0; zipalign 16 KiB OK; verify_apk PASS sem bibliotecas do leitor e sem credenciais",
+  "androidAvd": "Tonal_Local_20261015 com APK benchmark: queue_editor_smoke com a nova etapa de ordenação (Título A–Z, Z–A e desfazer mantendo a atual) PASS. Na primeira execução o cenário 'contexto lido do player' (499 faixas) falhou com 'Não foi possível consultar a fila'; a repetição completa passou em todas as etapas, sem mudança de código. Causa não estabelecida; registrado como intermitente.",
+  "windowsPortable": "Tonalify.exe e TonalHub.exe do pacote 0.18.1 abriram e seguiram em execução por 9 s; TonalJam.exe do pacote igual ao compilado"
+ },
+ "limits": [
+  "Sem Spotify autenticado no Android (AVD sem login) e sem aparelho físico",
+  "Seguir/deixar de seguir não foi exercido contra a conta real nesta versão",
+  "A consulta persistente getAlbum/queryArtistOverview é do cliente Spotify e pode mudar sem aviso",
+  "Integrantes e idades dependem dos dados colaborativos do MusicBrainz",
+  "Sem benchmark novo"
+ ],
+ "toolsInstalled": "Nenhum aplicativo ou ferramenta adicional instalado ou baixado. O bundle público do web player do Spotify foi baixado para o scratchpad só para ler os nomes das consultas persistentes."
+}

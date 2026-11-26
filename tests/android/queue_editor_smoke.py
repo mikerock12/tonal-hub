@@ -115,6 +115,26 @@ assert_order(nodes, "Agora · Mix Fixture 3", "Mix Fixture 2", "Mix Fixture 4", 
 assert not any(matches(node, "Mix Fixture 3") or matches(node, "Mix Fixture 1") for node in nodes)
 print("PASS Android double tap starts the selected occurrence and preserves every other upcoming track")
 
+# 0.18.1: the sort button reorders upcoming entries through the same queue edit.
+adb("shell", "am", "force-stop", PACKAGE)
+adb("shell", "am", "start", "-W", "-n", ACTIVITY, "--ez", "queueEditorFixture", "true")
+nodes = wait_for("Agora · Mix Fixture 1", "Mix Fixture 2", "Ordenar as próximas músicas da fila")
+tap(nodes, "Ordenar as próximas músicas da fila")
+tap(wait_for("Ordenar a fila", "Título A–Z"), "Título A–Z")
+nodes = wait_for("Mix Fixture 2", "Mix Fixture 3", "Mix Fixture 4")
+assert_order(nodes, "Mix Fixture 2", "Mix Fixture 3", "Mix Fixture 4")
+tap(nodes, "Ordenar as próximas músicas da fila")
+tap(wait_for("Ordenar a fila", "Título A–Z · tocar de novo inverte"), "Título A–Z · tocar de novo inverte")
+nodes = wait_for("Mix Fixture 2", "Mix Fixture 3", "Mix Fixture 4")
+assert_order(nodes, "Mix Fixture 4", "Mix Fixture 3", "Mix Fixture 2")
+assert any(node.get("text", "").startswith("Fila ordenada: Título Z–A") for node in nodes)
+screenshot("android-fila-ordenar-0181.png")
+tap(nodes, "Ordenar as próximas músicas da fila")
+tap(wait_for("Ordenar a fila", "Ordem anterior (desfazer)"), "Ordem anterior (desfazer)")
+nodes = wait_for("Mix Fixture 2", "Mix Fixture 3", "Mix Fixture 4")
+assert_order(nodes, "Mix Fixture 2", "Mix Fixture 3", "Mix Fixture 4")
+print("PASS Android queue sort menu: title A–Z, inverted Z–A and undo keep the current track")
+
 def launch_long_queue(*extras):
     adb("shell", "am", "force-stop", PACKAGE)
     adb("shell", "am", "start", "-W", "-n", ACTIVITY, "--ez", "queueEditorFixture", "true",
