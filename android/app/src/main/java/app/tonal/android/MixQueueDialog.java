@@ -23,6 +23,13 @@ final class MixQueueDialog {
     private final ArrayList<Entry> entries = new ArrayList<>();
     private final ArrayList<View> rowViews = new ArrayList<>();
     private final ImageButton[] buttons = new ImageButton[3];
+    private final SpotifyClient api;
+    private final IdentityHashMap<TextView,JSONObject> artistLines = new IdentityHashMap<>();
+    private final Runnable playsChanged = this::refreshPlays;
+    private String sortMode = "original";
+    private boolean sortDescending, sorting;
+    private ArrayList<Entry> beforeSort;
+    private TextView sortButton;
 
     private Dialog dialog;
     private LinearLayout rows, editActions, modeActions;
@@ -75,6 +82,7 @@ final class MixQueueDialog {
     MixQueueDialog(MainActivity host,SpotifyClient api,MusicStore store){
         this.host=host;
         this.store=store;
+        this.api=api;
         ui=new Ui(host);
         mixer=new ListeningMix(api,store);
         artwork=new Artwork(host);
@@ -135,6 +143,12 @@ final class MixQueueDialog {
         }
         modes.addView(ui.icon("close","Descartar prévia",()->load(3)),new LinearLayout.LayoutParams(ui.dp(48),ui.dp(48)));
         modes.getChildAt(3).setVisibility(View.GONE);
+        sortButton=ui.pill("↕  Ordenar",false,this::chooseSort);
+        sortButton.setContentDescription("Ordenar as próximas músicas da fila");
+        LinearLayout.LayoutParams sortSize=new LinearLayout.LayoutParams(-2,-2);
+        sortSize.leftMargin=ui.dp(8);
+        modes.setGravity(Gravity.CENTER_VERTICAL);
+        modes.addView(sortButton,sortSize);
         modeActions.addView(modes);
         CheckBox analyze=new CheckBox(host);
         analyze.setText("Analisar letras das candidatas");
@@ -162,7 +176,9 @@ final class MixQueueDialog {
             artwork.close();
             handler.removeCallbacksAndMessages(null);
             scroll.removeCallbacks(scrollDrag);
+            PlayCounts.get().forget(playsChanged);
         });
+        PlayCounts.get().listen(playsChanged);
         dialog.show();
         dialog.getWindow().setLayout(-1,-1);
         load(mode);
@@ -195,7 +211,10 @@ final class MixQueueDialog {
                     for(Entry entry:entries)discovery|=entry.track.optBoolean("_mixExternal");
             }
             showStatus(partial?"Fila parcial do Spotify. A ordem atual foi preservada.":entries.isEmpty()?"Nenhuma próxima música.":"");
+            beforeSort=null;
+            sortMode="original";
             render();
+            PlayCounts.get().requestAlbums(PlayCounts.albumIds(tracks));
             if(mode<3)generate(mode);
         },error->{
             if(dialog.isShowing()&&request==serial)showStatus("Não foi possível consultar a fila. "+error);
@@ -241,6 +260,51 @@ final class MixQueueDialog {
         editing=!editing;
         if(!editing)for(Entry entry:entries)entry.marked=false;
         render();
+    }
+
+    /** Sorts the upcoming entries through the same transactional edit as drag and drop. */
+    private void chooseSort(){
+        if(sorting)return;
+        if(!canEdit()){showStatus(partial?"Fila parcial do Spotify: a ordem não pode ser alterada.":"Conclua a prévia ou a edição antes de ordenar.");return;}
+        TrackSort.choose(host,"Ordenar a fila",sortMode,sortDescending,TrackSort.MODES,"Ordem anterior (desfazer)",mode->{
+            if(mode.equals("original")){
+                if(beforeSort==null){showStatus("A fila já está na ordem anterior à ordenação.");return;}
+                ArrayList<Entry> restore=new ArrayList<>();
+                for(Entry entry:beforeSort)if(entries.contains(entry))restore.add(entry);
+                for(Entry entry:entries)if(!restore.contains(entry))restore.add(entry);
+                sortMode="original";
+                beforeSort=null;
+                save(restore);
+                return;
+            }
+            if(sortMode.equals(mode))sortDescending=!sortDescending;
+            else{sortMode=mode;sortDescending=TrackSort.defaultDescending(mode);}
+            if(mode.equals("albumFavorites"))showStatus("O Spotify não informa o total de favoritos dos álbuns; itens sem dado ficam no fim.");
+            ArrayList<JSONObject> next=new ArrayList<>();
+            for(Entry entry:entries)next.add(entry.track);
+            int request=serial,revision=snapshotRevision;
+            sorting=true;
+            updateActions();
+            TrackSort.whenReady(api,next,mode,()->dialog.isShowing()&&request==serial&&revision==snapshotRevision,()->{
+                sorting=false;
+                if(beforeSort==null)beforeSort=new ArrayList<>(entries);
+                save(TrackSort.sorted(entries,entry->entry.track,sortMode,sortDescending,store));
+                showStatus("Fila ordenada: "+TrackSort.label(sortMode,sortDescending)+(sortMode.equals("plays")?" · sem dado público no fim":""));
+            },text->{if(dialog.isShowing())showStatus(text);});
+        });
+    }
+
+    private void refreshPlays(){
+        if(dialog==null||!dialog.isShowing())return;
+        for(Map.Entry<TextView,JSONObject> line:artistLines.entrySet()){
+            String text=artistLine(line.getValue());
+            if(!text.contentEquals(line.getKey().getText()))line.getKey().setText(text);
+        }
+    }
+
+    private static String artistLine(JSONObject track){
+        long plays=PlayCounts.get().plays(track.optString("uri"));
+        return CatalogScreen.artists(track)+(track.optBoolean("_mixExternal")?" · Descoberta":"")+(plays>=0?" · "+PlayCounts.compact(plays)+" plays":"");
     }
 
     private void confirmClear(){
@@ -361,6 +425,10 @@ final class MixQueueDialog {
         enabled(up,enabled&&canUp);
         enabled(down,enabled&&canDown);
         enabled(remove,enabled&&marked);
+        if(sortButton!=null){
+            sortButton.setText(sorting?"↕  Ordenando…":sortMode.equals("original")?"↕  Ordenar":"↕  "+TrackSort.label(sortMode,sortDescending));
+            enabled(sortButton,editingAvailable&&entries.size()>1&&!sorting);
+        }
         apply.setVisibility(prepared==null?View.GONE:View.VISIBLE);
         apply.setEnabled(!preparing);
         ((LinearLayout)buttons[0].getParent()).getChildAt(3).setVisibility(preview?View.VISIBLE:View.GONE);
@@ -376,6 +444,7 @@ final class MixQueueDialog {
     private void render(){
         rows.removeAllViews();
         rowViews.clear();
+        artistLines.clear();
         List<JSONObject> next=new ArrayList<>();
         if(prepared!=null)next=prepared.subList(1,prepared.size());
         else for(Entry entry:entries)next.add(entry.track);
@@ -417,7 +486,8 @@ final class MixQueueDialog {
         name.setEllipsize(TextUtils.TruncateAt.END);
         if(active)name.setTypeface(null,Typeface.BOLD);
         labels.addView(name);
-        TextView artist=ui.text(CatalogScreen.artists(track)+(track.optBoolean("_mixExternal")?" · Descoberta":""),12,Ui.MUTED);
+        TextView artist=ui.text(artistLine(track),12,Ui.MUTED);
+        artistLines.put(artist,track);
         artist.setSingleLine();
         artist.setEllipsize(TextUtils.TruncateAt.END);
         labels.addView(artist);

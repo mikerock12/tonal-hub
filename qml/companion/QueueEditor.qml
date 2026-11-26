@@ -16,6 +16,121 @@ ColumnLayout {
     readonly property bool partial: !!(player && player.queuePartial)
     readonly property bool available: visible && !partial && loadedToken !== ""
     readonly property int rowHeight: 56
+    // 0.18.1: public plays (CatalogStats) and Web API for artist metadata; both optional.
+    property var catalog: null
+    property var api: null
+    property string sortMode: "original"
+    property bool sortDescending: false
+    property bool sorting: false
+    property string sortStatus: ""
+    property var beforeSort: null
+    property var artistMeta: ({})
+    property var waitingAlbums: []
+    property var pendingSort: null
+    readonly property var sortModes: [
+        {id:"original",label:qsTr("Ordem anterior")},{id:"title",label:qsTr("Título A–Z")},
+        {id:"duration",label:qsTr("Duração")},{id:"artist",label:qsTr("Artista A–Z")},
+        {id:"album",label:qsTr("Álbum A–Z")},{id:"genre",label:qsTr("Gênero A–Z")},
+        {id:"plays",label:qsTr("Mais tocadas (Spotify)")},{id:"followers",label:qsTr("Seguidores do artista")}
+    ]
+    function sortLabel(mode, descending) {
+        const m = sortModes.find(x => x.id === mode)
+        if (!m || mode === "original") return qsTr("Ordenar")
+        const text = ["title","artist","album","genre"].indexOf(mode) >= 0
+        return m.label.replace(" A–Z", "") + (text ? (descending ? " Z–A" : " A–Z") : (descending ? " ↓" : " ↑"))
+    }
+    function playsOf(uri) { return catalog ? catalog.plays(uri) : -1 }
+    function sortValue(e, mode) {
+        switch (mode) {
+        case "title": return e.queueName
+        case "artist": return e.artist
+        case "album": return e.album
+        case "genre": return (artistMeta[e.artistId] || {}).genre || ""
+        case "duration": return e.durationMs > 0 ? e.durationMs : -1
+        case "plays": return playsOf(e.uri)
+        case "followers": { const f = (artistMeta[e.artistId] || {}).followers; return f === undefined ? -1 : f }
+        }
+        return 0
+    }
+    function compareEntries(a, b, mode, descending) {
+        const av = sortValue(a, mode), bv = sortValue(b, mode)
+        if (typeof av === "string") {
+            const x = av.trim(), y = bv.trim()
+            if (!x !== !y) return x ? -1 : 1
+            const c = x.localeCompare(y, "pt-BR", {sensitivity: "base"})
+            return (descending ? -c : c) || a.position - b.position
+        }
+        if ((av < 0) !== (bv < 0)) return av < 0 ? 1 : -1
+        return (descending ? bv - av : av - bv) || a.position - b.position
+    }
+    function rows() {
+        const out = []
+        for (let i = 0; i < entries.count; ++i) out.push(Object.assign({position: i}, JSON.parse(JSON.stringify(entries.get(i)))))
+        return out
+    }
+    function replaceRows(list) {
+        entries.clear()
+        for (const r of list) { delete r.position; entries.append(r) }
+        saveOrder()
+    }
+    function chooseSort(mode) {
+        if (!available || entries.count < 2 || sorting) return
+        if (mode === "original") {
+            if (!beforeSort) { sortStatus = qsTr("A fila já está na ordem anterior à ordenação."); return }
+            const pool = rows(), restored = []
+            for (const uri of beforeSort) { const k = pool.findIndex(r => r.uri === uri); if (k >= 0) restored.push(pool.splice(k, 1)[0]) }
+            sortMode = "original"; beforeSort = null; sortStatus = ""
+            replaceRows(restored.concat(pool))
+            return
+        }
+        if (sortMode === mode) sortDescending = !sortDescending
+        else { sortMode = mode; sortDescending = ["plays","followers"].indexOf(mode) >= 0 }
+        pendingSort = {mode: sortMode, descending: sortDescending, token: loadedToken}
+        sorting = true
+        if (mode === "plays" && catalog) {
+            const ids = [...new Set(rows().map(r => r.albumId).filter(id => id))]
+            waitingAlbums = ids
+            catalog.requestAlbums(ids)
+            checkPlays()
+        } else if ((mode === "genre" || mode === "followers") && api) {
+            loadArtists([...new Set(rows().map(r => r.artistId).filter(id => id && !artistMeta[id]))], 0)
+        } else finishSort()
+    }
+    function checkPlays() {
+        if (!pendingSort || pendingSort.mode !== "plays") return
+        let known = 0
+        for (const id of waitingAlbums) if (catalog.albumKnown(id)) known++
+        if (known >= waitingAlbums.length || catalog.pendingAlbums() === 0) finishSort()
+        else sortStatus = qsTr("Carregando plays do Spotify: %1/%2 álbuns…").arg(known).arg(waitingAlbums.length)
+    }
+    function loadArtists(ids, offset) {
+        if (offset >= ids.length) { finishSort(); return }
+        sortStatus = qsTr("Carregando gêneros e seguidores…")
+        const token = loadedToken
+        api.call("GET", "/artists", {ids: ids.slice(offset, offset + 50).join(",")}, null, function(status, data) {
+            if (token !== editor.loadedToken || !editor.pendingSort) return
+            if (status === 200 && data) {
+                const meta = Object.assign({}, editor.artistMeta)
+                for (const a of data.artists || []) if (a) meta[a.id] = {genre: (a.genres || []).join(", "), followers: a.followers && a.followers.total !== undefined ? a.followers.total : -1}
+                editor.artistMeta = meta
+                editor.loadArtists(ids, offset + 50)
+            } else { editor.sortStatus = qsTr("Dados de artistas incompletos; itens sem dado ficam no fim."); editor.finishSort() }
+        })
+    }
+    function finishSort() {
+        const job = pendingSort; pendingSort = null; sorting = false
+        if (!job || job.token !== loadedToken || !available) { sortStatus = qsTr("A fila mudou durante a ordenação."); return }
+        const list = rows()
+        if (!beforeSort) beforeSort = list.map(r => r.uri)
+        list.sort((a, b) => compareEntries(a, b, job.mode, job.descending))
+        replaceRows(list)
+        sortStatus = qsTr("Fila ordenada: %1").arg(sortLabel(job.mode, job.descending)) + (job.mode === "plays" ? qsTr(" · sem dado público no fim") : "")
+    }
+    Connections {
+        target: editor.catalog
+        ignoreUnknownSignals: true
+        function onPlaysChanged() { editor.checkPlays() }
+    }
 
     function reload() {
         dragFrom = dragIndex = -1
@@ -25,8 +140,10 @@ ColumnLayout {
         for (let i = 0; i < tracks.length; ++i) {
             const t = tracks[i]
             entries.append({ordinal:i, marked:false, queueName:t.name || "", artist:t.artists || "",
-                            queueCover:t.coverUrl || "", external:!!t.mixExternal})
+                            queueCover:t.coverUrl || "", external:!!t.mixExternal, uri:t.uri || "",
+                            album:t.album || "", albumId:t.albumId || "", artistId:t.artistId || "", durationMs:t.durationMs || 0})
         }
+        if (catalog && tracks.length) catalog.requestAlbums([...new Set(tracks.map(t => t.albumId).filter(id => id))])
         markedCount = 0
         if (!tracks.length || partial) editing = false
     }
@@ -145,11 +262,11 @@ ColumnLayout {
 
     GridLayout {
         Layout.fillWidth: true
-        columns: editor.width < 420 ? 2 : 3
+        columns: editor.width < 480 ? 3 : 4
         Label {
             objectName: "queueSummary"
             Layout.fillWidth: true
-            Layout.columnSpan: parent.columns === 2 ? 2 : 1
+            Layout.columnSpan: parent.columns === 3 ? 3 : 1
             text: editor.summary(editor.player && editor.player.queue || [])
             color: editor.tone.textSecondary
             font.pixelSize: 12
@@ -157,7 +274,7 @@ ColumnLayout {
         }
         Button {
             text: qsTr("Limpar")
-            Layout.fillWidth: parent.columns === 2
+            Layout.fillWidth: parent.columns === 3
             enabled: editor.available && entries.count > 0 && editor.dragIndex < 0
             onClicked: {
                 confirm.token = editor.loadedToken
@@ -166,10 +283,40 @@ ColumnLayout {
         }
         Button {
             text: editor.editing ? qsTr("Concluir") : qsTr("Editar")
-            Layout.fillWidth: parent.columns === 2
+            Layout.fillWidth: parent.columns === 3
             enabled: editor.available && entries.count > 0 && editor.dragIndex < 0
             onClicked: { if (editor.editing) editor.stopEditing(); else editor.editing = true }
         }
+        Button {
+            id: sortButton
+            objectName: "queueSort"
+            text: editor.sorting ? qsTr("↑↓ Ordenando…") : "↑↓ " + editor.sortLabel(editor.sortMode, editor.sortDescending)
+            Layout.fillWidth: parent.columns === 3
+            enabled: editor.available && entries.count > 1 && editor.dragIndex < 0 && !editor.editing && !editor.sorting
+            onClicked: sortMenu.popup(sortButton, 0, sortButton.height)
+            Menu {
+                id: sortMenu
+                Repeater {
+                    model: editor.sortModes
+                    MenuItem {
+                        required property var modelData
+                        text: modelData.id === editor.sortMode && modelData.id !== "original"
+                              ? editor.sortLabel(modelData.id, editor.sortDescending) + qsTr("  (clique para inverter)") : modelData.label
+                        checkable: true
+                        checked: modelData.id === editor.sortMode
+                        onTriggered: editor.chooseSort(modelData.id)
+                    }
+                }
+            }
+        }
+    }
+    Label {
+        Layout.fillWidth: true
+        visible: editor.sortStatus !== ""
+        text: editor.sortStatus
+        color: editor.tone.textSecondary
+        font.pixelSize: 12
+        wrapMode: Text.WordWrap
     }
 
     QueueTrack {
@@ -220,10 +367,15 @@ ColumnLayout {
             required property string queueName
             required property string queueCover
             required property bool external
+            required property string uri
             width: list.width
             name: queueName
             cover: queueCover
-            byline: artist + (external ? qsTr(" · Descoberta") : "")
+            byline: {
+                const revision = editor.catalog ? editor.catalog.revision : 0
+                const plays = editor.playsOf(uri)
+                return artist + (external ? qsTr(" · Descoberta") : "") + (plays >= 0 ? " · " + editor.catalog.compact(plays) + qsTr(" plays") : "")
+            }
             highlighted: marked || editor.dragIndex === index
             z: editor.dragIndex === index ? 1 : 0
             selectable: editor.editing

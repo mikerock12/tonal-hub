@@ -1,4 +1,5 @@
 #pragma once
+#include <QDate>
 #include <QObject>
 #include "LocalStories.h"
 #include <QJsonObject>
@@ -41,9 +42,13 @@ public:
   QVariantMap current() const {return m_current;}
   QVariantMap artistNotes() const {return m_artistNotes;}
   Q_INVOKABLE void loadArtistNotes();
+  Q_INVOKABLE void retryArtistNotes();
   Q_INVOKABLE void cancelArtistNotes(){++m_artistGeneration;m_artistName.clear();}
   static QVariantMap artistFacts(const QJsonObject &);
   static QString artistFromRelease(const QJsonObject &,const QString &name,const QString &album);
+  static QString linkedArtist(const QJsonObject &url);
+  static QString memberAge(const QString &born,const QString &died,const QDate &today);
+  static QString memberLine(const QVariantMap &member,const QDate &today);
   QVariantList favorites() const;
   QVariantList playlists() const;
   QVariantList lines() const{return m_lines;}

@@ -1,6 +1,8 @@
 # Contexto do Tonal Hub
 
-Atualizado em **26/11/2026**. Versão de trabalho **Windows 0.18.0 e Android 0.18.0**, versionCode 50.
+Atualizado em **26/11/2026**. Versão de trabalho **Windows 0.18.1 e Android 0.18.1**, versionCode 51.
+
+0.18.1: plays por faixa em álbuns, playlists e fila via `albumPlays` (consulta persistente `getAlbum` na sessão nativa, 8 álbuns por pedido, canal separado do Jam, cache 6 h), em formato abreviado. Ordenação num botão com menu, também na fila (edição transacional existente; "Ordem anterior" desfaz). `worldRank` 0 = fora do top 500 de ouvintes mensais, não exibido. Bastidores: identidade pelo link do Spotify no MusicBrainz, integrantes/instrumentos/período/idades registradas e cidades com mais ouvintes; 503 da busca mostra Tentar novamente. Botão Seguir/Seguindo estilizado. Ver docs/PLAYS_SORT_ARTIST_0181.md.
 
 0.18.0: seguir artistas e favoritar álbuns/playlists no Spotify nas duas plataformas; seguidos/favoritos locais de coleções no IndieTonal entram no backup. Artistas mostram seguidores, ouvintes mensais, plays e ouvintes por cidade via sessão nativa quando disponíveis, com fallback Web API. Listas têm nove ordenações temporárias sem alterar a playlist salva. O leitor Qwen foi removido: resumo determinístico de gêneros/clima e limpeza automática dos pesos antigos. Novo botão remove somente silêncio digital no fim da atual e começo da próxima, sozinho ou com transição. Ver docs/LIBRARY_POPULARITY_SILENCE_0180.md. Publicação: PR72 merge `bca01f7`, release v0.18.0; portal PR88 merge `27ac80f`, Worker `534e0934`; backup privado em https://drive.google.com/drive/folders/1Nx2lz-4vLZmP5QpWJcUYEohVw5lKY6WF (31 arquivos, somente proprietário).
 

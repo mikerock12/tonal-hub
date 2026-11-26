@@ -187,6 +187,8 @@ Rectangle {
         anchors.margins: 8
         player: root.player
         tone: App.theme.current
+        catalog: App.catalogStats
+        api: App.api
     }
 
     component QueueRow: Item {

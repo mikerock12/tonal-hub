@@ -17,13 +17,25 @@ Item {
     property string sortMode:"original"
     property bool sortDescending:false
     property var sortModes:[
-        {id:"original",label:qsTr("Ordem da playlist")},{id:"title",label:qsTr("Título A–Z")},
+        {id:"original",label:qsTr("Ordem original")},{id:"title",label:qsTr("Título A–Z")},
         {id:"duration",label:qsTr("Duração")},{id:"artist",label:qsTr("Artista A–Z")},
         {id:"album",label:qsTr("Álbum A–Z")},{id:"genre",label:qsTr("Gênero A–Z")},
-        {id:"plays",label:qsTr("Plays / suas escutas")},{id:"albumFavorites",label:qsTr("Favoritos do álbum")},
+        {id:"plays",label:qsTr("Mais tocadas (Spotify)")},{id:"albumFavorites",label:qsTr("Favoritos do álbum")},
         {id:"followers",label:qsTr("Seguidores do artista")}
     ]
     property int mixSeed:Math.floor(Math.random()*2147483647)
+    property var waitingAlbums:[]
+    property bool waitingPlays:false
+    property string sortStatus:""
+    function sortLabel(mode,descending){const m=sortModes.find(x=>x.id===mode);if(!m||mode==="original")return qsTr("Ordem original");const text=["title","artist","album","genre"].indexOf(mode)>=0;return m.label.replace(" A–Z","")+(text?(descending?" Z–A":" A–Z"):(descending?" ↓":" ↑"))}
+    function playsOf(row){return row.playCount>=0?row.playCount:(App.catalogStats?App.catalogStats.plays(row.uri):-1)}
+    function albumIds(){if(root.kind==="album")return[routeId()];return[...new Set(sourceRows.map(r=>r.albumId).filter(id=>id))]}
+    function routeId(){return route&&route.params?(route.params.id||""):""}
+    function requestPlays(){if(App.catalogStats&&sourceRows.length)App.catalogStats.requestAlbums(albumIds())}
+    function checkPlays(){if(!waitingPlays||!App.catalogStats)return;let known=0;for(const id of waitingAlbums)if(App.catalogStats.albumKnown(id))known++;if(known>=waitingAlbums.length||App.catalogStats.pendingAlbums()===0){waitingPlays=false;sortStatus="";rebuildSorted();afterSort()}else sortStatus=qsTr("Carregando plays do Spotify: %1/%2 álbuns…").arg(known).arg(waitingAlbums.length)}
+    // Ordenar a coleção que está tocando também reordena as próximas da fila atual.
+    function afterSort(){if(sortMode!=="original"&&playingHere())applyToPlaying()}
+    Connections{target:App.catalogStats||null;ignoreUnknownSignals:true;function onPlaysChanged(){root.checkPlays()}}
     function rawRows(){let rows=[];for(let i=0;i<trackModel.count;i++)rows.push(JSON.parse(JSON.stringify(trackModel.get(i))));return rows}
     function mixRows(){return rawRows().map(t=>({provider:"Spotify",id:t.uri,uri:t.uri,title:t.name,artist:t.artistsText,artistId:t.artistId,album:t.album,albumId:t.albumId,image:t.coverUrl,durationMs:t.durationMs,year:t.releaseYear||parseInt(root.year)||0}))}
     function personalRow(index){const t=trackModel.get(index);if(!t)return{};return{provider:"Spotify",id:t.uri,uri:t.uri,title:t.name,artist:t.artistsText,artistId:t.artistId,album:t.album,albumId:t.albumId,image:t.coverUrl,durationMs:t.durationMs,year:t.releaseYear||parseInt(root.year)||0}}
@@ -44,7 +56,7 @@ Item {
         return (av-bv)*direction || a.originalIndex-b.originalIndex
     }
     function rebuildSorted() {
-        let rows=sourceRows.map((t,i)=>Object.assign({},t,{originalIndex:i,sortPlayCount:t.playCount>=0?t.playCount:t.localPlays}))
+        let rows=sourceRows.map((t,i)=>Object.assign({},t,{originalIndex:i,sortPlayCount:root.playsOf(t)}))
         if (sortMode!=="original") rows.sort((a,b)=>compareRows(a,b,sortMode))
         trackModel.clear();for (let row of rows) trackModel.append(row)
     }
@@ -55,7 +67,8 @@ Item {
             listShaken=false;originalOrder=[];mixTouched=mode!=="original"||randomPlayback||discoveryPlayback
             if (mode==="genre"||mode==="followers") { loadArtistMetadata(0,[]); return }
             if (mode==="albumFavorites") Nav.toast(qsTr("O Spotify não informa o total de favoritos dos álbuns; itens sem dado ficam no fim."))
-            rebuildSorted()
+            if (mode==="plays"&&App.catalogStats) { waitingAlbums=albumIds();waitingPlays=true;App.catalogStats.requestAlbums(waitingAlbums);checkPlays();return }
+            rebuildSorted();afterSort()
         })
     }
     function loadArtistMetadata(offset,ids) {
@@ -74,7 +87,7 @@ Item {
                 const a=details[row.artistId];if(!a)return row
                 return Object.assign({},row,{artistMetadata:true,genre:(a.genres||[]).join(", "),artistFollowers:a.followers&&a.followers.total!==undefined?a.followers.total:-1})
             })
-            if (offset+50<ids.length) loadArtistMetadata(offset+50,ids);else rebuildSorted()
+            if (offset+50<ids.length) loadArtistMetadata(offset+50,ids);else {rebuildSorted();afterSort()}
         })
     }
     function likedAt(index){const t=personalRow(index);return!!t.uri&&App.music.liked(t)}
@@ -83,7 +96,7 @@ Item {
     // Quando esta coleção é a que toca, os modos valem na hora para a fila
     // atual, a partir da música que toca; senão, valem no próximo Reproduzir.
     function playingHere(){const u=App.player.trackUri||"";if(!App.player.hasTrack||App.player.localPlayback||!u.startsWith("spotify:track:"))return false;for(let i=0;i<trackModel.count;i++)if(trackModel.get(i).uri===u)return true;return false}
-    function applyToPlaying(){if(!playingHere())return false;ensureMix(function(){const rows=root.mixRows();const i=rows.findIndex(r=>r.uri===App.player.trackUri);if(i<0)return;const rest=(root.randomPlayback||root.listShaken)?rows.slice(i+1).concat(rows.slice(0,i)):rows.slice(i+1);if(!rest.length){Nav.toast("Não há próximas músicas nesta seleção.");return}App.listeningMix.applyModes([rows[i]].concat(rest),false,root.randomPlayback,root.discoveryPlayback);root.mixTouched=false;Nav.toast(root.discoveryPlayback?"Preparando a Descoberta 2+1 na fila atual…":"Fila atual atualizada; a música continua.")});return true}
+    function applyToPlaying(){if(!playingHere())return false;ensureMix(function(){const rows=root.mixRows();const i=rows.findIndex(r=>r.uri===App.player.trackUri);if(i<0)return;const rest=root.sortMode!=="original"&&!root.randomPlayback?rows.filter((r,k)=>k!==i):(root.randomPlayback||root.listShaken)?rows.slice(i+1).concat(rows.slice(0,i)):rows.slice(i+1);if(!rest.length){Nav.toast("Não há próximas músicas nesta seleção.");return}App.listeningMix.applyModes([rows[i]].concat(rest),false,root.randomPlayback,root.discoveryPlayback);root.mixTouched=false;Nav.toast(root.discoveryPlayback?"Preparando a Descoberta 2+1 na fila atual…":"Fila atual atualizada; a música continua.")});return true}
     function restoreOrder(){if(!listShaken)return;App.listeningMix.cancel();trackModel.clear();for(let t of originalOrder)trackModel.append(t);listShaken=false;sortMode="original";sortDescending=false;mixTouched=true;applyToPlaying()}
     function shakeList(){App.listeningMix.cancel();ensureMix(function(){sortMode="original";sortDescending=false;if(!root.listShaken)root.originalOrder=root.rawRows();let before=JSON.stringify(root.rawRows().map(t=>t.uri));let order=[];for(let attempt=0;attempt<5;attempt++){root.mixSeed=Math.floor(Math.random()*2147483647);order=App.listeningMix.order(root.originalOrder.length,root.mixSeed);if(JSON.stringify(order.map(i=>root.originalOrder[i].uri))!==before)break}trackModel.clear();for(let i of order)trackModel.append(root.originalOrder[i]);root.listShaken=true;root.mixTouched=true;root.applyToPlaying()})}
     Connections{target:App.player;function onPlaybackRequested(){root.pendingMix=null;root.loadingMix=false}}
@@ -141,7 +154,7 @@ Item {
     // ------------------------------------------------------------ dados
     function reset() {
         serial++
-        listShaken=false;randomPlayback=false;discoveryPlayback=false;mixTouched=false;loadingMix=false;pendingMix=null;originalOrder=[];sourceRows=[];sortMode="original";sortDescending=false
+        listShaken=false;randomPlayback=false;discoveryPlayback=false;mixTouched=false;loadingMix=false;pendingMix=null;originalOrder=[];sourceRows=[];sortMode="original";sortDescending=false;waitingPlays=false;sortStatus=""
         trackModel.clear()
         // Depois de clear() + append() o ListView põe currentIndex em 0 sozinho, e a primeira
         // faixa aparecia selecionada sem ninguém clicar nela.
@@ -309,6 +322,7 @@ Item {
         }
         sourceRows = sourceRows.concat([row])
         if (sortMode !== "original") rebuildSorted(); else trackModel.append(row)
+        Qt.callLater(requestPlays)
         totalDurationMs += t.duration_ms || 0
     }
 
@@ -668,20 +682,28 @@ Item {
                 x: 24
                 spacing: 8
                 visible: root.contentsAvailable && trackModel.count > 0
-                ComboBox {
-                    objectName: "collectionSort"
-                    width: 260
-                    model: root.sortModes
-                    textRole: "label"
-                    currentIndex: Math.max(0, root.sortModes.findIndex(m => m.id === root.sortMode))
-                    onActivated: root.chooseSort(root.sortModes[index].id)
-                }
                 Button {
-                    objectName: "collectionSortDirection"
-                    visible: root.sortMode !== "original"
-                    text: root.sortDescending ? qsTr("Decrescente") : qsTr("Crescente")
-                    onClicked: { root.sortDescending=!root.sortDescending;root.rebuildSorted() }
+                    id: sortButton
+                    objectName: "collectionSort"
+                    text: "↑↓ " + qsTr("Ordenar: %1").arg(root.sortLabel(root.sortMode, root.sortDescending))
+                    highlighted: root.sortMode !== "original"
+                    onClicked: sortMenu.popup(sortButton, 0, sortButton.height)
+                    Menu {
+                        id: sortMenu
+                        Repeater {
+                            model: root.sortModes
+                            MenuItem {
+                                required property var modelData
+                                text: modelData.id === root.sortMode && modelData.id !== "original"
+                                      ? root.sortLabel(modelData.id, root.sortDescending) + qsTr("  (clique para inverter)") : modelData.label
+                                checkable: true
+                                checked: modelData.id === root.sortMode
+                                onTriggered: root.chooseSort(modelData.id)
+                            }
+                        }
+                    }
                 }
+                Label { anchors.verticalCenter: parent.verticalCenter; visible: root.sortStatus !== ""; text: root.sortStatus; color: Theme.textSecondary; font.pixelSize: 12 }
             }
             Label{visible:root.showListening;x:24;width:parent.width-48;wrapMode:Text.Wrap;font.pixelSize:16;color:"#7ddbff";text:{root.journalRevision;const s=App.music.summary("album",root.ownerName+"|"+root.title);return(s.plays||0)+" escutas · "+((s.ms||0)/60000).toFixed(1)+" min · "+(s.tracks||0)+" músicas"}MouseArea{anchors.fill:parent;onClicked:{const rows=App.music.statistics(180,"albums").rows;listeningDetail.report=rows.find(r=>r.id===root.ownerName+"|"+root.title)||{};listeningDetail.open()}}}
             // Aviso de playlist sem conteúdo disponível
@@ -737,7 +759,11 @@ Item {
             title: name
             artists: artistsText
             explicitContent: explicit
-            catalogStats: playCount >= 0 ? Number(playCount).toLocaleString() + qsTr(" reproduções no Spotify") : (popularity >= 0 ? qsTr("Popularidade %1/100").arg(popularity) : "")
+            catalogStats: {
+                const revision = App.catalogStats ? App.catalogStats.revision : 0
+                const plays = playCount >= 0 ? playCount : (App.catalogStats ? App.catalogStats.plays(uri) : -1)
+                return plays >= 0 ? App.catalogStats.compact(plays) + qsTr(" plays") : (popularity >= 0 ? qsTr("Popularidade %1/100").arg(popularity) : "")
+            }
             showCover: root.kind !== "album"
             showAlbum: root.kind !== "album" && width > 640
             showAdded: root.kind !== "album"

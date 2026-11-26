@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.18.1 — 26/11/2026 (plays, ordenação da fila e bastidores)
+
+- Plays abreviados (2,2K, 200,5K, 4,5M) nas páginas de artista, álbum e playlist e na fila. Os números de álbuns e playlists vêm da consulta pública de álbum pela sessão nativa, de 8 em 8 álbuns e fora do canal do Jam.
+- A ordenação virou um botão **Ordenar** com lista de critérios, também na fila. Ordenar a coleção que está tocando reordena as próximas. "Mais tocadas" espera os plays e deixa as faixas sem dado no fim.
+- Corrige o "#0 no mundo": a posição só aparece quando o artista está entre os 500 com mais ouvintes mensais.
+- Bastidores do artista identifica a banda pelo link do Spotify no MusicBrainz e mostra origem, início, integrantes com instrumentos, período e idade (quando as datas estão registradas), além das cidades com mais ouvintes. A busca sobrecarregada do MusicBrainz agora mostra um aviso com **Tentar novamente**.
+- Botão **+ Seguir / ✓ Seguindo** estilizado, com mudança de cor ao seguir.
+- Detalhes e limites: docs/PLAYS_SORT_ARTIST_0181.md.
+
 ## 0.18.0 — 26/11/2026 (biblioteca, estatísticas e silêncio)
 
 - Seguir artistas e favoritar álbuns/playlists no Spotify; coleções locais no IndieTonal incluídas no backup.

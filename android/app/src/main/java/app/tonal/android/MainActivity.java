@@ -376,6 +376,20 @@ public final class MainActivity extends Activity {
         return true;
     }
 
+    /** Reorders only the upcoming entries by a TrackSort mode; the current track keeps playing. */
+    void sortQueue(String mode,boolean descending){
+        queueSnapshot(snapshot->{
+            ArrayList<JSONObject> tracks=snapshot.tracks();int revision=queueRevision;
+            if(snapshot.partial()){notice("Fila parcial do Spotify: a ordem da fila não foi alterada.");return;}
+            if(tracks.size()<3)return;
+            ArrayList<JSONObject> next=new ArrayList<>(tracks.subList(1,tracks.size()));
+            TrackSort.whenReady(api,next,mode,()->!isFinishing()&&revision==queueRevision,()->{
+                ArrayList<JSONObject> rows=new ArrayList<>();rows.add(tracks.get(0));rows.addAll(TrackSort.sorted(next,t->t,mode,descending,MusicStore.get(this)));
+                notice(editQueue(rows,revision)?"Fila ordenada: "+TrackSort.label(mode,descending):"A fila mudou ou não está disponível para edição.");
+            },this::notice);
+        },error->notice("Não foi possível consultar a fila. "+error));
+    }
+
     boolean playQueueEntry(ArrayList<JSONObject> rows,String anchor,int revision,boolean skipping) {
         if(!canEditQueue()||revision!=queueRevision||!isCurrentTrack(anchor)||rows.isEmpty())return false;
         if(queueFixture()){

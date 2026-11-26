@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(Tonal VERSION 0.18.0 LANGUAGES C CXX)
+project(Tonal VERSION 0.18.1 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -38,6 +38,7 @@ set(TONAL_SOURCES
     src/LibrespotProcess.h  src/LibrespotProcess.cpp
     src/Player.h            src/Player.cpp
     src/jam/JamController.h src/jam/JamController.cpp
+    src/jam/CatalogStats.h src/jam/CatalogStats.cpp
     src/MediaControls.h     src/MediaControls.cpp
     src/Lyrics.h            src/Lyrics.cpp
     src/SetlistFm.h         src/SetlistFm.cpp

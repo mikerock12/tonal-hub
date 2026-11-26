@@ -5,7 +5,7 @@ afetada antes de alterar o produto. Estado documental: 25/10/2026, builds Window
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
-Estado atual: 26/11/2026, Windows 0.18.0 e Android 0.18.0, versionCode 50 (ver seção da auditoria TH-006/TH-009 ao final). As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
+Estado atual: 26/11/2026, Windows 0.18.1 e Android 0.18.1, versionCode 51 (ver seção da auditoria TH-006/TH-009 ao final). As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
 
 ## Autoria, Git e privacidade
 
@@ -669,3 +669,20 @@ docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no
   remontagem local verificada, somente proprietário). Evidências: docs/release-0180-tests.json e
   docs/artifacts-0180.json. `jniLibs` é ignorado pelo Git e guarda .so antigos: `verify_apk.py`
   recusa bibliotecas do leitor. Commits documentais posteriores não significam rebuild.
+
+
+## Plays, ordenação da fila e bastidores — 0.18.1 (26/11/2026)
+
+- Ler docs/PLAYS_SORT_ARTIST_0181.md. `albumPlays` (jam-transport) usa a consulta
+  persistente `getAlbum`: até 8 álbuns por pedido, 150 faixas/álbum, 1 MiB por
+  corpo. Canal próprio: Android `catalog_busy` + `PlayCounts` (ids de pedido a
+  partir de 1.000.000.000); Windows `CatalogStats` com processo TonalJam próprio.
+  Nunca ocupar o slot do Jam nem estimar plays; desconhecido fica no fim.
+- `worldRank` só vale >0 (top 500 de ouvintes mensais). Não voltar a exibir 0.
+- Ordenação compartilhada: Android `TrackSort`, Windows `QueueEditor`/`CollectionPage`.
+  Na fila, ordenar usa a mesma edição transacional (fila parcial e >500 recusadas).
+- Bastidores: identidade pelo link Spotify→MusicBrainz antes da busca por nome;
+  idades só a partir de datas registradas (`CatalogFormat.age` / `MusicCompanion::memberAge`).
+  Até 6 consultas de integrantes no throttle comum de 1,25 s.
+- Sem Spotify autenticado no Android, aparelho físico ou garantia de estabilidade
+  da consulta persistente. Publicação e backup só após evidência.

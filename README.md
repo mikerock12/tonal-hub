@@ -10,6 +10,8 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
+**0.18.1 — Plays, ordenação da fila e bastidores:** plays abreviados (4,5M, 200,5K) em artistas, álbuns, playlists e na fila. A ordenação virou um botão **Ordenar**, também na fila. A posição no mundo só aparece para artistas realmente ranqueados. O Bastidores do artista mostra integrantes, origem, início, idades registradas e as cidades com mais ouvintes. O botão Seguir ganhou novo estilo. [Detalhes e limites](docs/PLAYS_SORT_ARTIST_0181.md).
+
 **0.18.0 — Biblioteca, estatísticas e transições sem silêncio:** siga artistas e favorite álbuns/playlists no Spotify; no IndieTonal esses dados ficam no aparelho e no backup. Artistas exibem seguidores, ouvintes mensais, plays e ouvintes por cidade quando disponíveis. Playlists ganham nove ordenações temporárias. O resumo de gêneros e clima não usa mais modelo e apaga os pesos Qwen antigos. **Tirar silêncio** remove somente zeros digitais no fim da atual e começo da próxima, com ou sem crossfade. [Detalhes e limites](docs/LIBRARY_POPULARITY_SILENCE_0180.md).
 
 **0.17.8 — Transições corrigidas pela auditoria TH-006/TH-009:** no Android a música atual volta a ser lida adiantada na velocidade do motor, então a mescla tem a próxima de verdade. A segunda transição não pula mais a música, e a barra e a letra contam o áudio guardado. No Windows, seek e pulo não perdem o começo da nova posição. Nas duas plataformas, o fim natural da fila toca até o fim. [Auditoria](docs/audit/TH006_TH009_AUDIT.md).
