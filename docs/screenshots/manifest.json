@@ -1,6 +1,6 @@
 {
   "documented_on": "2026-10-29",
-  "scope": "Real app/test screenshots with version and fixture provenance per image. Historical captures preserved; two new 0.12.0 native Android queue captures; four 0.13.0 theme captures without personal data; four 0.13.1 control/repeat captures without personal data. Halloween 0.15.4: seis capturas Windows com dados sintéticos; capturas Android pendentes por falha de inicialização do emulador.",
+  "scope": "Real app/test screenshots with version and fixture provenance per image. Historical captures preserved; two new 0.12.0 native Android queue captures; four 0.13.0 theme captures without personal data; four 0.13.1 control/repeat captures without personal data. Halloween 0.15.4: seis capturas Windows com dados sintéticos; capturas Android pendentes por falha de inicialização do emulador. 0.18.2: sete capturas (Windows e AVD) do Text to Tonalify e das fontes/efeitos/trilho de cores, com dados sintéticos.",
   "captures": [
     {
       "file": "desktop-modos.png",
@@ -529,6 +529,90 @@
       "height": 1200,
       "bytes": 341524,
       "sha256": "a348058ebe0c5bb6f39dc5efc16d3b0c015b11cb30c204e03ca63d9474cdd022"
+    },
+    {
+      "file": "windows-letras-fontes-0182.png",
+      "source": "out/lyrics-inline-ui/style-fonts-0182.png",
+      "platform": "Windows (qmltestrunner, renderizador Direct3D)",
+      "capture_context": "0.18.2: menu de fontes das letras, cada fonte no próprio desenho",
+      "note": "Harness QML com dados sintéticos; mesma janela LyricStyleDialog do app.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 850,
+      "height": 700,
+      "bytes": 99134,
+      "sha256": "69aa9b79e36e68a804152eb80d9a723ab6bc985309671f642a09712a3cd244ee"
+    },
+    {
+      "file": "windows-letras-efeitos-0182.png",
+      "source": "out/lyrics-inline-ui/style-effects-0182.png",
+      "platform": "Windows (qmltestrunner, renderizador Direct3D)",
+      "capture_context": "0.18.2: menu de efeitos com prévia aplicada (contorno ciano de teste)",
+      "note": "Harness QML com dados sintéticos.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 850,
+      "height": 700,
+      "bytes": 68479,
+      "sha256": "d9b3cd0059435ffe01a7965d7462ed3de352347afb3a3142c1e6ac0ae9ff17d1"
+    },
+    {
+      "file": "windows-text-revisao-0182.png",
+      "source": "out/text-playlist-ui/review.png",
+      "platform": "Windows (qmltestrunner offscreen)",
+      "capture_context": "0.18.2: revisão do Text to Tonalify com seções, motivo e Tentar de novo",
+      "note": "30 referências sintéticas; o símbolo ♪ não existe na fonte do harness offscreen.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 1040,
+      "height": 880,
+      "bytes": 58895,
+      "sha256": "8afc390036f986b83330886e2dd4f4f22add353541611ed4217cea6ddfe6af7c"
+    },
+    {
+      "file": "android-letras-fontes-0182.png",
+      "source": "out/android/lyric-style-0182/fonts.png",
+      "platform": "Android (AVD dedicada)",
+      "capture_context": "0.18.2: menu de fontes das letras, cada fonte no próprio desenho",
+      "note": "Sem login Spotify; diálogo aberto pelo extra de teste openLyricStyle.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 540,
+      "height": 1200,
+      "bytes": 82850,
+      "sha256": "c81e697d1c870fba35a6f651928b442bc89e89d517c12b192b724dab146de4f8"
+    },
+    {
+      "file": "android-letras-efeitos-0182.png",
+      "source": "out/android/lyric-style-0182/effects.png",
+      "platform": "Android (AVD dedicada)",
+      "capture_context": "0.18.2: menu de efeitos com prévia aplicada nas cores escolhidas no teste",
+      "note": "Cores magenta/escura vêm de toques anteriores do próprio smoke.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 540,
+      "height": 1200,
+      "bytes": 77518,
+      "sha256": "afd76f3bfca0ef9cd237d3f4e8621fd8a57d2490baa31edf64867448b7950e8d"
+    },
+    {
+      "file": "android-letras-trilho-0182.png",
+      "source": "out/android/lyric-style-0182/rail.png",
+      "platform": "Android (AVD dedicada)",
+      "capture_context": "0.18.2: trilho arco-íris 0–1000 com − e + nas pontas",
+      "note": "Valores após toques do smoke.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 540,
+      "height": 1200,
+      "bytes": 78377,
+      "sha256": "289d44f3b1e019fd4a1d5fe78f922bc3bf4cd9c4666eee771000cb9674677f49"
+    },
+    {
+      "file": "android-text-revisao-0182.png",
+      "source": "out/android/text-review-0182/review.png",
+      "platform": "Android (AVD dedicada)",
+      "capture_context": "0.18.2: revisão do Text to Tonalify com classe e motivo por referência",
+      "note": "Fixture sintética de 30 referências; nenhuma escrita na conta.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 540,
+      "height": 1200,
+      "bytes": 102558,
+      "sha256": "aab65ab862bd7c23394c8274e1d583a89201e7c35153e840838eccbf7ab67365"
     }
   ]
 }

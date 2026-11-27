@@ -80,13 +80,20 @@ bool MusicCompanion::collectionLiked(const QVariantMap &item) const{const auto i
 void MusicCompanion::favoriteCollection(const QVariantMap &item){const auto id=collectionKey(item);if(item.value("id").toString().isEmpty()||!QStringList{"artist","album","playlist"}.contains(item.value("kind").toString()))return;const bool on=!collectionLiked(item);auto list=m_data["collectionFavorites"].toArray();for(int i=list.size()-1;i>=0;--i)if(collectionKey(list[i].toObject().toVariantMap())==id)list.removeAt(i);if(on){if(list.size()>=500)list.removeLast();list.prepend(safeCollection(item));}m_data["collectionFavorites"]=list;save();}
 QVariantList MusicCompanion::collectionFavorites() const{return m_data["collectionFavorites"].toArray().toVariantList();}
 QString MusicCompanion::createPlaylist(const QString &name){if(name.trimmed().isEmpty()||playlists().size()>=100)return {};auto id=QUuid::createUuid().toString(QUuid::WithoutBraces);auto list=m_data["playlists"].toArray();list.append(QJsonObject{{"id",id},{"name",shortText(name,100)},{"tracks",QJsonArray{}}});m_data["playlists"]=list;save();return id;}
-QString MusicCompanion::importPlaylist(const QString &name,const QString &description,const QString &cover,const QVariantList &input){
+// Text to Tonalify audit: requested reference, chosen URI, decision code and reason (no tokens, no lyrics).
+QJsonArray MusicCompanion::safeImportAudit(const QJsonArray &input){
+  QJsonArray out;for(auto v:input){if(!v.isObject()||out.size()>=500)continue;const auto o=v.toObject();QJsonObject e;
+    for(auto name:{"requested","reason"})e[name]=shortText(o[name].toString(),300);
+    e["match"]=o["match"].toString().left(40);const auto uri=o["uri"].toString();if(uri.startsWith("spotify:track:")&&uri.size()<=64)e["uri"]=uri;e["manual"]=o["manual"].toBool();out.append(e);}
+  return out;
+}
+QString MusicCompanion::importPlaylist(const QString &name,const QString &description,const QString &cover,const QVariantList &input,const QVariantList &audit){
   if(name.trimmed().isEmpty()||playlists().size()>=100||input.isEmpty()||input.size()>500||cover.size()>262200)return {};
   auto next=m_data;auto tracks=next["tracks"].toObject();QJsonArray entries;
   for(auto value:input){auto t=safeTrack(value.toMap());if(!t.value("uri").toString().startsWith("spotify:track:"))return {};auto k=key(t);tracks[k]=QJsonObject::fromVariantMap(t);entries.append(k);}
   if(tracks.size()>3000)return {};
   const auto id=QUuid::createUuid().toString(QUuid::WithoutBraces);auto lists=next["playlists"].toArray();
-  lists.append(QJsonObject{{"id",id},{"name",name.trimmed().left(100)},{"description",description.left(300)},{"cover",cover},{"tracks",entries},{"importSource","Text to Tonalify"}});
+  lists.append(QJsonObject{{"id",id},{"name",name.trimmed().left(100)},{"description",description.left(300)},{"cover",cover},{"tracks",entries},{"importSource","Text to Tonalify"},{"importAudit",safeImportAudit(QJsonArray::fromVariantList(audit))}});
   next["tracks"]=tracks;next["playlists"]=lists;if(QJsonDocument(next).toJson(QJsonDocument::Compact).size()>7*1024*1024)return {};
   m_data=next;save();flush();return id;
 }
@@ -185,7 +192,7 @@ QJsonObject MusicCompanion::validateBackup(const QJsonObject &doc,const QString 
   clean["tracks"]=tracks;QJsonArray favorites,playlists,events;
   for(auto k:data["favorites"].toArray())if(k.isString()&&tracks.contains(k.toString())&&favorites.size()<3000&&!favorites.contains(k))favorites.append(k);clean["favorites"]=favorites;
   QJsonArray collections;QSet<QString> collectionIds;for(auto value:data["collectionFavorites"].toArray()){auto raw=value.toObject().toVariantMap();auto id=collectionKey(raw);auto kind=raw.value("kind").toString();if(raw.value("id").toString().isEmpty()||!QStringList{"artist","album","playlist"}.contains(kind)||collectionIds.contains(id)||collections.size()>=500)continue;collectionIds.insert(id);collections.append(safeCollection(raw));}clean["collectionFavorites"]=collections;
-  for(auto value:data["playlists"].toArray()){auto raw=value.toObject();if(raw["id"].toString().isEmpty())return {};QJsonObject p{{"id",raw["id"].toString().left(100)},{"name",raw["name"].toString().left(100)}};QJsonArray entries;for(auto k:raw["tracks"].toArray())if(k.isString()&&tracks.contains(k.toString())&&entries.size()<1000)entries.append(k);p["tracks"]=entries;p["description"]=raw["description"].toString().left(300);auto cover=raw["cover"].toString();if(cover.startsWith("data:image/jpeg;base64,")&&cover.size()<=262200)p["cover"]=cover;for(auto k:{"spotifyId","syncedCount","cloudUncertain","spotifyPublic","cloudComplete","coverSynced","importSource","appendMode","appendBase","appendBaseReady"})if(raw.contains(k))p[k]=raw[k];playlists.append(p);}clean["playlists"]=playlists;
+  for(auto value:data["playlists"].toArray()){auto raw=value.toObject();if(raw["id"].toString().isEmpty())return {};QJsonObject p{{"id",raw["id"].toString().left(100)},{"name",raw["name"].toString().left(100)}};QJsonArray entries;for(auto k:raw["tracks"].toArray())if(k.isString()&&tracks.contains(k.toString())&&entries.size()<1000)entries.append(k);p["tracks"]=entries;p["description"]=raw["description"].toString().left(300);auto cover=raw["cover"].toString();if(cover.startsWith("data:image/jpeg;base64,")&&cover.size()<=262200)p["cover"]=cover;for(auto k:{"spotifyId","syncedCount","cloudUncertain","spotifyPublic","cloudComplete","coverSynced","importSource","appendMode","appendBase","appendBaseReady"})if(raw.contains(k))p[k]=raw[k];if(raw["importAudit"].isArray())p["importAudit"]=safeImportAudit(raw["importAudit"].toArray());playlists.append(p);}clean["playlists"]=playlists;
   for(auto value:data["events"].toArray()){auto raw=value.toObject();if(!tracks.contains(raw["key"].toString()))continue;events.append(QJsonObject{{"key",raw["key"].toString()},{"session",raw["session"].toString(QUuid::createUuid().toString())},{"at",raw["at"].toDouble()},{"ms",std::clamp(raw["ms"].toDouble(),0.,86400000.)},{"play",raw["play"].toBool()}});}clean["events"]=events;
   for(auto k:{"history","background","photo","translationDay","translationBytes","searches","lyricStyle","lyricSync"})if(data.contains(k))clean[k]=data[k];
 

@@ -80,7 +80,7 @@ QtObject {
 ''', encoding='utf-8')
     # Use the production page, changing only its module import for the test doubles.
     (OUT / 'LyricsPage.qml').write_text('import LyricsHarness 1.0\n' + (ROOT / 'qml/pages/LyricsPage.qml').read_text(encoding='utf-8').replace('qrc:/companion/qml/companion','.'), encoding='utf-8')
-    for source in (ROOT / 'qml/companion').glob('*.qml'):
+    for source in [*(ROOT / 'qml/companion').glob('*.qml'), *(ROOT / 'qml/companion').glob('*.js')]:
         shutil.copyfile(source,OUT / source.name)
     shutil.copyfile(ROOT / 'qml/components/ThinScrollBar.qml', OUT / 'ThinScrollBar.qml')
     (OUT / 'Chip.qml').write_text('import QtQuick.Controls\nButton {}\n', encoding='utf-8')

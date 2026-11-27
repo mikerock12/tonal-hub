@@ -19,6 +19,32 @@ Item {
             // Atualizar ignora o cache e pede nova tradução; o teste restaura a chave para os demais casos.
             const saved=page.requestedTranslation;const calls=App.lyrics.reloadCalls;mouseClick(findChild(page,"refreshLyricsButton"));compare(App.lyrics.reloadCalls,calls+1);compare(page.requestedTranslation,"");page.requestedTranslation=saved
         }
+        // 0.18.2: fonts and effects are previewed in their menus; colors come from a 0–1000 rainbow rail with −/+.
+        function test_style_dialog_previews_and_rail(){
+            const dialog=findChild(page,"lyricStyleDialog");verify(dialog!==null);dialog.open();tryCompare(dialog,"opened",true)
+            const root=dialog.contentItem,box=findChild(root,"lyricFontBox")
+            verify(box!==null);verify(box.count>=10);const effects=findChild(root,"lyricEffectBox");verify(effects!==null);verify(effects.count>=10)
+            compare(box.model.indexOf("Cursiva")>=0,true);compare(effects.model.indexOf("Vazado")>=0,true)
+            const rail=findChild(root,"lyricColorRail"),plus=findChild(root,"lyricColorPlus"),minus=findChild(root,"lyricColorMinus"),value=()=>findChild(root,"lyricColorValue").text
+            verify(rail!==null&&plus!==null&&minus!==null);compare(rail.from,0);compare(rail.to,1000)
+            mouseClick(minus);verify(/^#[0-9A-F]{6}$/.test(App.music.lyricStyle.lyricColor))
+            rail.value=0;rail.moved();compare(value(),"#FFFFFF · 0")
+            mouseClick(plus);verify(App.music.lyricStyle.lyricColor!=="#FFFFFF");compare(value().indexOf("· 1")>0,true)
+            rail.value=1000;rail.moved();compare(value(),"#000000 · 1000")
+            rail.value=50;rail.moved();compare(value(),"#FF4040 · 50")
+            rail.value=200;rail.moved();compare(value(),"#FF8000 · 200")
+            rail.value=600;rail.moved();compare(value(),"#00FFFF · 600")
+            rail.value=800;rail.moved();compare(value(),"#8000FF · 800")
+            App.music.setLyricStyle("lyricColor","#F5F5F5");dialog.close();tryCompare(dialog,"visible",false)
+        }
+        function test_style_dialog_screenshots(){
+            const dialog=findChild(page,"lyricStyleDialog");verify(dialog!==null);dialog.open();tryCompare(dialog,"opened",true);wait(150)
+            grabImage(dialog.contentItem).save("style-dialog-0182.png")
+            const fonts=findChild(dialog.contentItem,"lyricFontBox");fonts.popup.open();tryCompare(fonts.popup,"opened",true);wait(250)
+            grabImage(page).save("style-fonts-0182.png");fonts.popup.close()
+            const effects=findChild(dialog.contentItem,"lyricEffectBox");App.music.setLyricStyle("lyricOutlineColor","#00C9FF");effects.popup.open();tryCompare(effects.popup,"opened",true);wait(250)
+            grabImage(page).save("style-effects-0182.png");effects.popup.close();dialog.close()
+        }
         function test_manual_sync_toggle(){App.music.alignLyrics(1,15000);compare(App.music.syncOffset,-14000);App.music.syncEnabled=false;compare(App.music.lineAt(15000),-1);App.music.syncEnabled=true}
         function test_fullscreen_styles_and_controls() {
             const savedBusy=App.music.busy

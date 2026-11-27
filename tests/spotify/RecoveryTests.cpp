@@ -4,6 +4,8 @@
 #include "DesktopUpdate.h"
 #include "SpotifyApi.h"
 #include "playback/ListeningMix.hpp"
+#include "playlist/TextPlaylistImport.hpp"
+#include <QElapsedTimer>
 #include "companion/MusicCompanion.h"
 #include "audio/AudioEngine.hpp"
 #include <QCoreApplication>
@@ -192,6 +194,99 @@ public:
     return report;
   }
   // Catalog and queue reads only. Never starts an engine or changes playback.
+  // 0.18.2: the production Text to Tonalify lookup against the real catalog. GET only; any other method is refused
+  // locally and counted. No playback, no playlist writes, no credentials or tokens in the report.
+  static QJsonObject textLookupReadOnly() {
+    QJsonObject report{{"read_only", true}, {"playback_commands", 0}, {"credentials_logged", false}};
+    QNetworkAccessManager network;
+    AuthManager auth(&network);
+    if (!auth.isAuthenticated()) { report["skipped"] = "No saved Web API session"; return report; }
+    if (!spin([&] { return auth.hasValidAccessToken() || !auth.isRefreshing(); }, 25000) || !auth.hasValidAccessToken()) {
+      report["skipped"] = "Saved session could not be refreshed"; return report;
+    }
+    SpotifyApi api(&network, &auth);
+    QTemporaryDir storage;
+    MusicCompanion music(nullptr, storage.path());
+    int requests = 0, refused = 0;
+    QMap<QString, int> families;
+    TextPlaylistImport importer(&music, [&](const QByteArray &method, const QString &path, const QVariantMap &query, const QByteArray &body,
+                                            const QByteArray &mime, TextPlaylistImport::Reply cb, std::function<bool()> current) {
+      if (method != "GET") { ++refused; cb(400, {}); return; }
+      ++requests;
+      const QString family = path.startsWith("/search") ? "search:" + query.value("type").toString() : path.startsWith("/artists/") ? "artist_albums" : "album_tracks";
+      families[family] = families.value(family) + 1;
+      api.raw(method, path, query, body, mime, std::move(cb), std::move(current));
+    });
+    // The 15 references of the user's prints (TONALIFY spec section 11).
+    const QString text = QString::fromUtf8(
+        "Remember Sports - Get Bummed Out\nDr. Dog - Heart It Races\nThe Wonder Years - Passing Through a Screen Door\n"
+        "Thin Lips - Non-Monogamy Nightmares\nCayetana - Age of Consent\nKurt Vile - Baby\xE2\x80\x99s Arms\nAlgernon Cadwallader - Look Down\n"
+        "The Superweaks - Glutton\nFree Energy - Dream City\nFree Energy - Hope Child\nThe Superweaks - Call Me Away\n"
+        "Free Energy - Dance All Night\nFree Energy - All I Know\nFree Energy - Something In Common\nFree Energy - Girls Want Rock");
+    QElapsedTimer timer;
+    timer.start();
+    importer.parse(text);
+    importer.search();
+    const bool finished = spin([&] { return !importer.busy(); }, 900000);
+    QJsonArray rows;
+    for (const auto &value : importer.rows()) {
+      const auto row = value.toMap();
+      const auto candidates = row["candidates"].toList();
+      const int choice = row["choice"].toInt();
+      QJsonObject out{{"requested", row["artist"].toString() + " - " + row["title"].toString()}, {"match", row["match"].toString()},
+        {"selected", row["selected"].toBool()}, {"section", row["section"].toString()}, {"reason", row["reason"].toString()},
+        {"requests", row["requests"].toInt()}, {"candidates", int(candidates.size())}};
+      if (choice >= 0 && choice < candidates.size()) {
+        const auto chosen = candidates[choice].toMap();
+        out["chosen"] = QJsonObject{{"title", chosen["title"].toString()}, {"artist", chosen["artist"].toString()}, {"album", chosen["album"].toString()},
+          {"match", chosen["match"].toString()}, {"reason", chosen["reason"].toString()}, {"playable", chosen["playable"].toBool()}};
+      }
+      int otherArtists = 0;
+      for (const auto &c : candidates) otherArtists += !c.toMap()["requestedArtist"].toBool();
+      out["other_artist_results"] = otherArtists;
+      rows.append(out);
+    }
+    QJsonObject perFamily;
+    for (auto it = families.cbegin(); it != families.cend(); ++it) perFamily[it.key()] = it.value();
+    const auto summary = importer.summary();
+    report["finished"] = finished;
+    report["elapsed_ms"] = timer.elapsed();
+    report["requests"] = requests;
+    report["requests_by_family"] = perFamily;
+    report["non_get_refused"] = refused;
+    report["selected"] = summary["selectedTotal"].toInt();
+    report["pending"] = summary["pending"].toInt();
+    report["status"] = importer.status();
+    report["rows"] = rows;
+    // Why the prints showed only homonyms for some Free Energy songs: compare the discography with and without
+    // the account market (a user token applies the account country either way, per the Web API reference).
+    QJsonObject probe;
+    bool received = false;
+    QString artistId;
+    api.get("/search", {{"q", "artist:\"Free Energy\""}, {"type", "artist"}, {"limit", 5}}, [&](int s, const QJsonDocument &d) {
+      probe["artist_search_http"] = s;
+      for (const auto &v : d.object()["artists"].toObject()["items"].toArray())
+        if (v.toObject()["name"].toString() == "Free Energy" && artistId.isEmpty()) artistId = v.toObject()["id"].toString();
+      received = true;
+    });
+    spin([&] { return received; }, 20000);
+    for (const bool market : {false, true}) {
+      if (artistId.isEmpty()) break;
+      received = false;
+      QVariantMap query{{"include_groups", "album,single"}, {"limit", 10}};
+      if (market) query["market"] = "from_token";
+      api.get("/artists/" + artistId + "/albums", query, [&](int s, const QJsonDocument &d) {
+        QJsonArray names;
+        for (const auto &v : d.object()["items"].toArray()) names.append(v.toObject()["name"]);
+        probe[market ? "albums_market_from_token" : "albums_without_market"] = QJsonObject{{"http", s}, {"total", d.object()["total"]}, {"names", names}};
+        received = true;
+      });
+      spin([&] { return received; }, 20000);
+    }
+    report["free_energy_discography_probe"] = probe;
+    report["passed"] = finished && refused == 0;
+    return report;
+  }
   static QJsonObject discoveryReadOnly() {
     QJsonObject report{{"passed", false}, {"read_only", true},
                        {"credentials_logged", false}};
@@ -1711,6 +1806,7 @@ int main(int argc, char **argv) {
   const bool live = app.arguments().contains("--live-session") ||
                     app.arguments().contains("--ready-only") ||
                     app.arguments().contains("--discovery-readonly") ||
+                    app.arguments().contains("--text-lookup-readonly") ||
                     app.arguments().contains("--catalog-readonly");
   app.setOrganizationName(live ? "Tonal" : "TonalRecoveryTests");
   app.setApplicationName(live ? "Tonal" : "Playback");
@@ -1726,6 +1822,8 @@ int main(int argc, char **argv) {
     report = SpotifyRecoveryTests::catalogReadOnly();
   else if (app.arguments().contains("--discovery-readonly"))
     report = SpotifyRecoveryTests::discoveryReadOnly();
+  else if (app.arguments().contains("--text-lookup-readonly"))
+    report = SpotifyRecoveryTests::textLookupReadOnly();
   else if (live)
     report = SpotifyRecoveryTests::liveSession(
         app.arguments().contains("--ready-only"));

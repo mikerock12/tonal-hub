@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.18.2 — 27/11/2026 (Text to Tonalify por artista e estilo das letras)
+
+- Text to Tonalify confirma o artista antes do título: homônimos de outros artistas nunca contam como encontrados nem ficam pré-escolhidos. Cada referência recebe uma classe (encontrada, equivalente, versão alternativa, artista errado, não encontrada, indisponível na região, erro) com o motivo visível.
+- Busca progressiva centrada no artista: busca dirigida, ID do artista, variantes do título e discografia do artista antes de desistir. Falhas de rede/5xx são repetidas com espera e nunca viram "não encontrada".
+- Singular/plural, créditos e remasters equivalentes são selecionados; versões ao vivo/remix ficam para revisão. Seções, "Só pendências", Ignorar, Tentar de novo e escolhas manuais preservadas; auditoria da escolha salva com a playlist.
+- Fontes e cores das letras: 12 fontes e 12 efeitos, cada um mostrado no menu do jeito que fica; cores num trilho arco-íris do branco ao preto, ajuste de 0 a 1000 com − e + nas pontas.
+- Detalhes, matriz antes/depois e limites: docs/TEXT_MATCHING_LYRIC_STYLE_0182.md.
+
 ## 0.18.1 — 26/11/2026 (plays, ordenação da fila e bastidores)
 
 - Plays abreviados (2,2K, 200,5K, 4,5M) nas páginas de artista, álbum e playlist e na fila. Os números de álbuns e playlists vêm da consulta pública de álbum pela sessão nativa, de 8 em 8 álbuns e fora do canal do Jam.

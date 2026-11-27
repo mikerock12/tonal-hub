@@ -94,3 +94,7 @@ Na etapa Personalizar, **Destino** permite escolher uma playlist Spotify existen
 `appendBase` guarda a sequência original e `appendBaseReady` diferencia uma base vazia de uma base ainda não confirmada. Se a resposta de um lote se perder, a retomada consulta o prefixo original e o sufixo já recebido antes de continuar. Mudanças externas ou paginação acima do limite existente de 12 páginas interrompem o envio sem novas escritas.
 
 Testes Windows e Android usam catálogo/transporte simulados, inclusive resposta 503 depois de o servidor aplicar o lote: a retomada não duplicou músicas, não criou outra playlist e fez zero PUT. Não houve escrita real em conta Spotify nesta entrega.
+
+## Identificação por artista — 0.18.2
+
+O ranking por palavras foi substituído por decisões tipadas com barreira de identidade do artista, política de versão e disponibilidade, e por uma busca progressiva centrada no artista (busca dirigida, ID do artista, variantes, discografia). Homônimos de outros artistas não são pré-escolhidos; erros técnicos não viram "não encontrada"; escolhas manuais são preservadas. A revisão tem seções e o filtro **Só pendências**. Relatório completo, matriz antes/depois dos prints e limites: [TEXT_MATCHING_LYRIC_STYLE_0182.md](TEXT_MATCHING_LYRIC_STYLE_0182.md).

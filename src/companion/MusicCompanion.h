@@ -63,6 +63,8 @@ public:
   void setPhoto(const QString &);
   QVariantList searches() const;
   QVariantMap lyricStyle() const;
+  Q_INVOKABLE static QStringList lyricFonts();
+  Q_INVOKABLE static QStringList lyricEffects();
   Q_INVOKABLE void rememberSearch(const QString &);
   Q_INVOKABLE void forgetSearch(const QString &query={});
   Q_INVOKABLE void setLyricStyle(const QString &,const QVariant &);
@@ -85,7 +87,8 @@ public:
   void setFavorite(const QVariantMap &,bool);
   Q_INVOKABLE QString createPlaylist(const QString &);
   QString importPlaylist(const QString &name,const QString &description,const QString &cover,
-                         const QVariantList &tracks);
+                         const QVariantList &tracks,const QVariantList &audit={});
+  static QJsonArray safeImportAudit(const QJsonArray &);
   Q_INVOKABLE QVariantMap playlistDetails(const QString &id) const;
   void updatePlaylistDetails(const QString &id,const QVariantMap &patch);
   void persist(std::function<void(bool)> done);
