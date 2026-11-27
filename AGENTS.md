@@ -715,3 +715,9 @@ docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no
   Não usar `shadowScale` ≠ 1 em MultiEffect de linhas (desloca o brilho) e manter texto visível no
   renderizador por software. Sem animação nova além do Piscante existente.
 - Sem Spotify autenticado no Android, aparelho físico ou escrita real de playlist nesta versão.
+- Entrega 0.18.2 (27/11/2026): PR76 merge `45c4dead88426d808be1687285ffe63993a8650f` (CI 4/4), código de produto
+  `fdd6c4e`, release v0.18.2 com Windows, ZIP, APKs e `SHA256SUMS.txt` (digests remotos iguais). Portal PR92 merge
+  `b3875df`, Worker `32c7fb46-572f-4c61-a781-20629da2d4b9` (verify 62/62; API, hashes, redirects, nota e privado 401
+  conferidos; o Android serviu a 0.18.1 por até 5 min de cache do Worker). Backup privado
+  `11vlfhiU0yeLnq7qiQI6qtWJAPS5-wOpX` (31 arquivos, partes de 7 MB, PRIVATE). Evidências: docs/release-0182-tests.json e
+  docs/artifacts-0182.json. Commits documentais posteriores não significam rebuild.

@@ -27,5 +27,12 @@
   "Fontes dependem das famílias instaladas no sistema; 'Arredondada' pode ser igual à Sans em Androids sem sans-serif-rounded",
   "Sem benchmark novo"
  ],
- "toolsInstalled": "Nenhum aplicativo ou ferramenta adicional instalado ou baixado. Pillow já existente no Python local foi usado só para recortar capturas."
+ "toolsInstalled": "Nenhum aplicativo ou ferramenta adicional instalado ou baixado. Pillow já existente no Python local foi usado só para recortar capturas.",
+ "publication": {
+  "ci": "PR76 4/4 (android-components, android-java, native-jam-transport, personal-library)",
+  "merge": "45c4dea",
+  "release": "v0.18.2 latest, 5 assets com digests iguais aos locais",
+  "portal": "PR92 merge b3875df, Worker 32c7fb46",
+  "backup": "Drive privado 11vlfhiU0yeLnq7qiQI6qtWJAPS5-wOpX, 31 arquivos"
+ }
 }

@@ -24,5 +24,24 @@
   }
  ],
  "androidCertificateSha256": "464ae7cf34f4f145541569db215f8fcdef5deda1be31921d8e366eed20aa22c2",
- "alignment16KiB": true
+ "alignment16KiB": true,
+ "productCode": "fdd6c4e",
+ "release": "https://github.com/mikerock12/tonal-hub/releases/tag/v0.18.2",
+ "merge": "45c4dead88426d808be1687285ffe63993a8650f",
+ "pullRequest": 76,
+ "releaseDigestsVerified": true,
+ "portal": {
+  "pullRequest": 92,
+  "merge": "b3875dfb9c749790982e45e31f3f2b3500a14b73",
+  "worker": "32c7fb46-572f-4c61-a781-20629da2d4b9",
+  "checks": "verify 62/62; produção: API v0.18.2 com hashes iguais nas duas plataformas, downloads 302 para a release, nota em /catalog.json, área privada 401. O Android mostrou v0.18.1 até expirar o cache de 5 min do Worker."
+ },
+ "backup": {
+  "driveFolder": "11vlfhiU0yeLnq7qiQI6qtWJAPS5-wOpX",
+  "files": 31,
+  "bytes": 181404906,
+  "parts": "7 MB, remontagem verificada localmente pelo SHA-256",
+  "access": "somente proprietário; arquivos PRIVATE",
+  "remoteHash": "não fornecido pelo conector; tamanhos remotos iguais aos locais"
+ }
 }
