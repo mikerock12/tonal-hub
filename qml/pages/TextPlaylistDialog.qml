@@ -7,10 +7,21 @@ Dialog {
     id: root
     required property var controller
     property int step: 0
-    property bool onlyMissing: false
+    // Section filter: same section names as TextPlaylistImport::sectionOf (Windows) and TextPlaylistWizard (Android).
+    property string filter: "all"
+    readonly property var sections: [{key:"all",label:"Todas"},{key:"pending",label:"Pendências"},{key:"selected",label:"Encontradas e selecionadas"},{key:"equivalent",label:"Equivalentes para confirmar"},
+        {key:"alternate",label:"Versões alternativas"},{key:"wrongArtist",label:"Só artista errado"},{key:"notFound",label:"Não encontradas"},{key:"unavailable",label:"Indisponíveis na região"},
+        {key:"error",label:"Erro / busca incompleta"},{key:"ignored",label:"Ignoradas"},{key:"waiting",label:"Aguardando busca"}]
     property var playlistTargets: Playlists.editable || []
-    function missingCount(){let count=0;for(let i=0;i<controller.rows.length;i++)if(!controller.rows[i].selected)count++;return count}
-    function reviewRows(){const result=[];for(let i=0;i<controller.rows.length;i++)if(!onlyMissing||!controller.rows[i].selected)result.push(Object.assign({},controller.rows[i],{reviewIndex:i}));return result}
+    function inSection(row,key){const section=row.section||"waiting";return key==="all"||key===section||(key==="pending"&&section!=="selected"&&section!=="ignored")}
+    function sectionCount(key){let count=0;for(let i=0;i<controller.rows.length;i++)if(inSection(controller.rows[i],key))count++;return count}
+    function missingCount(){return sectionCount("pending")}
+    function reviewRows(){const result=[];for(let i=0;i<controller.rows.length;i++)if(inSection(controller.rows[i],filter))result.push(Object.assign({},controller.rows[i],{reviewIndex:i}));return result}
+    function reasonOf(row){const c=row.choice>=0&&row.choice<row.candidates.length?row.candidates[row.choice]:null;return c&&c.reason?c.reason:(row.reason||"")}
+    function statusColor(row){const s=row.section||"";return row.selected?"#5ed1fa":s==="error"?"#ffb36b":(s==="wrongArtist"||s==="notFound")?"#f3c98a":"#c7d0d8"}
+    // "Escolher gravação": requested artist first; other performers below a labelled header.
+    function versionEntries(candidates){const out=[];let header=false,requested=0;for(let i=0;i<candidates.length;i++)if(candidates[i].requestedArtist)requested++;
+        for(let i=0;i<candidates.length;i++){if(!header&&!candidates[i].requestedArtist){out.push({header:requested?"Resultados não correspondentes (outros artistas ou músicas)":"Nenhuma gravação do artista pedido · resultados não correspondentes"});header=true}out.push(Object.assign({index:i},candidates[i]))}return out}
     function chooseReview(row,candidate,selected){const y=review.contentY;controller.choose(row,candidate,selected);Qt.callLater(()=>review.contentY=Math.min(y,Math.max(0,review.contentHeight-review.height)))}
     signal authorizationRequested()
     signal localPlaylistRequested(string playlistId)
@@ -46,23 +57,24 @@ Dialog {
         }
         ColumnLayout {visible:root.step===1;Layout.fillWidth:true;Layout.fillHeight:true
             RowLayout {Layout.fillWidth:true
-                Label {text:root.controller.selectedCount+" músicas selecionadas";color:"#f5f5f5";Layout.fillWidth:true}
-                Button {objectName:"missingFilter";text:root.onlyMissing?"Mostrar todas":"Só não encontradas ("+root.missingCount()+")";enabled:!root.controller.busy;onClicked:{root.onlyMissing=!root.onlyMissing;review.positionViewAtBeginning()}}
+                Label {objectName:"reviewSummary";text:root.controller.selectedCount+" selecionadas · "+root.missingCount()+" pendentes · "+root.sectionCount("ignored")+" ignoradas";color:"#f5f5f5";Layout.fillWidth:true}
+                ComboBox {objectName:"sectionFilter";Layout.preferredWidth:300;enabled:!root.controller.busy;model:root.sections.map(s=>s.label+" ("+root.sectionCount(s.key)+")");currentIndex:Math.max(0,root.sections.findIndex(s=>s.key===root.filter));onActivated:index=>{root.filter=root.sections[index].key;review.positionViewAtBeginning()}}
+                Button {objectName:"missingFilter";text:root.filter==="pending"?"Mostrar todas":"Só pendências ("+root.missingCount()+")";enabled:!root.controller.busy;onClicked:{root.filter=root.filter==="pending"?"all":"pending";review.positionViewAtBeginning()}}
                 BusyIndicator {running:root.controller.busy;visible:running;implicitWidth:30;implicitHeight:30}
                 Button {text:root.controller.busy?"Interromper busca":"Buscar / tentar pendentes";onClicked:root.controller.busy?root.controller.cancel():root.controller.search()}
             }
             ListView {id:review;objectName:"reviewList";Layout.fillWidth:true;Layout.fillHeight:true;clip:true;spacing:8;model:root.reviewRows();cacheBuffer:180
-                delegate: Rectangle {id:reviewCard;required property var modelData;required property int index;readonly property int sourceIndex:modelData.reviewIndex;readonly property var selectedTrack:modelData.choice>=0&&modelData.choice<modelData.candidates.length?modelData.candidates[modelData.choice]:({title:"",artist:"",album:"",image:""});width:review.width;height:148;color:index%2?"#1b2025":"#20262c";radius:10
+                delegate: Rectangle {id:reviewCard;required property var modelData;required property int index;readonly property int sourceIndex:modelData.reviewIndex;readonly property var selectedTrack:modelData.choice>=0&&modelData.choice<modelData.candidates.length?modelData.candidates[modelData.choice]:({title:"",artist:"",album:"",image:""});width:review.width;height:176;color:index%2?"#1b2025":"#20262c";radius:10
                     ColumnLayout {anchors.fill:parent;anchors.margins:10;spacing:6
                         RowLayout {Layout.fillWidth:true
-                            CheckBox {checked:modelData.selected;enabled:!root.controller.busy&&modelData.choice>=0;onClicked:root.chooseReview(sourceIndex,modelData.choice,checked)}
+                            CheckBox {checked:modelData.selected;enabled:!root.controller.syncing&&modelData.choice>=0;onClicked:root.chooseReview(sourceIndex,modelData.choice,checked);Accessible.name:"Incluir "+modelData.title}
                             Rectangle {width:56;height:56;radius:8;color:"#303842"
                                 Image {id:reviewArt;anchors.fill:parent;source:reviewCard.selectedTrack.image || "";asynchronous:true;fillMode:Image.PreserveAspectCrop;sourceSize.width:112;sourceSize.height:112}
                                 Label {anchors.centerIn:parent;visible:reviewArt.status!==Image.Ready;text:"♪";font.pixelSize:24;color:"#a8b0b7"}
                             }
                             ColumnLayout {Layout.fillWidth:true
                                 Label {text:(sourceIndex+1)+". "+modelData.title;textFormat:Text.PlainText;elide:Text.ElideRight;color:"white";font.bold:true;Layout.fillWidth:true}
-                                Label {text:modelData.artist+" • "+modelData.status;textFormat:Text.PlainText;color:modelData.selected?"#5ed1fa":"#f3c98a";Layout.fillWidth:true;elide:Text.ElideRight}
+                                Label {text:modelData.artist+" • "+modelData.status;textFormat:Text.PlainText;color:root.statusColor(modelData);Layout.fillWidth:true;elide:Text.ElideRight}
                             }
                             ToolButton {text:"↑";enabled:!root.controller.busy&&sourceIndex>0;onClicked:root.controller.move(sourceIndex,-1);ToolTip.text:"Mover para cima";ToolTip.visible:hovered}
                             ToolButton {text:"↓";enabled:!root.controller.busy&&sourceIndex+1<root.controller.rows.length;onClicked:root.controller.move(sourceIndex,1);ToolTip.text:"Mover para baixo";ToolTip.visible:hovered}
@@ -72,13 +84,16 @@ Dialog {
                             ColumnLayout {Layout.fillWidth:true;Layout.leftMargin:66
                                 Label {visible:!!selectedTrack.title;text:selectedTrack.title+" · "+selectedTrack.artist;textFormat:Text.PlainText;color:"white";Layout.fillWidth:true;elide:Text.ElideRight}
                                 Label {visible:!!selectedTrack.album;text:selectedTrack.album;textFormat:Text.PlainText;color:"#a8b0b7";Layout.fillWidth:true;elide:Text.ElideRight}
+                                Label {objectName:"reviewReason";visible:text.length>0;text:root.reasonOf(modelData);textFormat:Text.PlainText;color:"#9fb3c2";font.pixelSize:12;Layout.fillWidth:true;elide:Text.ElideRight;ToolTip.text:text;ToolTip.visible:reasonHover.hovered;HoverHandler{id:reasonHover}}
                             }
-                            Button {text:"Versão";enabled:!root.controller.busy&&modelData.candidates.length>0;onClicked:{versionDialog.row=sourceIndex;versionDialog.currentChoice=modelData.choice;versionDialog.candidates=modelData.candidates;versionDialog.open()}}
+                            Button {text:"Gravações";enabled:!root.controller.syncing&&modelData.candidates.length>0;onClicked:{versionDialog.row=sourceIndex;versionDialog.currentChoice=modelData.choice;versionDialog.candidates=modelData.candidates;versionDialog.requested=modelData.artist;versionDialog.open()}}
+                            Button {objectName:"reviewRetry";text:"Tentar de novo";visible:modelData.manual||modelData.section==="error"||modelData.section==="notFound"||modelData.section==="wrongArtist";enabled:!root.controller.busy;onClicked:root.controller.retry(sourceIndex)}
+                            Button {objectName:"reviewIgnore";text:"Ignorar";visible:!modelData.ignored&&!modelData.manual&&modelData.section!=="error"&&modelData.section!=="notFound"&&modelData.section!=="wrongArtist";enabled:!root.controller.syncing;onClicked:root.controller.ignore(sourceIndex)}
                         }
                     }
                 }
             }
-            Label {text:"Correspondências duvidosas ficam desmarcadas. Escolha a versão, corrija a busca ou deixe a faixa fora da playlist.";wrapMode:Text.WordWrap;color:"#a8b0b7";Layout.fillWidth:true}
+            Label {text:"Encontradas e equivalentes comprovadas ficam marcadas. Versões alternativas, ambíguas e resultados de outros artistas ficam desmarcados; homônimos nunca contam como encontrados.";wrapMode:Text.WordWrap;color:"#a8b0b7";Layout.fillWidth:true}
         }
         ColumnLayout {visible:root.step===2;Layout.fillWidth:true;Layout.fillHeight:true;spacing:16
             ComboBox {id:importTarget;objectName:"importTargetPlaylist";textRole:"name";valueRole:"id";model:[{id:"",name:"Criar uma nova playlist"}].concat(root.playlistTargets);Layout.fillWidth:true}
@@ -123,29 +138,35 @@ Dialog {
         }
     }
     FileDialog {id:coverFile;title:"Capa da playlist";nameFilters:["Imagens (*.jpg *.jpeg *.png *.webp)"];onAccepted:root.controller.setCover(selectedFile)}
-    Dialog {id:versionDialog;objectName:"versionDialog";property int row:-1;property int currentChoice:-1;property var candidates:[];parent:Overlay.overlay;anchors.centerIn:parent;modal:true;title:"Escolher gravação";width:Math.min(720,parent.width-32);height:Math.min(620,parent.height-48);standardButtons:Dialog.Close
+    Dialog {id:versionDialog;objectName:"versionDialog";property int row:-1;property int currentChoice:-1;property var candidates:[];property string requested:"";parent:Overlay.overlay;anchors.centerIn:parent;modal:true;title:"Escolher gravação";width:Math.min(760,parent.width-32);height:Math.min(640,parent.height-48);standardButtons:Dialog.Close
         palette.window:"#151719";palette.windowText:"#f5f5f5";palette.text:"#f5f5f5";palette.button:"#263440";palette.buttonText:"#f5f5f5"
         background:Rectangle{color:"#151719";radius:18;border.color:"#343a42"}
         ColumnLayout{anchors.fill:parent;spacing:10
-            Label{text:"Compare música, artista, álbum e capa antes de escolher.";color:"#a8b0b7";wrapMode:Text.WordWrap;Layout.fillWidth:true}
-            ListView{Layout.fillWidth:true;Layout.fillHeight:true;clip:true;spacing:8;model:versionDialog.candidates
-                delegate:Rectangle{required property var modelData;required property int index;width:ListView.view.width;height:78;radius:10;color:index===versionDialog.currentChoice?"#29424d":"#20262c"
-                    RowLayout{anchors.fill:parent;anchors.margins:10;spacing:12
+            Label{text:"Gravações do artista pedido aparecem primeiro, com o motivo da classificação. Resultados de outros artistas ficam separados.";color:"#a8b0b7";wrapMode:Text.WordWrap;Layout.fillWidth:true}
+            ListView{objectName:"versionList";Layout.fillWidth:true;Layout.fillHeight:true;clip:true;spacing:8;model:root.versionEntries(versionDialog.candidates)
+                delegate:Rectangle{required property var modelData;readonly property bool isHeader:modelData.header!==undefined;width:ListView.view.width;height:isHeader?34:92;radius:10;color:isHeader?"transparent":modelData.index===versionDialog.currentChoice?"#29424d":"#20262c"
+                    Label{visible:isHeader;anchors.verticalCenter:parent.verticalCenter;x:6;text:modelData.header || "";color:"#f3c98a";font.bold:true}
+                    RowLayout{visible:!isHeader;anchors.fill:parent;anchors.margins:10;spacing:12
                         Rectangle{width:56;height:56;radius:8;color:"#303842"
-                            Image{id:candidateArt;anchors.fill:parent;source:modelData.image || "";asynchronous:true;fillMode:Image.PreserveAspectCrop;sourceSize.width:112;sourceSize.height:112}
+                            Image{id:candidateArt;anchors.fill:parent;source:isHeader?"":(modelData.image || "");asynchronous:true;fillMode:Image.PreserveAspectCrop;sourceSize.width:112;sourceSize.height:112}
                             Label{anchors.centerIn:parent;visible:candidateArt.status!==Image.Ready;text:"♪";font.pixelSize:24;color:"#a8b0b7"}
                         }
-                        ColumnLayout{Layout.fillWidth:true
-                            Label{text:modelData.title;textFormat:Text.PlainText;color:"white";font.bold:true;Layout.fillWidth:true;elide:Text.ElideRight}
-                            Label{text:modelData.artist;textFormat:Text.PlainText;color:"#8ed7f2";Layout.fillWidth:true;elide:Text.ElideRight}
-                            Label{text:modelData.album;textFormat:Text.PlainText;color:"#a8b0b7";Layout.fillWidth:true;elide:Text.ElideRight}
+                        ColumnLayout{Layout.fillWidth:true;spacing:1
+                            Label{text:modelData.title || "";textFormat:Text.PlainText;color:"white";font.bold:true;Layout.fillWidth:true;elide:Text.ElideRight}
+                            Label{text:(modelData.artist || "")+(modelData.album?" · "+modelData.album:"");textFormat:Text.PlainText;color:"#8ed7f2";Layout.fillWidth:true;elide:Text.ElideRight}
+                            Label{text:(modelData.matchLabel || "")+(modelData.reason?" · "+modelData.reason:"");textFormat:Text.PlainText;color:modelData.requestedArtist?"#a8b0b7":"#f3c98a";font.pixelSize:12;Layout.fillWidth:true;wrapMode:Text.WordWrap;maximumLineCount:2;elide:Text.ElideRight}
                         }
-                        Label{visible:index===versionDialog.currentChoice;text:"✓";font.pixelSize:24;color:"#63d5ff"}
+                        Label{visible:!isHeader&&modelData.index===versionDialog.currentChoice;text:"✓";font.pixelSize:24;color:"#63d5ff"}
                     }
-                    MouseArea{anchors.fill:parent;cursorShape:Qt.PointingHandCursor;onClicked:{root.chooseReview(versionDialog.row,index,true);versionDialog.close()}}
+                    MouseArea{enabled:!isHeader;anchors.fill:parent;cursorShape:Qt.PointingHandCursor
+                        onClicked:{if(modelData.requestedArtist){root.chooseReview(versionDialog.row,modelData.index,true);versionDialog.close()}else{otherArtist.index=modelData.index;otherArtist.detail=modelData.title+" · "+modelData.artist+"\n\n"+(modelData.reason||"");otherArtist.open()}}}
                 }
             }
         }
+    }
+    Dialog {id:otherArtist;objectName:"otherArtistDialog";property int index:-1;property string detail:"";parent:Overlay.overlay;anchors.centerIn:parent;modal:true;title:"Usar resultado de outro artista?";standardButtons:Dialog.Yes|Dialog.Cancel
+        Label{width:480;wrapMode:Text.WordWrap;text:otherArtist.detail+"\n\nIsso não é a gravação pedida ("+versionDialog.requested+"). Use só se for mesmo a substituição desejada."}
+        onAccepted:{root.chooseReview(versionDialog.row,index,true);versionDialog.close()}
     }
     Dialog {id:editDialog;property int row:-1;parent:Overlay.overlay;anchors.centerIn:parent;modal:true;title:"Corrigir busca";standardButtons:Dialog.Ok|Dialog.Cancel
         ColumnLayout {TextField {id:editArtist;placeholderText:"Artista";maximumLength:300;Layout.preferredWidth:500}TextField {id:editTitle;placeholderText:"Música";maximumLength:300;Layout.preferredWidth:500}}

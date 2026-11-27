@@ -57,6 +57,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python tests/themes/check_themes.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tests/lyrics/check_style_lists.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python tests/mix/run_ui.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python tests/themes/halloween_ui.py
@@ -102,5 +104,9 @@ jobs:
         run: |
           javac -d out/ci-playback android/app/src/main/java/app/tonal/android/CatalogFormat.java tests/android/CatalogFormatChecks.java
           java -cp out/ci-playback app.tonal.android.CatalogFormatChecks
+      - name: Test the lyric color rail
+        run: |
+          javac -d out/ci-playback android/app/src/main/java/app/tonal/android/LyricRail.java tests/android/LyricColorChecks.java
+          java -cp out/ci-playback app.tonal.android.LyricColorChecks
       - name: Compile Android variants
         run: gradle -p android compileReleaseJavaWithJavac compileBenchmarkJavaWithJavac compileComparisonJavaWithJavac :automation:compileDebugJavaWithJavac --console=plain

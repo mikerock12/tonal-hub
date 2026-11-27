@@ -1,0 +1,283 @@
+{
+    "credentials_logged": false,
+    "elapsed_ms": 42932,
+    "finished": true,
+    "free_energy_discography_probe": {
+        "albums_market_from_token": {
+            "http": 200,
+            "names": [
+                "Love Sign",
+                "Love Sign",
+                "Wild Life",
+                "Girls Want Rock",
+                "Dance All Night",
+                "Electric Fever - Single",
+                "Bang Pop",
+                "I'm Going Down"
+            ],
+            "total": 8
+        },
+        "albums_without_market": {
+            "http": 200,
+            "names": [
+                "Love Sign",
+                "Love Sign",
+                "Wild Life",
+                "Girls Want Rock",
+                "Dance All Night",
+                "Electric Fever - Single",
+                "Bang Pop",
+                "I'm Going Down"
+            ],
+            "total": 8
+        },
+        "artist_search_http": 200
+    },
+    "non_get_refused": 0,
+    "passed": true,
+    "pending": 6,
+    "playback_commands": 0,
+    "read_only": true,
+    "recorded_at_utc": "2026-11-27T22:48:37Z",
+    "requests": 102,
+    "requests_by_family": {
+        "album_tracks": 36,
+        "artist_albums": 24,
+        "search:artist": 9,
+        "search:track": 33
+    },
+    "rows": [
+        {
+            "candidates": 3,
+            "chosen": {
+                "album": "All of Something",
+                "artist": "Remember Sports",
+                "match": "EXACT_MATCH",
+                "playable": true,
+                "reason": "Artista confirmado (ID Spotify); título idêntico",
+                "title": "Get Bummed Out"
+            },
+            "match": "EXACT_MATCH",
+            "other_artist_results": 0,
+            "reason": "Artista confirmado (ID Spotify); título idêntico",
+            "requested": "Remember Sports - Get Bummed Out",
+            "requests": 2,
+            "section": "selected",
+            "selected": true
+        },
+        {
+            "candidates": 17,
+            "chosen": {
+                "album": "Live at a Flamingo Hotel",
+                "artist": "Dr. Dog",
+                "match": "ALTERNATE_VERSION",
+                "playable": true,
+                "reason": "Artista confirmado (ID Spotify); versão ao vivo (pedido: estúdio)",
+                "title": "Heart It Races - Live"
+            },
+            "match": "ALTERNATE_VERSION",
+            "other_artist_results": 15,
+            "reason": "Artista confirmado (ID Spotify); versão ao vivo (pedido: estúdio)",
+            "requested": "Dr. Dog - Heart It Races",
+            "requests": 14,
+            "section": "alternate",
+            "selected": false
+        },
+        {
+            "candidates": 3,
+            "chosen": {
+                "album": "The Greatest Generation",
+                "artist": "The Wonder Years",
+                "match": "EXACT_MATCH",
+                "playable": true,
+                "reason": "Artista confirmado (ID Spotify); título idêntico",
+                "title": "Passing Through A Screen Door"
+            },
+            "match": "EXACT_MATCH",
+            "other_artist_results": 0,
+            "reason": "Artista confirmado (ID Spotify); título idêntico",
+            "requested": "The Wonder Years - Passing Through a Screen Door",
+            "requests": 2,
+            "section": "selected",
+            "selected": true
+        },
+        {
+            "candidates": 10,
+            "chosen": {
+                "album": "Divorce Year",
+                "artist": "Thin Lips",
+                "match": "EQUIVALENT_MATCH",
+                "playable": true,
+                "reason": "Artista confirmado (ID Spotify); título equivalente (singular/plural)",
+                "title": "Non-Monogamy Nightmare"
+            },
+            "match": "EQUIVALENT_MATCH",
+            "other_artist_results": 9,
+            "reason": "Artista confirmado (ID Spotify); título equivalente (singular/plural)",
+            "requested": "Thin Lips - Non-Monogamy Nightmares",
+            "requests": 3,
+            "section": "selected",
+            "selected": true
+        },
+        {
+            "candidates": 1,
+            "chosen": {
+                "album": "Tired Eyes",
+                "artist": "Cayetana",
+                "match": "EQUIVALENT_MATCH",
+                "playable": true,
+                "reason": "Artista confirmado (ID Spotify); título equivalente (New Order)",
+                "title": "Age of Consent (New Order)"
+            },
+            "match": "EQUIVALENT_MATCH",
+            "other_artist_results": 0,
+            "reason": "Artista confirmado (ID Spotify); título equivalente (New Order)",
+            "requested": "Cayetana - Age of Consent",
+            "requests": 2,
+            "section": "selected",
+            "selected": true
+        },
+        {
+            "candidates": 2,
+            "chosen": {
+                "album": "Smoke Ring For My Halo",
+                "artist": "Kurt Vile",
+                "match": "EXACT_MATCH",
+                "playable": true,
+                "reason": "Artista confirmado (ID Spotify); título idêntico",
+                "title": "Baby's Arms"
+            },
+            "match": "EXACT_MATCH",
+            "other_artist_results": 0,
+            "reason": "Artista confirmado (ID Spotify); título idêntico",
+            "requested": "Kurt Vile - Baby’s Arms",
+            "requests": 2,
+            "section": "selected",
+            "selected": true
+        },
+        {
+            "candidates": 2,
+            "chosen": {
+                "album": "Algernon Cadwallader",
+                "artist": "Algernon Cadwallader",
+                "match": "EQUIVALENT_MATCH",
+                "playable": true,
+                "reason": "Artista confirmado (ID Spotify); título equivalente (Because The Ground Is Easier To Understand And Doesn't Take So Much WorkToFigureOutButI'dRatherNotKnowWhereI'mStandingAndHaveAnIdeaOfWhatLifeIsAllAbout)",
+                "title": "Look Down (Because The Ground Is Easier To Understand And Doesn't Take So Much WorkToFigureOutButI'dRatherNotKnowWhereI'mStandingAndHaveAnIdeaOfWhatLifeIsAllAbout)"
+            },
+            "match": "EQUIVALENT_MATCH",
+            "other_artist_results": 0,
+            "reason": "Artista confirmado (ID Spotify); título equivalente (Because The Ground Is Easier To Understand And Doesn't Take So Much WorkToFigureOutButI'dRatherNotKnowWhereI'mStandingAndHaveAnIdeaOfWhatLifeIsAllAbout)",
+            "requested": "Algernon Cadwallader - Look Down",
+            "requests": 2,
+            "section": "selected",
+            "selected": true
+        },
+        {
+            "candidates": 24,
+            "match": "NOT_FOUND",
+            "other_artist_results": 24,
+            "reason": "Nenhuma gravação de The Superweaks com esse título; 24 resultado(s) de outros artistas separados; discografia de The Superweaks conferida no catálogo disponível para esta conta (pode estar indisponível na sua região)",
+            "requested": "The Superweaks - Glutton",
+            "requests": 15,
+            "section": "wrongArtist",
+            "selected": false
+        },
+        {
+            "candidates": 22,
+            "match": "NOT_FOUND",
+            "other_artist_results": 22,
+            "reason": "Nenhuma gravação de Free Energy com esse título; 22 resultado(s) de outros artistas separados; discografia de Free Energy conferida no catálogo disponível para esta conta (pode estar indisponível na sua região)",
+            "requested": "Free Energy - Dream City",
+            "requests": 15,
+            "section": "wrongArtist",
+            "selected": false
+        },
+        {
+            "candidates": 29,
+            "match": "NOT_FOUND",
+            "other_artist_results": 29,
+            "reason": "Nenhuma gravação de Free Energy com esse título; 29 resultado(s) de outros artistas separados; discografia de Free Energy conferida no catálogo disponível para esta conta (pode estar indisponível na sua região)",
+            "requested": "Free Energy - Hope Child",
+            "requests": 14,
+            "section": "wrongArtist",
+            "selected": false
+        },
+        {
+            "candidates": 1,
+            "chosen": {
+                "album": "Strength In Weakness",
+                "artist": "The Superweaks",
+                "match": "EXACT_MATCH",
+                "playable": true,
+                "reason": "Artista confirmado (ID Spotify); título idêntico",
+                "title": "Call Me Away"
+            },
+            "match": "EXACT_MATCH",
+            "other_artist_results": 0,
+            "reason": "Artista confirmado (ID Spotify); título idêntico",
+            "requested": "The Superweaks - Call Me Away",
+            "requests": 1,
+            "section": "selected",
+            "selected": true
+        },
+        {
+            "candidates": 3,
+            "chosen": {
+                "album": "Love Sign",
+                "artist": "Free Energy",
+                "match": "EXACT_MATCH",
+                "playable": true,
+                "reason": "Artista confirmado (ID Spotify); título idêntico",
+                "title": "Dance All Night"
+            },
+            "match": "EXACT_MATCH",
+            "other_artist_results": 0,
+            "reason": "Artista confirmado (ID Spotify); título idêntico",
+            "requested": "Free Energy - Dance All Night",
+            "requests": 1,
+            "section": "selected",
+            "selected": true
+        },
+        {
+            "candidates": 20,
+            "match": "NOT_FOUND",
+            "other_artist_results": 20,
+            "reason": "Nenhuma gravação de Free Energy com esse título; 20 resultado(s) de outros artistas separados; discografia de Free Energy conferida no catálogo disponível para esta conta (pode estar indisponível na sua região)",
+            "requested": "Free Energy - All I Know",
+            "requests": 14,
+            "section": "wrongArtist",
+            "selected": false
+        },
+        {
+            "candidates": 27,
+            "match": "NOT_FOUND",
+            "other_artist_results": 27,
+            "reason": "Nenhuma gravação de Free Energy com esse título; 27 resultado(s) de outros artistas separados; discografia de Free Energy conferida no catálogo disponível para esta conta (pode estar indisponível na sua região)",
+            "requested": "Free Energy - Something In Common",
+            "requests": 14,
+            "section": "wrongArtist",
+            "selected": false
+        },
+        {
+            "candidates": 3,
+            "chosen": {
+                "album": "Love Sign",
+                "artist": "Free Energy",
+                "match": "EXACT_MATCH",
+                "playable": true,
+                "reason": "Artista confirmado (ID Spotify); título idêntico",
+                "title": "Girls Want Rock"
+            },
+            "match": "EXACT_MATCH",
+            "other_artist_results": 0,
+            "reason": "Artista confirmado (ID Spotify); título idêntico",
+            "requested": "Free Energy - Girls Want Rock",
+            "requests": 1,
+            "section": "selected",
+            "selected": true
+        }
+    ],
+    "selected": 9,
+    "status": "Revisão pronta • 9 selecionadas, 6 pendentes, 0 ignoradas de 15. Homônimos de outros artistas ficam separados."
+}

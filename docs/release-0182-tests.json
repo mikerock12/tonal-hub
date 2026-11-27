@@ -1,0 +1,31 @@
+{
+ "version": "0.18.2",
+ "date": "2026-11-27",
+ "androidVersionCode": 52,
+ "report": "Usuário pediu: aplicar na íntegra TONALIFY_Text_to_Tonalify_Auditoria_Correcao_Estrutural.md; no diálogo Fontes e cores das letras, mostrar cada fonte e cada contorno do jeito que fica, ao menos 10 fontes e 10 efeitos, e trocar bolinhas/código por um trilho arco-íris reto com '16-bits de cores', ajuste 0 a 1000 do branco ao preto e − / + nas pontas. Interpretação adotada para '16-bits de cores': 16 cores-base no trilho (branco, 14 do espectro, preto), com interpolação completa (990 cores distintas nas 1001 posições). A primeira tentativa com quantização RGB565 dava só 323 cores e − / + muitas vezes não mudava a cor; foi descartada.",
+ "baseline": {
+  "how": "rank() da 0.18.1 compilado à parte com os 15 casos dos prints (antes de alterar o código)",
+  "result": "6 selecionadas; 2 falsos negativos (Thin Lips, Cayetana); 5 referências com candidato de outro artista pré-escolhido e rotulado 'Revisar versão' (Buckcherry, Balcony Sunrise, Chandelier, Screaming Trees, Bobby Brown/Whitney Houston)"
+ },
+ "validation": {
+  "coreFixtures": "tests/playlist/CoreCases.hpp: 15 casos dos prints + homônimos por ID, participação, karaokê/cover, live/estúdio, indisponível, &/and, apóstrofos, Lookup (discografia, 404, 503 com repetição, timeout, orçamento, cache de artista, saída antecipada) e 500 decisões. MSVC /W4 sem avisos; g++ no CI.",
+  "windowsImport": "TonalTextPlaylistTests: busca progressiva com mock (homônimos separados, discografia recupera a faixa com capa do álbum, cache de artista 1 busca por importação, Buscar pendentes não refaz resolvidas, UserOverride preservado, Ignorar, 503 marca a linha e continua, 429 pausa o restante, resposta tardia ignorada, 300 referências em 266 ms sem rede, auditoria importAudit) + fluxos de nuvem anteriores.",
+  "windowsCtest": "12/12 (92 s), build Release sem avisos C",
+  "qml": "lyrics 9/9 (inclui diálogo com 12 fontes/12 efeitos, trilho 0/50/200/600/800/1000 e − / +), playlist 4/4 (seções, Só pendências, homônimos separados), mix 37/37, temas 8/267, Halloween 3, Natal 7, check_style_lists (12 fontes, 12 efeitos, 16 cores iguais em C++/QML/Java)",
+  "qmlRealRenderer": "Capturas do menu de efeitos com o renderizador Direct3D (qmltestrunner em janela). Encontrado e corrigido: shadowScale 1.03 deslocava o brilho de linhas largas para a esquerda (bug também existente no Brilho/Neon da 0.18.1).",
+  "javaHost": "LyricColorChecks 17 checagens (16 cores, valores fixados, 990 cores distintas, ida e volta do ponto mais próximo)",
+  "realSpotifyWindows": "TonalSpotifyRecoveryTests --text-lookup-readonly com a sessão Spotify existente deste PC, só GET (outros métodos recusados localmente: 0), sem reprodução e sem credenciais no relatório. 15 referências dos prints: 9 selecionadas, todas corretas (artista, título e álbum conferidos), 0 de outro artista; 102 pedidos em 42,9 s. A primeira execução teve HTTP 503 em 'Look Down' antes da repetição automática e virou LOOKUP_ERROR (não NOT_FOUND); motivou repetição com espera e o filtro de faixas de álbum. Sonda: a discografia do Free Energy para esta conta tem 8 lançamentos sem 'Stuck on Nothing' (com e sem market). docs/text-matching-live-0182.json.",
+  "androidAvd": "Tonal_Local_20261015, APK benchmark: lyric_style_smoke PASS (12 fontes no próprio desenho, 12 efeitos com prévia, − / + passo 1, extremo preto, escolha pelo menu sem fechar o diálogo); text_review_smoke PASS (classes e motivos visíveis, Só pendências (2), rolagem preservada); tests/playlist/android_ui.py PASS (fluxo local-first, envio com 503 simulado, adição a playlist existente). Corrigido durante o teste: passadas de contorno/relevo desalinhadas com gravidade vertical; fixture com URI repetida entre artistas.",
+  "androidApks": "Universal 50.243.629 bytes e ARM64 27.864.326 bytes; versionCode 52; certificado SHA-256 464ae7cf…a22c2 igual ao da 0.18.1; zipalign 16 KiB OK; verify_apk sem seed privado e sem token",
+  "windowsPortable": "Tonalify.exe e TonalHub.exe do pacote 0.18.2 abriram e seguiram em execução por 9 s; nenhum arquivo de credencial no pacote"
+ },
+ "limits": [
+  "Sem Spotify autenticado no Android (AVD sem login) e sem aparelho físico",
+  "Sem escrita real em playlist Spotify nesta versão (adição/criação inalteradas e cobertas por fixtures)",
+  "Token de usuário só enxerga o catálogo do país da conta: ausência após a discografia não prova ausência no Spotify",
+  "'Mesma composição' é inferida por artista confirmado + título; prefixos e grafias parecidas ficam para confirmação",
+  "Fontes dependem das famílias instaladas no sistema; 'Arredondada' pode ser igual à Sans em Androids sem sans-serif-rounded",
+  "Sem benchmark novo"
+ ],
+ "toolsInstalled": "Nenhum aplicativo ou ferramenta adicional instalado ou baixado. Pillow já existente no Python local foi usado só para recortar capturas."
+}

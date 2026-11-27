@@ -5,7 +5,7 @@ afetada antes de alterar o produto. Estado documental: 25/10/2026, builds Window
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
-Estado atual: 26/11/2026, Windows 0.18.1 e Android 0.18.1, versionCode 51 (ver seção da auditoria TH-006/TH-009 ao final). As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
+Estado atual: 27/11/2026, Windows 0.18.2 e Android 0.18.2, versionCode 52 (ver seção 0.18.2 ao final). As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
 
 ## Autoria, Git e privacidade
 
@@ -692,3 +692,26 @@ docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no
   nota e privado 401 conferidos). Backup privado `1k2V_yKKjUry8L9J8oJBphcovM8SBmnBS` (31 arquivos, partes
   de 7 MB, somente proprietário). Evidências: docs/release-0181-tests.json e docs/artifacts-0181.json.
   Commits documentais posteriores não significam rebuild.
+
+
+## Text to Tonalify por artista e estilo das letras — 0.18.2 (27/11/2026)
+
+- Ler docs/TEXT_MATCHING_LYRIC_STYLE_0182.md. Decisão em C++ compartilhado (`TextPlaylistCore`):
+  barreira de artista antes do título (ID Spotify confirmado pela busca de artista; mesmo nome com
+  outro ID = homônimo, nunca automático; participação não substitui o intérprete). Nunca voltar a
+  pré-escolher candidato de outro artista nem aprovar só por título.
+- `Lookup` é máquina de estados pura; Windows e Android só executam os pedidos. Ordem: busca dirigida,
+  artista, variantes, discografia (até 2 IDs, 6 lançamentos), título. Orçamento 18; falha transitória
+  repete 2× com espera; erro técnico = LOOKUP_ERROR, nunca NOT_FOUND. `market=from_token`.
+- Feb/2026 Development Mode: sem popularity, ISRC, linked_from, top-tracks, lotes e `country` de /me.
+  Token de usuário só vê o catálogo do país da conta: não afirmar que a música não existe no Spotify.
+- Escolha/ignorar manual é UserOverride; "Buscar pendentes" não refaz selecionadas. Seções e
+  contadores derivam dos mesmos campos nas duas plataformas (`sectionOf`/`section`). `importAudit`
+  guarda referência, URI, código e motivo (até 500, saneado no backup, sem tokens).
+- Leitura real: `TonalSpotifyRecoveryTests --text-lookup-readonly` (só GET, recusa outros métodos).
+  Não publicar tokens; o relatório não tem credenciais.
+- Letras: 12 fontes e 12 efeitos com nomes iguais em C++/QML/Java (`check_style_lists.py`); fontes
+  do sistema, nada embutido. Trilho `LyricRail`/`LyricColors.js`: 16 cores, 0–1000, −/+.
+  Não usar `shadowScale` ≠ 1 em MultiEffect de linhas (desloca o brilho) e manter texto visível no
+  renderizador por software. Sem animação nova além do Piscante existente.
+- Sem Spotify autenticado no Android, aparelho físico ou escrita real de playlist nesta versão.
