@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.18.3 — 28/11/2026 (Text to Tonalify: discografia completa, rascunhos e mais músicas)
+
+- A busca na discografia lê todas as páginas de lançamentos (álbuns, singles, coletâneas e participações) e as faixas de cada um. "Discografia conferida" só aparece quando a varredura foi completa; corte ou erro viram "busca incompleta".
+- "Part II" e "Pt. 2" são o mesmo título. Dois cadastros do Spotify com o mesmo nome e músicas em comum contam como o mesmo artista (caso Scrawl); sem evidência, a escolha fica com você, que pode fixar o cadastro para a lista inteira.
+- Rascunhos: ao sair com mudanças, Salvar rascunho e sair / Sair sem salvar / Continuar editando. Continuar, renomear e excluir rascunhos na entrada; recuperação automática se o app fechar.
+- Adicionar mais músicas à mesma playlist em revisão (Adicionar ou Substituir pendentes), com prévia de duplicadas, desfazer e busca só das novas.
+- Detalhes, antes/depois Ohio e limites: docs/TEXT_DRAFTS_DISCOGRAPHY_0183.md.
+
 ## 0.18.2 — 27/11/2026 (Text to Tonalify por artista e estilo das letras)
 
 - Text to Tonalify confirma o artista antes do título: homônimos de outros artistas nunca contam como encontrados nem ficam pré-escolhidos. Cada referência recebe uma classe (encontrada, equivalente, versão alternativa, artista errado, não encontrada, indisponível na região, erro) com o motivo visível.

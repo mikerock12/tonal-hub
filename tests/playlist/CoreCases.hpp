@@ -100,14 +100,14 @@ inline void playlistCoreCases(){
     d=decide({"Free Energy","Dream City",{}},{track("Dream City",{"Free Energy"},{}, {"AAAAAAAAAAAAAAAAAAAAA1"})},one,true);
     expectCore(d.autoSelect&&d.reason.find("ID Spotify")!=std::string::npos,"artist confirmed by ID");
     d=decide({"Free Energy","Dream City",{}},{track("Dream City",{"Free Energy"},{}, {"CCCCCCCCCCCCCCCCCCCCC3"})},one,true);
-    expectCore(!d.autoSelect&&d.match==Match::Ambiguous,"same name, different artist ID is not approved by name");
+    expectCore(!d.autoSelect&&d.match==Match::ArtistAmbiguous,"same name, different artist ID is not approved by name");
     d=decide({"Free Energy","Dream City",{}},{track("Dream City",{"Free Energy"},"spotify:track:1111111111111111111111",{"AAAAAAAAAAAAAAAAAAAAA1"}),track("Dream City",{"Free Energy"},"spotify:track:2222222222222222222222",{"BBBBBBBBBBBBBBBBBBBBB2"})},two,true);
-    expectCore(!d.autoSelect&&d.match==Match::Ambiguous,"homonymous artists both offering the title");
+    expectCore(!d.autoSelect&&d.match==Match::ArtistAmbiguous,"homonymous artists both offering the title");
     d=decide({"Free Energy","Dream City",{}},{track("Dream City",{"Free Energy"},"spotify:track:1111111111111111111111",{"AAAAAAAAAAAAAAAAAAAAA1"}),track("Dream City",{"Free Energy"},"spotify:track:3333333333333333333333",{"AAAAAAAAAAAAAAAAAAAAA1"})},two,true);
     expectCore(d.autoSelect,"duplicate releases of the same artist are not ambiguous");
 
     // Codes round-trip for persistence.
-    for(auto m:{Match::Exact,Match::Equivalent,Match::Alternate,Match::Cover,Match::WrongArtist,Match::WrongSong,Match::Ambiguous,Match::NotFound,Match::Unavailable,Match::LookupError,Match::Incomplete})
+    for(auto m:{Match::Exact,Match::Equivalent,Match::Alternate,Match::Cover,Match::WrongArtist,Match::WrongSong,Match::Ambiguous,Match::NotFound,Match::Unavailable,Match::LookupError,Match::Incomplete,Match::ArtistAmbiguous})
         expectCore(matchFromCode(code(m))==m&&!label(m).empty(),"match code round-trip");
 
     auto q=queries({"Nirvana","Lithium",{}});expectCore(q.size()>=2&&q[0]=="track:\"Lithium\" artist:\"Nirvana\""&&q[1]=="Nirvana Lithium","directed query first, then joint text");
@@ -122,17 +122,89 @@ inline void playlistCoreCases(){
         r=look.next();expectCore(r.kind==Request::Artists,"artist resolved before giving up");
         look.acceptArtists({{"AAAAAAAAAAAAAAAAAAAAA1","Free Energy"},{"DDDDDDDDDDDDDDDDDDDDD4","Free Energy Band"}});
         expectCore(look.artists().size()==1,"only exact-name artists confirmed");
-        int albums=0;bool sawSingles=false;
+        int listings=0;bool sawAppears=false;
         while((r=look.next()).kind!=Request::None) {
             if(r.kind==Request::Tracks)look.acceptTracks({});
-            else if(r.kind==Request::Albums){++albums;if(r.query[0].second=="single"){sawSingles=true;look.acceptAlbums({{"SSSSSSSSSSSSSSSSSSSSS1","Other Single","single","2010",""},{"SSSSSSSSSSSSSSSSSSSSS2","Dream City","single","2010",""}});}else look.acceptAlbums({{"LLLLLLLLLLLLLLLLLLLLL1","Stuck on Nothing","album","2010",""}});}
-            else if(r.kind==Request::AlbumTracks){expectCore(r.path=="/albums/SSSSSSSSSSSSSSSSSSSSS2/tracks","single named after the song is fetched first");
-                const auto map=look.acceptTracks({track("Bang Pop",{"Free Energy"},{}, {"AAAAAAAAAAAAAAAAAAAAA1"},1),track("Dream City",{"Free Energy"},{}, {"AAAAAAAAAAAAAAAAAAAAA1"},1)});
+            else if(r.kind==Request::Albums){++listings;
+                if(r.query[0].second=="appears_on"){sawAppears=true;look.acceptAlbums({},0);}
+                else{expectCore(r.query[0].second=="album,single,compilation","own releases include compilations");
+                    look.acceptAlbums({{"SSSSSSSSSSSSSSSSSSSSS1","Other Single","single","2010",""},{"SSSSSSSSSSSSSSSSSSSSS2","Dream City","single","2010",""},{"LLLLLLLLLLLLLLLLLLLLL1","Stuck on Nothing","album","2010",""}},3);}}
+            else if(r.kind==Request::AlbumTracks){expectCore(r.path=="/albums/SSSSSSSSSSSSSSSSSSSSS2/tracks","release named after the song is fetched first");
+                const auto map=look.acceptTracks({track("Bang Pop",{"Free Energy"},{}, {"AAAAAAAAAAAAAAAAAAAAA1"},1),track("Dream City",{"Free Energy"},{}, {"AAAAAAAAAAAAAAAAAAAAA1"},1)},2);
                 expectCore(map[0]==-1&&map[1]>=0,"unrelated album tracks are not added to the review");}
         }
         d=look.decision();
-        expectCore(sawSingles&&albums==2&&look.finished()&&d.autoSelect&&d.match==Match::Exact&&look.pool()[size_t(d.ordered[0].index)].album=="Dream City","discography lookup finds the requested artist");
+        expectCore(sawAppears&&listings==2&&look.finished()&&d.autoSelect&&d.match==Match::Exact&&look.pool()[size_t(d.ordered[0].index)].album=="Dream City","discography lookup finds the requested artist");
         expectCore(d.ordered.back().match==Match::WrongArtist&&look.requests()<=12,"homonym kept apart and bounded requests");
+    }
+    // V3 (Ohio): every page of releases and every release's tracks, compilations included, before "not found".
+    {
+        Lookup look({"New Bomb Turks","Dragstrip Riot",{}});look.seedArtists({{"NNNNNNNNNNNNNNNNNNNNN1","New Bomb Turks"}});
+        Request r;int pages=0,offsets=0,albumCalls=0;
+        while((r=look.next()).kind!=Request::None){
+            if(r.kind==Request::Albums){
+                if(r.query[0].second=="appears_on"){look.acceptAlbums({},0);continue;}
+                ++pages;int offset=0;for(auto &kv:r.query)if(kv.first=="offset")offset=std::stoi(kv.second);offsets+=offset;
+                std::vector<AlbumHit> page;for(int i=0;i<10&&offset+i<25;++i){const auto n=std::to_string(offset+i);page.push_back({std::string(20-n.size(),'R')+"AB"+n,"Release "+n,offset+i==21?"compilation":"album","1995",""});}
+                look.acceptAlbums(page,25);
+            } else if(r.kind==Request::AlbumTracks){++albumCalls;
+                look.acceptTracks(r.album.name=="Release 21"?std::vector<Candidate>{track("Dragstrip Riot",{"New Bomb Turks"},{}, {"NNNNNNNNNNNNNNNNNNNNN1"},1)}:std::vector<Candidate>{track("Other",{"New Bomb Turks"})},1);
+            } else look.acceptTracks({});
+        }
+        d=look.decision();
+        expectCore(pages==3&&offsets==30&&d.autoSelect&&d.match==Match::Exact,"all release pages read; the compilation track is recovered");
+        expectCore(albumCalls>=7,"more than the 0.18.2 cap of six releases is checked");
+    }
+    {   // Not found after the complete scan: the claim names the work done. Cut by the budget: SEARCH_INCOMPLETE, no claim.
+        auto scan=[](int budget){Lookup look({"The Dopamines","Kitchen Cleaners",{}},"from_token",18,budget);look.seedArtists({{"DPDPDPDPDPDPDPDPDPDPD1","The Dopamines"}});Request r;
+            while((r=look.next()).kind!=Request::None){
+                if(r.kind==Request::Albums){if(r.query[0].second=="appears_on")look.acceptAlbums({},0);else{std::vector<AlbumHit> page;for(int i=0;i<10;++i){const auto n=std::to_string(i);page.push_back({std::string(20,'D')+"0"+n,"Release "+n,"album","2010",""});}look.acceptAlbums(page,13);}}
+                else if(r.kind==Request::AlbumTracks)look.acceptTracks({track("Other Song",{"The Dopamines"})},1);else look.acceptTracks({});}
+            return look.decision();};
+        d=scan(240);expectCore(d.match==Match::NotFound&&d.reason.find("discografia completa conferida")!=std::string::npos,"complete scan stated");
+        d=scan(4);expectCore(d.match==Match::Incomplete&&d.reason.find("discografia completa")==std::string::npos&&d.reason.find("busca incompleta")!=std::string::npos,"cut scan is SEARCH_INCOMPLETE, never 'discography checked'");
+    }
+    {   // Part / Pt. / roman numerals share a key; the Dopamines title is found as an exact equivalent.
+        expectCore(title("You're So Vain Part II").core==title("You\xE2\x80\x99re So Vain, Pt. 2").core,"Part II == Pt. 2");
+        expectCore(title("Chapter IV").core==title("Chapter 4").core&&title("Rocky II").core!=title("Rocky 2").core,"roman numerals only after part/volume words");
+        d=decide({"The Dopamines","You're So Vain Part II",{}},{track("You're So Vain, Pt. 2",{"The Dopamines"})});
+        expectCore(d.autoSelect,"Part II variant auto-selected for the same artist");
+        d=decide({"The Dopamines","You're So Vain Part II",{}},{track("You're So Vain, Pt. 2",{"Other Band"})});
+        expectCore(!d.autoSelect&&d.match==Match::NotFound,"the variant by another artist is not accepted");
+    }
+    {   // Scrawl: two Spotify profiles with the same name. Extra member credits are not another artist;
+        // shared discography titles prove one act; disjoint discographies keep the choice with the user.
+        auto run=[](bool shared,const std::string &pinned){
+            Lookup look({"Scrawl","Charles",{}});
+            Context ctx;if(!pinned.empty()){ctx.preferredId=pinned;ctx.preferredReason="cadastro fixado por você";}look.setContext(ctx);
+            Request r;
+            while((r=look.next()).kind!=Request::None){
+                if(r.kind==Request::Artists)look.acceptArtists({{"SCRAWLAAAAAAAAAAAAAAA1","Scrawl"},{"SCRAWLBBBBBBBBBBBBBBB2","Scrawl"}});
+                else if(r.kind==Request::Albums){
+                    if(r.query[0].second=="appears_on"){look.acceptAlbums({},0);continue;}
+                    if(r.path.find("SCRAWLAAAAAAAAAAAAAAA1")!=std::string::npos)look.acceptAlbums({{"NATUREFILMAAAAAAAAAAA1","Nature Film","album","1990",""}},1);
+                    else look.acceptAlbums({{"SMALLMOUTHBBBBBBBBBBB2","Smallmouth","album","1991",""}},1);
+                } else if(r.kind==Request::AlbumTracks){
+                    if(r.album.name=="Nature Film")look.acceptTracks({track("Charles",{"Scrawl"},"spotify:track:CHARLESAAAAAAAAAAAAAA1",{"SCRAWLAAAAAAAAAAAAAAA1"},1),track("Clock Song",{"Scrawl"}),track("Green Mind",{"Scrawl"}),track("Time",{"Scrawl"})},4);
+                    else look.acceptTracks(shared?std::vector<Candidate>{track("Charles",{"Scrawl","Marcy Mays","Sue Harshe","Carolyn O'Leary"},"spotify:track:CHARLESBBBBBBBBBBBBBB2",{"SCRAWLBBBBBBBBBBBBBBB2","MMMMMMMMMMMMMMMMMMMMM1","SSSSSSSSSSSSSSSSSSSSS3","CCCCCCCCCCCCCCCCCCCCC4"},1),track("Clock Song",{"Scrawl"}),track("Green Mind",{"Scrawl"})}
+                        :std::vector<Candidate>{track("Charles",{"Scrawl"},"spotify:track:CHARLESBBBBBBBBBBBBBB2",{"SCRAWLBBBBBBBBBBBBBBB2"},1),track("Unrelated",{"Scrawl"})},3);
+                } else look.acceptTracks({track("Charles",{"Scrawl"},"spotify:track:CHARLESAAAAAAAAAAAAAA1",{"SCRAWLAAAAAAAAAAAAAAA1"},1),
+                    track("Charles",{"Scrawl","Marcy Mays","Sue Harshe","Carolyn O'Leary"},"spotify:track:CHARLESBBBBBBBBBBBBBB2",{"SCRAWLBBBBBBBBBBBBBBB2","MMMMMMMMMMMMMMMMMMMMM1","SSSSSSSSSSSSSSSSSSSSS3","CCCCCCCCCCCCCCCCCCCCC4"},1)});
+            }
+            return std::make_pair(look.decision(),look.pool());};
+        auto [same,pool]=run(true,"");
+        expectCore(same.autoSelect&&pool[size_t(same.ordered[0].index)].uri=="spotify:track:CHARLESAAAAAAAAAAAAAA1"&&same.reason.find("músicas em comum")!=std::string::npos,"duplicated profiles of one act are not homonyms");
+        auto [different,pool2]=run(false,"");
+        expectCore(!different.autoSelect&&different.match==Match::ArtistAmbiguous&&std::string(group(different.match))=="homonyms","disjoint discographies stay ARTIST_AMBIGUOUS");
+        expectCore(different.reason.find("Nature Film")!=std::string::npos,"ambiguity names the albums");
+        auto [pinned,pool3]=run(false,"SCRAWLBBBBBBBBBBBBBBB2");
+        expectCore(pinned.autoSelect&&pool3[size_t(pinned.ordered[0].index)].uri=="spotify:track:CHARLESBBBBBBBBBBBBBB2"&&pinned.reason.find("fixado")!=std::string::npos,"a pinned profile decides for the list");
+    }
+    {   // Duplicate detection keys and pasted-list fingerprints.
+        expectCore(referenceKey({"The Dopamines","You're So Vain Part II",{}})==referenceKey({"Dopamines","You\xE2\x80\x99re So Vain, Pt. 2",{}}),"reference key ignores article, apostrophe and Pt./Part");
+        expectCore(referenceKey({"Scrawl","Charles",{}})!=referenceKey({"Scrawl","Clock Song",{}}),"distinct songs differ");
+        const std::vector<Song> pasted{{"Scrawl","Charles",{}},{"Scrawl","Clock Song",{}}},again{{"scrawl","Charles",{}},{"Scrawl","Clock song",{}}},other{{"Scrawl","Clock Song",{}},{"Scrawl","Charles",{}}};
+        expectCore(fingerprint(pasted)==fingerprint(again)&&fingerprint(pasted)!=fingerprint(other),"the same list pasted twice is recognised");
     }
     {   // Technical failure never becomes "not found".
         Lookup look({"Free Energy","Dream City",{}});const auto first=look.next();look.fail(503,"Spotify HTTP 503");
@@ -151,7 +223,7 @@ inline void playlistCoreCases(){
         Lookup look({"Free Energy","Hope Child",{}});look.seedArtists({{"AAAAAAAAAAAAAAAAAAAAA1","Free Energy"}});
         Request r;int artistsRequests=0,failures=0;
         while((r=look.next()).kind!=Request::None){if(r.kind==Request::Artists)++artistsRequests;
-            if(r.kind==Request::Albums){look.acceptAlbums({{"EEEEEEEEEEEEEEEEEEEEE5","Love Sign","album","2011",""}});}
+            if(r.kind==Request::Albums){look.acceptAlbums({{"EEEEEEEEEEEEEEEEEEEEE5","Love Sign","album","2011",""}},1);}
             else if(r.kind==Request::AlbumTracks){look.fail(404,"not found");++failures;}
             else look.acceptTracks({});}
         expectCore(artistsRequests==0&&failures==1&&look.decision().match==Match::NotFound,"404 on an album skips the step; seeded artist reused");

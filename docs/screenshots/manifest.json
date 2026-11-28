@@ -1,6 +1,6 @@
 {
   "documented_on": "2026-10-29",
-  "scope": "Real app/test screenshots with version and fixture provenance per image. Historical captures preserved; two new 0.12.0 native Android queue captures; four 0.13.0 theme captures without personal data; four 0.13.1 control/repeat captures without personal data. Halloween 0.15.4: seis capturas Windows com dados sintéticos; capturas Android pendentes por falha de inicialização do emulador. 0.18.2: sete capturas (Windows e AVD) do Text to Tonalify e das fontes/efeitos/trilho de cores, com dados sintéticos.",
+  "scope": "Real app/test screenshots with version and fixture provenance per image. Historical captures preserved; two new 0.12.0 native Android queue captures; four 0.13.0 theme captures without personal data; four 0.13.1 control/repeat captures without personal data. Halloween 0.15.4: seis capturas Windows com dados sintéticos; capturas Android pendentes por falha de inicialização do emulador. 0.18.2: sete capturas (Windows e AVD) do Text to Tonalify e das fontes/efeitos/trilho de cores, com dados sintéticos. 0.18.3: seis capturas (Windows e AVD) de rascunhos e Adicionar mais músicas, dados sintéticos. 0.18.3: seis capturas (Windows e AVD) de rascunhos e Adicionar mais músicas, dados sintéticos.",
   "captures": [
     {
       "file": "desktop-modos.png",
@@ -613,6 +613,78 @@
       "height": 1200,
       "bytes": 102558,
       "sha256": "aab65ab862bd7c23394c8274e1d583a89201e7c35153e840838eccbf7ab67365"
+    },
+    {
+      "file": "windows-text-saida-rascunho-0183.png",
+      "source": "out/text-playlist-ui/exit-dialog.png",
+      "platform": "Windows (qmltestrunner offscreen)",
+      "capture_context": "0.18.3: pergunta ao sair com três ações",
+      "note": "Mock sintético de 30 referências.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 1040,
+      "height": 880,
+      "bytes": 63531,
+      "sha256": "c3c44f5c1d242a8066dfc1215febfe4e80f9369dfad9ee0f0b35663505e88106"
+    },
+    {
+      "file": "windows-text-adicionar-0183.png",
+      "source": "out/text-playlist-ui/add-songs.png",
+      "platform": "Windows (qmltestrunner offscreen)",
+      "capture_context": "0.18.3: Adicionar mais músicas com prévia",
+      "note": "Mock sintético.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 1040,
+      "height": 880,
+      "bytes": 49856,
+      "sha256": "66cdb1b058397fd578decd6760aa65861b5cb14155654c7c6fce5aba2a27224f"
+    },
+    {
+      "file": "windows-text-rascunhos-0183.png",
+      "source": "out/text-playlist-ui/drafts-entry.png",
+      "platform": "Windows (qmltestrunner offscreen)",
+      "capture_context": "0.18.3: Continuar rascunho na entrada",
+      "note": "Mock sintético.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 1040,
+      "height": 880,
+      "bytes": 38959,
+      "sha256": "c0dabef677662769885b74a22afd083f3763ea6a6570b60abf14addc20d76576"
+    },
+    {
+      "file": "android-text-saida-rascunho-0183.png",
+      "source": "out/android/text-draft-0183/exit-dialog.png",
+      "platform": "Android (AVD dedicada)",
+      "capture_context": "0.18.3: pergunta ao sair com três ações",
+      "note": "Fixture sintética, sem Spotify.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 540,
+      "height": 1200,
+      "bytes": 97484,
+      "sha256": "19ecfae0012db16941810998b551aaf5a34efa6313dbc3fbcfd3d3e5c3f43831"
+    },
+    {
+      "file": "android-text-adicionar-0183.png",
+      "source": "out/android/text-draft-0183/add-songs.png",
+      "platform": "Android (AVD dedicada)",
+      "capture_context": "0.18.3: Adicionar mais músicas",
+      "note": "Fixture sintética.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 540,
+      "height": 1200,
+      "bytes": 89598,
+      "sha256": "c57cdd803a821e667a9353926d40c6d477f22bd3af0dea0a465a5675e24dfead"
+    },
+    {
+      "file": "android-text-rascunhos-0183.png",
+      "source": "out/android/text-draft-0183/drafts-entry.png",
+      "platform": "Android (AVD dedicada)",
+      "capture_context": "0.18.3: rascunho retomado após o processo encerrado",
+      "note": "Fixture sintética; processo encerrado com am kill.",
+      "transformation": "none; original PNG bytes copied",
+      "width": 540,
+      "height": 1200,
+      "bytes": 119981,
+      "sha256": "707604e2249622d713f481ba9b69a0c826662095d9772b4f0440f75f4923a86f"
     }
   ]
 }

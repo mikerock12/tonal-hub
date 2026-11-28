@@ -10,6 +10,8 @@ A base original C++/Qt e a integração inicial Spotify são de Matheus. As
 extensões deste fork preservam os [créditos](CREDITS.md) e a [licença MIT](LICENSE).
 As entregas pessoais não são releases oficiais do projeto original ou do Spotify.
 
+**0.18.3 — Rascunhos e discografia completa no Text to Tonalify:** a busca na discografia agora lê tudo (álbuns, singles, coletâneas, participações) e só diz "conferida" quando terminou; cadastros duplicados do mesmo artista são reconhecidos; rascunhos com pergunta ao sair e "Adicionar mais músicas" à mesma playlist. [Detalhes e limites](docs/TEXT_DRAFTS_DISCOGRAPHY_0183.md).
+
 **0.18.2 — Text to Tonalify por artista e estilo das letras:** o Text to Tonalify confirma o artista antes do título, separa homônimos, procura na discografia do artista antes de desistir e mostra o motivo de cada decisão (encontrada, equivalente, versão alternativa, artista errado, não encontrada, indisponível, erro). Fontes e cores das letras ganham 12 fontes e 12 efeitos com prévia no próprio menu e um trilho arco-íris de 0 a 1000 com ajuste fino. [Detalhes, matriz antes/depois e limites](docs/TEXT_MATCHING_LYRIC_STYLE_0182.md).
 
 **0.18.1 — Plays, ordenação da fila e bastidores:** plays abreviados (4,5M, 200,5K) em artistas, álbuns, playlists e na fila. A ordenação virou um botão **Ordenar**, também na fila. A posição no mundo só aparece para artistas realmente ranqueados. O Bastidores do artista mostra integrantes, origem, início, idades registradas e as cidades com mais ouvintes. O botão Seguir ganhou novo estilo. [Detalhes e limites](docs/PLAYS_SORT_ARTIST_0181.md).
