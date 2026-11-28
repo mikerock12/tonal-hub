@@ -89,6 +89,7 @@ public:
   QString importPlaylist(const QString &name,const QString &description,const QString &cover,
                          const QVariantList &tracks,const QVariantList &audit={});
   static QJsonArray safeImportAudit(const QJsonArray &);
+  QString storageFolder() const;   // folder of the personal library (drafts live beside it)
   Q_INVOKABLE QVariantMap playlistDetails(const QString &id) const;
   void updatePlaylistDetails(const QString &id,const QVariantMap &patch);
   void persist(std::function<void(bool)> done);

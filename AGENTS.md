@@ -5,7 +5,7 @@ afetada antes de alterar o produto. Estado documental: 25/10/2026, builds Window
 As instruções diretas do usuário prevalecem; este arquivo não cria uma nova
 exigência de confirmação para ações já autorizadas.
 
-Estado atual: 27/11/2026, Windows 0.18.2 e Android 0.18.2, versionCode 52 (ver seção 0.18.2 ao final). As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
+Estado atual: 28/11/2026, Windows 0.18.3 e Android 0.18.3, versionCode 53 (ver seção 0.18.3 ao final). As seções anteriores são históricas; o contrato atual do leitor está na seção 0.15.2 e as correções visuais/player mais recentes ao final deste arquivo.
 
 ## Autoria, Git e privacidade
 
@@ -721,3 +721,18 @@ docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no
   conferidos; o Android serviu a 0.18.1 por até 5 min de cache do Worker). Backup privado
   `11vlfhiU0yeLnq7qiQI6qtWJAPS5-wOpX` (31 arquivos, partes de 7 MB, PRIVATE). Evidências: docs/release-0182-tests.json e
   docs/artifacts-0182.json. Commits documentais posteriores não significam rebuild.
+
+
+## Rascunhos, discografia completa e mais músicas — 0.18.3 (28/11/2026)
+
+- Ler docs/TEXT_DRAFTS_DISCOGRAPHY_0183.md. Discografia: todas as páginas de `album,single,compilation` e depois
+  `appears_on`, faixas de cada lançamento; "discografia completa" só com `discographyComplete()`; corte/erro =
+  SEARCH_INCOMPLETE/LOOKUP_ERROR. Nunca voltar ao limite de 6 lançamentos nem omitir coletâneas.
+- Cadastros com o mesmo nome: `ARTIST_AMBIGUOUS`; ≥3 títulos em comum nas discografias = mesmo artista; créditos
+  de integrantes nunca provam outro intérprete. Cadastro fixado por lista (`pins`) é decisão do usuário.
+- Rascunhos: JSON schema 1 em `text-drafts/` (atômico + conferência); pergunta de saída com exatamente 3 ações em
+  X/Fechar/Voltar/Esc/Interpretar; autosave só para recuperação; até 20 rascunhos, nada apagado sem pedido.
+- Lotes: Adicionar/Substituir pendentes, impressão digital da lista, chave de duplicata, "Já está na playlist",
+  desfazer último lote; só linhas novas são buscadas.
+- Leituras reais de diagnóstico custam quota: o Spotify respondeu 429 com Retry-After de ~17 h após ≈500 pedidos.
+  Usar listas pequenas no `--text-lookup-readonly`; intervalo do app 350 ms.

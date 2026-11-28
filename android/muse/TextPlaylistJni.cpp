@@ -26,7 +26,7 @@ std::vector<std::string> list(JNIEnv *e,jobjectArray a,size_t maxItems){
 std::vector<std::string> split(const std::string &s){std::vector<std::string> out;if(s.empty())return out;size_t start=0;for(size_t p;(p=s.find('\x1f',start))!=std::string::npos;start=p+1)out.push_back(s.substr(start,p-start));out.push_back(s.substr(start));return out;}
 std::vector<std::string> decisionStrings(const tp::Decision &d){
     std::vector<std::string> out{tp::code(d.match),tp::label(d.match),std::to_string(d.choice),d.autoSelect?"1":"0",d.reason};
-    for(const auto &x:d.ordered){out.push_back(std::to_string(x.index));out.push_back(tp::code(x.match));out.push_back(tp::label(x.match));out.push_back(x.safe?"1":"0");out.push_back(x.reason);out.push_back(tp::requestedArtistResult(x.match)?"1":"0");}
+    for(const auto &x:d.ordered){out.push_back(std::to_string(x.index));out.push_back(tp::code(x.match));out.push_back(tp::label(x.match));out.push_back(x.safe?"1":"0");out.push_back(x.reason);out.push_back(tp::requestedArtistResult(x.match)?"1":"0");out.push_back(tp::group(x.match));}
     return out;
 }
 }
@@ -42,25 +42,35 @@ extern "C" JNIEXPORT jobjectArray JNICALL Java_app_tonal_android_TextPlaylistNat
     for(const auto &[k,v]:r.query){out.push_back(k);out.push_back(v);}return strings(e,out);
 }
 // 13 fields per track: id, uri, title, album, albumType, releaseDate, artists(0x1f), artistIds(0x1f), popularity, durationMs, playable, restriction, linkedFrom.
-extern "C" JNIEXPORT jintArray JNICALL Java_app_tonal_android_TextPlaylistNative_lookupTracks(JNIEnv *e,jclass,jlong h,jobjectArray fields){
+extern "C" JNIEXPORT jintArray JNICALL Java_app_tonal_android_TextPlaylistNative_lookupTracks(JNIEnv *e,jclass,jlong h,jobjectArray fields,jint total){
     try{if(!h)return nullptr;const auto f=list(e,fields,13*60);if(f.size()%13)throw std::length_error("Campos de faixa inválidos");std::vector<tp::Candidate> input;
         for(size_t i=0;i<f.size();i+=13){tp::Candidate c;c.id=f[i];c.uri=f[i+1];c.title=f[i+2];c.album=f[i+3];c.albumType=f[i+4];c.releaseDate=f[i+5];c.artists=split(f[i+6]);c.artistIds=split(f[i+7]);
             c.popularity=std::atoi(f[i+8].c_str());c.durationMs=std::atoi(f[i+9].c_str());c.playable=std::atoi(f[i+10].c_str());c.restriction=f[i+11];c.linkedFrom=f[i+12];input.push_back(std::move(c));}
-        const auto map=lookup(h)->acceptTracks(input);auto a=e->NewIntArray(jsize(map.size()));e->SetIntArrayRegion(a,0,jsize(map.size()),map.data());return a;
+        const auto map=lookup(h)->acceptTracks(input,total);auto a=e->NewIntArray(jsize(map.size()));e->SetIntArrayRegion(a,0,jsize(map.size()),map.data());return a;
     }catch(const std::exception &x){error(e,x);return nullptr;}
 }
 extern "C" JNIEXPORT void JNICALL Java_app_tonal_android_TextPlaylistNative_lookupArtists(JNIEnv *e,jclass,jlong h,jobjectArray pairs,jboolean seed){
     try{if(!h)return;const auto f=list(e,pairs,2*50);std::vector<tp::ArtistHit> hits;for(size_t i=0;i+1<f.size();i+=2)hits.push_back({f[i],f[i+1]});
         if(seed)lookup(h)->seedArtists(hits);else lookup(h)->acceptArtists(hits);}catch(const std::exception &x){error(e,x);}
 }
-extern "C" JNIEXPORT void JNICALL Java_app_tonal_android_TextPlaylistNative_lookupAlbums(JNIEnv *e,jclass,jlong h,jobjectArray fields){
-    try{if(!h)return;const auto f=list(e,fields,5*50);std::vector<tp::AlbumHit> hits;for(size_t i=0;i+4<f.size();i+=5)hits.push_back({f[i],f[i+1],f[i+2],f[i+3],f[i+4]});lookup(h)->acceptAlbums(hits);}catch(const std::exception &x){error(e,x);}
+extern "C" JNIEXPORT void JNICALL Java_app_tonal_android_TextPlaylistNative_lookupAlbums(JNIEnv *e,jclass,jlong h,jobjectArray fields,jint total){
+    try{if(!h)return;const auto f=list(e,fields,5*50);std::vector<tp::AlbumHit> hits;for(size_t i=0;i+4<f.size();i+=5)hits.push_back({f[i],f[i+1],f[i+2],f[i+3],f[i+4]});lookup(h)->acceptAlbums(hits,total);}catch(const std::exception &x){error(e,x);}
+}
+// Profile pinned by the user for every line of this artist (V3 section 3).
+extern "C" JNIEXPORT void JNICALL Java_app_tonal_android_TextPlaylistNative_lookupSetPreferred(JNIEnv *e,jclass,jlong h,jbyteArray id,jbyteArray reason){
+    if(!h)return;tp::Context ctx;ctx.preferredId=bytes(e,id);ctx.preferredReason=bytes(e,reason);lookup(h)->setContext(ctx);
+}
+extern "C" JNIEXPORT jboolean JNICALL Java_app_tonal_android_TextPlaylistNative_lookupDiscographyComplete(JNIEnv*,jclass,jlong h){return h&&lookup(h)->discographyComplete();}
+extern "C" JNIEXPORT jstring JNICALL Java_app_tonal_android_TextPlaylistNative_referenceKey(JNIEnv *e,jclass,jbyteArray artist,jbyteArray title){return string(e,tp::referenceKey({bytes(e,artist),bytes(e,title),{}}));}
+// pairs: artist, title, artist, title... in list order.
+extern "C" JNIEXPORT jstring JNICALL Java_app_tonal_android_TextPlaylistNative_fingerprint(JNIEnv *e,jclass,jobjectArray pairs){
+    try{const auto f=list(e,pairs,2*600);std::vector<tp::Song> songs;for(size_t i=0;i+1<f.size();i+=2)songs.push_back({f[i],f[i+1],{}});return string(e,tp::fingerprint(songs));}catch(const std::exception &x){error(e,x);return nullptr;}
 }
 extern "C" JNIEXPORT void JNICALL Java_app_tonal_android_TextPlaylistNative_lookupFail(JNIEnv *e,jclass,jlong h,jint status,jbyteArray message){if(h)lookup(h)->fail(status,bytes(e,message));}
 extern "C" JNIEXPORT jboolean JNICALL Java_app_tonal_android_TextPlaylistNative_lookupFinished(JNIEnv*,jclass,jlong h){return h&&lookup(h)->finished();}
 extern "C" JNIEXPORT jint JNICALL Java_app_tonal_android_TextPlaylistNative_lookupRequests(JNIEnv*,jclass,jlong h){return h?lookup(h)->requests():0;}
 extern "C" JNIEXPORT jint JNICALL Java_app_tonal_android_TextPlaylistNative_lookupBackoff(JNIEnv*,jclass,jlong h){return h?lookup(h)->backoffMs():0;}
-// [code, label, choice, autoSelect, reason, then per ordered candidate: index, code, label, safe, reason, requestedArtist]
+// [code, label, choice, autoSelect, reason, then per ordered candidate: index, code, label, safe, reason, requestedArtist, group]
 extern "C" JNIEXPORT jobjectArray JNICALL Java_app_tonal_android_TextPlaylistNative_lookupDecision(JNIEnv *e,jclass,jlong h){return h?strings(e,decisionStrings(lookup(h)->decision())):nullptr;}
 // ["1"|"0" resolved, id1, name1, ...] for the per-import artist cache.
 extern "C" JNIEXPORT jobjectArray JNICALL Java_app_tonal_android_TextPlaylistNative_lookupResolvedArtists(JNIEnv *e,jclass,jlong h){

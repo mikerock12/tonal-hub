@@ -1,3 +1,4 @@
+#include <QFileInfo>
 #include "MusicCompanion.h"
 #include "PersonalDatabase.h"
 #include "insights/TinyMusicModel.h"
@@ -81,6 +82,7 @@ void MusicCompanion::favoriteCollection(const QVariantMap &item){const auto id=c
 QVariantList MusicCompanion::collectionFavorites() const{return m_data["collectionFavorites"].toArray().toVariantList();}
 QString MusicCompanion::createPlaylist(const QString &name){if(name.trimmed().isEmpty()||playlists().size()>=100)return {};auto id=QUuid::createUuid().toString(QUuid::WithoutBraces);auto list=m_data["playlists"].toArray();list.append(QJsonObject{{"id",id},{"name",shortText(name,100)},{"tracks",QJsonArray{}}});m_data["playlists"]=list;save();return id;}
 // Text to Tonalify audit: requested reference, chosen URI, decision code and reason (no tokens, no lyrics).
+QString MusicCompanion::storageFolder() const{return QFileInfo(m_path).absolutePath();}
 QJsonArray MusicCompanion::safeImportAudit(const QJsonArray &input){
   QJsonArray out;for(auto v:input){if(!v.isObject()||out.size()>=500)continue;const auto o=v.toObject();QJsonObject e;
     for(auto name:{"requested","reason"})e[name]=shortText(o[name].toString(),300);

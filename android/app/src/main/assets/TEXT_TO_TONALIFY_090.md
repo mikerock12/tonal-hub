@@ -98,3 +98,7 @@ Testes Windows e Android usam catálogo/transporte simulados, inclusive resposta
 ## Identificação por artista — 0.18.2
 
 O ranking por palavras foi substituído por decisões tipadas com barreira de identidade do artista, política de versão e disponibilidade, e por uma busca progressiva centrada no artista (busca dirigida, ID do artista, variantes, discografia). Homônimos de outros artistas não são pré-escolhidos; erros técnicos não viram "não encontrada"; escolhas manuais são preservadas. A revisão tem seções e o filtro **Só pendências**. Relatório completo, matriz antes/depois dos prints e limites: [TEXT_MATCHING_LYRIC_STYLE_0182.md](TEXT_MATCHING_LYRIC_STYLE_0182.md).
+
+## Rascunhos e discografia completa — 0.18.3
+
+Discografia paginada inteira (inclusive coletâneas e participações), estado honesto (incompleta ≠ não encontrada), Part/Pt. e numerais romanos, cadastros duplicados comparados pela discografia e cadastro fixado por lista. Rascunhos persistentes com pergunta de saída e "Adicionar mais músicas" (Adicionar ou Substituir pendentes). Relatório: [TEXT_DRAFTS_DISCOGRAPHY_0183.md](TEXT_DRAFTS_DISCOGRAPHY_0183.md).

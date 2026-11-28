@@ -19,7 +19,7 @@ def main():
         assert any('Shove' in value for value in text) and any('Música 2' in value for value in text) and not any('Seether' in value for value in text),text
         # 0.18.2: decision classes are visible; a live-only result is an alternate version, not "found".
         assert any('Versão alternativa' in value for value in text) and any('Não encontrada' in value for value in text),text
-        assert any('versão ao vivo' in value for value in text) and any('Tentar de novo' in value for value in text),text
+        assert any('versão ao vivo' in value for value in text) and any(('Tentar de novo' in value or 'Buscar na discografia' in value) for value in text),text
         checks.append('decision_classes_and_reasons_visible')
         assert any('Editar busca' in value for value in text)
         checks.append('filter_lists_missing_and_review_unselected_rows')

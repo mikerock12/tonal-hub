@@ -11,9 +11,13 @@ final class TextPlaylistNative {
     static native long lookupCreate(byte[] artist,byte[] title,byte[] original);
     static native void lookupFree(long handle);
     static native String[] lookupNext(long handle);
-    static native int[] lookupTracks(long handle,String[] fields);
+    static native int[] lookupTracks(long handle,String[] fields,int total);
     static native void lookupArtists(long handle,String[] idNamePairs,boolean seed);
-    static native void lookupAlbums(long handle,String[] fields);
+    static native void lookupAlbums(long handle,String[] fields,int total);
+    static native void lookupSetPreferred(long handle,byte[] artistId,byte[] reason);
+    static native boolean lookupDiscographyComplete(long handle);
+    static native String referenceKey(byte[] artist,byte[] title);
+    static native String fingerprint(String[] artistTitlePairs);
     static native void lookupFail(long handle,int status,byte[] message);
     static native boolean lookupFinished(long handle);
     static native int lookupRequests(long handle);

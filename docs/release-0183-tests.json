@@ -1,0 +1,27 @@
+{
+ "version": "0.18.3",
+ "date": "2026-11-28",
+ "androidVersionCode": 53,
+ "report": "Usuário pediu para seguir TONALIFY_V3_1_RASCUNHOS_E_ADICIONAR_MUSICAS.md: recuperação por discografia (Ohio), homônimos/créditos (Scrawl), rascunhos persistentes com pergunta de saída e adicionar músicas de outra lista à mesma playlist.",
+ "diagnosis": "Rastreamento real (docs/text-ohio-live-0183.json): Dopamines 13 lançamentos com apenas 6 abertos (singles primeiro); New Bomb Turks sem coletâneas/participações; \"discografia conferida\" afirmada sem varredura completa; Scrawl com dois cadastros comparados só por ID.",
+ "validation": {
+  "coreFixtures": "CoreCases: paginação completa com coletânea (3 páginas, >6 lançamentos), corte = SEARCH_INCOMPLETE sem a frase de discografia, Part II = Pt. 2, romanos só após part/vol, Scrawl duplicado (títulos em comum) / homônimo real (ARTIST_AMBIGUOUS) / fixado, chave de duplicata e impressão digital; regressões Filadélfia mantidas.",
+  "windowsImport": "TonalTextPlaylistTests: DRAFT-02/03/04/05, recuperação automática, APPEND-01/02/03/04/06/07, duplicata por URI, cadastro fixado aplicado a todas as linhas, 300 referências; fluxos de nuvem anteriores.",
+  "windowsCtest": "12/12 (98 s)",
+  "qml": "playlist 5/5 (saída com 3 ações e Esc, adicionar músicas, rascunho na entrada, sair sem salvar), lyrics 9/9, mix 37/37, temas 8/267, Halloween 3, Natal 7, check_style_lists",
+  "javaHost": "LyricColorChecks 17",
+  "androidAvd": "Tonal_Local_20261015, APK benchmark: text_draft_smoke PASS (saída 3 ações, Continuar editando, adicionar 1 música = 31 ativas, salvar, am kill, retomar com os mesmos contadores, sair sem salvar mantém o rascunho, excluir com confirmação, falha de gravação não declarada como salva); text_review_smoke PASS; tests/playlist/android_ui.py PASS; lyric_style_smoke PASS.",
+  "realSpotifyWindows": "--text-lookup-readonly com a sessão existente deste PC (só GET). Antes: Scrawl AMBIGUOUS, 12 NOT_FOUND com 6 lançamentos. Depois: Scrawl Charles/Clock Song EXACT selecionadas (cadastros com 5 músicas em comum); 11 de New Bomb Turks/Dopamines NOT_FOUND após discografia completa (20 e 17 lançamentos); Long Gone Sister LOOKUP_ERROR por 429; demais linhas não consultadas. O Spotify aplicou Retry-After de 61.150 s (~17 h) à aplicação após cerca de 500 pedidos de diagnóstico.",
+  "androidApks": "Universal 50328285 bytes e ARM64 27930486 bytes; versionCode 53; certificado 464ae7cf...a22c2 igual ao da 0.18.2; zipalign 16 KiB OK; verify_apk sem seed nem token",
+  "windowsPortable": "Tonalify.exe e TonalHub.exe do pacote 0.18.3 abriram e seguiram em execução por 9 s; nenhum arquivo de credencial"
+ },
+ "limits": [
+  "Sem Spotify autenticado no Android e sem aparelho físico",
+  "Sem escrita real em playlist Spotify",
+  "Reinício do celular não testado; morte do processo simulada com am kill",
+  "Kitchen Cleaners e as linhas finais da leitura real não foram consultadas por causa do 429 de ~17 h",
+  "Rascunho não registra a conta Spotify; destino escolhido de novo em Personalizar",
+  "Sem benchmark novo"
+ ],
+ "toolsInstalled": "Nenhum aplicativo ou ferramenta adicional instalado ou baixado."
+}

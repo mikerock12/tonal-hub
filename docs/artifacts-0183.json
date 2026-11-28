@@ -1,0 +1,28 @@
+{
+ "version": "0.18.3",
+ "androidVersionCode": 53,
+ "assets": [
+  {
+   "name": "Tonal-Hub-0.18.3.0-Windows-x64-Setup.exe",
+   "sha256": "77178893bab412687e538b4a74e5439a6a509664ea4772e45fee91a3cb0b9018",
+   "bytes": 88193145
+  },
+  {
+   "name": "Tonal-Hub-0.18.3-local.zip",
+   "sha256": "9ae2bfafe4cae0f7ecdfa3166b2f4f8b3e153ac0baa0d2c59c7f4ced7cb7f0cb",
+   "bytes": 119698778
+  },
+  {
+   "name": "Tonal-Android-0.18.3-arm64-v8a.apk",
+   "sha256": "edf1358e5091fb9ddc55f1ba7604f340c0dae9d6b9aac977ba310fb0f566e716",
+   "bytes": 27930486
+  },
+  {
+   "name": "Tonal-Android-0.18.3-local.apk",
+   "sha256": "430ca6ba2f45785aad163722ab1e10b71d5fd5076d22b6e256c55a34e4306279",
+   "bytes": 50328285
+  }
+ ],
+ "androidCertificateSha256": "464ae7cf34f4f145541569db215f8fcdef5deda1be31921d8e366eed20aa22c2",
+ "alignment16KiB": true
+}

@@ -209,20 +209,45 @@ public:
     MusicCompanion music(nullptr, storage.path());
     int requests = 0, refused = 0;
     QMap<QString, int> families;
+    QJsonArray trace;   // AUD-01: every real request (path, filters, offset, HTTP status, items) per reference
+    TextPlaylistImport *self = nullptr;
     TextPlaylistImport importer(&music, [&](const QByteArray &method, const QString &path, const QVariantMap &query, const QByteArray &body,
                                             const QByteArray &mime, TextPlaylistImport::Reply cb, std::function<bool()> current) {
       if (method != "GET") { ++refused; cb(400, {}); return; }
       ++requests;
       const QString family = path.startsWith("/search") ? "search:" + query.value("type").toString() : path.startsWith("/artists/") ? "artist_albums" : "album_tracks";
       families[family] = families.value(family) + 1;
-      api.raw(method, path, query, body, mime, std::move(cb), std::move(current));
+      QString reference;
+      if (self) for (const auto &v : self->rows()) if (v.toMap()["lookup"].toString() == "searching") { reference = v.toMap()["artist"].toString() + " - " + v.toMap()["title"].toString(); break; }
+      QJsonObject entry{{"reference", reference}, {"family", family}, {"path", path.startsWith("/search") ? QString("/search") : path.section('/', 0, 1) + "/:id/" + path.section('/', 3)},
+        {"q", query.value("q").toString()}, {"include_groups", query.value("include_groups").toString()}, {"offset", query.value("offset", 0).toInt()},
+        {"limit", query.value("limit").toInt()}, {"market", query.value("market").toString()}};
+      const int index = int(trace.size());
+      trace.append(entry);
+      api.raw(method, path, query, body, mime, [&, index, cb, family](int status, const QJsonDocument &doc) {
+        auto e = trace[index].toObject();
+        e["http"] = status;
+        const auto o = doc.object();
+        const auto items = family == "search:track" ? o["tracks"].toObject() : family == "search:artist" ? o["artists"].toObject() : o;
+        e["items"] = int(items["items"].toArray().size());
+        e["total"] = items["total"];
+        e["next"] = !items["next"].toString().isEmpty();
+        trace[index] = e;
+        cb(status, doc);
+      }, std::move(current));
     });
-    // The 15 references of the user's prints (TONALIFY spec section 11).
-    const QString text = QString::fromUtf8(
+    self = &importer;
+    // The 15 references of the user's prints (TONALIFY spec section 11), or --text-file <UTF-8 list>.
+    QString text = QString::fromUtf8(
         "Remember Sports - Get Bummed Out\nDr. Dog - Heart It Races\nThe Wonder Years - Passing Through a Screen Door\n"
         "Thin Lips - Non-Monogamy Nightmares\nCayetana - Age of Consent\nKurt Vile - Baby\xE2\x80\x99s Arms\nAlgernon Cadwallader - Look Down\n"
         "The Superweaks - Glutton\nFree Energy - Dream City\nFree Energy - Hope Child\nThe Superweaks - Call Me Away\n"
         "Free Energy - Dance All Night\nFree Energy - All I Know\nFree Energy - Something In Common\nFree Energy - Girls Want Rock");
+    const int textArg = QCoreApplication::arguments().indexOf("--text-file");
+    if (textArg > 0 && textArg + 1 < QCoreApplication::arguments().size()) {
+      QFile file(QCoreApplication::arguments()[textArg + 1]);
+      if (file.open(QIODevice::ReadOnly)) text = QString::fromUtf8(file.readAll());
+    }
     QElapsedTimer timer;
     timer.start();
     importer.parse(text);
@@ -258,6 +283,7 @@ public:
     report["pending"] = summary["pending"].toInt();
     report["status"] = importer.status();
     report["rows"] = rows;
+    report["trace"] = trace;
     // Why the prints showed only homonyms for some Free Energy songs: compare the discography with and without
     // the account market (a user token applies the account country either way, per the Web API reference).
     QJsonObject probe;

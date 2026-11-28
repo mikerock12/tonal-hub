@@ -45,6 +45,7 @@ foreach($abi in @('x86_64','arm64-v8a')){
 [IO.File]::WriteAllText((Join-Path $root 'android\local.properties'),"sdk.dir=$($sdkPath.Replace('\','/').Replace(':','\:'))`n",[Text.Encoding]::ASCII)
 $gradlePath=Join-Path $env:USERPROFILE '.gradle\wrapper\dists\gradle-8.14.3-all\10utluxaxniiv4wxiphsi49nj\gradle-8.14.3\bin\gradle.bat'
 $assets=Join-Path $root 'android/app/src/main/assets'
+Copy-Item -LiteralPath (Join-Path $root 'docs/TEXT_DRAFTS_DISCOGRAPHY_0183.md') -Destination (Join-Path $assets 'TEXT_DRAFTS_DISCOGRAPHY_0183.md') -Force
 Copy-Item -LiteralPath (Join-Path $root 'docs/TEXT_MATCHING_LYRIC_STYLE_0182.md') -Destination (Join-Path $assets 'TEXT_MATCHING_LYRIC_STYLE_0182.md') -Force
 Copy-Item -LiteralPath (Join-Path $root 'docs/PLAYS_SORT_ARTIST_0181.md') -Destination (Join-Path $assets 'PLAYS_SORT_ARTIST_0181.md') -Force
 Copy-Item -LiteralPath (Join-Path $root 'docs/LIBRARY_POPULARITY_SILENCE_0180.md') -Destination (Join-Path $assets 'LIBRARY_POPULARITY_SILENCE_0180.md') -Force
@@ -70,6 +71,6 @@ if($PhoneOnly){$gradleArgs+='-PtonalAbi=arm64-v8a'}
 if($LASTEXITCODE -ne 0){throw 'Build APK falhou'}
 $outputPath=Join-Path $root 'out\android'
 New-Item -ItemType Directory -Force $outputPath | Out-Null
-$apkName=if($PhoneOnly){'Tonal-Android-0.18.2-arm64-v8a.apk'}else{'Tonal-Android-0.18.2-local.apk'}
+$apkName=if($PhoneOnly){'Tonal-Android-0.18.3-arm64-v8a.apk'}else{'Tonal-Android-0.18.3-local.apk'}
 Copy-Item -LiteralPath (Join-Path $root 'android\app\build\outputs\apk\release\app-release.apk') -Destination (Join-Path $outputPath $apkName) -Force
 Write-Host "APK local: $outputPath\$apkName"
