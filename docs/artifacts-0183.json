@@ -24,5 +24,24 @@
   }
  ],
  "androidCertificateSha256": "464ae7cf34f4f145541569db215f8fcdef5deda1be31921d8e366eed20aa22c2",
- "alignment16KiB": true
+ "alignment16KiB": true,
+ "productCode": "d27eb3d",
+ "release": "https://github.com/mikerock12/tonal-hub/releases/tag/v0.18.3",
+ "merge": "7726c5a1624eec3aa6a9b84cee06fe09dc957351",
+ "pullRequest": 78,
+ "releaseDigestsVerified": true,
+ "portal": {
+  "pullRequest": 94,
+  "merge": "bc623a7a99301cf3df8fd34ec08ba5f0907da6fd",
+  "worker": "dc5580e0-533b-4794-9158-0f14d74eb03b",
+  "checks": "npm test 62/62 e verify (build + dry-run); produção: API v0.18.3 com hashes iguais nas duas plataformas e nota nova, downloads 302 para a release, área privada 401."
+ },
+ "backup": {
+  "driveFolder": "1mG_90dARQpVbqYcTmlXp9pm0dRMwCWHT",
+  "files": 31,
+  "bytes": 182488765,
+  "parts": "7 MB, remontagem verificada localmente pelo SHA-256",
+  "access": "somente proprietário",
+  "remoteHash": "não fornecido pelo conector; tamanhos remotos iguais aos locais"
+ }
 }

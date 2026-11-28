@@ -23,5 +23,12 @@
   "Rascunho não registra a conta Spotify; destino escolhido de novo em Personalizar",
   "Sem benchmark novo"
  ],
- "toolsInstalled": "Nenhum aplicativo ou ferramenta adicional instalado ou baixado."
+ "toolsInstalled": "Nenhum aplicativo ou ferramenta adicional instalado ou baixado.",
+ "publication": {
+  "ci": "PR78 4/4 (android-components, android-java, native-jam-transport, personal-library)",
+  "merge": "7726c5a",
+  "release": "v0.18.3 latest, 5 assets com digests iguais aos locais",
+  "portal": "PR94 merge bc623a7, Worker dc5580e0",
+  "backup": "Drive privado 1mG_90dARQpVbqYcTmlXp9pm0dRMwCWHT, 31 arquivos"
+ }
 }

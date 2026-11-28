@@ -736,3 +736,8 @@ docs/release-01512-tests.json. Nenhuma ferramenta adicional instalada/baixada no
   desfazer último lote; só linhas novas são buscadas.
 - Leituras reais de diagnóstico custam quota: o Spotify respondeu 429 com Retry-After de ~17 h após ≈500 pedidos.
   Usar listas pequenas no `--text-lookup-readonly`; intervalo do app 350 ms.
+- Entrega 0.18.3 (28/11/2026): PR78 merge `7726c5a1624eec3aa6a9b84cee06fe09dc957351` (CI 4/4), código de produto
+  `d27eb3d`, release v0.18.3 com Windows, ZIP, APKs e `SHA256SUMS.txt` (digests remotos iguais). Portal PR94 merge
+  `bc623a7`, Worker `dc5580e0-533b-4794-9158-0f14d74eb03b` (verify 62/62; API, hashes, downloads e privado 401 conferidos).
+  Backup privado `1mG_90dARQpVbqYcTmlXp9pm0dRMwCWHT` (31 arquivos, partes de 7 MB, somente proprietário). Evidências:
+  docs/release-0183-tests.json e docs/artifacts-0183.json. Commits documentais posteriores não significam rebuild.
